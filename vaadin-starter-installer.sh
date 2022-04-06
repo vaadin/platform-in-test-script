@@ -21,7 +21,7 @@ git checkout "$3"
 
 compilation-fail(){
 
-  echo "$1"
+  echo "$1" >&2
   exit 1
 }
 
@@ -80,13 +80,14 @@ skeleton-starter-flow-cdi(){
 base-starter-spring-gradle(){
 
 
-  ./gradlew clean bootRun
+  ./gradlew clean bootRun && echo "./gradlew clean bootRun succeeded!"
 
-  perl -pi -e "s/vaadinVersion=.*/vaadinVersion=$version/" gradle.properties
+  perl -pi -e "s/vaadinVersion=.*/vaadinVersion=$version/" gradle.properties || compilation-fail "Could not find gradle.properties!"
 
-  perl -pi -e "s/pluginManagement {/pluginManagement {\n  repositories {\n\tmaven { url = 'https:\/\/maven.vaadin.com\/vaadin-prereleases' }\n\tgradlePluginPortal()\n}/" settings.gradle
+  perl -pi -e "s/pluginManagement {/pluginManagement {\n  repositories {\n\tmaven { url = 'https:\/\/maven.vaadin.com\/vaadin-prereleases' }\n\tgradlePluginPortal()\n}/" settings.gradle \
+  || compilation-fail "Could not edit settings.gradle!"
 
-  ./gradlew clean bootRun
+  ./gradlew clean bootRun && echo "./gradlew clean bootRun succeeded!"
 
 
   echo -e "\n--------------------------\n| ALL BUILDS SUCCESSFUL! |\n--------------------------"
