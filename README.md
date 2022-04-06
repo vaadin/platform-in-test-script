@@ -4,6 +4,6 @@
 
 ./vaadin-starter-installer project version branch
 
-Ctrl-C interrupts the server and continues the script.
+Note: Ctrl-C interrupts the server and continues the script.
 
 
