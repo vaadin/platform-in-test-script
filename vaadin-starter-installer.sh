@@ -2,8 +2,8 @@
 # This script installs any specified starter project automatically
 
 
-[[ "$#" != 2 ]] && echo -e "usage: ./vaadin-starter-installer.sh project branch
-example: ./vaadin-starter-installer.sh skeleton-starter-flow-spring v23" && exit 1
+[[ "$#" != 3 ]] && echo -e "usage: ./vaadin-starter-installer.sh project version branch
+example: ./vaadin-starter-installer.sh skeleton-starter-flow-spring 23.0.1 v23" && exit 1
 
 if [[ -d "$1" ]]; then
   read -p "$1 already exists! Do you want to remove the existing one? y/n " remove
@@ -12,9 +12,11 @@ if [[ -d "$1" ]]; then
 fi
 
 
+version="$2"
+
 git clone https://github.com/vaadin/$1.git && cd "$1"
 
-git checkout "$2"
+git checkout "$3"
 
 
 compilation-fail(){
@@ -26,10 +28,6 @@ compilation-fail(){
 
 base-starter-flow-osgi(){
 
-  version=$(grep '<vaadin.version>' pom.xml)
-
-  version=${version#*>}
-  version=${version%<*}
 
   mvn clean install >/dev/null && echo "mvn clean install succeeded!" || compilation-fail "mvn clean install failed!"
 
@@ -52,7 +50,6 @@ base-starter-flow-osgi(){
 
 skeleton-starter-flow-cdi(){
 
-  first='yes'
 
   pgrep -f "wildfly" >/dev/null && read -p "wildfly is already running! Do you want to kill it? y/n" answer
 
@@ -63,10 +60,6 @@ skeleton-starter-flow-cdi(){
   # Press Ctrl-C to continue
   mvn wildfly:run
 
-  version=$(grep '<vaadin.version>' pom.xml)
-
-  version=${version#*>}
-  version=${version%<*}
 
   mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$version >/dev/null \
   && echo "mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$version succeeded!" \
@@ -86,12 +79,10 @@ skeleton-starter-flow-cdi(){
 
 base-starter-spring-gradle(){
 
-  version=$(grep 'vaadinVersion=' gradle.properties)
-  version=${version#*=}
 
   ./gradlew clean bootRun
 
-  perl -pi -e 's/vaadinVersion=.*/vaadinVersion=$version' gradle.properties
+  perl -pi -e "s/vaadinVersion=.*/vaadinVersion=$version/" gradle.properties
 
   perl -pi -e "s/pluginManagement {/pluginManagement {\n  repositories {\n\tmaven { url = 'https:\/\/maven.vaadin.com\/vaadin-prereleases' }\n\tgradlePluginPortal()\n}/" settings.gradle
 
@@ -107,10 +98,6 @@ base-starter-spring-gradle(){
 
 vaadin-flow-karaf-example(){
 
-  version=$(grep '<vaadin.version>' pom.xml)
-
-  version=${version#*>}
-  version=${version%<*}
 
   mvn install && echo "mvn install succeeded!" || compilation-fail "mvn install failed!"
 
@@ -146,10 +133,6 @@ vaadin-flow-karaf-example(){
 
 base-starter-flow-quarkus(){
 
-  version=$(grep '<vaadin.version>' pom.xml)
-
-  version=${version#*>}
-  version=${version%<*}
 
   ./mvnw package -Pproduction >/dev/null && echo "mvnw package -Pproduction succeeded!" || compilation-fail "mvnw package -Pproduction failed!"
 
@@ -173,11 +156,6 @@ base-starter-flow-quarkus(){
 
 
 skeleton-starter-flow-spring(){
-
-  version=$(grep '<vaadin.version>' pom.xml)
-
-  version=${version#*>}
-  version=${version%<*}
 
 
   mvn package -Pproduction >/dev/null && echo "mvn package -Pproduction succeeded!" || compilation-fail "mvn package -Pproduction failed!"
