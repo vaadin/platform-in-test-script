@@ -3,12 +3,12 @@
 
 
 [[ "$#" != 3 ]] && echo -e "usage: ./vaadin-starter-installer.sh project version branch
-example: ./vaadin-starter-installer.sh skeleton-starter-flow-spring 23.0.1 v23" && exit 1
+example: ./vaadin-starter-installer.sh skeleton-starter-flow-spring 23.0.1 v23" >&2 && exit 1
 
 if [[ -d "$1" ]]; then
   read -p "$1 already exists! Do you want to remove the existing one? y/n " remove
   [[ "$remove" == "y" ]] || [[ "$remove" == "Y" ]] && rm -rf "$1" && git clone https://github.com/vaadin/$1.git && cd "$1"
-  [[ "$remove" == "n" ]] || [[ "$remove" == "N" ]] && echo "Error! Remove or rename the old directory before trying again." && exit 1
+  [[ "$remove" == "n" ]] || [[ "$remove" == "N" ]] && echo "Error! Remove or rename the old directory before trying again." >&2 && exit 1
 fi
 
 
