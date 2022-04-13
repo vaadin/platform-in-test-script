@@ -2,13 +2,6 @@
 # This script installs any specified starter project automatically
 
 
-# TODO :
-# DONE: A lot of duplicate code, make some into a function and call it
-# DONE: Make it more maintainable(easier to add stuff)
-# Make it more AI-like
-# Ideally, make it so we can make a PR from within the script
-# Automatically open and close the server in the browser
-
 
 base_starter_flow_osgi_result="Not Tested"
 skeleton_starter_flow_cdi_result="Not Tested"
