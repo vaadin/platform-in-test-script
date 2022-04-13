@@ -2,15 +2,22 @@
 # This script installs any specified starter project automatically
 
 
+# TODO :
+# DONE: A lot of duplicate code, make some into a function and call it
+# DONE: Make it more maintainable(easier to add stuff)
+# Make it more AI-like
+# Ideally, make it so we can make a PR from within the script
+# Automatically open and close the server in the browser
 
-declare base_starter_flow_osgi_result="Not Tested"
-declare skeleton_starter_flow_cdi_result="Not Tested"
-declare skeleton_starter_flow_spring_result="Not Tested"
-declare base_starter_spring_gradle_result="Not Tested"
-declare base_starter_flow_quarkus_result="Not Tested"
-declare vaadin_flow_karaf_example_result="Not Tested"
 
-declare setup_result=""
+base_starter_flow_osgi_result="Not Tested"
+skeleton_starter_flow_cdi_result="Not Tested"
+skeleton_starter_flow_spring_result="Not Tested"
+base_starter_spring_gradle_result="Not Tested"
+base_starter_flow_quarkus_result="Not Tested"
+vaadin_flow_karaf_example_result="Not Tested"
+
+setup_result=""
 
 
 # exit with instructions if not given three args
@@ -79,7 +86,6 @@ fail(){
   echo "$1" >&2
 
 
-
   case "$2" in
     base-starter-flow-osgi)
     base_starter_flow_osgi_result="Failed";
@@ -119,20 +125,20 @@ fail(){
 
 mvn-clean-install(){
 
-    mvn clean install >/dev/null && echo "mvn clean install succeeded!" || fail "mvn clean install failed!"
+    mvn clean install >/dev/null && echo "mvn clean install succeeded!" || fail "mvn clean install failed!" "$1"
 
 }
 
 
 base-starter-flow-osgi(){
 
-  mvn-clean-install
+  mvn-clean-install "$FUNCNAME"
 
   mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$version >/dev/null \
   && echo "mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$version succeeded!" \
   || fail "mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$version failed!" "$FUNCNAME"
 
-  mvn-clean-install
+  mvn-clean-install "$FUNCNAME"
 
   mvn clean install -Dpnpm.enable=true >/dev/null && echo "mvn clean install with Dpnpm.enable=true succeeded!" \
   || fail "mvn clean install with Dpnpm.enable=true failed!" "$FUNCNAME"
@@ -141,27 +147,37 @@ base-starter-flow-osgi(){
 
   echo -e "\n--------------------------------------------\n| base-starter-flow-osgi build successful! |\n--------------------------------------------\n"
 
-
   return
 
 }
 
 mvn-verify(){
-  mvn verify -Pit,production >/dev/null \
-  && echo "mvn verify -Pit,production succeeded!" \
-  || fail "mvn verify -Pit,production failed!" "$FUNCNAME"
+
+  mvn verify -Pit,production >/dev/null && echo "mvn verify -Pit,production succeeded!" || fail "mvn verify -Pit,production failed!" "$1"
+
+}
+
+
+check-wildfly-server(){
+
+  pgrep -f "wildfly" >/dev/null && read -p "wildfly is already running! Do you want to kill it? y/n" answer2 || return
+
+  if [[ "$answer2" == "y" ]] || [[ "$answer2" == "Y" ]]; then
+    pgrep -f "wildfly" | xargs kill
+  else
+    echo "Shut down the server or kill it before running the script." >&2
+    exit 1
+  fi
+
 }
 
 
 skeleton-starter-flow-cdi(){
 
 
-  pgrep -f "wildfly" >/dev/null && read -p "wildfly is already running! Do you want to kill it? y/n" answer2
+  check-wildfly-server
 
-  [[ "$answer2" == "y" ]] || [[ "$answer2" == "Y" ]] && pgrep -f "wildfly" | xargs kill
-  [[ "$answer2" == "n" ]] || [[ "$answer2" == "N" ]] && exit 1
-
-  mvn-verify
+  mvn-verify "$FUNCNAME"
 
   # Press Ctrl-C to continue
   mvn wildfly:run
@@ -184,7 +200,7 @@ skeleton-starter-flow-cdi(){
 
 gradlew-boot(){
 
-  ./gradlew clean bootRun #&& echo "./gradlew clean bootRun succeeded!" || fail "./gradlew clean bootRun failed!" "$FUNCNAME"
+  ./gradlew clean bootRun && echo "./gradlew clean bootRun succeeded!" || fail "./gradlew clean bootRun failed!" "$FUNCNAME"
 
 }
 
@@ -193,25 +209,23 @@ base-starter-spring-gradle(){
 
   gradlew-boot
 
-  perl -pi -e "s/vaadinVersion=.*/vaadinVersion=$version/" gradle.properties || fail "Could not find gradle.properties!" "$FUNCNAME"
+  perl -pi -e "s/vaadinVersion=.*/vaadinVersion=$version/" gradle.properties || fail "Could not edit gradle.properties!" "$FUNCNAME"
 
   #perl -pi -e "s/repositories {\n\tmavenCentral()\n/repositories {\n\tmavenCentral()\n\tmaven { setUrl('https:\/\/maven.vaadin.com\/vaadin-prereleases') }/" build.gradle
 
 
-  # Edit the string and replacement string if it changes in the future
+  # Edit the string and replacement string if they change in the future
   build_gradle_string='mavenCentral\(\)'
   build_gradle_replace="mavenCentral\(\)\n\tmaven { setUrl('https:\/\/maven.vaadin.com\/vaadin-prereleases') }"
 
-  perl -pi -e "s/$build_gradle_string/$build_gradle_replace/" build.gradle \
-  || fail "Could not edit build.gradle!" "$FUNCNAME"
+  perl -pi -e "s/$build_gradle_string/$build_gradle_replace/" build.gradle || fail "Could not edit build.gradle!" "$FUNCNAME"
 
 
-  # Edit the string and replacement string if it changes in the future
+  # Edit the string and replacement string if they change in the future
   setting_gradle_string='pluginManagement {'
   setting_gradle_replace="pluginManagement {\n  repositories {\n\tmaven { url = 'https:\/\/maven.vaadin.com\/vaadin-prereleases' }\n\tgradlePluginPortal()\n}"
 
-  perl -pi -e "s/$setting_gradle_string/$setting_gradle_replace/" settings.gradle \
-  || fail "Could not edit settings.gradle!" "$FUNCNAME"
+  perl -pi -e "s/$setting_gradle_string/$setting_gradle_replace/" settings.gradle || fail "Could not edit settings.gradle!" "$FUNCNAME"
 
   gradlew-boot
 
@@ -233,7 +247,7 @@ mvn-install(){
 
 remove-node-modules(){
 
-  rm -rf ./main-ui/node_modules
+  rm -rf ./main-ui/node_modules && return 0 || return 1
 
 }
 
@@ -301,20 +315,19 @@ base-starter-flow-quarkus(){
 
   echo -e "\n-----------------------------------------------\n| base-starter-flow-quarkus build successful! |\n-----------------------------------------------\n"
 
-
   return
 
 }
 
 mvn-package-production(){
 
-  mvn package -Pproduction && echo "mvn package -Pproduction succeeded!" || fail "mvn package -Pproduction failed!" "$1"
+  mvn package -Pproduction >/dev/null && echo "mvn package -Pproduction succeeded!" || fail "mvn package -Pproduction failed!" "$1"
 
 }
 
 mvn-package-it(){
 
-  mvn package -Pit && echo "mvn package -Pit succeeded!" || fail "mvn package -Pit failed!" "$1"
+  mvn package -Pit >/dev/null && echo "mvn package -Pit succeeded!" || fail "mvn package -Pit failed!" "$1"
 
 }
 
@@ -327,13 +340,13 @@ skeleton-starter-flow-spring(){
 
   mvn-package-it "$FUNCNAME"
 
-  mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$version \
+  mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$version >/dev/null \
   && echo "mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$version succeeded!" \
   || fail "mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$version failed!" "$FUNCNAME"
 
   mvn || fail "mvn failed!" "$FUNCNAME"
 
-  rm -rf node_modules && mvn 2>/dev/null || fail "Failed to remove the node_modules!" "$FUNCNAME"
+  rm -rf node_modules && mvn || fail "rm -rf node_modules && mvn failed!" "$FUNCNAME"
 
   mvn-package-production "$FUNCNAME"
 
