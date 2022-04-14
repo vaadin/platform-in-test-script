@@ -57,7 +57,7 @@ setup2(){
 # setup3 tests for any running web servers on port 8080 and optionally kills it
 setup3(){
 
-  lsof -i:8080 >/dev/null && read -p "You already have a web server running on port 8080. This will cause a conflict. Do you want to kill the running web server? y/n " answer1 || return
+  lsof -i:8080 >/dev/null && read -p "Warning! You already have a web server running on port 8080. This will cause a conflict. Do you want to kill the running web server? y/n " answer1 || return
 
   if [[ "$answer1" == "y" ]] || [[ "$answer1" == "Y" ]]; then
     kill $(lsof -t -i:8080) || fail "Failed to kill the running web server!"
@@ -78,7 +78,7 @@ fail(){
 
   echo "$1" >&2
 
-
+# tests what function failed and sets its status to failed
   case "$2" in
     base-starter-flow-osgi)
     base_starter_flow_osgi_result="Failed";
@@ -101,6 +101,7 @@ fail(){
   esac
 
 
+# if a project passed all setups(setup1, setup2, setup3) but later throws an error, show all results
   if [[ "$setup_result" == "OK" ]]; then
     echo -e "\nResults:\n
     base-starter-flow-osgi: ${base_starter_flow_osgi_result}
@@ -172,7 +173,7 @@ skeleton-starter-flow-cdi(){
 
   mvn-verify "$FUNCNAME"
 
-  # Press Ctrl-C to continue
+
   mvn wildfly:run
 
 
@@ -193,18 +194,17 @@ skeleton-starter-flow-cdi(){
 
 gradlew-boot(){
 
-  ./gradlew clean bootRun && echo "./gradlew clean bootRun succeeded!" || fail "./gradlew clean bootRun failed!" "$FUNCNAME"
+   # There seems to be no way of stopping the gradlew server gracefully, so we can't test for errors here(since Ctrl-C will trigger an error)
+  ./gradlew clean bootRun && echo "./gradlew clean bootRun succeeded!" #|| fail "./gradlew clean bootRun failed!" "$1"
 
 }
 
 
 base-starter-spring-gradle(){
 
-  gradlew-boot
+  gradlew-boot "$FUNCNAME"
 
   perl -pi -e "s/vaadinVersion=.*/vaadinVersion=$version/" gradle.properties || fail "Could not edit gradle.properties!" "$FUNCNAME"
-
-  #perl -pi -e "s/repositories {\n\tmavenCentral()\n/repositories {\n\tmavenCentral()\n\tmaven { setUrl('https:\/\/maven.vaadin.com\/vaadin-prereleases') }/" build.gradle
 
 
   # Edit the string and replacement string if they change in the future
@@ -220,7 +220,7 @@ base-starter-spring-gradle(){
 
   perl -pi -e "s/$setting_gradle_string/$setting_gradle_replace/" settings.gradle || fail "Could not edit settings.gradle!" "$FUNCNAME"
 
-  gradlew-boot
+  gradlew-boot "$FUNCNAME"
 
   base_starter_spring_gradle_result="Successful"
 
@@ -233,14 +233,14 @@ base-starter-spring-gradle(){
 
 mvn-install(){
 
-  mvn install && echo "mvn install succeeded!" || fail "mvn install failed!" "$1"
+  mvn install && echo "mvn install succeeded!" >/dev/null || fail "mvn install failed!" "$1"
 
 }
 
 
 remove-node-modules(){
 
-  rm -rf ./main-ui/node_modules && return 0 || return 1
+  rm -rf ./main-ui/node_modules >/dev/null && return 0 || return 1
 
 }
 
@@ -301,8 +301,6 @@ base-starter-flow-quarkus(){
   mvnw-package-production "$FUNCNAME"
 
   mvnw-package-it "$FUNCNAME"
-
-  #./mvnw package -Pit && echo "mvnw package -Pit succeeded!" || echo "mvnw package -Pit failed!"
 
   base_starter_flow_quarkus_result="Successful"
 
@@ -408,6 +406,7 @@ all(){
   vaadin-flow-karaf-example
   unset setup_result
 
+
   echo -e "\n--------------------------\n| ALL BUILDS SUCCESSFUL! |\n--------------------------\n"
 
 
@@ -422,6 +421,8 @@ main(){
 
   [[ "$1" == "all" ]] && all "$@"
 
+
+  # run all the setups
   setup1 "$@"
   setup2 "$@"
   setup3 "$@"
