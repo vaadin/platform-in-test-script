@@ -16,7 +16,8 @@ setup_result=""
 # exit with instructions if not given three args
 usage(){
   echo -e "usage: ./vaadin-starter-installer.sh project version branch
-  example: ./vaadin-starter-installer.sh skeleton-starter-flow-spring 23.0.1 v23" >&2 && exit 1
+  example: ./vaadin-starter-installer.sh skeleton-starter-flow-spring 23.0.1 v23" >&2
+  exit 1
 }
 
 
@@ -47,20 +48,30 @@ setup2(){
 
   version="$2"
 
-  git clone https://github.com/vaadin/$1.git && cd "$1"
+  git clone https://github.com/vaadin/$1.git || fail "\nError! Failed to git clone: vaadin/$1.git Are you sure that "\"$1\"" is the correct project?\n"
+
+  cd "$1" || fail "Error! Failed to cd into $1"
 
   git checkout "$3" || fail "Failed to change branch to $3"
 
 }
 
 
-# setup3 tests for any running web servers on port 8080 and optionally kills it
+# setup3 tests for any running web server on port 8080 and optionally kills it
 setup3(){
 
-  lsof -i:8080 >/dev/null && read -p "Warning! You already have a web server running on port 8080. This will cause a conflict. Do you want to kill the running web server? y/n " answer1 || return
+  if [[ $(lsof -i:8080 >/dev/null) == 0 ]]; then
+    read -p "Warning! You already have a web server running on port 8080. This will cause a conflict. Do you want to kill the running web server? y/n " answer1
+  else
+    # set setup_result to OK. This is needed when calling the show-result() function
+    setup_result="OK"
+    return
+  fi
 
   if [[ "$answer1" == "y" ]] || [[ "$answer1" == "Y" ]]; then
-    kill $(lsof -t -i:8080) || fail "Failed to kill the running web server!"
+      kill $(lsof -t -i:8080) &>/dev/null
+      lsof -i:8080 >/dev/null && kill -9 $(lsof -t -i:8080) &>/dev/null
+      lsof -i:8080 >/dev/null && fail "Failed to kill the running web server!"
 
   elif [[ "$answer1" == "n" ]] || [[ "$answer1" == "N" ]]; then
     fail "Error! Stop the running web server before you start the script!"
@@ -70,15 +81,18 @@ setup3(){
     setup3
   fi
 
+  # set setup_result to OK. This is needed when calling the show-result() function
+  setup_result="OK"
+
 }
 
 
 # if an error occurs, call this function
 fail(){
 
-  echo "$1" >&2
+  echo -e "$2" "$1" >&2
 
-# tests what function failed and sets its status to failed
+  # tests what function failed and sets its status to failed
   case "$2" in
     base-starter-flow-osgi)
     base_starter_flow_osgi_result="Failed";
@@ -101,19 +115,27 @@ fail(){
   esac
 
 
-# if a project passed all setups(setup1, setup2, setup3) but later throws an error, show all results
-  if [[ "$setup_result" == "OK" ]]; then
-    echo -e "\nResults:\n
-    base-starter-flow-osgi: ${base_starter_flow_osgi_result}
-    skeleton-starter-flow-cdi: ${skeleton_starter_flow_cdi_result}
-    skeleton-starter-flow-spring: ${skeleton_starter_flow_spring_result}
-    base-starter-spring-gradle: ${base_starter_spring_gradle_result}
-    base-starter-flow-quarkus: ${base_starter_flow_quarkus_result}
-    vaadin-flow-karaf-example: ${vaadin_flow_karaf_example_result}
-    "
-  fi
+  show-results
 
   exit 1
+}
+
+
+# this function shows the results of the installation of the project(s)
+show-results(){
+
+    # this function always gets called at the end when running through all tests or if any test failed
+    if [[ "$setup_result" == "OK" ]]; then
+      echo -e "\nResults:\n
+      base-starter-flow-osgi: ${base_starter_flow_osgi_result}
+      skeleton-starter-flow-cdi: ${skeleton_starter_flow_cdi_result}
+      skeleton-starter-flow-spring: ${skeleton_starter_flow_spring_result}
+      base-starter-spring-gradle: ${base_starter_spring_gradle_result}
+      base-starter-flow-quarkus: ${base_starter_flow_quarkus_result}
+      vaadin-flow-karaf-example: ${vaadin_flow_karaf_example_result}
+      "
+    fi
+
 }
 
 
@@ -133,9 +155,6 @@ base-starter-flow-osgi(){
   || fail "mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$version failed!" "$FUNCNAME"
 
   mvn-clean-install "$FUNCNAME"
-
-  mvn clean install -Dpnpm.enable=true >/dev/null && echo "mvn clean install with Dpnpm.enable=true succeeded!" \
-  || fail "mvn clean install with Dpnpm.enable=true failed!" "$FUNCNAME"
 
   base_starter_flow_osgi_result="Successful"
 
@@ -195,6 +214,7 @@ skeleton-starter-flow-cdi(){
 gradlew-boot(){
 
    # There seems to be no way of stopping the gradlew server gracefully, so we can't test for errors here(since Ctrl-C will trigger an error)
+   # It's commented out for now
   ./gradlew clean bootRun && echo "./gradlew clean bootRun succeeded!" #|| fail "./gradlew clean bootRun failed!" "$1"
 
 }
@@ -357,7 +377,6 @@ all(){
   setup1 base-starter-flow-osgi "$2" "$3"
   setup2 base-starter-flow-osgi "$2" "$3"
   setup3 base-starter-flow-osgi "$2" "$3"
-  setup_result="OK"
   base-starter-flow-osgi
   unset setup_result
 
@@ -366,7 +385,6 @@ all(){
   setup1 skeleton-starter-flow-cdi "$2" "$3"
   setup2 skeleton-starter-flow-cdi "$2" "$3"
   setup3 skeleton-starter-flow-cdi "$2" "$3"
-  setup_result="OK"
   skeleton-starter-flow-cdi
   unset setup_result
 
@@ -375,7 +393,6 @@ all(){
   setup1 skeleton-starter-flow-spring "$2" "$3"
   setup2 skeleton-starter-flow-spring "$2" "$3"
   setup3 skeleton-starter-flow-spring "$2" "$3"
-  setup_result="OK"
   skeleton-starter-flow-spring
   unset setup_result
 
@@ -384,7 +401,6 @@ all(){
   setup1 base-starter-spring-gradle "$2" "$3"
   setup2 base-starter-spring-gradle "$2" "$3"
   setup3 base-starter-spring-gradle "$2" "$3"
-  setup_result="OK"
   base-starter-spring-gradle
   unset setup_result
 
@@ -393,7 +409,6 @@ all(){
   setup1 base-starter-flow-quarkus "$2" "$3"
   setup2 base-starter-flow-quarkus "$2" "$3"
   setup3 base-starter-flow-quarkus "$2" "$3"
-  setup_result="OK"
   base-starter-flow-quarkus
   unset setup_result
 
@@ -402,12 +417,10 @@ all(){
   setup1 vaadin-flow-karaf-example "$2" "$3"
   setup2 vaadin-flow-karaf-example "$2" "$3"
   setup3 vaadin-flow-karaf-example "$2" "$3"
-  setup_result="OK"
   vaadin-flow-karaf-example
-  unset setup_result
+  # no need to unset setup_result here because we will be calling show-results() next which requires it to be OK
 
-
-  echo -e "\n--------------------------\n| ALL BUILDS SUCCESSFUL! |\n--------------------------\n"
+  show-results
 
 
   exit 0
