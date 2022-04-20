@@ -29,14 +29,14 @@ setup1(){
     read -p "$1 already exists! Do you want to remove the existing one? y/n " remove
 
     if [[ "$remove" == "y" ]] || [[ "$remove" == "Y" ]]; then
-      rm -rf "$1" || fail "Failed to remove $1!"
+      rm -rf "$1" || fail "ERROR: Failed to remove $1!"
       return
 
     elif [[ "$remove" == "n" ]] || [[ "$remove" == "N" ]]; then
-      fail "Error! Remove or rename the old directory before trying again."
+      fail "ERROR: Remove or rename the old directory before trying again."
 
     else
-      echo "Error! Please enter a valid answer(y/n)!" >&2
+      echo "Please enter a valid answer(y/n)!" >&2
       setup1
     fi
   fi
@@ -48,11 +48,11 @@ setup2(){
 
   version="$2"
 
-  git clone https://github.com/vaadin/$1.git || fail "\nError! Failed to git clone: vaadin/$1.git Are you sure that "\"$1\"" is the correct project?\n"
+  git clone https://github.com/vaadin/$1.git || fail "\nERROR: Failed to git clone: vaadin/$1.git Are you sure that "\"$1\"" is the correct project?\n"
 
-  cd "$1" || fail "Error! Failed to cd into $1"
+  cd "$1" || fail "ERROR: Failed to cd into $1"
 
-  git checkout "$3" || fail "Failed to change branch to $3"
+  git checkout "$3" || fail "ERROR: Failed to change branch to $3"
 
 }
 
@@ -60,8 +60,11 @@ setup2(){
 # setup3 tests for any running web server on port 8080 and optionally kills it
 setup3(){
 
-  if [[ $(lsof -i:8080 >/dev/null) == 0 ]]; then
-    read -p "Warning! You already have a web server running on port 8080. This will cause a conflict. Do you want to kill the running web server? y/n " answer1
+  lsof -i:8080 >/dev/null
+  exitValue=$?
+
+  if [[ exitValue == 0 ]]; then
+    read -p "Warning: You already have a web server running on port 8080. This will cause a conflict. Do you want to kill the running web server? y/n " answer1
   else
     # set setup_result to OK. This is needed when calling the show-result() function
     setup_result="OK"
@@ -71,13 +74,13 @@ setup3(){
   if [[ "$answer1" == "y" ]] || [[ "$answer1" == "Y" ]]; then
       kill $(lsof -t -i:8080) &>/dev/null
       lsof -i:8080 >/dev/null && kill -9 $(lsof -t -i:8080) &>/dev/null
-      lsof -i:8080 >/dev/null && fail "Failed to kill the running web server!"
+      lsof -i:8080 >/dev/null && fail "ERROR: Failed to kill the running web server!"
 
   elif [[ "$answer1" == "n" ]] || [[ "$answer1" == "N" ]]; then
-    fail "Error! Stop the running web server before you start the script!"
+    fail "ERROR: Stop the running web server before you start the script!"
 
   else
-    echo "Error! Please enter a valid answer(y/n)!" >&2
+    echo "Please enter a valid answer(y/n)!" >&2
     setup3
   fi
 
@@ -90,7 +93,7 @@ setup3(){
 # if an error occurs, call this function
 fail(){
 
-  echo -e "$2" "$1" >&2
+  echo -e "$2 - $1" >&2
 
   # tests what function failed and sets its status to failed
   case "$2" in
@@ -141,7 +144,7 @@ show-results(){
 
 mvn-clean-install(){
 
-    mvn clean install >/dev/null && echo "mvn clean install succeeded!" || fail "mvn clean install failed!" "$1"
+    mvn clean install >/dev/null && echo "mvn clean install succeeded!" || fail "ERROR: mvn clean install failed!" "$1"
 
 }
 
@@ -152,7 +155,7 @@ base-starter-flow-osgi(){
 
   mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$version >/dev/null \
   && echo "mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$version succeeded!" \
-  || fail "mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$version failed!" "$FUNCNAME"
+  || fail "ERROR: mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$version failed!" "$FUNCNAME"
 
   mvn-clean-install "$FUNCNAME"
 
@@ -166,7 +169,7 @@ base-starter-flow-osgi(){
 
 mvn-verify(){
 
-  mvn verify -Pit,production >/dev/null && echo "mvn verify -Pit,production succeeded!" || fail "mvn verify -Pit,production failed!" "$1"
+  mvn verify -Pit,production >/dev/null && echo "mvn verify -Pit,production succeeded!" || fail "ERROR: mvn verify -Pit,production failed!" "$1"
 
 }
 
@@ -178,7 +181,7 @@ check-wildfly-server(){
   if [[ "$answer2" == "y" ]] || [[ "$answer2" == "Y" ]]; then
     pgrep -f "wildfly" | xargs kill
   else
-    echo "Shut down the server or kill it before running the script." >&2
+    echo "ERROR: Shut down the server or kill it before running the script." >&2
     exit 1
   fi
 
@@ -198,7 +201,7 @@ skeleton-starter-flow-cdi(){
 
   mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$version >/dev/null \
   && echo "mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$version succeeded!" \
-  || fail "mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$version failed!" "$FUNCNAME"
+  || fail "ERROR: mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$version failed!" "$FUNCNAME"
 
   mvn-verify
 
@@ -215,7 +218,7 @@ gradlew-boot(){
 
    # There seems to be no way of stopping the gradlew server gracefully, so we can't test for errors here(since Ctrl-C will trigger an error)
    # It's commented out for now
-  ./gradlew clean bootRun && echo "./gradlew clean bootRun succeeded!" #|| fail "./gradlew clean bootRun failed!" "$1"
+  ./gradlew clean bootRun && echo "./gradlew clean bootRun succeeded!" #|| fail "ERROR: ./gradlew clean bootRun failed!" "$1"
 
 }
 
@@ -224,21 +227,21 @@ base-starter-spring-gradle(){
 
   gradlew-boot "$FUNCNAME"
 
-  perl -pi -e "s/vaadinVersion=.*/vaadinVersion=$version/" gradle.properties || fail "Could not edit gradle.properties!" "$FUNCNAME"
+  perl -pi -e "s/vaadinVersion=.*/vaadinVersion=$version/" gradle.properties || fail "ERROR: Could not edit gradle.properties!" "$FUNCNAME"
 
 
   # Edit the string and replacement string if they change in the future
   build_gradle_string='mavenCentral\(\)'
   build_gradle_replace="mavenCentral\(\)\n\tmaven { setUrl('https:\/\/maven.vaadin.com\/vaadin-prereleases') }"
 
-  perl -pi -e "s/$build_gradle_string/$build_gradle_replace/" build.gradle || fail "Could not edit build.gradle!" "$FUNCNAME"
+  perl -pi -e "s/$build_gradle_string/$build_gradle_replace/" build.gradle || fail "ERROR: Could not edit build.gradle!" "$FUNCNAME"
 
 
   # Edit the string and replacement string if they change in the future
   setting_gradle_string='pluginManagement {'
   setting_gradle_replace="pluginManagement {\n  repositories {\n\tmaven { url = 'https:\/\/maven.vaadin.com\/vaadin-prereleases' }\n\tgradlePluginPortal()\n}"
 
-  perl -pi -e "s/$setting_gradle_string/$setting_gradle_replace/" settings.gradle || fail "Could not edit settings.gradle!" "$FUNCNAME"
+  perl -pi -e "s/$setting_gradle_string/$setting_gradle_replace/" settings.gradle || fail "ERROR: Could not edit settings.gradle!" "$FUNCNAME"
 
   gradlew-boot "$FUNCNAME"
 
@@ -253,7 +256,7 @@ base-starter-spring-gradle(){
 
 mvn-install(){
 
-  mvn install && echo "mvn install succeeded!" >/dev/null || fail "mvn install failed!" "$1"
+  mvn install && echo "mvn install succeeded!" >/dev/null || fail "ERROR: mvn install failed!" "$1"
 
 }
 
@@ -269,17 +272,17 @@ vaadin-flow-karaf-example(){
 
   mvn-install "$FUNCNAME"
 
-  mvn -pl main-ui install -Prun && echo "mvn -pl main-ui install -Prun succeeded!" || fail "mvn -pl main-ui install -Prun failed!" "$FUNCNAME"
+  mvn -pl main-ui install -Prun && echo "mvn -pl main-ui install -Prun succeeded!" || fail "ERROR: mvn -pl main-ui install -Prun failed!" "$FUNCNAME"
 
   mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$version \
   && echo "mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$version succeeded!" \
-  || fail "mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$version failed!" "$FUNCNAME"
+  || fail "ERROR: mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$version failed!" "$FUNCNAME"
 
   mvn-install "$FUNCNAME"
 
-  remove-node-modules && mvn install && echo "remove-node-modules && mvn install succeeded!" || fail "rm -rf ./main-ui/node_modules && mvn install failed!" "$FUNCNAME"
+  remove-node-modules && mvn install && echo "remove-node-modules && mvn install succeeded!" || fail "ERROR: rm -rf ./main-ui/node_modules && mvn install failed!" "$FUNCNAME"
 
-  mvn -pl main-ui install -Prun && echo "mvn -pl main-ui install -Prun succeeded!" || fail "mvn -pl main-ui install -Prun failed!" "$FUNCNAME"
+  mvn -pl main-ui install -Prun && echo "mvn -pl main-ui install -Prun succeeded!" || fail "ERROR: mvn -pl main-ui install -Prun failed!" "$FUNCNAME"
 
 
   vaadin_flow_karaf_example_result="Successful"
@@ -293,20 +296,20 @@ vaadin-flow-karaf-example(){
 
 mvnw-package-production(){
 
-  ./mvnw package -Pproduction >/dev/null && echo "mvnw package -Pproduction succeeded!" || fail "mvnw package -Pproduction failed!" "$1"
+  ./mvnw package -Pproduction >/dev/null && echo "mvnw package -Pproduction succeeded!" || fail "ERROR: mvnw package -Pproduction failed!" "$1"
 
 }
 
 mvnw-package-it(){
 
-  ./mvnw package -Pit >/dev/null && echo "mvnw package -Pit succeeded!" || fail "mvnw package -Pit failed!" "$1"
+  ./mvnw package -Pit >/dev/null && echo "mvnw package -Pit succeeded!" || fail "ERROR: mvnw package -Pit failed!" "$1"
 
 }
 
 
 base-starter-flow-quarkus(){
 
-  ./mvnw && echo "./mvnw succeeded!" || fail "./mvnw failed!" "$FUNCNAME"
+  ./mvnw && echo "./mvnw succeeded!" || fail "ERROR: ./mvnw failed!" "$FUNCNAME"
 
   mvnw-package-production "$FUNCNAME"
 
@@ -314,9 +317,9 @@ base-starter-flow-quarkus(){
 
   mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$version >/dev/null \
   && echo "mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$version succeeded!" \
-  || fail "mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$version failed!" "$FUNCNAME"
+  || fail "ERROR: mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$version failed!" "$FUNCNAME"
 
-  ./mvnw && echo "mvnw succeeded!" || fail "mvnw failed!" "$FUNCNAME"
+  ./mvnw && echo "mvnw succeeded!" || fail "ERROR: mvnw failed!" "$FUNCNAME"
 
   mvnw-package-production "$FUNCNAME"
 
@@ -332,20 +335,20 @@ base-starter-flow-quarkus(){
 
 mvn-package-production(){
 
-  mvn package -Pproduction >/dev/null && echo "mvn package -Pproduction succeeded!" || fail "mvn package -Pproduction failed!" "$1"
+  mvn package -Pproduction >/dev/null && echo "mvn package -Pproduction succeeded!" || fail "ERROR: mvn package -Pproduction failed!" "$1"
 
 }
 
 mvn-package-it(){
 
-  mvn package -Pit >/dev/null && echo "mvn package -Pit succeeded!" || fail "mvn package -Pit failed!" "$1"
+  mvn package -Pit >/dev/null && echo "mvn package -Pit succeeded!" || fail "ERROR: mvn package -Pit failed!" "$1"
 
 }
 
 
 skeleton-starter-flow-spring(){
 
-  mvn || fail "mvn failed!" "$FUNCNAME"
+  mvn || fail "ERROR: mvn failed!" "$FUNCNAME"
 
   mvn-package-production "$FUNCNAME"
 
@@ -353,11 +356,11 @@ skeleton-starter-flow-spring(){
 
   mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$version >/dev/null \
   && echo "mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$version succeeded!" \
-  || fail "mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$version failed!" "$FUNCNAME"
+  || fail "ERROR: mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$version failed!" "$FUNCNAME"
 
   mvn || fail "mvn failed!" "$FUNCNAME"
 
-  rm -rf node_modules && mvn || fail "rm -rf node_modules && mvn failed!" "$FUNCNAME"
+  rm -rf node_modules && mvn || fail "ERROR: rm -rf node_modules && mvn failed!" "$FUNCNAME"
 
   mvn-package-production "$FUNCNAME"
 
