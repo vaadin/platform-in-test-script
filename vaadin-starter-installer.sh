@@ -3,6 +3,10 @@
 
 
 
+# TODO : Fix quarkus and karaf
+
+
+
 base_starter_flow_osgi_result="Not Tested"
 skeleton_starter_flow_cdi_result="Not Tested"
 skeleton_starter_flow_spring_result="Not Tested"
@@ -21,8 +25,8 @@ usage(){
 }
 
 
-# setup1 tests if you already have a previous project directory and optionally removes it
-setup1(){
+# check-directory checks if you already have a previous project directory and optionally removes it
+check-directory(){
 
   if [[ -d "$1" ]]; then
 
@@ -37,18 +41,32 @@ setup1(){
 
     else
       echo "Please enter a valid answer(y/n)!" >&2
-      setup1
+      check-directory
     fi
   fi
 }
 
 
-# setup2 clones a git repo and changes the branch
-setup2(){
+# clone-repo clones a git repo and changes the branch
+clone-repo(){
 
   version="$2"
 
   git clone https://github.com/vaadin/$1.git || fail "\nERROR: Failed to git clone: vaadin/$1.git Are you sure that "\"$1\"" is the correct project?\n"
+
+
+}
+
+
+check-server-return(){
+
+  sleep $2
+  grep -q 'HTTP/1.1 200' <(curl --fail -I localhost:$1) && kill -2 $(lsof -t -i:$1) || fail "$3 ERROR: Server did not exit with an HTTP exit code of 200!"
+
+}
+
+
+setup-directory(){
 
   cd "$1" || fail "ERROR: Failed to cd into $1"
 
@@ -57,14 +75,33 @@ setup2(){
 }
 
 
-# setup3 tests for any running web server on port 8080 and optionally kills it
-setup3(){
+# sounds the bell
+play-bell(){
+  while [[ 1 ]]; do
+    echo -ne "\a"
+    sleep 1
+  done
+}
+
+
+change-spring-port(){
+  sed -i '' -e 's/PORT:8080/PORT:8081/' ./src/main/resources/application.properties
+}
+
+
+# check-server tests for any running web server on port 8080 and optionally kills it
+check-server(){
 
   lsof -i:8080 >/dev/null
   exitValue=$?
 
-  if [[ exitValue == 0 ]]; then
-    read -p "Warning: You already have a web server running on port 8080. This will cause a conflict. Do you want to kill the running web server? y/n " answer1
+  if [[ $exitValue -eq 0 ]]; then
+
+    play-bell &
+    bell_pid=$!
+    read -p "WARNING: You already have a web server running on port 8080. This will cause a conflict. Do you want to kill the running web server? y/n " answer1
+    kill $bell_pid &>/dev/null
+
   else
     # set setup_result to OK. This is needed when calling the show-result() function
     setup_result="OK"
@@ -72,6 +109,7 @@ setup3(){
   fi
 
   if [[ "$answer1" == "y" ]] || [[ "$answer1" == "Y" ]]; then
+
       kill $(lsof -t -i:8080) &>/dev/null
       lsof -i:8080 >/dev/null && kill -9 $(lsof -t -i:8080) &>/dev/null
       lsof -i:8080 >/dev/null && fail "ERROR: Failed to kill the running web server!"
@@ -81,7 +119,7 @@ setup3(){
 
   else
     echo "Please enter a valid answer(y/n)!" >&2
-    setup3
+    check-server
   fi
 
   # set setup_result to OK. This is needed when calling the show-result() function
@@ -149,6 +187,7 @@ mvn-clean-install(){
 }
 
 
+# Note : osgi doesn't seem to be needing a server
 base-starter-flow-osgi(){
 
   mvn-clean-install "$FUNCNAME"
@@ -174,36 +213,54 @@ mvn-verify(){
 }
 
 
-check-wildfly-server(){
+# This is probably not needed because we already have a function that kills existing web servers
+#check-wildfly-server(){
+#
+#  pgrep -f "wildfly" >/dev/null
+#  wildfly_return=$?
+#
+#
+#  if [[ $wildfly_return -eq 0 ]]; then
+#
+#    play-bell &
+#    bell_pid=$!
+#
+#    read -p "wildfly is already running! Do you want to kill it? y/n" answer2
+#
+#    kill $bell_pid &>/dev/null
+#
+#  else
+#    return
+#
+#
+#  if [[ "$answer2" == "y" ]] || [[ "$answer2" == "Y" ]]; then
+#    pgrep -f "wildfly" | xargs kill
+#  else
+#    echo "ERROR: Shut down the server or kill it before running the script." >&2
+#    exit 1
+#  fi
+#
+#}
 
-  pgrep -f "wildfly" >/dev/null && read -p "wildfly is already running! Do you want to kill it? y/n" answer2 || return
 
-  if [[ "$answer2" == "y" ]] || [[ "$answer2" == "Y" ]]; then
-    pgrep -f "wildfly" | xargs kill
-  else
-    echo "ERROR: Shut down the server or kill it before running the script." >&2
-    exit 1
-  fi
-
-}
-
-
+# cdi server starts on port 8080
 skeleton-starter-flow-cdi(){
 
 
-  check-wildfly-server
+  #check-wildfly-server
 
   mvn-verify "$FUNCNAME"
 
+  check-server-return "8080" "20" &
 
-  mvn wildfly:run
+  mvn wildfly:run >/dev/null && echo "mvn wildfly:run succeeded!" || fail "ERROR: mvn wildfly:run failed!"
 
 
   mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$version >/dev/null \
   && echo "mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$version succeeded!" \
   || fail "ERROR: mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$version failed!" "$FUNCNAME"
 
-  mvn-verify
+  mvn-verify >/dev/null && echo "mvn wildfly:run succeeded!" || fail "ERROR: mvn wildfly:run failed!"
 
   skeleton_starter_flow_cdi_result="Successful"
 
@@ -218,12 +275,14 @@ gradlew-boot(){
 
    # There seems to be no way of stopping the gradlew server gracefully, so we can't test for errors here(since Ctrl-C will trigger an error)
    # It's commented out for now
-  ./gradlew clean bootRun && echo "./gradlew clean bootRun succeeded!" #|| fail "ERROR: ./gradlew clean bootRun failed!" "$1"
+  ./gradlew clean bootRun --args='--server.port=8082' >/dev/null && echo "./gradlew clean bootRun succeeded!" #|| fail "ERROR: ./gradlew clean bootRun failed!" "$1"
 
 }
 
 
 base-starter-spring-gradle(){
+
+  check-server-return "8082" "35" &
 
   gradlew-boot "$FUNCNAME"
 
@@ -242,6 +301,8 @@ base-starter-spring-gradle(){
   setting_gradle_replace="pluginManagement {\n  repositories {\n\tmaven { url = 'https:\/\/maven.vaadin.com\/vaadin-prereleases' }\n\tgradlePluginPortal()\n}"
 
   perl -pi -e "s/$setting_gradle_string/$setting_gradle_replace/" settings.gradle || fail "ERROR: Could not edit settings.gradle!" "$FUNCNAME"
+
+  check-server-return "8082" "35" &
 
   gradlew-boot "$FUNCNAME"
 
@@ -274,15 +335,15 @@ vaadin-flow-karaf-example(){
 
   mvn -pl main-ui install -Prun && echo "mvn -pl main-ui install -Prun succeeded!" || fail "ERROR: mvn -pl main-ui install -Prun failed!" "$FUNCNAME"
 
-  mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$version \
+  mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$version >/dev/null \
   && echo "mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$version succeeded!" \
   || fail "ERROR: mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$version failed!" "$FUNCNAME"
 
   mvn-install "$FUNCNAME"
 
-  remove-node-modules && mvn install && echo "remove-node-modules && mvn install succeeded!" || fail "ERROR: rm -rf ./main-ui/node_modules && mvn install failed!" "$FUNCNAME"
+  remove-node-modules && mvn install >/dev/null && echo "remove-node-modules && mvn install succeeded!" || fail "ERROR: rm -rf ./main-ui/node_modules && mvn install failed!" "$FUNCNAME"
 
-  mvn -pl main-ui install -Prun && echo "mvn -pl main-ui install -Prun succeeded!" || fail "ERROR: mvn -pl main-ui install -Prun failed!" "$FUNCNAME"
+  mvn -pl main-ui install -Prun >/dev/null && echo "mvn -pl main-ui install -Prun succeeded!" || fail "ERROR: mvn -pl main-ui install -Prun failed!" "$FUNCNAME"
 
 
   vaadin_flow_karaf_example_result="Successful"
@@ -348,7 +409,9 @@ mvn-package-it(){
 
 skeleton-starter-flow-spring(){
 
-  mvn || fail "ERROR: mvn failed!" "$FUNCNAME"
+  check-server-return "8081" "40" &
+
+  mvn >/dev/null || fail "ERROR: mvn failed!" "$FUNCNAME"
 
   mvn-package-production "$FUNCNAME"
 
@@ -358,9 +421,13 @@ skeleton-starter-flow-spring(){
   && echo "mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$version succeeded!" \
   || fail "ERROR: mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$version failed!" "$FUNCNAME"
 
-  mvn || fail "mvn failed!" "$FUNCNAME"
+  check-server-return "8081" "140" &
 
-  rm -rf node_modules && mvn || fail "ERROR: rm -rf node_modules && mvn failed!" "$FUNCNAME"
+  mvn >/dev/null || fail "mvn failed!" "$FUNCNAME"
+
+  check-server-return "8081" "60" &
+
+  rm -rf node_modules && mvn >/dev/null || fail "ERROR: rm -rf node_modules && mvn failed!" "$FUNCNAME"
 
   mvn-package-production "$FUNCNAME"
 
@@ -377,51 +444,57 @@ skeleton-starter-flow-spring(){
 # this function runs all the starter tests
 all(){
 
-  setup1 base-starter-flow-osgi "$2" "$3"
-  setup2 base-starter-flow-osgi "$2" "$3"
-  setup3 base-starter-flow-osgi "$2" "$3"
+  check-server
+
+  check-directory base-starter-flow-osgi "$2" "$3"
+  clone-repo base-starter-flow-osgi "$2" "$3"
+
+  check-directory skeleton-starter-flow-cdi "$2" "$3"
+  clone-repo skeleton-starter-flow-cdi "$2" "$3"
+
+  check-directory skeleton-starter-flow-spring "$2" "$3"
+  clone-repo skeleton-starter-flow-spring "$2" "$3"
+
+  check-directory base-starter-spring-gradle "$2" "$3"
+  clone-repo base-starter-spring-gradle "$2" "$3"
+
+  #check-directory base-starter-flow-quarkus "$2" "$3"
+  #clone-repo base-starter-flow-quarkus "$2" "$3"
+
+  #check-directory vaadin-flow-karaf-example "$2" "$3"
+  #clone-repo vaadin-flow-karaf-example "$2" "$3"
+
+
+  setup-directory base-starter-flow-osgi "$2" "$3"
   base-starter-flow-osgi
-  unset setup_result
-
   cd ..
 
-  setup1 skeleton-starter-flow-cdi "$2" "$3"
-  setup2 skeleton-starter-flow-cdi "$2" "$3"
-  setup3 skeleton-starter-flow-cdi "$2" "$3"
+
+  setup-directory skeleton-starter-flow-cdi "$2" "$3"
   skeleton-starter-flow-cdi
-  unset setup_result
+  cd ..
 
-  cd..
 
-  setup1 skeleton-starter-flow-spring "$2" "$3"
-  setup2 skeleton-starter-flow-spring "$2" "$3"
-  setup3 skeleton-starter-flow-spring "$2" "$3"
+  setup-directory skeleton-starter-flow-spring "$2" "$3"
+  change-spring-port
   skeleton-starter-flow-spring
-  unset setup_result
-
   cd ..
 
-  setup1 base-starter-spring-gradle "$2" "$3"
-  setup2 base-starter-spring-gradle "$2" "$3"
-  setup3 base-starter-spring-gradle "$2" "$3"
+
+  setup-directory base-starter-spring-gradle "$2" "$3"
   base-starter-spring-gradle
-  unset setup_result
-
   cd ..
 
-  setup1 base-starter-flow-quarkus "$2" "$3"
-  setup2 base-starter-flow-quarkus "$2" "$3"
-  setup3 base-starter-flow-quarkus "$2" "$3"
-  base-starter-flow-quarkus
-  unset setup_result
 
-  cd ..
 
-  setup1 vaadin-flow-karaf-example "$2" "$3"
-  setup2 vaadin-flow-karaf-example "$2" "$3"
-  setup3 vaadin-flow-karaf-example "$2" "$3"
-  vaadin-flow-karaf-example
+  #cd ..
+  #setup-directory base-starter-flow-quarkus "$2" "$3"
+  #base-starter-flow-quarkus
+  #cd ..
+  #setup-directory vaadin-flow-karaf-example "$2" "$3"
+  #vaadin-flow-karaf-example
   # no need to unset setup_result here because we will be calling show-results() next which requires it to be OK
+
 
   show-results
 
@@ -439,31 +512,13 @@ main(){
 
 
   # run all the setups
-  setup1 "$@"
-  setup2 "$@"
-  setup3 "$@"
+  check-directory "$@"
+  clone-repo "$@"
+  check-server "$@"
+  setup-directory "$@"
 
 
-  case "$1" in
-    base-starter-flow-osgi)
-    base-starter-flow-osgi;;
-
-    skeleton-starter-flow-cdi)
-    skeleton-starter-flow-cdi;;
-
-    skeleton-starter-flow-spring)
-    skeleton-starter-flow-spring;;
-
-    base-starter-spring-gradle)
-    base-starter-spring-gradle;;
-
-    vaadin-flow-karaf-example)
-    vaadin-flow-karaf-example;;
-
-    base-starter-flow-quarkus)
-    base-starter-flow-quarkus;;
-
-  esac
+  "$1"
 
   exit 0
 
