@@ -33,7 +33,8 @@ check-directory(){
       return
 
     elif [[ "$remove" == "n" ]] || [[ "$remove" == "N" ]]; then
-      fail "ERROR: Remove or rename the old directory before trying again."
+      echo "ERROR: Remove or rename the old directory before trying again." 2>/dev/null
+      exit 1
 
     else
       echo "Please enter a valid answer(y/n)!" >&2
@@ -48,7 +49,7 @@ clone-repo(){
 
   version="$2"
 
-  git clone https://github.com/vaadin/$1.git || fail "\nERROR: Failed to git clone: vaadin/$1.git Are you sure that "\"$1\"" is the correct project?\n"
+  git clone https://github.com/vaadin/$1.git || echo "\nERROR: Failed to git clone: vaadin/$1.git Are you sure that "\"$1\"" is the correct project?\n" 2>/dev/null
 
 
 }
@@ -101,7 +102,7 @@ turn-off-spring-browser(){
 # check-server tests for any running server on port 8080 and optionally kills it
 check-server(){
 
-  lsof -i:8080 >/dev/null
+  lsof -i:$1 >/dev/null
   exitValue=$?
 
   if [[ $exitValue -eq 0 ]]; then
@@ -119,9 +120,9 @@ check-server(){
 
   if [[ "$answer1" == "y" ]] || [[ "$answer1" == "Y" ]]; then
 
-      kill $(lsof -t -i:8080) &>/dev/null
-      lsof -i:8080 >/dev/null && kill -9 $(lsof -t -i:8080) &>/dev/null
-      lsof -i:8080 >/dev/null && fail "ERROR: Failed to kill the running server!"
+      kill $(lsof -t -i:$1) &>/dev/null
+      lsof -i:$1 >/dev/null && kill -9 $(lsof -t -i:$1) &>/dev/null
+      lsof -i:$1 >/dev/null && fail "ERROR: Failed to kill the running server!"
 
   elif [[ "$answer1" == "n" ]] || [[ "$answer1" == "N" ]]; then
     fail "ERROR: Stop the running server before you start the script!"
@@ -450,7 +451,9 @@ skeleton-starter-flow-spring(){
 # this function runs all the starter tests
 all(){
 
-  check-server
+  check-server "8080"
+  check-server "8081"
+  check-server "8082"
 
   check-directory base-starter-flow-osgi "$2" "$3"
   clone-repo base-starter-flow-osgi "$2" "$3"
@@ -489,12 +492,10 @@ all(){
 
   setup-directory base-starter-flow-quarkus "$2" "$3"
   base-starter-flow-quarkus
-
   cd ..
 
   setup-directory vaadin-flow-karaf-example "$2" "$3"
   vaadin-flow-karaf-example
-  # no need to unset setup_result here because we will be calling show-results() next which requires it to be OK
 
 
   show-results
