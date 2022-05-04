@@ -500,25 +500,21 @@ all(){
 
   show-results
 
-
   exit 0
-
 }
-
 
 # main function
 main(){
 
-
   [[ "$1" == "all" ]] && all "$@"
-
 
   # run all the setups
   check-directory "$@"
   clone-repo "$@"
-  check-server "$@"
+  check-server "8080"
+  check-server "8081"
+  check-server "8082"
   setup-directory "$@"
-
 
   "$1"
 
@@ -526,9 +522,7 @@ main(){
 
 }
 
-
 # call usage if not given three args
 [[ "$#" != 3 ]] && usage
-
 
 main "$@"
