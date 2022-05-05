@@ -116,7 +116,11 @@ waitForUserManualTesting() {
 checkBusyPort() {
   _port="$1"
   log "Checking whether port $_port is busy"
-  netstat -an | grep LISTEN | egrep -q "[:\.]${_port} +" && log "Port ${_port} is occupied" && return 1 || return 0
+  curl -s telnet://localhost:$_port >/dev/null &
+  curl_pid=$!
+  sleep 1
+  kill $curl_pid 2>/dev/null && log "Port ${_port} is occupied" && return 1 || return 0
+  exit
 }
 
 checkHttpServlet() {
@@ -211,7 +215,7 @@ checkArgs() {
 
 ### MAIN
 main() {
-  trap "doExit" INT TERM EXIT SIGINT
+  trap "doExit" INT TERM EXIT
   pwd="$PWD"
   tmp="$pwd/starters"
   mkdir -p "$tmp"
