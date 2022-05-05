@@ -1,4 +1,5 @@
 #!/bin/sh
+trap "doExit" INT TERM EXIT
 
 DEFAULT_PORT=8080
 ## List of the preset in start.vaadin.com
@@ -36,7 +37,7 @@ ask() {
   read key
 }
 
-## Generate and starter with the given preset, and unzip it in the current folder
+## Generate an starter with the given preset, and unzip it in the current folder
 downloadStarter() {
   _preset=$1
   _url="https://start.vaadin.com/dl?preset=${_preset}&projectName=${_preset}"
@@ -215,7 +216,6 @@ checkArgs() {
 
 ### MAIN
 main() {
-  trap "doExit" INT TERM EXIT
   pwd="$PWD"
   tmp="$pwd/starters"
   mkdir -p "$tmp"
