@@ -21,7 +21,7 @@ doExit() {
 ## Kills a process and all its children and wait until complete
 doKill() {
   while [ -n "$1" ]; do
-    _procs=`pgrep -P $1`" $1"
+    _procs=`type pgrep >/dev/null 2>&1 && pgrep -P $1`" $1"
     kill $_procs 2>/dev/null
     shift
   done
@@ -120,7 +120,7 @@ checkBusyPort() {
   log "Checking whether port $_port is busy"
   curl -s telnet://localhost:$_port >/dev/null &
   curl_pid=$!
-  sleep 1
+  sleep 4
   kill $curl_pid 2>/dev/null && log "Port ${_port} is occupied" && return 1 || return 0
   exit
 }
@@ -167,14 +167,19 @@ testStarter() {
   $compile -B -q
 
   runInBackgroundToFile "$cmd" "$file"
-  waitUntilMessageInFile "$file" "$check" $TIMEOUT || exit 1
+  waitUntilMessageInFile "$file" "$check" $TIMEOUT
 
   if [ $? != 0 ]
   then
-    log "App $name failed to Start ($cmd)"
+    log "App $name failed to Start ($cmd)" && return 1
   else
     sleep 4
     checkHttpServlet "http://localhost:$port/"
+    if [ $? != 0 ]
+    then
+      log "App $name failed to Check at port $port" && return 1
+    fi
+
     if [ current != "$version" ]
     then
       waitForUserWithBell
@@ -184,6 +189,7 @@ testStarter() {
 
   doKill $pid_run $pid_tail $pid_bell
   unset pid_run pid_tail pid_bell
+  return 0
 }
 
 
@@ -214,7 +220,6 @@ checkArgs() {
       timeout=*) TIMEOUT="$arg";;
       verbose|debug) VERBOSE=true;;
       offline) OFFLINE=OFFLINE;;
-      help|--help|-h) usage;;
       *) echo "Unknown option: $1" && usage && exit 1;;
     esac
     shift
@@ -241,12 +246,15 @@ main() {
     fi
     cd "$dir" || exit 1
 
-    testStarter current $i $PORT
-    setVersion $VERSION && \
-      testStarter $VERSION $i $PORT && \
-      testStarter $VERSION $i $PORT 'mvn -Pproduction package' 'java -jar target/*.jar' "Generated demo data" && \
-      log "==== Starter '$name' was Tested successfuly ====" || \
-      log "==== Starter '$name' !!! Failed !!! ===="
+    testStarter current $i $PORT || exit 1
+
+    if setVersion $VERSION
+    then
+      log "Testing version $VERSION in the '$name' app"
+      testStarter $VERSION $i $PORT || exit 1
+      testStarter $VERSION $i $PORT 'mvn -Pproduction package' 'java -jar target/*.jar' "Generated demo data" || exit 1
+    fi
+    log "==== Starter '$name' was Tested successfuly ===="
   done
 }
 
