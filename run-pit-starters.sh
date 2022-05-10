@@ -10,6 +10,7 @@ DEFAULT_PORT=8080
 #  latest-java-top
 #  latest-javahtml
 DEFAULT_PRESETS="latest-java,latest-java-top,latest-javahtml"
+DEFAULT_TIMEOUT=180
 
 ## Exit the script after killing background processes
 doExit() {
@@ -75,7 +76,7 @@ runInBackgroundToFile() {
 waitUntilMessageInFile() {
   _file="$1"
   _message="$2"
-  [ -n "$3" ] && _timeout="$3" || _timeout=120
+  _timeout="$3"
   log "Waiting for server to start, timeout=$_timeout secs., message='$_message'"
   while [ $_timeout -gt 0 ]
   do
@@ -83,7 +84,7 @@ waitUntilMessageInFile() {
     sleep 2 && _timeout=`expr $_timeout - 2`
   done
   [ -z "$VERBOSE" ] && tail -50 $_file
-  log "Could not find '$_message' in $_file after $_timeout secs. (check output in $_file)"
+  log "Could not find '$_message' in $_file after $3 secs. (check output in $_file)"
   return 1
 }
 
@@ -151,7 +152,9 @@ testStarter() {
   [ -n "$1" ] && version="$1" || return 1
   [ -n "$2" ] && name="$2" || return 1
   [ -n "$3" ] && port="$3" || port="$PORT"
-  [ -n "$4" ] && check="$4" || check=" Frontend compiled "
+  [ -n "$4" ] && compile="$4" || compile="mvn clean"
+  [ -n "$5" ] && cmd="$5" || cmd="mvn -B"
+  [ -n "$6" ] && check="$6" || check=" Frontend compiled "
   log "Running test on starter $name, port $port, $version"
 
   file="starter-$name.out"
@@ -159,10 +162,12 @@ testStarter() {
 
   disableLaunchBrowser
 
-  cmd="mvn -B"
-  [ -n "$OFFLINE" ] && cmd="$cmd -o"
+  [ -n "$OFFLINE" ] && cmd="$cmd -o" && compile="$compile -o"
+  log "Running $compile"
+  $compile -B -q
+
   runInBackgroundToFile "$cmd" "$file"
-  waitUntilMessageInFile "$file" " Frontend compiled " || exit 1
+  waitUntilMessageInFile "$file" "$check" $TIMEOUT || exit 1
 
   if [ $? != 0 ]
   then
@@ -184,11 +189,12 @@ testStarter() {
 
 usage() {
   cat <<EOF
-Use: $0 [version=] [presets=] [port=] [verbose] [offline]"
+Use: $0 [version=] [presets=] [port=] [timeout=] [verbose] [offline]"
 
-  version    Version to test, by default current, otherwise current first and then provided version
+  version    Vaadin version to test, by default current stable, otherwise it runs tests against current stable and then against provided version.
   presets    List of start presets separated by comman (default: $DEFAULT_PRESETS)
   port       HTTP Port for thee servlet container (default: $DEFAULT_PORT)
+  timeout    Time in secs to wait for server to start (default $DEFAULT_TIMEOUT)
   verbose    Show server output (default silent)
   offline    Do not remove previous folders, and do not use network for mvn (default online)
 
@@ -197,7 +203,7 @@ EOF
 }
 
 checkArgs() {
-  VERSION=current; PORT=$DEFAULT_PORT; PRESETS=$DEFAULT_PRESETS
+  VERSION=current; PORT=$DEFAULT_PORT; PRESETS=$DEFAULT_PRESETS; TIMEOUT=$DEFAULT_TIMEOUT
   while [ -n "$1" ]
   do
     arg=`echo "$1" | cut -d= -f2`
@@ -205,6 +211,7 @@ checkArgs() {
       port=*) PORT="$arg";;
       presets=*|starters=*) PRESETS="$arg";;
       version=*) VERSION="$arg";;
+      timeout=*) TIMEOUT="$arg";;
       verbose|debug) VERBOSE=true;;
       offline) OFFLINE=OFFLINE;;
       help|--help|-h) usage;;
@@ -233,9 +240,13 @@ main() {
       downloadStarter $i || exit 1
     fi
     cd "$dir" || exit 1
+
     testStarter current $i $PORT
-    setVersion $VERSION && testStarter $VERSION $i $PORT
-    log "==== Starter '$name' was Tested successfuly ===="
+    setVersion $VERSION && \
+      testStarter $VERSION $i $PORT && \
+      testStarter $VERSION $i $PORT 'mvn -Pproduction package' 'java -jar target/*.jar' "Generated demo data" && \
+      log "==== Starter '$name' was Tested successfuly ====" || \
+      log "==== Starter '$name' !!! Failed !!! ===="
   done
 }
 
