@@ -62,7 +62,9 @@ kill-server(){
     if [[ "$system" == "mac" ]]; then
       kill -2 $(lsof -t -i:$1)
     elif [[ "$system" == "linux" ]]; then
-      fuser -k $1/tcp
+      kill -2 $(fuser $1/tcp)
+		else
+			kill -2 $(netstat -ao | grep '8080' | awk '{print $5}'
     fi
 }
 
@@ -174,6 +176,12 @@ check_server(){
 
 }
 
+# print the project's success message
+print_success(){
+
+  echo -e "\n-----------------------------------------------\n $1 build successful! \n-----------------------------------------------\n"
+
+}
 
 # if an error occurs, call this function
 fail(){
@@ -250,9 +258,9 @@ base_starter_flow_osgi(){
 
   echo -e "\n--------------------------------------------\n| base_starter_flow_osgi build successful! |\n--------------------------------------------\n"
 
-	rm $pwd/osgi.output
+	print_success "$FUNCNAME"
 
-  return
+	rm $pwd/osgi.output
 
 }
 
@@ -286,11 +294,12 @@ skeleton_starter_flow_cdi(){
 
   skeleton_starter_flow_cdi_result="Successful"
 
-  echo -e "\n-----------------------------------------------\n| skeleton_starter_flow_cdi build successful! |\n-----------------------------------------------\n"
+  #echo -e "\n-----------------------------------------------\n| skeleton_starter_flow_cdi build successful! |\n-----------------------------------------------\n"
+	
+	print_success "$FUNCNAME"
 
   rm $pwd/cdi.output
 
-  return
 }
 
 
@@ -304,7 +313,7 @@ gradlew_boot(){
 
 base_starter_spring_gradle(){
 
-  echo -e "\nNOTE: You are going to see an error after closing the gradle server! This is perfectly normal\n"
+  echo -e "\nNOTE: You are going to see an error after closing the gradle server! This is perfectly normal.\n"
 
                               #35 for fast computers
   check_server_return "8080" "50" &
@@ -337,6 +346,8 @@ base_starter_spring_gradle(){
   base_starter_spring_gradle_result="Successful"
 
   echo -e "\n------------------------------------------------\n| base_starter_spring_gradle build successful! |\n------------------------------------------------\n"
+
+	print_success "$FUNCNAME"
 
   rm $pwd/gradle.output
 
@@ -377,6 +388,8 @@ vaadin_flow_karaf_example(){
   vaadin_flow_karaf_example_result="Successful"
 
   echo -e "\n-----------------------------------------------\n| vaadin_flow_karaf_example build successful! |\n-----------------------------------------------\n"
+
+	print_success "$FUNCNAME"
 
 	rm $pwd/karaf.output
 
@@ -426,6 +439,8 @@ base_starter_flow_quarkus(){
 
   echo -e "\n-----------------------------------------------\n| base_starter_flow_quarkus build successful! |\n-----------------------------------------------\n"
 
+	print_success "$FUNCNAME"
+
   rm $pwd/quarkus.output 
 
 }
@@ -446,7 +461,8 @@ mvn_package_it(){
 skeleton_starter_flow_spring(){
 
   # Disable automatic browser statrtup in development mode
-  turn_off_spring_browser
+	# Doesn't work on Linux and Windows
+  #turn_off_spring_browser
 
   #change_spring_port
 
@@ -454,7 +470,7 @@ skeleton_starter_flow_spring(){
   check_server_return "8080" "60" &
   timer_pid=$!
 
-  mvn spring-boot:run &> "$pwd/spring.output" || fail "mvn spring-boot:run. Output dumped to spring.output" "$FUNCNAME" "$timer_pid"
+  mvn &> "$pwd/spring.output" || fail "mvn spring-boot:run. Output dumped to spring.output" "$FUNCNAME" "$timer_pid"
 
   mvn_package_production "$FUNCNAME"
 
@@ -485,6 +501,11 @@ skeleton_starter_flow_spring(){
   skeleton_starter_flow_spring_result="Successful"
 
   echo -e "\n--------------------------------------------------\n| skeleton_starter_flow_spring build successful! |\n--------------------------------------------------\n"
+
+	print_success "$FUNCNAME"
+
+	rm $pwd/spring.output
+	
 }
 
 
@@ -514,25 +535,26 @@ all(){
   clone_repo vaadin-flow-karaf-example "$2" "$3"
 
 
+
   setup_directory base-starter-flow-osgi "$2" "$3"
   base_starter_flow_osgi
 	cd ..
 
   setup_directory skeleton-starter-flow-cdi "$2" "$3"
   skeleton_starter_flow_cdi
-  cd ..
+	cd ..
 
   setup_directory skeleton-starter-flow-spring "$2" "$3"
   skeleton_starter_flow_spring
-  cd ..
+	cd ..
 
   setup_directory base-starter-spring-gradle "$2" "$3"
   base_starter_spring_gradle
-  cd ..
+	cd ..
 
   setup_directory base-starter-flow-quarkus "$2" "$3"
   base_starter_flow_quarkus
-  cd ..
+	cd ..
 
   setup_directory vaadin-flow-karaf-example "$2" "$3"
   vaadin_flow_karaf_example
@@ -554,8 +576,7 @@ main(){
   check_directory "$@"
   clone_repo "$@"
   check_server "8080"
-  check_server "8081"
-  check_server "8082"
+	check_os
   setup_directory "$@"
 
   func_name=${1//-/_}
