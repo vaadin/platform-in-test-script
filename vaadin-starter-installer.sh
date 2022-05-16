@@ -64,7 +64,7 @@ kill-server(){
     elif [[ "$system" == "linux" ]]; then
       kill -2 $(fuser $1/tcp)
 		else
-			kill -2 $(netstat -ao | grep '8080' | awk '{print $5}'
+			kill -2 $(ps | grep 'java' | awk '{print $1}'
     fi
 }
 
