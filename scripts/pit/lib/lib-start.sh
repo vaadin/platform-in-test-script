@@ -73,6 +73,7 @@ testStarter() {
   return 0
 }
 
+## get the selenium IDE test file used for each starter
 getTestFile() {
   case $1 in
    latest-java|latest-java-top|latest-javahtml|latest-typescript|latest-typescript-top)
