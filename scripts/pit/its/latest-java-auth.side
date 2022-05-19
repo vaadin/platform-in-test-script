@@ -1,0 +1,254 @@
+{
+  "id": "21d9db0e-fb8d-472a-9af2-ae0ec262d0b9",
+  "version": "2.0",
+  "name": "AA",
+  "url": "http://localhost:8080",
+  "tests": [{
+    "id": "ea8772da-25fb-4bc9-8d8d-83e378dbab90",
+    "name": "UI",
+    "commands": [{
+      "id": "b041fcea-b19b-487f-b152-e6ba52fcf1fc",
+      "comment": "",
+      "command": "open",
+      "target": "/",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "5dc5f8e0-d934-4247-8227-bd1f959cabe6",
+      "comment": "",
+      "command": "waitForElementPresent",
+      "target": "css=vaadin-button",
+      "targets": [],
+      "value": "Log in"
+    }, {
+      "id": "93a06f5e-f756-47aa-98ae-db7d05be4bce",
+      "comment": "",
+      "command": "type",
+      "target": "id=vaadin-text-field-0",
+      "targets": [],
+      "value": "admin"
+    }, {
+      "id": "fb5357f3-041d-4319-8dbb-b13af3ba951d",
+      "comment": "",
+      "command": "type",
+      "target": "id=vaadin-password-field-1",
+      "targets": [],
+      "value": "admin"
+    }, {
+      "id": "763b29cb-90c2-429e-bb40-1f19443ddccb",
+      "comment": "",
+      "command": "click",
+      "target": "css=vaadin-button",
+      "targets": [
+        ["css=vaadin-button", "css:finder"],
+        ["xpath=//div[@id='outlet']/main-layout/hello-world-typescript-view/vaadin-button", "xpath:idRelative"],
+        ["xpath=//vaadin-button", "xpath:position"],
+        ["xpath=//vaadin-button[contains(.,'Say hello')]", "xpath:innerText"]
+      ],
+      "value": ""
+    }, {
+      "id": "9c8b9cf7-0fa9-42e7-b2fa-d98acc7e72d5",
+      "comment": "",
+      "command": "waitForElementPresent",
+      "target": "css=.me-xs",
+      "targets": [
+        ["css=.me-xs", "css:finder"],
+        ["xpath=//vaadin-avatar[@name='Emma Powerful']", "xpath:attributes"],
+        ["xpath=//flow-container-root-2521314[@id='ROOT-2521314']/vaadin-app-layout/section/footer/vaadin-avatar", "xpath:idRelative"],
+        ["xpath=//vaadin-avatar", "xpath:position"]
+      ],
+      "value": "30000"
+    }, {
+      "id": "4a10ca7d-4ed9-451f-942e-58dcd3e80399",
+      "comment": "",
+      "command": "open",
+      "target": "/hello-world-view",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "82aa9371-fa98-43c5-8433-d22aa894ee87",
+      "comment": "",
+      "command": "waitForElementPresent",
+      "target": "id=vaadin-text-field-0",
+      "targets": [
+        ["id=vaadin-text-field-0", "id"],
+        ["css=#vaadin-text-field-0", "css:finder"],
+        ["xpath=//input[@id='vaadin-text-field-0']", "xpath:attributes"],
+        ["xpath=//div[@id='outlet']/main-layout/hello-world-typescript-view/vaadin-text-field/input", "xpath:idRelative"],
+        ["xpath=//input", "xpath:position"]
+      ],
+      "value": "30000"
+    }, {
+      "id": "6ff487f5-dea3-47b0-b67f-e3de812d54ff",
+      "comment": "",
+      "command": "type",
+      "target": "id=vaadin-text-field-0",
+      "targets": [],
+      "value": "HOLA"
+    }, {
+      "id": "ac780727-926c-4b7b-b539-449abff522f8",
+      "comment": "",
+      "command": "click",
+      "target": "css=vaadin-button",
+      "targets": [
+        ["css=vaadin-button", "css:finder"],
+        ["xpath=//div[@id='outlet']/main-layout/hello-world-typescript-view/vaadin-button", "xpath:idRelative"],
+        ["xpath=//vaadin-button", "xpath:position"],
+        ["xpath=//vaadin-button[contains(.,'Say hello')]", "xpath:innerText"]
+      ],
+      "value": ""
+    }, {
+      "id": "457e336c-b6d3-4c04-a758-a20a1cbfc642",
+      "comment": "",
+      "command": "waitForElementPresent",
+      "target": "css=vaadin-notification-card",
+      "targets": [
+        ["css=vaadin-notification-card", "css:finder"],
+        ["xpath=//vaadin-notification-card", "xpath:position"],
+        ["xpath=//vaadin-notification-card[contains(.,'Hello afdaf')]", "xpath:innerText"]
+      ],
+      "value": "30000"
+    }, {
+      "id": "5b839929-a1d5-497d-b1ae-c949abded8a9",
+      "comment": "",
+      "command": "waitForText",
+      "target": "css=vaadin-notification-card",
+      "targets": [
+        ["css=vaadin-notification-card", "css:finder"],
+        ["xpath=//vaadin-notification-card", "xpath:position"],
+        ["xpath=//vaadin-notification-card[contains(.,'Hello HOLA')]", "xpath:innerText"]
+      ],
+      "value": "Hello HOLA"
+    }, {
+      "id": "85500ecd-c61d-4975-9686-cb6daaf096e6",
+      "comment": "",
+      "command": "open",
+      "target": "/master-detail-view",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "ae151313-fe60-4177-b811-2de44a3f5433",
+      "comment": "",
+      "command": "click",
+      "target": "css=vaadin-grid-cell-content:nth-child(29)",
+      "targets": [
+        ["css=vaadin-grid-cell-content:nth-child(29)", "css:finder"],
+        ["xpath=//flow-container-root-2521314[@id='ROOT-2521314']/vaadin-app-layout/div/vaadin-split-layout/div/vaadin-grid/vaadin-grid-cell-content[22]", "xpath:idRelative"],
+        ["xpath=//vaadin-grid-cell-content[22]", "xpath:position"],
+        ["xpath=//vaadin-grid-cell-content[contains(.,'Manolo')]", "xpath:innerText"]
+      ],
+      "value": ""
+    }, {
+      "id": "a6882ace-4401-4af3-ac92-431d0ed3d55c",
+      "comment": "",
+      "command": "waitForElementPresent",
+      "target": "id=vaadin-text-field-0",
+      "targets": [
+        ["id=vaadin-text-field-0", "id"],
+        ["css=#vaadin-text-field-0", "css:finder"],
+        ["xpath=//input[@id='vaadin-text-field-0']", "xpath:attributes"],
+        ["xpath=//div[@id='outlet']/main-layout/hello-world-typescript-view/vaadin-text-field/input", "xpath:idRelative"],
+        ["xpath=//input", "xpath:position"]
+      ],
+      "value": "30000"
+    }, {
+      "id": "2bf47614-376a-4c4d-a476-b9388c4b21f8",
+      "comment": "",
+      "command": "type",
+      "target": "id=vaadin-text-field-0",
+      "targets": [],
+      "value": "Jose"
+    }, {
+      "id": "f73ea81f-9b9b-4bbe-a940-b22ebd390204",
+      "comment": "",
+      "command": "click",
+      "target": "xpath=//vaadin-button[contains(.,'Save')]",
+      "targets": [
+        ["css=vaadin-button:nth-child(1)", "css:finder"],
+        ["xpath=//flow-container-root-2521314[@id='ROOT-2521314']/vaadin-app-layout/div/vaadin-split-layout/div[2]/vaadin-horizontal-layout/vaadin-button", "xpath:idRelative"],
+        ["xpath=//vaadin-button", "xpath:position"],
+        ["xpath=//vaadin-button[contains(.,'Save')]", "xpath:innerText"]
+      ],
+      "value": ""
+    }, {
+      "id": "3f873d4c-2467-48c3-b815-c9cd7f0b3262",
+      "comment": "",
+      "command": "waitForText",
+      "target": "css=vaadin-grid-cell-content:nth-child(29)",
+      "targets": [
+        ["css=vaadin-grid-cell-content:nth-child(29)", "css:finder"],
+        ["xpath=//flow-container-root-2521314[@id='ROOT-2521314']/vaadin-app-layout/div/vaadin-split-layout/div/vaadin-grid/vaadin-grid-cell-content[22]", "xpath:idRelative"],
+        ["xpath=//vaadin-grid-cell-content[22]", "xpath:position"],
+        ["xpath=//vaadin-grid-cell-content[contains(.,'Manolo')]", "xpath:innerText"]
+      ],
+      "value": "Jose"
+    }, {
+      "id": "c81e9aad-0006-4f30-8813-d875571d29a9",
+      "comment": "",
+      "command": "open",
+      "target": "/",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "7ec19c79-11d8-41c9-8c30-df70332f908b",
+      "comment": "",
+      "command": "waitForElementPresent",
+      "target": "css=.me-xs",
+      "targets": [
+        ["css=.me-xs", "css:finder"],
+        ["xpath=//vaadin-avatar[@name='Emma Powerful']", "xpath:attributes"],
+        ["xpath=//flow-container-root-2521314[@id='ROOT-2521314']/vaadin-app-layout/section/footer/vaadin-avatar", "xpath:idRelative"],
+        ["xpath=//vaadin-avatar", "xpath:position"]
+      ],
+      "value": "30000"
+    }, {
+      "id": "6a82b63b-c28a-4eac-8939-df61416b2085",
+      "comment": "",
+      "command": "click",
+      "target": "css=.me-xs",
+      "targets": [
+        ["css=.me-xs", "css:finder"],
+        ["xpath=//vaadin-avatar[@name='Emma Powerful']", "xpath:attributes"],
+        ["xpath=//flow-container-root-2521314[@id='ROOT-2521314']/vaadin-app-layout/section/footer/vaadin-avatar", "xpath:idRelative"],
+        ["xpath=//vaadin-avatar", "xpath:position"]
+      ],
+      "value": ""
+    }, {
+      "id": "339e6c18-c5c5-495d-826c-21b41e6e672b",
+      "comment": "",
+      "command": "click",
+      "target": "css=.vaadin-menu-item",
+      "targets": [
+        ["css=.vaadin-menu-item", "css:finder"],
+        ["xpath=//vaadin-context-menu-overlay[@id='overlay']/vaadin-context-menu-list-box/vaadin-context-menu-item", "xpath:idRelative"],
+        ["xpath=//vaadin-context-menu-item", "xpath:position"],
+        ["xpath=//vaadin-context-menu-item[contains(.,'Logout')]", "xpath:innerText"]
+      ],
+      "value": ""
+    }, {
+      "id": "8dc3eb00-a662-474c-8864-81bc92ed42fb",
+      "comment": "",
+      "command": "waitForElementPresent",
+      "target": "css=vaadin-button",
+      "targets": [],
+      "value": "Log in"
+    }, {
+      "id": "ee71dfa4-7503-428c-8250-56f596db9360",
+      "comment": "",
+      "command": "close",
+      "target": "",
+      "targets": [],
+      "value": ""
+    }]
+  }],
+  "suites": [{
+    "id": "38cd4125-553a-4790-8e82-b10b5b0c92b3",
+    "name": "Default Suite",
+    "persistSession": false,
+    "parallel": false,
+    "timeout": 300,
+    "tests": ["ea8772da-25fb-4bc9-8d8d-83e378dbab90"]
+  }],
+  "urls": ["http://localhost:8080/", "http://localhost:8080/hello-world-view"],
+  "plugins": []
+}
