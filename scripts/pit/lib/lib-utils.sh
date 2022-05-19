@@ -74,7 +74,7 @@ waitUntilMessageInFile() {
 playBell() {
   while true
   do
-    printf "\a" && sleep 1
+    printf "\a." && sleep 1
   done
 }
 
