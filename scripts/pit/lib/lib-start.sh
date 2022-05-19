@@ -61,7 +61,7 @@ testStarter() {
     then
       log "App $name failed to Check at port $port" && return 1
     fi
-    runSeleniumTests "$test" || return 1
+    [ -n "$SKIPTESTS" ] || runSeleniumTests "$test" || return 1
 
     if [ -n "$INTERACTIVE" -a current != "$version" ]
     then

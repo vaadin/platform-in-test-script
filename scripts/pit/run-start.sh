@@ -18,7 +18,7 @@ Use: $0 [version=] [presets=] [port=] [timeout=] [verbose] [offline]"
   verbose      Show server output (default silent)
   offline      Do not remove previous folders, and do not use network for mvn (default online)
   interactive  Play Bell and ask user to manually test the application
-
+  skiptests    Skip Selenium Tests (They do not work in gitpod)
 EOF
   exit 1
 }
@@ -36,6 +36,7 @@ checkArgs() {
       verbose|debug) VERBOSE=true;;
       offline) OFFLINE=true;;
       interactive) INTERACTIVE=true;;
+      skiptests) SKIPTESTS=true;;
       *) echo "Unknown option: $1" && usage && exit 1;;
     esac
     shift
