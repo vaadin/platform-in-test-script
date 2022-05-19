@@ -26,6 +26,7 @@ log() {
 
 ## ask user a question, response is stored in key
 ask() {
+  read -t1 ignore
   printf "\033[0;32m$1\033[0m...">&2
   read key
 }
