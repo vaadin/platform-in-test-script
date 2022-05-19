@@ -15,6 +15,10 @@ runSeleniumTests() {
   _file=$1
   [ -f "$_file" ] && checkSeleniumInstallation || return 0
   log "Running Selenium IDE test from file: $_file"
+
+  _win_driver=/c/Users/tester/AppData/Roaming/npm/node_modules/chromedriver/lib/chromedriver
+  [ -d "$_win_driver" ] && export PATH="$_win_driver:$PATH"
+
   if [ -z "$VERBOSE" ] 
   then
     selenium-side-runner $_file -c "goog:chromeOptions.args=[--headless,--nogpu] browserName=chrome"
