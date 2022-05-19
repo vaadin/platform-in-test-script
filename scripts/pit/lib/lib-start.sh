@@ -4,6 +4,7 @@
 IT_FOLDER=`computeAbsolutePath`/its
 
 ## Generate an starter with the given preset, and unzip it in the current folder
+## multiple presets can be used by joining them with the `_` character
 downloadStarter() {
   _preset=$1
   _presets=""
@@ -24,7 +25,6 @@ downloadStarter() {
 }
 
 ## Run validations on an start.vaadin.com application
-## Arguments: <current|next> <name of the app> <servlet port> <app running message in the logs>
 testStarter() {
   [ -n "$1" ] && version="$1" || return 1
   [ -n "$2" ] && name="$2" || return 1
@@ -33,6 +33,8 @@ testStarter() {
   [ -n "$5" ] && cmd="$5" || cmd="mvn -B"
   [ -n "$6" ] && check="$6" || check=" Frontend compiled "
   [ -n "$7" ] && test="$7"
+
+  echo ""
   log "Running test on starter $name, port $port, $version"
 
   file="starter-$name.out"
@@ -109,6 +111,7 @@ runStarters() {
       _versionProp=hilla.version
     fi
 
+    echo ""
     log "================= TESTING '$i' $_offline =================="
     cd "$tmp"
     dir="$tmp/$i"
@@ -125,7 +128,6 @@ runStarters() {
 
     if setVersion $_versionProp $_version
     then
-      log "Testing version $_version in the '$i' app"
       testStarter $_version $i $_port "" "" "" "$_test" || exit 1
       testStarter $_version $i $_port 'mvn -Pproduction package' 'java -jar target/*.jar' "Generated demo data" "$_test" || exit 1
     fi

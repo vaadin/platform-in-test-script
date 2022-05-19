@@ -26,7 +26,9 @@ log() {
 
 ## ask user a question, response is stored in key
 ask() {
-  read -t1 ignore
+  # flush stdin
+  while read -t1 ignore; do :; done
+
   printf "\033[0;32m$1\033[0m...">&2
   read key
 }
@@ -75,7 +77,7 @@ waitUntilMessageInFile() {
 playBell() {
   while true
   do
-    printf "\a." && sleep 1
+    sleep 2 && printf "\a."
   done
 }
 
@@ -85,7 +87,7 @@ waitForUserWithBell() {
   playBell &
   pid_bell=$!
   [ -n "$_message" ] && log "$_message"
-  ask "\n\nPush ENTER to stop the bell and continue"
+  ask "Push ENTER to stop the bell and continue"
   doKill $pid_bell
   unset pid_bell
 }
@@ -94,7 +96,7 @@ waitForUserWithBell() {
 waitForUserManualTesting() {
   _port="$1"
   log "App is running in http://localhost:$_port, open it in your browser"
-  ask "\nWhen you finish, push ENTER  to continue"
+  ask "When you finish, push ENTER  to continue"
 }
 
 ## Check whether the port is already in use in this machine
@@ -120,6 +122,7 @@ setVersion() {
   _version=$2
   git checkout -q .
   _current=`mvn help:evaluate -Dexpression=$_mavenProperty -q -DforceStdout`
+  echo ""
   log "Version $_current, $_version"
   case $_version in
     current|$_current)
@@ -134,23 +137,26 @@ setVersion() {
 ## Do not open Browser after app is started
 disableLaunchBrowser() {
   _prop="src/main/resources/application.properties"
-  log "Disabling launch-browser"
+  _key="vaadin.launch-browser"
+  log "Disabling $_key in $_prop"
   touch $_prop
-  perl -pi -e 's/vaadin.launch-browser=.*//g' "$_prop"
+  perl -pi -e "s/$_key=.*//g" "$_prop"
 }
 
+## pnpm is quite faster than npm
 enablePnpm() {
   _prop="src/main/resources/application.properties"
   _key="vaadin.pnpm.enable"
-  log "Enabling Pnpm"
+  log "Enabling $_key in $_prop"
   touch $_prop
   grep -q "$_key=true" "$_prop" || echo "$_key=true" >> "$_prop"
 }
 
+## vite is faster than webpack
 enableVite() {
   _prop="src/main/resources/vaadin-featureflags.properties"
   _key="com.vaadin.experimental.viteForFrontendBuild"
-  log "Enabling Vite"
+  log "Enabling $_key in $_prop"
   touch $_prop
   grep -q "$_key=true" "$_prop" || echo "$_key=true" >> "$_prop"
 }
