@@ -1,7 +1,4 @@
-. `dirname $0`/lib/lib-utils.sh
-. `dirname $0`/lib/lib-side.sh
-
-IT_FOLDER=`computeAbsolutePath`/its
+. `dirname $0`/lib/lib-validate.sh
 
 ## Generate an starter with the given preset, and unzip it in the current folder
 ## multiple presets can be used by joining them with the `_` character
@@ -24,59 +21,8 @@ downloadStarter() {
   [ "$_new" != "$_preset" ] && mv "$_new" "$_preset" || return 0
 }
 
-## Run validations on an start.vaadin.com application
-testStarter() {
-  [ -n "$1" ] && version="$1" || return 1
-  [ -n "$2" ] && name="$2" || return 1
-  [ -n "$3" ] && port="$3" || port="$PORT"
-  [ -n "$4" ] && compile="$4" || compile="mvn clean"
-  [ -n "$5" ] && cmd="$5" || cmd="mvn -B"
-  [ -n "$6" ] && check="$6" || check=" Frontend compiled "
-  [ -n "$7" ] && test="$7"
-
-  echo ""
-  log "Running test on starter $name, port $port, $version"
-
-  file="starter-$name.out"
-  checkBusyPort "$port" || return 1
-
-  disableLaunchBrowser
-  enablePnpm
-  enableVite
-
-  [ -n "$OFFLINE" ] && cmd="$cmd -o" && compile="$compile -o"
-  log "Running $compile"
-  [ -z "$VERBOSE" ] && compile="$compile -q"
-  $compile -B
-
-  runInBackgroundToFile "$cmd" "$file" "$VERBOSE"
-  waitUntilMessageInFile "$file" "$check" "$TIMEOUT"
-
-  if [ $? != 0 ]
-  then
-    log "App $name failed to Start ($cmd)" && return 1
-  else
-    sleep 4
-    checkHttpServlet "http://localhost:$port/"
-    if [ $? != 0 ]
-    then
-      log "App $name failed to Check at port $port" && return 1
-    fi
-    [ -n "$SKIPTESTS" ] || runSeleniumTests "$test" || return 1
-
-    if [ -n "$INTERACTIVE" -a current != "$version" ]
-    then
-      waitForUserWithBell
-      waitForUserManualTesting "$port"
-    fi
-  fi
-
-  killAll
-  return 0
-}
-
 ## get the selenium IDE test file used for each starter
-getTestFile() {
+getStartTestFile() {
   case $1 in
    latest-java|latest-java-top|latest-javahtml|latest-typescript|latest-typescript-top)
      echo "latest-java.side";;
@@ -89,9 +35,8 @@ getTestFile() {
   esac
 }
 
-### MAIN
 runStarters() {
-  _presets=`echo "$1" | tr ',' ' '`
+  _presets="$1"
   _port="$2"
   _version="$3"
   _offline="$4"
@@ -99,8 +44,6 @@ runStarters() {
   pwd="$PWD"
   tmp="$pwd/starters"
   mkdir -p "$tmp"
-
-  checkBusyPort "$_port" || exit 1
 
   for i in $_presets
   do
@@ -112,7 +55,7 @@ runStarters() {
     fi
 
     echo ""
-    log "================= TESTING '$i' $_offline =================="
+    log "================= TESTING Start Preset '$i' $_offline =================="
     cd "$tmp"
     dir="$tmp/$i"
     if [ -z "$_offline" ]
@@ -122,17 +65,15 @@ runStarters() {
     fi
     cd "$dir" || exit 1
 
-    _test="$IT_FOLDER/"`getTestFile $i`
+    _test=`getStartTestFile $i`
 
-    testStarter current $i $_port "" "" "" "$_test" || exit 1
+    runValidations current $i $_port "" "" "" "$_test" || exit 1
 
     if setVersion $_versionProp $_version
     then
-      testStarter $_version $i $_port "" "" "" "$_test" || exit 1
-      testStarter $_version $i $_port 'mvn -Pproduction package' 'java -jar target/*.jar' "Generated demo data" "$_test" || exit 1
+      runValidations $_version $i $_port "" "" "" "$_test" || exit 1
+      runValidations $_version $i $_port 'mvn -Pproduction package' 'java -jar target/*.jar' "Generated demo data" "$_test" || exit 1
     fi
-    log "==== Starter '$i' was Tested successfuly ====
-    
-    "
+    log "==== Start Preset '$i' was Tested Successfuly ===="
   done
 }

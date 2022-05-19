@@ -27,7 +27,9 @@ runSeleniumTests() {
   # if not verbose it runs tests in headless mode
   if [ -z "$VERBOSE" ] 
   then
-    selenium-side-runner $_file -c "goog:chromeOptions.args=[--headless,--nogpu] browserName=chrome"
+    _out=`basename $_file`".out"
+    selenium-side-runner $_file -c "goog:chromeOptions.args=[--headless,--nogpu] browserName=chrome" > $_out 2>&1
+    [ $? != 0 ] && cat $_out && return 1 || return 0
   else
     selenium-side-runner $_file 
   fi

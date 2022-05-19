@@ -68,8 +68,8 @@ waitUntilMessageInFile() {
     grep -q "$_message" $_file && return 0
     sleep 2 && _timeout=`expr $_timeout - 2`
   done
-  [ -z "$VERBOSE" ] && tail -50 $_file
   log "Could not find '$_message' in $_file after $3 secs. (check output in $_file)"
+  [ -z "$VERBOSE" ] && tail -80 $_file
   return 1
 }
 
@@ -134,8 +134,27 @@ setVersion() {
   esac
 }
 
+## Set the value of a property in the gradle.properties file, returning error if unchanged
+setGradleVersion() {
+  _gradleProperty=$1
+  _version=$2
+  git checkout -q .
+  _current=`cat gradle.properties | grep "$_gradleProperty" | cut -d "=" -f2`
+  echo ""
+  log "Version $_current, $_version"
+  case $_version in
+    current|$_current)
+      return 1;;
+    *)
+      log "Changing $_gradleProperty from $_current to $_version"
+      perl -pi -e "s,$_gradleProperty=.*,$_gradleProperty=$_version," gradle.properties
+      return 0;;
+  esac
+}
+
 ## Do not open Browser after app is started
 disableLaunchBrowser() {
+  [ ! -d src/main/resources ] && return
   _prop="src/main/resources/application.properties"
   _key="vaadin.launch-browser"
   log "Disabling $_key in $_prop"
@@ -145,6 +164,7 @@ disableLaunchBrowser() {
 
 ## pnpm is quite faster than npm
 enablePnpm() {
+  [ ! -d src/main/resources ] && return
   _prop="src/main/resources/application.properties"
   _key="vaadin.pnpm.enable"
   log "Enabling $_key in $_prop"
@@ -154,11 +174,10 @@ enablePnpm() {
 
 ## vite is faster than webpack
 enableVite() {
+  [ ! -d src/main/resources ] && return
   _prop="src/main/resources/vaadin-featureflags.properties"
   _key="com.vaadin.experimental.viteForFrontendBuild"
   log "Enabling $_key in $_prop"
   touch $_prop
   grep -q "$_key=true" "$_prop" || echo "$_key=true" >> "$_prop"
 }
-
-
