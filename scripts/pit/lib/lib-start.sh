@@ -2,7 +2,6 @@
 . `dirname $0`/lib/lib-side.sh
 
 IT_FOLDER=`computeAbsolutePath`/its
-echo $IT_FOLDER
 
 ## Generate an starter with the given preset, and unzip it in the current folder
 downloadStarter() {
@@ -102,11 +101,11 @@ runStarters() {
 
   for i in $_presets
   do
-    _key=vaadin.version
+    _versionProp=vaadin.version
     if echo "$i" | grep -q typescript
     then
       _version=`echo $_version | sed -e 's,^23,1,'`
-      _key=hilla.version
+      _versionProp=hilla.version
     fi
 
     log "================= TESTING '$i' $_offline =================="
@@ -123,7 +122,7 @@ runStarters() {
 
     testStarter current $i $_port "" "" "" "$_test" || exit 1
 
-    if setVersion $_key $_version
+    if setVersion $_versionProp $_version
     then
       log "Testing version $_version in the '$i' app"
       testStarter $_version $i $_port "" "" "" "$_test" || exit 1
