@@ -1,15 +1,17 @@
 usage() {
   cat <<EOF
-Use: $0 [version=] [presets=] [port=] [timeout=] [verbose] [offline] [interactive] [skiptests]"
+Use: $0 [version=] [starters=] [port=] [timeout=] [verbose] [offline] [interactive] [skiptests] [help]
 
-  version      Vaadin version to test, by default current stable, otherwise it runs tests against current stable and then against provided version.
-  starters     List of demos o presets separated by comma (default: $DEFAULT_STARTERS)
+  version      Vaadin version to test, by default current stable, otherwise it runs tests against current stable and then against given version.
+  starters     List of demos o presets separated by comma to run (default: all) valid options:
+                 `echo $DEFAULT_STARTERS | sed -e 's/,/\n                 /g'`
   port         HTTP Port for thee servlet container (default: $DEFAULT_PORT)
   timeout      Time in secs to wait for server to start (default $DEFAULT_TIMEOUT)
   verbose      Show server output (default silent)
   offline      Do not remove previous folders, and do not use network for mvn (default online)
   interactive  Play Bell and ask user to manually test the application (default non interactive)
-  skiptests    Skip Selenium Tests because thhey do not work in gitpod (default run its)
+  skiptests    Skip Selenium IDE Tests (default run tests). Note: selenium-ide does not work in gitpod 
+  help         Show this message
 EOF
   exit 1
 }
@@ -19,7 +21,7 @@ checkArgs() {
   while [ -n "$1" ]
   do
     arg=`echo "$1" | cut -d= -f2`
-    case "$1" in
+    case `echo $1 | sed -e 's/\-//g'` in
       port=*) PORT="$arg";;
       starters=*) STARTERS="$arg";;
       version=*) VERSION="$arg";;
@@ -28,6 +30,7 @@ checkArgs() {
       offline) OFFLINE=true;;
       interactive) INTERACTIVE=true;;
       skiptests) SKIPTESTS=true;;
+      help|h) usage && exit 0;;
       *) echo "Unknown option: $1" && usage && exit 1;;
     esac
     shift

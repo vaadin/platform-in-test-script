@@ -22,7 +22,7 @@ base-starter-flow-quarkus
 skeleton-starter-flow-spring
 vaadin-flow-karaf-example
 base-starter-flow-osgi"
-DEFAULT_STARTERS=`echo "$PRESETS$DEMOS" | tr "\n" ","`
+DEFAULT_STARTERS=`echo "$PRESETS$DEMOS" | tr "\n" "," | sed -e 's/^,//' | sed -e 's/,$//'`
 
 ### MAIN
 main() {
