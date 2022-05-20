@@ -2,11 +2,11 @@
 # This script installs any specified starter project automatically
 
 source utils.sh
-set -e
+
 
 version="$2"
 spring_message="No issues found."
-VERBOSE="hwuia"
+VERBOSE=" "
 system="mac"
 PORT=8080
 
@@ -187,7 +187,7 @@ skeleton_starter_flow_spring(){
 
   #change_spring_port
 	checkBusyPort 8080 || { echo "IN HERE" ; kill_server $PORT; }
-	echo "VALUE IS ------ $? ---------"
+	echo "RETURN VALUE IS ------ $? ---------"
   runInBackgroundToFile mvn "spring.output" "xas"
 	waitUntilMessageInFile "spring.output" "$spring_message" 100
 	returnCode=$?
