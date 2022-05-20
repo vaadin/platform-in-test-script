@@ -52,7 +52,7 @@ runStarter() {
 
   echo ""
   log "================= TESTING start preset '$_preset' $_offline =================="
-  
+
   cd "$_tmp"
   _dir="$_tmp/$_preset"
   if [ -z "$_offline" ]
@@ -64,12 +64,12 @@ runStarter() {
 
   _test=`getStartTestFile $_preset`
 
-  runValidations current $_preset $_port "" "" "" "$_test" || return 1
+  runValidations current $_preset $_port "mvn -B clean" "mvn -B" "Frontend compiled" "$_test" || return 1
 
   if setVersion $_versionProp $_version
   then
-    runValidations $_version $_preset $_port "" "" "" "$_test" || return 1
-    runValidations $_version $_preset $_port 'mvn -Pproduction package' 'java -jar target/*.jar' "Generated demo data" "$_test" || return 1
+    runValidations $_version $_preset $_port "mvn -B clean" "mvn -B" "Frontend compiled" "$_test" || return 1
+    runValidations $_version $_preset $_port 'mvn -B -Pproduction package' 'java -jar target/*.jar' "Generated demo data" "$_test" || return 1
   fi
   log "==== start preset '$_preset' was build and tested successfuly ===="
 }

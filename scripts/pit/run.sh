@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 . `dirname $0`/lib/lib-args.sh
 . `dirname $0`/lib/lib-start.sh
 . `dirname $0`/lib/lib-demos.sh
@@ -50,12 +50,14 @@ main() {
   ## Run presets (star.vaadin.com downloaded apps)
   for i in $presets
   do
-    runStarter "$i" "$tmp" "$PORT" "$VERSION" "$OFFLINE" && success="$i $success" || failed="$i $failed"
+    runStarter "$i" "$tmp" "$PORT" "$VERSION" "$OFFLINE" && success="$success $i" || failed="$failed $i"
+    killAll
   done
   ## Run demos (proper starters in github)
   for i in $demos
   do
-    runDemo "$i" "$tmp" "$PORT" "$VERSION" "$OFFLINE" && success="$i $success" || failed="$i $failed"
+    runDemo "$i" "$tmp" "$PORT" "$VERSION" "$OFFLINE" && success="$success $i" || failed="$failed $i"
+    killAll
   done
 
   cd $pwd
@@ -65,9 +67,10 @@ main() {
   do
     log "Starter $i built successfully"
   done
-  for i in $failed 
+  for i in $failed
   do
-    log "!!! ERROR Running $i !!! check log files: "`echo starters/$i/*.out`
+    files=`echo starters/$i/*.out`
+    log "!!! ERROR in $i !!! check log files: $files"
   done
 }
 

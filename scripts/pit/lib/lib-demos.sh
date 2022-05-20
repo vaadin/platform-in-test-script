@@ -1,6 +1,6 @@
 . `dirname $0`/lib/lib-validate.sh
 
-## Checkout a 
+## Checkout a
 ## multiple presets can be used by joining them with the `_` character
 checkoutDemo() {
   _repo=$1
@@ -21,7 +21,7 @@ getDemoTestFile() {
 
 getInstallCmdDev() {
   case $1 in
-    skeleton-starter-flow-cdi|base-starter-flow-quarkus) echo "mvn clean";;
+    skeleton-starter-flow-cdi|base-starter-flow-quarkus) echo "mvn -B clean";;
     base-starter-spring-gradle) echo "./gradlew clean" ;;
     *) echo "mvn clean install -Dpnpm.enable=true";;
   esac
@@ -29,8 +29,8 @@ getInstallCmdDev() {
 
 getInstallCmdPrd() {
   case $1 in
-    skeleton-starter-flow-spring) echo "mvn package -Pproduction";;
-    base-starter-flow-quarkus) echo "mvn package -Pproduction";;
+    skeleton-starter-flow-spring) echo "mvn -B package -Pproduction";;
+    base-starter-flow-quarkus) echo "mvn -B package -Pproduction";;
     base-starter-spring-gradle) echo "./gradlew clean build -Pvaadin.productionMode";;
     *) getInstallCmdDev $1;;
   esac
@@ -38,9 +38,9 @@ getInstallCmdPrd() {
 
 getRunCmdDev() {
   case $1 in
-    vaadin-flow-karaf-example) echo "mvn -pl main-ui install -Prun";;
+    vaadin-flow-karaf-example) echo "mvn -B -pl main-ui install -Prun";;
     base-starter-flow-osgi) echo "java -jar app/target/app.jar";;
-    skeleton-starter-flow-cdi) echo "mvn wildfly:run -Dpnpm.enable=true";;
+    skeleton-starter-flow-cdi) echo "mvn -B wildfly:run -Dpnpm.enable=true";;
     base-starter-spring-gradle) echo "./gradlew bootRun";;
     skeleton-starter-flow-spring|base-starter-flow-quarkus) echo "mvn -Dpnpm.enable=true";;
   esac

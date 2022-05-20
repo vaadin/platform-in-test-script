@@ -42,18 +42,18 @@ computeAbsolutePath() {
 }
 
 ## Run a process silently in background sending its output to a file
-runInBackgroundToFile() { 
+runInBackgroundToFile() {
   _cmd="$1"
   _file="$2"
   _verbose="$3"
-  log "Running $_cmd (logs are saved to $_file)" &
-  > $_file
+  log "Running $_cmd"
+  touch $_file
   if [ -n "$_verbose" ]
   then
     tail -f "$_file" &
     pid_tail=$!
   fi
-  $_cmd > $_file 2>&1 &
+  $_cmd >> $_file 2>&1 &
   pid_run=$!
 }
 
@@ -62,14 +62,22 @@ waitUntilMessageInFile() {
   _file="$1"
   _message="$2"
   _timeout="$3"
-  log "Waiting for server to start, timeout=$_timeout secs., message='$_message'"
+  _cmd="$4"
+  log "Waiting for server to start, timeout=$_timeout secs, message='$_message'"
   while [ $_timeout -gt 0 ]
   do
+    kill -0 $pid_run 2>/dev/null
+    if [ $? != 0 ]
+    then
+      log "ERROR: $_cmd failed to start (check full output in $_file)"
+      [ -n "$VERBOSE" ] && tail -80 $_file
+      return 1
+    fi
     grep -q "$_message" $_file && return 0
     sleep 2 && _timeout=`expr $_timeout - 2`
   done
-  log "Could not find '$_message' in $_file after $3 secs. (check output in $_file)"
-  [ -z "$VERBOSE" ] && tail -80 $_file
+  log "ERROR: Could not find '$_message' in $_file after $3 secs (check output in $_file)"
+  [ -n "$VERBOSE" ] && tail -80 $_file
   return 1
 }
 
@@ -114,6 +122,7 @@ checkHttpServlet() {
   _url="$1"
   log "Checking whether url $_url returns HTTP 200"
   curl --fail -s -I -L "$_url" | grep -q 'HTTP/1.1 200'
+  [ $? != 0 ] && log "Got and invalid response from $_url" && return 1 || return 0
 }
 
 ## Set the value of a property in the pom file, returning error if unchanged
