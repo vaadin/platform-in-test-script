@@ -1,47 +1,17 @@
 #!/usr/bin/env bash
 # This script installs any specified starter project automatically
 
+source utils.sh
 
-
-base_starter_flow_osgi_result="Not Tested"
-skeleton_starter_flow_cdi_result="Not Tested"
-skeleton_starter_flow_spring_result="Not Tested"
-base_starter_spring_gradle_result="Not Tested"
-base_starter_flow_quarkus_result="Not Tested"
-vaadin_flow_karaf_example_result="Not Tested"
-
-setup_result=""
-
+_port=8080
+VERBOSE=''
+TIMEOUT='150'
 
 # exit with instructions if not given three args
 usage(){
   echo -e "usage: ./vaadin-starter-installer.sh project version branch
   example: ./vaadin-starter-installer.sh skeleton_starter_flow_spring 23.0.1 v23" >&2
   exit 1
-}
-
-
-# checks what OS the user is using. $system variable will contain the name of the operating system
-check_os(){
-
-  os=$(uname)
-
-  case "$os" in
-   Darwin*)system="mac";;
-   MINGW*)system="windows";;
-   Linux*)system="linux";;
-  esac
-
-}
-
-
-# check_directory checks if you already have a previous project directory and optionally removes it
-check_directory(){
-
-  if [[ -d "$1" ]]; then
-      rm -rf "$1" || fail "ERROR: Failed to remove $1!"
-      return
-  fi
 }
 
 
@@ -56,183 +26,12 @@ clone_repo(){
 
 }
 
-
-# kill the server
-kill-server(){
-    if [[ "$system" == "mac" ]]; then
-      kill -2 $(lsof -t -i:$1)
-    elif [[ "$system" == "linux" ]]; then
-      kill -2 $(fuser $1/tcp)
-		else
-			kill -2 $(ps | grep 'java' | awk '{print $1}'
-    fi
-}
-
-
-# check and prompt the user for visual inspection
-check_server_return(){
-
-  sleep "$2"
-
-  grep -q 'HTTP/1.1 200' <(curl --fail -I localhost:$1)
-  exit_status=$?
-
-  if [[ "$exitStatus" -eq 0 ]]; then 
-    #play_bell &
-    #bell_pid=$!
-	  
-    #read -p "The server exited with an HTTP exit code of 200. Do you still want to visually inspect it? y/n" answer2
-		#echo "ANSWER2 IS : ${answer}\n"
-    #kill $bell_pid &>/dev/null
-    #if [[ "$answer2" == "y" || "$answer2" == "Y" ]]; then
-    #  play_bell &
-    #  bell_pid=$!
-    #  read -p "Visual inspection of the server started. Press any key to continue the script." foo
-    #  kill $bell_pid &>/dev/null
-      kill-server "$1" 
-      return
-    #elif [[ "$answer2" == "n" || "$answer2" == "N" ]]; then
-    #  kill-server "$1"
-    #  return 
-    #fi
-  else
-    fail "$3 ERROR: Server did not exit with an HTTP exit code of 200!"
-  fi
-
-
-}
-
 # setup the directory
 setup_directory(){
 
   cd "$1" || fail "ERROR: Failed to cd into $1"
 
   git checkout "$3" || fail "ERROR: Failed to change branch to $3"
-
-}
-
-
-# sounds the bell
-play_bell(){
-  while [[ 1 ]]; do
-    echo -ne "\a"
-    sleep 1
-  done
-}
-
-
-# turn off automatic browser launch in development mode
-turn_off_spring_browser(){
-  sed -i '' -e 's/vaadin.launch-browser=true/vaadin.launch-browser=false/' ./src/main/resources/application.properties
-}
-
-
-# check_server tests for any running server on port 8080 and optionally kills it
-check_server(){
-
-  if [[ "$system" == "mac" ]]; then
-    lsof -i:$1 >/dev/null
-    exitValue=$?
-  elif [[ "$system" == "linux" ]]; then
-    fuser $1/tcp >/dev/null
-    exitValue=$?
-  fi
-
-  if [[ $exitValue -eq 0 ]]; then
-    play_bell &
-    bell_pid=$!
-    read -p "WARNING: You already have a server running on port $1. This will cause a conflict. Do you want to kill the running server? y/n " answer1
-    kill $bell_pid &>/dev/null
-  else
-    # set setup_result to OK. This is needed when calling the show-result() function
-    setup_result="OK"
-    return
-  fi
-
-  if [[ "$answer1" == "y" ]] || [[ "$answer1" == "Y" ]]; then
-
-    if [[ "$system" == "mac" ]]; then
-      kill $(lsof -t -i:$1) &>/dev/null
-			sleep 1
-      lsof -i:$1 >/dev/null && kill -9 $(lsof -t -i:$1) &>/dev/null
-      sleep 1
-      lsof -i:$1 >/dev/null && fail "ERROR: Failed to kill the running server!"
-    elif [[ "$system" == "linux" ]]; then
-      fuser -k $1/tcp &>/dev/null
-			sleep 1
-      fuser $1/tcp && kill -9 $(fuser $1/tcp) &>/dev/null
-			sleep 1
-      fuser $1/tcp && fail "ERROR: Failed to kill the running server!"
-    fi
-  elif [[ "$answer1" == "n" ]] || [[ "$answer1" == "N" ]]; then
-    fail "ERROR: Stop the running server before you start the script!"
-  else
-    echo "Please enter a valid answer(y/n)!" >&2
-    check_server
-  fi
-
-  # set setup_result to OK. This is needed when calling the show-result() function
-  setup_result="OK"
-
-}
-
-# print the project's success message
-print_success(){
-
-  echo -e "\n-----------------------------------------------\n $1 build successful! \n-----------------------------------------------\n"
-
-}
-
-# if an error occurs, call this function
-fail(){
-
-  kill "$3" &>/dev/null
-
-  echo -e "$2 - $1" >&2
-
-  # tests what function failed and sets its status to failed
-  case "$2" in
-    base_starter_flow_osgi)
-    base_starter_flow_osgi_result="Failed";
-    ;;
-    skeleton_starter_flow_cdi)
-    skeleton_starter_flow_cdi_result="Failed";
-    ;;
-    skeleton_starter_flow_spring)
-    skeleton_starter_flow_spring_result="Failed";
-    ;;
-    base_starter_spring_gradle)
-    base_starter_spring_gradle_result="Failed";
-    ;;
-    base_starter_flow_quarkus)
-    base_starter_flow_quarkus_result="Failed";
-    ;;
-    vaadin_flow_karaf_example)
-    vaadin_flow_karaf_example_result="Failed";
-    ;;
-  esac
-
-
-  show_results
-
-  exit 1
-}
-
-
-# this function shows the results of the installation of the project(s)
-show_results(){
-
-    # this function always gets called at the end when running through all tests or if any test failed
-    if [[ "$setup_result" == "OK" ]]; then
-      echo -e "\nResults:\n
-      base_starter_flow_osgi: ${base_starter_flow_osgi_result}
-      skeleton_starter_flow_cdi: ${skeleton_starter_flow_cdi_result}
-      skeleton_starter_flow_spring: ${skeleton_starter_flow_spring_result}
-      base_starter_spring_gradle: ${base_starter_spring_gradle_result}
-      base_starter_flow_quarkus: ${base_starter_flow_quarkus_result}
-      vaadin_flow_karaf_example: ${vaadin_flow_karaf_example_result}
-      "
-    fi
 
 }
 
@@ -467,10 +266,19 @@ skeleton_starter_flow_spring(){
   #change_spring_port
 
                               #40 for fast computers
-  check_server_return "8080" "60" &
-  timer_pid=$!
+  #check_server_return "8080" "60" &
+	
+  #timer_pid=$!
 
-  mvn &> "$pwd/spring.output" || fail "mvn spring-boot:run. Output dumped to spring.output" "$FUNCNAME" "$timer_pid"
+	log "Running mvn"
+  runInBackgroundToFile mvn "spring.output" "$VERBOSE"
+	waitUntilMessageInFile "spring.output" "No issues found." "$TIMEOUT"
+	checkHttpServlet "https://localhost:8080"
+	waitForUserWithBell
+	ask "Server exited successfuly. Do you wish to visually inspect it?(y/n)"
+	[[ "$key" == 'y' ]] && waitForUserWithBell "Inspect the server and then press enter"
+	
+	echo "\nHurray! It worked!!!!!!!!!!!!!\n"
 
   mvn_package_production "$FUNCNAME"
 
@@ -502,9 +310,9 @@ skeleton_starter_flow_spring(){
 
   echo -e "\n--------------------------------------------------\n| skeleton_starter_flow_spring build successful! |\n--------------------------------------------------\n"
 
-	print_success "$FUNCNAME"
 
-	rm $pwd/spring.output
+
+
 	
 }
 
@@ -575,8 +383,8 @@ main(){
   # run all the setups
   check_directory "$@"
   clone_repo "$@"
-  check_server "8080"
-	check_os
+	checkBusyPort 8080
+
   setup_directory "$@"
 
   func_name=${1//-/_}
