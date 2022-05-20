@@ -14,13 +14,6 @@
       "targets": [],
       "value": ""
     }, {
-      "id": "5dc4b0e4-f649-41be-a510-1edc04dfb643",
-      "comment": "",
-      "command": "setWindowSize",
-      "target": "1024x780",
-      "targets": [],
-      "value": ""
-    }, {
       "id": "57175cbb-91e6-4ab6-94ba-774a43c1e42e",
       "comment": "",
       "command": "setWindowSize",
@@ -33,7 +26,7 @@
       "command": "waitForElementPresent",
       "target": "id=vaadin-text-field-0",
       "targets": [],
-      "value": "3000"
+      "value": "10000"
     }, {
       "id": "ae9d61ae-0140-4ab5-8e66-054edbeb7199",
       "comment": "",
@@ -59,7 +52,7 @@
       "command": "waitForElementPresent",
       "target": "css=vaadin-notification-card",
       "targets": [],
-      "value": "3000"
+      "value": "5000"
     }, {
       "id": "855a26d4-d89b-4176-94a8-ebaa6cfd6498",
       "comment": "",
