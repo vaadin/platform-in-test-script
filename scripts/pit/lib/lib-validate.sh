@@ -45,11 +45,7 @@ runValidations() {
 
     [ -n "$SKIPTESTS" ] || runSeleniumTests "$test" || return 1
 
-    if [ -n "$INTERACTIVE" -a current != "$version" ]
-    then
-      waitForUserWithBell
-      waitForUserManualTesting "$port"
-    fi
+    [ -n "$INTERACTIVE" ] && waitForUserWithBell && waitForUserManualTesting "$port"
   fi
 
   killAll

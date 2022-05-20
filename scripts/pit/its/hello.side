@@ -14,6 +14,13 @@
       "targets": [],
       "value": ""
     }, {
+      "id": "5dc4b0e4-f649-41be-a510-1edc04dfb643",
+      "comment": "",
+      "command": "setWindowSize",
+      "target": "1024x780",
+      "targets": [],
+      "value": ""
+    }, {
       "id": "57175cbb-91e6-4ab6-94ba-774a43c1e42e",
       "comment": "",
       "command": "setWindowSize",

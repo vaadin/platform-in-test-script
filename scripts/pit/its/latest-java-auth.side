@@ -14,6 +14,13 @@
       "targets": [],
       "value": ""
     }, {
+      "id": "5dc4b0e4-f649-41be-a510-1edc04dfb643",
+      "comment": "",
+      "command": "setWindowSize",
+      "target": "1024x780",
+      "targets": [],
+      "value": ""
+    }, {
       "id": "5dc5f8e0-d934-4247-8227-bd1f959cabe6",
       "comment": "",
       "command": "waitForElementPresent",
