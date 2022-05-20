@@ -94,49 +94,44 @@ setDemoVersion() {
   fi
 }
 
-runDemos() {
-  _demos="$1"
-  _port="$2"
-  _version="$3"
-  _offline="$4"
+runDemo() {
+  _demo="$1"
+  _tmp="$2"
+  _port="$3"
+  _version="$4"
+  _offline="$5"
 
-  pwd="$PWD"
-  tmp="$pwd/starters"
-  mkdir -p "$tmp"
+  echo ""
+  log "================= TESTING demo '$_demo' $_offline =================="
 
-  for i in $_demos
-  do
-    echo ""
-    log "================= TESTING Demo '$i' $_offline =================="
-    cd "$tmp"
-    dir="$tmp/$i"
-    if [ -z "$_offline" ]
+  cd "$_tmp" || return 1
+  _dir="$_tmp/$_demo"
+  if [ -z "$_offline" ]
+  then
+    [ -d "$_dir" ] && log "Removing project folder $_dir" && rm -rf $_dir
+    checkoutDemo $_demo || return 1
+  fi
+  cd "$_dir" || return 1
+
+  _installCmdDev=`getInstallCmdDev $_demo`
+  _installCmdPrd=`getInstallCmdPrd $_demo`
+  _runCmdDev=`getRunCmdDev $_demo`
+  _runCmdPrd=`getRunCmdPrd $_demo`
+  _readyDev=`getReadyMessageDev $_demo`
+  _readyPrd=`getReadyMessagePrd $_demo`
+  _port=`getPort $_demo`
+  _test=`getDemoTestFile $_demo`
+
+  runValidations current $_demo $_port "$_installCmdDev" "$_runCmdDev" "$_readyDev" "$_test" || return 1
+
+  if setDemoVersion $_demo $_version
+  then
+    runValidations $_version $_demo $_port "$_installCmdDev" "$_runCmdDev" "$_readyDev" "$_test" || return 1
+    if hasProduction $_demo
     then
-      [ -d "$dir" ] && log "Removing project folder $dir" && rm -rf $dir
-      checkoutDemo $i || exit 1
+      runValidations $_version $_demo $_port "$_installCmdPrd" "$_runCmdPrd" "$_readyPrd" "$_test" || return 1
     fi
-    cd "$dir" || exit 1
-
-    _installCmdDev=`getInstallCmdDev $i`
-    _installCmdPrd=`getInstallCmdPrd $i`
-    _runCmdDev=`getRunCmdDev $i`
-    _runCmdPrd=`getRunCmdPrd $i`
-    _readyDev=`getReadyMessageDev $i`
-    _readyPrd=`getReadyMessagePrd $i`
-    _port=`getPort $i`
-    _test=`getDemoTestFile $i`
-
-    runValidations current $i $_port "$_installCmdDev" "$_runCmdDev" "$_readyDev" "$_test" || exit 1
-
-    if setDemoVersion $i $_version
-    then
-      runValidations $_version $i $_port "$_installCmdDev" "$_runCmdDev" "$_readyDev" "$_test" || exit 1
-      if hasProduction $i
-      then
-        runValidations $_version $i $_port "$_installCmdPrd" "$_runCmdPrd" "$_readyPrd" "$_test" || exit 1
-      fi
-    fi
-    log "==== Demo '$i' was Tested successfuly ====
-    "
-  done
+  fi
+  log "==== demo '$_demo' was build and tested successfuly ====
+  "
 }

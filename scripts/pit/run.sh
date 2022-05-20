@@ -26,7 +26,11 @@ DEFAULT_STARTERS=`echo "$PRESETS$DEMOS" | tr "\n" ","`
 
 ### MAIN
 main() {
-  presets=""; demos=""
+
+  ## Exit soon if the port is busy
+  checkBusyPort "$PORT" || exit 1
+
+  ## Check whick arguments are valid presets or demos
   for i in `echo "$STARTERS" | tr ',' ' '`
   do
     if echo "$PRESETS" | grep -q "^$i$"; then
@@ -38,12 +42,34 @@ main() {
     fi
   done
 
-  checkBusyPort "$PORT" || exit 1
+  ## Create temporary folder for downloading and running starters
+  pwd="$PWD"
+  tmp="$pwd/starters"
+  mkdir -p "$tmp"
 
-  runStarters "$presets" "$PORT" "$VERSION" "$OFFLINE" || exit 1
-  runDemos "$demos" "$PORT" "$VERSION" "$OFFLINE" || exit 1
+  ## Run presets (star.vaadin.com downloaded apps)
+  for i in $presets
+  do
+    runStarter "$i" "$tmp" "$PORT" "$VERSION" "$OFFLINE" && success="$i $success" || failed="$i $failed"
+  done
+  ## Run demos (proper starters in github)
+  for i in $demos
+  do
+    runDemo "$i" "$tmp" "$PORT" "$VERSION" "$OFFLINE" && success="$i $success" || failed="$i $failed"
+  done
+
+  cd $pwd
+
+  ## Report success and failed projects
+  for i in $success
+  do
+    log "Starter $i built successfully"
+  done
+  for i in $failed 
+  do
+    log "!!! ERROR Running $i !!! check log files: "`echo starters/$i/*.out`
+  done
 }
 
 checkArgs ${@}
 main
-

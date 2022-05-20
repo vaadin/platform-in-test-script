@@ -35,45 +35,41 @@ getStartTestFile() {
   esac
 }
 
-runStarters() {
-  _presets="$1"
-  _port="$2"
-  _version="$3"
-  _offline="$4"
+runStarter() {
+  _preset="$1"
+  _tmp="$2"
+  _port="$3"
+  _version="$4"
+  _offline="$5"
 
-  pwd="$PWD"
-  tmp="$pwd/starters"
-  mkdir -p "$tmp"
+  ## For typescript starters, use hilla.version property and the equivalent version numering
+  _versionProp=vaadin.version
+  if echo "$_preset" | grep -q typescript
+  then
+    _version=`echo $_version | sed -e 's,^23,1,'`
+    _versionProp=hilla.version
+  fi
 
-  for i in $_presets
-  do
-    _versionProp=vaadin.version
-    if echo "$i" | grep -q typescript
-    then
-      _version=`echo $_version | sed -e 's,^23,1,'`
-      _versionProp=hilla.version
-    fi
+  echo ""
+  log "================= TESTING start preset '$_preset' $_offline =================="
+  
+  cd "$_tmp"
+  _dir="$_tmp/$_preset"
+  if [ -z "$_offline" ]
+  then
+    [ -d "$_dir" ] && log "Removing project folder $_dir" && rm -rf $_dir
+    downloadStarter $_preset || return 1
+  fi
+  cd "$_dir" || return 1
 
-    echo ""
-    log "================= TESTING Start Preset '$i' $_offline =================="
-    cd "$tmp"
-    dir="$tmp/$i"
-    if [ -z "$_offline" ]
-    then
-      [ -d "$dir" ] && log "Removing project folder $dir" && rm -rf $dir
-      downloadStarter $i || exit 1
-    fi
-    cd "$dir" || exit 1
+  _test=`getStartTestFile $_preset`
 
-    _test=`getStartTestFile $i`
+  runValidations current $_preset $_port "" "" "" "$_test" || return 1
 
-    runValidations current $i $_port "" "" "" "$_test" || exit 1
-
-    if setVersion $_versionProp $_version
-    then
-      runValidations $_version $i $_port "" "" "" "$_test" || exit 1
-      runValidations $_version $i $_port 'mvn -Pproduction package' 'java -jar target/*.jar' "Generated demo data" "$_test" || exit 1
-    fi
-    log "==== Start Preset '$i' was Tested Successfuly ===="
-  done
+  if setVersion $_versionProp $_version
+  then
+    runValidations $_version $_preset $_port "" "" "" "$_test" || return 1
+    runValidations $_version $_preset $_port 'mvn -Pproduction package' 'java -jar target/*.jar' "Generated demo data" "$_test" || return 1
+  fi
+  log "==== start preset '$_preset' was build and tested successfuly ===="
 }
