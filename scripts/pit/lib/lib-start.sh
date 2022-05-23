@@ -1,6 +1,6 @@
 . `dirname $0`/lib/lib-validate.sh
 
-## Generate an starter with the given preset, and unzip it in the current folder
+## Generate an app from start.vaadin.com with the given preset, and unzip it in the current folder
 ## multiple presets can be used by joining them with the `_` character
 downloadStarter() {
   _preset=$1
@@ -35,6 +35,12 @@ getStartTestFile() {
   esac
 }
 
+## Run an App downloaded from start.vaadin.com by following the next steps
+# 1. generate the project and download from start.vaadin.com (if not in offline)
+# 2. run validations in the current version to check that it's not broken
+# 3. increase version to the version used for PiT (if version given)
+# 4. run validations for the new version in dev-mode
+# 5. run validations for the new version in prod-mode (if project can be run in prod and dev)
 runStarter() {
   _preset="$1"
   _tmp="$2"
@@ -49,6 +55,7 @@ runStarter() {
     _version=`echo $_version | sed -e 's,^23,1,'`
     _versionProp=hilla.version
   fi
+  _test=`getStartTestFile $_preset`
 
   echo ""
   log "================= TESTING start preset '$_preset' $_offline =================="
@@ -58,17 +65,19 @@ runStarter() {
   if [ -z "$_offline" ]
   then
     [ -d "$_dir" ] && log "Removing project folder $_dir" && rm -rf $_dir
+    # 1
     downloadStarter $_preset || return 1
   fi
   cd "$_dir" || return 1
-
-  _test=`getStartTestFile $_preset`
-
+  
+  # 2
   runValidations current $_preset $_port "mvn -B clean" "mvn -B" "Frontend compiled" "$_test" || return 1
-
+  # 3
   if setVersion $_versionProp $_version
   then
+    # 4
     runValidations $_version $_preset $_port "mvn -B clean" "mvn -B" "Frontend compiled" "$_test" || return 1
+    # 5
     runValidations $_version $_preset $_port 'mvn -B -Pproduction package' 'java -jar target/*.jar' "Generated demo data" "$_test" || return 1
   fi
   log "==== start preset '$_preset' was build and tested successfuly ===="

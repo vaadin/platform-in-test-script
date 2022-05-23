@@ -3,8 +3,10 @@
 . `dirname $0`/lib/lib-start.sh
 . `dirname $0`/lib/lib-demos.sh
 
+## Clean background processes on exit
 trap "doExit" INT TERM EXIT
 
+## Default configuration
 DEFAULT_PORT=8080
 DEFAULT_TIMEOUT=300
 PRESETS="
@@ -30,7 +32,7 @@ main() {
   ## Exit soon if the port is busy
   checkBusyPort "$PORT" || exit 1
 
-  ## Check whick arguments are valid presets or demos
+  ## Check which arguments are valid names of presets or demos
   for i in `echo "$STARTERS" | tr ',' ' '`
   do
     if echo "$PRESETS" | grep -q "^$i$"; then

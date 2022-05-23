@@ -46,7 +46,7 @@ runInBackgroundToFile() {
   _cmd="$1"
   _file="$2"
   _verbose="$3"
-  log "Running $_cmd"
+  log "Running $_cmd >> $_file"
   touch $_file
   if [ -n "$_verbose" ]
   then
@@ -73,7 +73,7 @@ waitUntilMessageInFile() {
       [ -n "$VERBOSE" ] && tail -80 $_file
       return 1
     fi
-    grep -q "$_message" $_file && return 0
+    grep -q "$_message" $_file && log "Found '$_message' in $_file after "`expr $3 - $_timeout`" secs" && return 0
     sleep 2 && _timeout=`expr $_timeout - 2`
   done
   log "ERROR: Could not find '$_message' in $_file after $3 secs (check output in $_file)"

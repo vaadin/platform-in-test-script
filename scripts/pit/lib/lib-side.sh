@@ -1,4 +1,3 @@
-
 ## Check whether selenium-side-runner and chromedriver executables are available in the PATH
 isInstalledSelenium() {
   type selenium-side-runner >/dev/null 2>&1 && type chromedriver >/dev/null 2>&1
