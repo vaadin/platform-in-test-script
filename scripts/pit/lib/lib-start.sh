@@ -12,7 +12,7 @@ downloadStarter() {
   _url="https://start.vaadin.com/dl?${_presets}&projectName=${_preset}"
   _zip="$_preset.zip"
 
-  log "Downloading $_url"
+  log "Downloading (curl -s -f '$_url' -o $_zip && unzip $_zip && cd $_preset)"
   curl -s -f "$_url" -o $_zip \
     && unzip -q $_zip \
     && rm -f $_zip || return 1

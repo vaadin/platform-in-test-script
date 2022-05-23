@@ -46,7 +46,7 @@ runInBackgroundToFile() {
   _cmd="$1"
   _file="$2"
   _verbose="$3"
-  log "Running $_cmd >> $_file"
+  log "Running: $_cmd >> $_file"
   touch $_file
   if [ -n "$_verbose" ]
   then
@@ -137,9 +137,9 @@ setVersion() {
     current|$_current)
       return 1;;
     *)
-      log "Changing $_mavenProperty from $_current to $_version"
-      mvn -B -q versions:set-property -Dproperty=vaadin.version -DnewVersion=$_version
-      return 0;;
+      _cmd="mvn -B -q versions:set-property -Dproperty=vaadin.version -DnewVersion=$_version"
+      log "Changing $_mavenProperty from $_current to $_version ($_cmd)"
+      $_cmd && return 0 || return 1;;
   esac
 }
 
@@ -155,9 +155,9 @@ setGradleVersion() {
     current|$_current)
       return 1;;
     *)
+      _cmd="perl -pi -e 's,$_gradleProperty=.*,$_gradleProperty=$_version,' gradle.properties"
       log "Changing $_gradleProperty from $_current to $_version"
-      perl -pi -e "s,$_gradleProperty=.*,$_gradleProperty=$_version," gradle.properties
-      return 0;;
+      $_cmd && return 0 || return 1;;
   esac
 }
 
