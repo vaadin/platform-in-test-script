@@ -1,6 +1,6 @@
 usage() {
   cat <<EOF
-Use: $0 [version=] [starters=] [port=] [timeout=] [verbose] [offline] [interactive] [skiptests] [help]
+Use: $0 [version=] [starters=] [port=] [timeout=] [verbose] [offline] [interactive] [skiptests] [pnpm] [vite] [help]
 
   version      Vaadin version to test, by default current stable, otherwise it runs tests against current stable and then against given version.
   starters     List of demos o presets separated by comma to run (default: all) valid options:
@@ -10,7 +10,9 @@ Use: $0 [version=] [starters=] [port=] [timeout=] [verbose] [offline] [interacti
   verbose      Show server output (default silent)
   offline      Do not remove previous folders, and do not use network for mvn (default online)
   interactive  Play Bell and ask user to manually test the application (default non interactive)
-  skiptests    Skip Selenium IDE Tests (default run tests). Note: selenium-ide does not work in gitpod 
+  skiptests    Skip Selenium IDE Tests (default run tests). Note: selenium-ide does not work in gitpod
+  pnpm         Use pnpm instead of npm to speed up frontend compilation (default npm)
+  vite         Use vite inetad of webpack to speed up frontend compilation (default webpack)
   help         Show this message
 EOF
   exit 1
@@ -30,6 +32,8 @@ checkArgs() {
       offline) OFFLINE=true;;
       interactive) INTERACTIVE=true;;
       skiptests) SKIPTESTS=true;;
+      pnpm) PNPM=true;;
+      vite) VITE=true;;
       help|h) usage && exit 0;;
       *) echo "Unknown option: $1" && usage && exit 1;;
     esac

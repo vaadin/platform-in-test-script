@@ -30,8 +30,8 @@ runValidations() {
   checkBusyPort "$port" || return 1
   # 2
   disableLaunchBrowser
-  enablePnpm
-  enableVite
+  [ -n "$PNPM" ] && enablePnpm
+  [ -n "$VITE" ] && enableVite
 
   # when offline add the offline parameter to mvn or gradle
   [ -n "$OFFLINE" ] && cmd="$cmd --offline" && compile="$compile --offline"
