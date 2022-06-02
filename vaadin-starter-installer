@@ -3,21 +3,20 @@
 
 source ./lib/lib-utils.sh
 
-
+PROJECT="$1"
 VERSION="$2"
 TIMEOUT="$3"
-VERBOSE="$4"
 SPRING_STRING="No issues found."
 CDI_STRING="Content removed from location "
 GRADLE_STRING="No issues found."
 QUARKUS_STRING="No issues found."
 QUARKUS2_STRING="Atmosphere Framework "
-SYSTEM="mac"
+SYSTEM=""
 PORT=8080
 FAIL_COUNT=0
 
 usage(){
-		echo -e "Usage: ./vaadin-stater-installer <project> <version> <timeout> [verbose]\n"
+		echo -e "Usage: ./vaadin-stater-installer <project> <version> <timeout>\n"
 		exit 1
 }
 
@@ -48,16 +47,16 @@ check_success(){
 				kill_server $PORT
 		else	
 				log "The server failed"
-				exit 1
+				return 1
 		fi
 }
 
 fail(){
 
-	cmd=$1
-	output=$2
-		
-	log "$cmd failed! Output dumped to $output"
+		cmd=$1
+		output=$2
+
+		log "$cmd failed! Output dumped to $output"
 
 }	
 
@@ -77,13 +76,14 @@ check_fail(){
 
 
 git_clone(){
-		git clone https://github.com/vaadin/$1.git
+		git --quiet clone https://github.com/vaadin/$1.git
 		cd $1
 }
 
+
 mvn_clean_install(){
 
-		mvn clean install >>osgi.output || increment_fail
+		mvn clean install >>osgi.output 2>&1 || increment_fail
 
 }
 
@@ -91,16 +91,18 @@ base_starter_flow_osgi(){
 
 		mvn_clean_install
 
-		mvn version:set-property -Dproperty=vaadin.version -DnewVersion=$VERSION >>osgi.output || increment_fail
+		mvn version:set-property -Dproperty=vaadin.version -DnewVersion=$VERSION >>osgi.output 2>&1 || increment_fail
 
 		mvn_clean_install
+
+		log "$FUNCNAME: exited with $FAIL_COUNT error(s). Check the logs for more details."
 
 		FAIL_COUNT=0
 }
 
 mvn_verify(){
 
-		mvn verify -Pit,production || increment_fail
+		mvn verify -Pit,production >>cdi.output 2>&1 || increment_fail
 
 }
 
@@ -108,18 +110,18 @@ skeleton_starter_flow_cdi(){
 
 		mvn_verify
 
-		checkBusyPort $PORT || exit 1
-		runInBackgroundToFile "mvn wildfly:run" "cdi.output" "$VERBOSE"
+		checkBusyPort $PORT ||  exit 1
+		runInBackgroundToFile "mvn wildfly:run" "cdi.output" 
 		waitUntilMessageInFile "cdi.output" "$CDI_STRING" "$TIMEOUT" || kill_server $PORT
 		messageFound=$?
 		checkHttpServlet "http://localhost:8080"
 		httpCode=$?
 		check_success "$messageFound" "$httpCode"
 
-		mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$VERSION 
+		mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$VERSION >>cdi.output 2>&1
 
 		checkBusyPort $PORT || exit 1
-		runInBackgroundToFile "mvn clean wildfly:run" "cdi.output" "$VERBOSE"
+		runInBackgroundToFile "mvn clean wildfly:run" "cdi.output"
 		waitUntilMessageInFile "cdi.output" "$CDI_STRING" "$TIMEOUT" || kill_server $PORT
 		messageFound=$?
 		checkHttpServlet "http://localhost:8080"
@@ -140,7 +142,7 @@ gradlew_boot(){
 base_starter_spring_gradle(){
 
 		checkBusyPort $PORT || exit 1
-		runInBackgroundToFile "gradlew_boot" "gradle.output" "$VERBOSE"
+		runInBackgroundToFile "gradlew_boot" "gradle.output"
 		waitUntilMessageInFile "gradle.output" "$GRADLE_STRING" "$TIMEOUT" || kill_server $PORT
 		messageFound=$?
 		checkHttpServlet "http://localhost:8080"
@@ -164,7 +166,7 @@ base_starter_spring_gradle(){
 	perl -pi -e "s/$settingGradleString/$settingGradleReplace/" settings.gradle
 
 	checkBusyPort $PORT || exit 1
-	runInBackgroundToFile "gradlew_boot" "gradle.output" "$VERBOSE"
+	runInBackgroundToFile "gradlew_boot" "gradle.output"
 	waitUntilMessageInFile "gradle.output" "$GRADLE_STRING" "$TIMEOUT" || kill_server $PORT
 	messageFound=$?
 	checkHttpServlet "http://localhost:8080"
@@ -215,7 +217,7 @@ base_starter_flow_quarkus(){
 
 
 		checkBusyPort $PORT || exit 1
-		runInBackgroundToFile "./mvnw" "quarkus.output" "$VERBOSE"
+		runInBackgroundToFile "./mvnw" "quarkus.output"
 		waitUntilMessageInFile "quarkus.output" "$QUARKUS_STRING" "$TIMEOUT" || kill_server $PORT
 		messageFound=$?
 		checkHttpServlet "http://localhost:8080"
@@ -227,7 +229,7 @@ base_starter_flow_quarkus(){
 		mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$VERSION
 
 		checkBusyPort $PORT || exit 1
-		runInBackgroundToFile "./mvnw" "quarkus.output" "$VERBOSE"
+		runInBackgroundToFile "./mvnw" "quarkus.output"
 		waitUntilMessageInFile "quarkus.output" "$QUARKUS2_STRING" "$TIMEOUT" || kill_server $PORT
 		messageFound=$?
 		checkHttpServlet "http://localhost:8080"
@@ -258,13 +260,13 @@ skeleton_starter_flow_spring(){
 
 	#change_spring_port
 	checkBusyPort $PORT || exit 1
-	runInBackgroundToFile mvn "spring.output" "$VERBOSE"
+	runInBackgroundToFile mvn "spring.output"
 	waitUntilMessageInFile "spring.output" "$SPRING_STRING" "$TIMEOUT" || kill_server $PORT
 	messageFound=$?
 	checkHttpServlet "http://localhost:8080"
 	httpCode=$?
 	check_success "$messageFound" "$httpCode"
-	
+
 	mvn_package_production
 
 	mvn_package_it
@@ -272,7 +274,7 @@ skeleton_starter_flow_spring(){
 	mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$VERSION
 
 	checkBusyPort $PORT || exit 1
-	runInBackgroundToFile mvn "spring.output" "$VERBOSE"
+	runInBackgroundToFile mvn "spring.output"
 	waitUntilMessageInFile "spring.output" "$SPRING_STRING" "$TIMEOUT" || kill_server $PORT
 	messageFound=$?
 	checkHttpServlet "http://localhost:8080"
@@ -282,7 +284,7 @@ skeleton_starter_flow_spring(){
 	rm -rf node_modules
 
 	checkBusyPort $PORT || exit 1
-	runInBackgroundToFile mvn "spring.output" "$VERBOSE"
+	runInBackgroundToFile mvn "spring.output"
 	waitUntilMessageInFile "spring.output" "$SPRING_STRING" "$TIMEOUT" || kill_server $PORT
 	messageFound=$?
 	checkHttpServlet "http://localhost:8080"
@@ -295,12 +297,47 @@ skeleton_starter_flow_spring(){
 
 }
 
+all(){
+
+  check_directory base-starter-flow-osgi
+  git_clone base-starter-flow-osgi
+  base_starter_flow_osgi
+	cd ..
+
+  check_directory skeleton-starter-flow-cdi
+  git_clone skeleton-starter-flow-cdi
+  skeleton_starter_flow_cdi
+	cd ..
+
+  check_directory skeleton-starter-flow-spring
+  git_clone skeleton-starter-flow-spring
+  skeleton_starter_flow_spring
+	cd ..
+
+  check_directory base-starter-spring-gradle
+  git_clone base-starter-spring-gradle
+  base_starter_spring_gradle
+	cd ..
+
+  check_directory base-starter-flow-quarkus
+  git_clone base-starter-flow-quarkus
+  base_starter_flow_quarkus
+	cd ..
+
+  check_directory vaadin-flow-karaf-example
+  git_clone vaadin-flow-karaf-example
+  vaadin_flow_karaf_example
+
+	exit 0
+}
 
 [[ "$#" -ne 3 ]] && usage
 
+[[ "$1" == "all" ]] && all
+
 func_name=${1//-/_}
 
-check_directory "$1"
-git_clone "$1"
+check_directory "$PROJECT"
+git_clone "$PROJECT"
 
 "$func_name"
