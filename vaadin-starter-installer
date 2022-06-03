@@ -47,6 +47,7 @@ check_success(){
 				kill_server $PORT
 		else	
 				log "The server failed"
+				FAIL_COUNT=$((FAIL_COUNT + 1))
 				return 1
 		fi
 }
@@ -76,10 +77,20 @@ check_fail(){
 
 
 git_clone(){
-		git --quiet clone https://github.com/vaadin/$1.git
-		cd $1
+		git clone --quiet https://github.com/vaadin/$1.git
+		cd "$1"
 }
 
+
+check_os(){
+
+	case $OSTYPE in
+			darwin*) SYSTEM="mac";;
+			Linux*) SYSTEM="linux";;
+			*) SYSTEM="windows";;
+	esac
+
+}
 
 mvn_clean_install(){
 
@@ -112,23 +123,30 @@ skeleton_starter_flow_cdi(){
 
 		checkBusyPort $PORT ||  exit 1
 		runInBackgroundToFile "mvn wildfly:run" "cdi.output" 
+		# TODO :  What to do here? We either check the exit status and increment FAIL_COUNT or something else
+		# We can't check the exit status because killing the server might result in an error, besides
+		# we are already checking that it works with waitUntilMessageInFile and checkHttpServlet
+
 		waitUntilMessageInFile "cdi.output" "$CDI_STRING" "$TIMEOUT" || kill_server $PORT
 		messageFound=$?
 		checkHttpServlet "http://localhost:8080"
 		httpCode=$?
 		check_success "$messageFound" "$httpCode"
 
-		mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$VERSION >>cdi.output 2>&1
+		mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$VERSION >>cdi.output 2>&1 || increment_fail
 
 		checkBusyPort $PORT || exit 1
 		runInBackgroundToFile "mvn clean wildfly:run" "cdi.output"
-		waitUntilMessageInFile "cdi.output" "$CDI_STRING" "$TIMEOUT" || kill_server $PORT
+		# TODO : The STRING appears twice in the output!
+		waitUntilMessageInFile "cdi.output" "$CDI_STRING2" "$TIMEOUT" || kill_server $PORT
 		messageFound=$?
 		checkHttpServlet "http://localhost:8080"
 		httpCode=$?
 		check_success "$messageFound" "$httpCode"
 
 		mvn_verify
+
+		log "$FUNCNAME: exited with $FAIL_COUNT error(s). Check the logs for more details."
 
 		FAIL_COUNT=0
 }
@@ -208,7 +226,7 @@ vaadin_flow_karaf_example(){
 
 mvnw_package_production(){
 
-		./mvnw package -Pproduction
+		./mvnw package -Pproduction  >>quarkus.output 2>&1 || increment_fail
 
 }
 
@@ -226,7 +244,8 @@ base_starter_flow_quarkus(){
 
 		mvnw_package_production
 
-		mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$VERSION
+		mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$VERSION >>quarkus.output 2>&1 || increment_fail
+
 
 		checkBusyPort $PORT || exit 1
 		runInBackgroundToFile "./mvnw" "quarkus.output"
@@ -238,17 +257,20 @@ base_starter_flow_quarkus(){
 
 		mvnw_package_production
 
+		log "$FUNCNAME: exited with $FAIL_COUNT error(s). Check the logs for more details."
+
+		FAIL_COUNT=0
 }
 
 mvn_package_production(){
 
-		mvn package -Pproduction
+		mvn package -Pproduction >>spring.output 2>&1 || increment_fail
 
 }
 
 mvn_package_it(){
 
-		mvn package -Pit
+		mvn package -Pit >>spring.output 2>&1 || increment_fail
 
 }
 
@@ -271,7 +293,7 @@ skeleton_starter_flow_spring(){
 
 	mvn_package_it
 
-	mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$VERSION
+	mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$VERSION >>quarkus.output 2>&1 || increment_fail
 
 	checkBusyPort $PORT || exit 1
 	runInBackgroundToFile mvn "spring.output"
@@ -295,6 +317,9 @@ skeleton_starter_flow_spring(){
 
 	mvn_package_it
 
+	log "$FUNCNAME: exited with $FAIL_COUNT error(s). Check the logs for more details."
+
+	FAIL_COUNT=0
 }
 
 all(){
@@ -337,6 +362,7 @@ all(){
 
 func_name=${1//-/_}
 
+check_os
 check_directory "$PROJECT"
 git_clone "$PROJECT"
 
