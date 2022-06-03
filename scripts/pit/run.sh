@@ -74,7 +74,11 @@ main() {
     files=`echo starters/$i/*.out`
     log "!!! ERROR in $i !!! check log files: $files"
   done
+
 }
 
 checkArgs ${@}
 main
+echo
+log "times"
+times

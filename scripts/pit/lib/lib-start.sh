@@ -71,9 +71,10 @@ runStarter() {
   cd "$_dir" || return 1
   
   # 2
-  runValidations current $_preset $_port "mvn -B clean" "mvn -B" "Frontend compiled" "$_test" || return 1
+  _current=`setVersion $_versionProp current`
+  runValidations $_current $_preset $_port "mvn -B clean" "mvn -B" "Frontend compiled" "$_test" || return 1
   # 3
-  if setVersion $_versionProp $_version
+  if setVersion $_versionProp $_version >/dev/null
   then
     # 4
     runValidations $_version $_preset $_port "mvn -B clean" "mvn -B" "Frontend compiled" "$_test" || return 1

@@ -21,8 +21,7 @@ getInstallCmdDev() {
 ## Get install command for prod-mode
 getInstallCmdPrd() {
   case $1 in
-    skeleton-starter-flow-spring) echo "mvn -B package -Pproduction";;
-    base-starter-flow-quarkus) echo "mvn -B package -Pproduction";;
+    skeleton-starter-flow-spring|base-starter-flow-quarkus) echo "mvn -B package -Pproduction";;
     base-starter-spring-gradle) echo "./gradlew clean build -Pvaadin.productionMode";;
     *) getInstallCmdDev $1;;
   esac
@@ -118,9 +117,10 @@ runDemo() {
   _readyPrd=`getReadyMessagePrd $_demo`
   _port=`getPort $_demo`
   _test=hello.side
+  _current=`setDemoVersion $_demo current`
 
   # 2
-  runValidations current $_demo $_port "$_installCmdDev" "$_runCmdDev" "$_readyDev" "$_test" || return 1
+  runValidations $_current $_demo $_port "$_installCmdDev" "$_runCmdDev" "$_readyDev" "$_test" || return 1
   # 3
   if setDemoVersion $_demo $_version
   then

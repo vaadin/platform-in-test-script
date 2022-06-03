@@ -132,9 +132,9 @@ setVersion() {
   git checkout -q .
   _current=`mvn help:evaluate -Dexpression=$_mavenProperty -q -DforceStdout`
   echo ""
-  log "Version $_current, $_version"
   case $_version in
     current|$_current)
+      echo $_current;
       return 1;;
     *)
       _cmd="mvn -B -q versions:set-property -Dproperty=vaadin.version -DnewVersion=$_version"
@@ -150,9 +150,9 @@ setGradleVersion() {
   git checkout -q .
   _current=`cat gradle.properties | grep "$_gradleProperty" | cut -d "=" -f2`
   echo ""
-  log "Version $_current, $_version"
   case $_version in
     current|$_current)
+      echo $_current;
       return 1;;
     *)
       _cmd="perl -pi -e 's,$_gradleProperty=.*,$_gradleProperty=$_version,' gradle.properties"
