@@ -28,6 +28,8 @@ DEFAULT_STARTERS=`echo "$PRESETS$DEMOS" | tr "\n" "," | sed -e 's/^,//' | sed -e
 
 ### MAIN
 main() {
+  _start=`date +%s`
+  printVersions
 
   ## Exit soon if the port is busy
   checkBusyPort "$PORT" || exit 1
@@ -75,10 +77,8 @@ main() {
     log "!!! ERROR in $i !!! check log files: $files"
   done
 
+  printTime $_start
 }
 
 checkArgs ${@}
 main
-echo
-log "times"
-times

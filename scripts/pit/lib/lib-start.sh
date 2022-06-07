@@ -13,7 +13,9 @@ downloadStarter() {
   _zip="$_preset.zip"
 
   log "Downloading (curl -s -f '$_url' -o $_zip && unzip $_zip && cd $_preset)"
-  curl -s -f "$_url" -o $_zip \
+  [ -z "$VERBOSE" ] && _silent="-s"
+
+  curl $_silent -f "$_url" -o $_zip \
     && unzip -q $_zip \
     && rm -f $_zip || return 1
 

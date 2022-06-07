@@ -25,13 +25,13 @@ checkArgs() {
     arg=`echo "$1" | cut -d= -f2`
     case `echo $1 | sed -e 's/\-//g'` in
       port=*) PORT="$arg";;
-      starters=*) STARTERS="$arg";;
+      start*=*) STARTERS="$arg";;
       version=*) VERSION="$arg";;
       timeout=*) TIMEOUT="$arg";;
       verbose|debug) VERBOSE=true;;
       offline) OFFLINE=true;;
       interactive) INTERACTIVE=true;;
-      skiptests) SKIPTESTS=true;;
+      skip*) SKIPTESTS=true;;
       pnpm) PNPM=true;;
       vite) VITE=true;;
       help|h) usage && exit 0;;

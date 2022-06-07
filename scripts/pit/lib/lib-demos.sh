@@ -6,7 +6,8 @@ checkoutDemo() {
   _branch=""
   _gitUrl="https://github.com/vaadin/$_repo.git"
   log "Checking out (git clone $_gitUrl && cd $_repo)"
-  git clone -q "$_gitUrl" || return 1
+  [ -z "$VERBOSE" ] && _quiet="-q"
+  git clone $_quiet "$_gitUrl" || return 1
   [ -z "$_branch" ] || git checkout "$_branch"
 }
 

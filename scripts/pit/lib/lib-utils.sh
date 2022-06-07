@@ -190,3 +190,20 @@ enableVite() {
   touch $_prop
   grep -q "$_key=true" "$_prop" || echo "$_key=true" >> "$_prop"
 }
+
+printVersions() {
+  log "===================== Running PiT Tests ============================================
+`mvn -version`
+Node version: `node --version`
+Npm version: `npm --version`"
+}
+
+printTime() {
+  [ -n "$1" ] && _start=$1 || return
+  _end=`date +%s`
+  _time=`expr $_end - $_start`
+  _mins=`expr $_time / 60`
+  _secs=`expr $_time % 60`
+  echo ""
+  log "Total time: $_mins' $_secs\""
+}
