@@ -8,12 +8,14 @@ VERSION="$2"
 TIMEOUT="$3"
 SPRING_STRING="No issues found."
 CDI_STRING="Content removed from location "
+CDI_STRING2="Content removed from location "
 GRADLE_STRING="No issues found."
 QUARKUS_STRING="No issues found."
 QUARKUS2_STRING="Atmosphere Framework "
 SYSTEM=""
 PORT=8080
 FAIL_COUNT=0
+
 
 usage(){
 		echo -e "Usage: ./vaadin-stater-installer <project> <version> <timeout>\n"
@@ -52,6 +54,7 @@ check_success(){
 		fi
 }
 
+
 fail(){
 
 		cmd=$1
@@ -81,7 +84,7 @@ git_clone(){
 		cd "$1"
 }
 
-
+# Check what OS the user is using and store it in SYSTEM
 check_os(){
 
 	case $OSTYPE in
@@ -94,15 +97,17 @@ check_os(){
 
 mvn_clean_install(){
 
-		mvn clean install >>osgi.output 2>&1 || increment_fail
+		mvn clean install >>../osgi.output 2>&1 || increment_fail
 
 }
 
 base_starter_flow_osgi(){
 
+		log "Running $FUNCNAME"
+
 		mvn_clean_install
 
-		mvn version:set-property -Dproperty=vaadin.version -DnewVersion=$VERSION >>osgi.output 2>&1 || increment_fail
+		mvn version:set-property -Dproperty=vaadin.version -DnewVersion=$VERSION >>../osgi.output 2>&1 || increment_fail
 
 		mvn_clean_install
 
@@ -113,11 +118,13 @@ base_starter_flow_osgi(){
 
 mvn_verify(){
 
-		mvn verify -Pit,production >>cdi.output 2>&1 || increment_fail
+		mvn verify -Pit,production >>../cdi.output 2>&1 || increment_fail
 
 }
 
 skeleton_starter_flow_cdi(){
+
+		log "Running $FUNCNAME"
 
 		mvn_verify
 
@@ -133,8 +140,10 @@ skeleton_starter_flow_cdi(){
 		httpCode=$?
 		check_success "$messageFound" "$httpCode"
 
-		mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$VERSION >>cdi.output 2>&1 || increment_fail
-
+		mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$VERSION >>../cdi.output 2>&1 || increment_fail
+		echo -e "\n\n\nSTARTING HERE\n\n\n"
+		mvn clean wildfly:run
+		exit 0
 		checkBusyPort $PORT || exit 1
 		runInBackgroundToFile "mvn clean wildfly:run" "cdi.output"
 		# TODO : The STRING appears twice in the output!
@@ -147,7 +156,8 @@ skeleton_starter_flow_cdi(){
 		mvn_verify
 
 		log "$FUNCNAME: exited with $FAIL_COUNT error(s). Check the logs for more details."
-
+			
+		CDI_RESULT=$FAIL_COUNT
 		FAIL_COUNT=0
 }
 
@@ -158,6 +168,8 @@ gradlew_boot(){
 }
 
 base_starter_spring_gradle(){
+
+		log "Running $FUNCNAME"
 
 		checkBusyPort $PORT || exit 1
 		runInBackgroundToFile "gradlew_boot" "gradle.output"
@@ -191,6 +203,8 @@ base_starter_spring_gradle(){
 	httpCode=$?
 	check_success "$messageFound" "$httpCode"
 
+
+
 }
 
 mvn_install(){
@@ -208,6 +222,7 @@ remove_node-modules(){
 
 vaadin_flow_karaf_example(){
 
+		log "Running $FUNCNAME"
 
 		mvn_install
 
@@ -226,13 +241,14 @@ vaadin_flow_karaf_example(){
 
 mvnw_package_production(){
 
-		./mvnw package -Pproduction  >>quarkus.output 2>&1 || increment_fail
+		./mvnw package -Pproduction  >>../quarkus.output 2>&1 || increment_fail
 
 }
 
 
 base_starter_flow_quarkus(){
 
+		log "Running $FUNCNAME"
 
 		checkBusyPort $PORT || exit 1
 		runInBackgroundToFile "./mvnw" "quarkus.output"
@@ -244,7 +260,7 @@ base_starter_flow_quarkus(){
 
 		mvnw_package_production
 
-		mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$VERSION >>quarkus.output 2>&1 || increment_fail
+		mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$VERSION >>../quarkus.output 2>&1 || increment_fail
 
 
 		checkBusyPort $PORT || exit 1
@@ -264,13 +280,13 @@ base_starter_flow_quarkus(){
 
 mvn_package_production(){
 
-		mvn package -Pproduction >>spring.output 2>&1 || increment_fail
+		mvn package -Pproduction >>../spring.output 2>&1 || increment_fail
 
 }
 
 mvn_package_it(){
 
-		mvn package -Pit >>spring.output 2>&1 || increment_fail
+		mvn package -Pit >>../spring.output 2>&1 || increment_fail
 
 }
 
@@ -279,6 +295,9 @@ skeleton_starter_flow_spring(){
 	# Disable automatic browser startup in development mode
 	# Doesn't work on Linux and Windows
 	#turn_off_spring_browser
+
+
+	log "Running $FUNCNAME"
 
 	#change_spring_port
 	checkBusyPort $PORT || exit 1
@@ -293,7 +312,7 @@ skeleton_starter_flow_spring(){
 
 	mvn_package_it
 
-	mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$VERSION >>quarkus.output 2>&1 || increment_fail
+	mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$VERSION >>../quarkus.output 2>&1 || increment_fail
 
 	checkBusyPort $PORT || exit 1
 	runInBackgroundToFile mvn "spring.output"
@@ -329,11 +348,6 @@ all(){
   base_starter_flow_osgi
 	cd ..
 
-  check_directory skeleton-starter-flow-cdi
-  git_clone skeleton-starter-flow-cdi
-  skeleton_starter_flow_cdi
-	cd ..
-
   check_directory skeleton-starter-flow-spring
   git_clone skeleton-starter-flow-spring
   skeleton_starter_flow_spring
@@ -347,6 +361,11 @@ all(){
   check_directory base-starter-flow-quarkus
   git_clone base-starter-flow-quarkus
   base_starter_flow_quarkus
+	cd ..
+
+  check_directory skeleton-starter-flow-cdi
+  git_clone skeleton-starter-flow-cdi
+  skeleton_starter_flow_cdi
 	cd ..
 
   check_directory vaadin-flow-karaf-example

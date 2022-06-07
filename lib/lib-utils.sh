@@ -73,7 +73,11 @@ waitUntilMessageInFile() {
       [ -n "$VERBOSE" ] && tail -80 $_file
       return 1
     fi
-    grep -q "$_message" $_file && return 0
+#		if [[ "$_cmd" == 'mvn clean wildfly:run' ]]; then
+#		[[ $(grep -c "$_message" $_file) -eq 2 ]] && return 0
+#	else
+				grep -q "$_message" $_file && return 0
+#	fi
     sleep 2 && _timeout=`expr $_timeout - 2`
   done
   [ -n "$VERBOSE" ] && tail -80 $_file
