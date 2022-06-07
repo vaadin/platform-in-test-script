@@ -141,9 +141,7 @@ skeleton_starter_flow_cdi(){
 		check_success "$messageFound" "$httpCode"
 
 		mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$VERSION >>../cdi.output 2>&1 || increment_fail
-		echo -e "\n\n\nSTARTING HERE\n\n\n"
-		mvn clean wildfly:run
-		exit 0
+
 		checkBusyPort $PORT || exit 1
 		runInBackgroundToFile "mvn clean wildfly:run" "cdi.output"
 		# TODO : The STRING appears twice in the output!
