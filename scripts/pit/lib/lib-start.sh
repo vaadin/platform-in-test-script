@@ -40,9 +40,10 @@ getStartTestFile() {
 ## Run an App downloaded from start.vaadin.com by following the next steps
 # 1. generate the project and download from start.vaadin.com (if not in offline)
 # 2. run validations in the current version to check that it's not broken
-# 3. increase version to the version used for PiT (if version given)
-# 4. run validations for the new version in dev-mode
-# 5. run validations for the new version in prod-mode (if project can be run in prod and dev)
+# 3. run validations for the current version in prod-mode
+# 4. increase version to the version used for PiT (if version given)
+# 5. run validations for the new version in dev-mode
+# 6. run validations for the new version in prod-mode
 runStarter() {
   _preset="$1"
   _tmp="$2"
@@ -76,11 +77,13 @@ runStarter() {
   _current=`setVersion $_versionProp current`
   runValidations $_current $_preset $_port "mvn -B clean" "mvn -B" "Frontend compiled" "$_test" || return 1
   # 3
+  runValidations $_current $_preset $_port 'mvn -B -Pproduction package' 'java -jar target/*.jar' "Generated demo data" "$_test" || return 1
+  # 4
   if setVersion $_versionProp $_version >/dev/null
   then
-    # 4
-    runValidations $_version $_preset $_port "mvn -B clean" "mvn -B" "Frontend compiled" "$_test" || return 1
     # 5
+    runValidations $_version $_preset $_port "mvn -B clean" "mvn -B" "Frontend compiled" "$_test" || return 1
+    # 6
     runValidations $_version $_preset $_port 'mvn -B -Pproduction package' 'java -jar target/*.jar' "Generated demo data" "$_test" || return 1
   fi
   log "==== start preset '$_preset' was build and tested successfuly ===="

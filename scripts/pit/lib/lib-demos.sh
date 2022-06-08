@@ -87,9 +87,10 @@ setDemoVersion() {
 ## Run a Demo project by following the next steps
 # 1. checkout the project from github (if not in offline)
 # 2. run validations in the current version to check that it's not broken
-# 3. increase version to the version used for PiT (if version given)
-# 4. run validations for the new version in dev-mode
-# 5. run validations for the new version in prod-mode (if project can be run in prod and dev)
+# 3. run validations for the current version in prod-mode (if project can be run in prod and dev)
+# 4. increase version to the version used for PiT (if version given)
+# 5. run validations for the new version in dev-mode
+# 6. run validations for the new version in prod-mode (if project can be run in prod and dev)
 runDemo() {
   _demo="$1"
   _tmp="$2"
@@ -122,14 +123,19 @@ runDemo() {
 
   # 2
   runValidations $_current $_demo $_port "$_installCmdDev" "$_runCmdDev" "$_readyDev" "$_test" || return 1
-  # 3
+  if hasProduction $_demo
+  then
+    # 3
+    runValidations $_current $_demo $_port "$_installCmdPrd" "$_runCmdPrd" "$_readyPrd" "$_test" || return 1
+  fi
+  # 4
   if setDemoVersion $_demo $_version
   then
-    # 4
+    # 5
     runValidations $_version $_demo $_port "$_installCmdDev" "$_runCmdDev" "$_readyDev" "$_test" || return 1
     if hasProduction $_demo
     then
-      # 5
+      # 6
       runValidations $_version $_demo $_port "$_installCmdPrd" "$_runCmdPrd" "$_readyPrd" "$_test" || return 1
     fi
   fi
