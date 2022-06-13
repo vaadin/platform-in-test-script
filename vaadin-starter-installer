@@ -3,23 +3,56 @@
 
 source ./lib/lib-utils.sh
 
+
 PROJECT="$1"
 VERSION="$2"
 TIMEOUT="$3"
+
+# Strings to be parsed for success in each output file
+OSGI_STRING="Started"
 SPRING_STRING="No issues found."
 CDI_STRING="Content removed from location "
 CDI_STRING2="Content removed from location "
 GRADLE_STRING="No issues found."
 QUARKUS_STRING="No issues found."
 QUARKUS2_STRING="Atmosphere Framework "
+QUARKUS3_STRING="Atmosphere Framework "
+QUARKUS4_STRING="Atmosphere Framework "
+
+
 SYSTEM=""
 PORT=8080
 FAIL_COUNT=0
 
 
 usage(){
-		echo -e "Usage: ./vaadin-stater-installer <project> <version> <timeout>\n"
+		echo -e "Usage: ./vaadin-stater-installer <project> <version> <timeout>
+./vaadin-starter-installer --help for help"
+
 		exit 1
+}
+
+# the help function provides you with a help menu
+help_func(){
+
+	echo -e "Usage: ./vaadin-stater-installer <project> <version> <timeout>
+
+	Projects:
+
+	base-starter-flow-osgi
+	skeleton-starter-flow-cdi	
+	base-starter-spring-gradle	
+	vaadin-flow-karaf-example
+	base-starter-flow-quarkus	
+	skeleton-starter-flow-spring
+
+	all - Run all the projects
+
+	Example : ./vaadin-starter-installer base-starter-flow-osgi 23.1.0.rc2 200\n"
+
+
+	exit 1
+
 }
 
 # checks and deletes old directory
@@ -40,10 +73,9 @@ kill_server(){
 }
 
 # check the answer of "Do you wish to visually inspect it?"
-check_success(){ 
-		messageFound="$1"
-		httpCode="$2"
-		if [[ $messageFound -eq 0 && $httpCode -eq 0 ]]; then
+check_code(){ 
+		httpCode="$1"
+		if [[ $httpCode -eq 0 ]]; then
 				#ask "The server exited successfully. Press enter when ready."
 				waitForUserWithBell "The server executed successfully. Inspect the server visually." 
 				kill_server $PORT
@@ -52,6 +84,18 @@ check_success(){
 				FAIL_COUNT=$((FAIL_COUNT + 1))
 				return 1
 		fi
+}
+
+check_message(){
+
+	message=$1
+	if [[ "$message" -eq 0 ]]; then
+			return 0
+	else
+			log "Failed to find the string in the output file."
+			exit 1
+	fi
+
 }
 
 
@@ -64,17 +108,17 @@ fail(){
 
 }	
 
+# keep track of the number of errors
 increment_fail(){
 
 		FAIL_COUNT=$((FAIL_COUNT + 1))
 
 }	
 
+# display the number of errors (if any)
 check_fail(){
 
-		if [[ $FAIL_COUNT -gt 0 ]]; then
 				log "base_starter_flow_osgi failed $FAIL_COUNT time(s). Check osgi.output for errors."
-		fi	
 
 }
 
@@ -107,9 +151,38 @@ base_starter_flow_osgi(){
 
 		mvn_clean_install
 
-		mvn version:set-property -Dproperty=vaadin.version -DnewVersion=$VERSION >>../osgi.output 2>&1 || increment_fail
+		checkBusyPort $PORT || exit 1
+		runInBackgroundToFile "java -jar app/target/app.jar" "osgi.output"
+		waitUntilMessageInFile "osgi.output" "$OSGI_STRING" "$TIMEOUT" || kill_server $PORT
+		messageFound=$?
+		check_message "$messageFound"
+		checkHttpServlet "http://localhost:8080"
+		httpCode=$?
+		check_code "$httpCode"
+
+		mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$VERSION >>../osgi.output 2>&1 || increment_fail
 
 		mvn_clean_install
+		
+		checkBusyPort $PORT || exit 1
+		runInBackgroundToFile "java -jar app/target/app.jar" "osgi.output"
+		waitUntilMessageInFile "osgi.output" "$OSGI_STRING" "$TIMEOUT" || kill_server $PORT
+		messageFound=$?
+		check_message "$messageFound"
+		checkHttpServlet "http://localhost:8080"
+		httpCode=$?
+		check_code "$httpCode"
+
+		mvn clean install -Dpnpm.enable=true >>../osgi.output 2>&1 || increment_fail
+
+		checkBusyPort $PORT || exit 1
+		runInBackgroundToFile "java -jar app/target/app.jar" "osgi.output"
+		waitUntilMessageInFile "osgi.output" "$OSGI_STRING" "$TIMEOUT" || kill_server $PORT
+		messageFound=$?
+		check_message "$messageFound"
+		checkHttpServlet "http://localhost:8080"
+		httpCode=$?
+		check_code "$httpCode"
 
 		log "$FUNCNAME: exited with $FAIL_COUNT error(s). Check the logs for more details."
 
@@ -126,7 +199,6 @@ skeleton_starter_flow_cdi(){
 
 		log "Running $FUNCNAME"
 
-		mvn_verify
 
 		checkBusyPort $PORT ||  exit 1
 		runInBackgroundToFile "mvn wildfly:run" "cdi.output" 
@@ -136,26 +208,27 @@ skeleton_starter_flow_cdi(){
 
 		waitUntilMessageInFile "cdi.output" "$CDI_STRING" "$TIMEOUT" || kill_server $PORT
 		messageFound=$?
+		check_message "$messageFound"
 		checkHttpServlet "http://localhost:8080"
 		httpCode=$?
-		check_success "$messageFound" "$httpCode"
+		check_code "$httpCode"
 
 		mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$VERSION >>../cdi.output 2>&1 || increment_fail
 
 		checkBusyPort $PORT || exit 1
 		runInBackgroundToFile "mvn clean wildfly:run" "cdi.output"
-		# TODO : The STRING appears twice in the output!
+		# TODO : The CDI_STRING2 appears twice in the output!
 		waitUntilMessageInFile "cdi.output" "$CDI_STRING2" "$TIMEOUT" || kill_server $PORT
-		messageFound=$?
+	 	messageFound=$?
+		check_message "$messageFound"
 		checkHttpServlet "http://localhost:8080"
 		httpCode=$?
-		check_success "$messageFound" "$httpCode"
-
-		mvn_verify
+		check_code "$httpCode"
+		
+		mvn clean wildfly:run -Dpnpm.enable=true || increment_fail
 
 		log "$FUNCNAME: exited with $FAIL_COUNT error(s). Check the logs for more details."
 			
-		CDI_RESULT=$FAIL_COUNT
 		FAIL_COUNT=0
 }
 
@@ -173,9 +246,10 @@ base_starter_spring_gradle(){
 		runInBackgroundToFile "gradlew_boot" "gradle.output"
 		waitUntilMessageInFile "gradle.output" "$GRADLE_STRING" "$TIMEOUT" || kill_server $PORT
 		messageFound=$?
+		check_message "$messageFound"
 		checkHttpServlet "http://localhost:8080"
 		httpCode=$?
-		check_success "$messageFound" "$httpCode"
+		check_code "$httpCode"
 
 		perl -pi -e "s/vaadinVersion=.*/vaadinVersion=$VERSION/" gradle.properties
 
@@ -197,10 +271,10 @@ base_starter_spring_gradle(){
 	runInBackgroundToFile "gradlew_boot" "gradle.output"
 	waitUntilMessageInFile "gradle.output" "$GRADLE_STRING" "$TIMEOUT" || kill_server $PORT
 	messageFound=$?
+	check_message "$messageFound"
 	checkHttpServlet "http://localhost:8080"
 	httpCode=$?
-	check_success "$messageFound" "$httpCode"
-
+	check_code "$httpCode"
 
 
 }
@@ -230,7 +304,7 @@ vaadin_flow_karaf_example(){
 
 		mvn_install
 
-		remove-node-modules && mvn install
+		remove_node_modules && mvn install
 
 		mvn -pl main-ui install -Prun
 
@@ -252,24 +326,45 @@ base_starter_flow_quarkus(){
 		runInBackgroundToFile "./mvnw" "quarkus.output"
 		waitUntilMessageInFile "quarkus.output" "$QUARKUS_STRING" "$TIMEOUT" || kill_server $PORT
 		messageFound=$?
+		check_message "$messageFound"
 		checkHttpServlet "http://localhost:8080"
 		httpCode=$?
-		check_success "$messageFound" "$httpCode"
+		check_code "$httpCode"
 
 		mvnw_package_production
+			
+		checkBusyPort $PORT || exit 1
+		runInBackgroundToFile " java -jar target/quarkus-app/quarkus-run.jar" "quarkus.output"
+		waitUntilMessageInFile "quarkus.output" "$QUARKUS2_STRING" "$TIMEOUT" || kill_server $PORT
+		messageFound=$?
+		check_message "$messageFound"
+		checkHttpServlet "http://localhost:8080"
+		httpCode=$?
+		check_code "$httpCode"
+
 
 		mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$VERSION >>../quarkus.output 2>&1 || increment_fail
 
 
 		checkBusyPort $PORT || exit 1
 		runInBackgroundToFile "./mvnw" "quarkus.output"
-		waitUntilMessageInFile "quarkus.output" "$QUARKUS2_STRING" "$TIMEOUT" || kill_server $PORT
+		waitUntilMessageInFile "quarkus.output" "$QUARKUS3_STRING" "$TIMEOUT" || kill_server $PORT
 		messageFound=$?
+		check_message "$messageFound"
 		checkHttpServlet "http://localhost:8080"
 		httpCode=$?
-		check_success "$messageFound" "$httpCode"
+		check_code "$httpCode"
 
 		mvnw_package_production
+
+		checkBusyPort $PORT || exit 1
+		runInBackgroundToFile " java -jar target/quarkus-app/quarkus-run.jar" "quarkus.output"
+		waitUntilMessageInFile "quarkus.output" "$QUARKUS4_STRING" "$TIMEOUT" || kill_server $PORT
+		messageFound=$?
+		check_message "$messageFound"
+		checkHttpServlet "http://localhost:8080"
+		httpCode=$?
+		check_code "$httpCode"
 
 		log "$FUNCNAME: exited with $FAIL_COUNT error(s). Check the logs for more details."
 
@@ -302,9 +397,10 @@ skeleton_starter_flow_spring(){
 	runInBackgroundToFile mvn "spring.output"
 	waitUntilMessageInFile "spring.output" "$SPRING_STRING" "$TIMEOUT" || kill_server $PORT
 	messageFound=$?
+	check_message "$messageFound"
 	checkHttpServlet "http://localhost:8080"
 	httpCode=$?
-	check_success "$messageFound" "$httpCode"
+	check_code "$httpCode"
 
 	mvn_package_production
 
@@ -316,9 +412,10 @@ skeleton_starter_flow_spring(){
 	runInBackgroundToFile mvn "spring.output"
 	waitUntilMessageInFile "spring.output" "$SPRING_STRING" "$TIMEOUT" || kill_server $PORT
 	messageFound=$?
+	check_message "$messageFound"
 	checkHttpServlet "http://localhost:8080"
 	httpCode=$?
-	check_success "$messageFound" "$httpCode"
+	check_code "$httpCode"
 
 	rm -rf node_modules
 
@@ -326,9 +423,10 @@ skeleton_starter_flow_spring(){
 	runInBackgroundToFile mvn "spring.output"
 	waitUntilMessageInFile "spring.output" "$SPRING_STRING" "$TIMEOUT" || kill_server $PORT
 	messageFound=$?
+	check_message "$messageFound"
 	checkHttpServlet "http://localhost:8080"
 	httpCode=$?
-	check_success "$messageFound" "$httpCode"
+	check_code "$httpCode"
 
 	mvn_package_production
 
@@ -339,7 +437,11 @@ skeleton_starter_flow_spring(){
 	FAIL_COUNT=0
 }
 
+# all runs all the projects
 all(){
+
+	# Check what OS the user is running
+	check_os
 
   check_directory base-starter-flow-osgi
   git_clone base-starter-flow-osgi
@@ -373,14 +475,44 @@ all(){
 	exit 0
 }
 
-[[ "$#" -ne 3 ]] && usage
 
+# Search for the --debug option and act accordingly
+for arg in $@
+do
+		if [[ "$arg" == "--debug" ]]; then
+				PS4=""
+				set -x	
+		fi
+
+		# TODO : https://stackoverflow.com/questions/25474854/after-using-exec-1file-how-can-i-stop-this-redirection-of-the-stdout-to-file
+		# Make it so verbose outputs to stdout
+		# We need a way of making redirections to files useless if we
+		# provide the --verbose option
+		if [[ "$arg" == "--verbose" ]]; then
+	 			exec 1>/dev/tty 2>/dev/tty
+		fi
+done	
+
+# If given --help or -h, call the help function
+[[ "$1" == "--help" ]] || [[ "$1" == "-h" ]] && help_func
+
+# If given less than three args, call the usage function
+[[ "$#" -lt 3 ]] && usage
+
+# If given all, run the all function
 [[ "$1" == "all" ]] && all
 
+# Convert my-chosen-project to my_chosen_project
 func_name=${1//-/_}
 
+# Check what OS the user is running
 check_os
+
+# Check if the directory already exists and delete it if necessary
 check_directory "$PROJECT"
+
+# Download the project(s)
 git_clone "$PROJECT"
 
+# Call the function
 "$func_name"
