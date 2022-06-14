@@ -35,8 +35,10 @@ usage(){
 # the help function provides you with a help menu
 help_func(){
 
-	echo -e "Usage: ./vaadin-stater-installer <project> <version> <timeout>
-
+	echo -e "Usage: ./vaadin-stater-installer <project> <version> <timeout> [debug]
+	
+	The <> are required options while [] are optional options. 
+	
 	Projects:
 
 	base-starter-flow-osgi
@@ -48,7 +50,8 @@ help_func(){
 
 	all - Run all the projects
 
-	Example : ./vaadin-starter-installer base-starter-flow-osgi 23.1.0.rc2 200\n"
+	Example 1 : ./vaadin-starter-installer base-starter-flow-osgi 23.1.0.rc2 200\n
+	Example 2 : ./vaadin-starter-installer all 23.1.0.rc2 300 --debug\n"
 
 
 	exit 1
@@ -80,31 +83,32 @@ check_code(){
 				waitForUserWithBell "The server executed successfully. Inspect the server visually." 
 				kill_server $PORT
 		else	
-				log "The server failed"
+				error "The server failed"
 				FAIL_COUNT=$((FAIL_COUNT + 1))
-				return 1
+				exit 1
 		fi
 }
 
+# checks if the message is in the output file
 check_message(){
 
 	message=$1
 	if [[ "$message" -eq 0 ]]; then
 			return 0
 	else
-			log "Failed to find the string in the output file."
+			error "Failed to find the string in the output file."
 			exit 1
 	fi
 
 }
 
-
+# fail gets called if an error is encountered
 fail(){
 
 		cmd=$1
 		output=$2
 
-		log "$cmd failed! Output dumped to $output"
+		error "$cmd failed! Output dumped to $output"
 
 }	
 
@@ -114,6 +118,7 @@ increment_fail(){
 		FAIL_COUNT=$((FAIL_COUNT + 1))
 
 }	
+
 
 # display the number of errors (if any)
 check_fail(){
@@ -202,9 +207,6 @@ skeleton_starter_flow_cdi(){
 
 		checkBusyPort $PORT ||  exit 1
 		runInBackgroundToFile "mvn wildfly:run" "cdi.output" 
-		# TODO :  What to do here? We either check the exit status and increment FAIL_COUNT or something else
-		# We can't check the exit status because killing the server might result in an error, besides
-		# we are already checking that it works with waitUntilMessageInFile and checkHttpServlet
 
 		waitUntilMessageInFile "cdi.output" "$CDI_STRING" "$TIMEOUT" || kill_server $PORT
 		messageFound=$?
@@ -217,7 +219,6 @@ skeleton_starter_flow_cdi(){
 
 		checkBusyPort $PORT || exit 1
 		runInBackgroundToFile "mvn clean wildfly:run" "cdi.output"
-		# TODO : The CDI_STRING2 appears twice in the output!
 		waitUntilMessageInFile "cdi.output" "$CDI_STRING2" "$TIMEOUT" || kill_server $PORT
 	 	messageFound=$?
 		check_message "$messageFound"
@@ -225,7 +226,7 @@ skeleton_starter_flow_cdi(){
 		httpCode=$?
 		check_code "$httpCode"
 		
-		mvn clean wildfly:run -Dpnpm.enable=true || increment_fail
+		mvn clean wildfly:run -Dpnpm.enable=true >>../cdi.output 2>&1 || increment_fail
 
 		log "$FUNCNAME: exited with $FAIL_COUNT error(s). Check the logs for more details."
 			
@@ -482,14 +483,6 @@ do
 		if [[ "$arg" == "--debug" ]]; then
 				PS4=""
 				set -x	
-		fi
-
-		# TODO : https://stackoverflow.com/questions/25474854/after-using-exec-1file-how-can-i-stop-this-redirection-of-the-stdout-to-file
-		# Make it so verbose outputs to stdout
-		# We need a way of making redirections to files useless if we
-		# provide the --verbose option
-		if [[ "$arg" == "--verbose" ]]; then
-	 			exec 1>/dev/tty 2>/dev/tty
 		fi
 done	
 
