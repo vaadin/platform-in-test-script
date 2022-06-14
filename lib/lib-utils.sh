@@ -1,3 +1,6 @@
+## Manolo's library, modified by Frans
+
+
 ## Kills a process and all its children and wait until complete
 doKill() {
   while [ -n "$1" ]; do
@@ -22,6 +25,11 @@ doExit() {
 ## log with some color
 log() {
   printf "\033[0m> \033[0;32m$1\033[0m\n" >&2
+}
+
+## log with error and red color 
+error(){
+		printf "\033[31m$1\n"
 }
 
 ## ask user a question, response is stored in key
@@ -69,7 +77,7 @@ waitUntilMessageInFile() {
     kill -0 $pid_run 2>/dev/null
     if [ $? != 0 ]
     then
-      log "ERROR: $_cmd failed to start (check full output in $_file)"
+      error "ERROR: $_cmd failed to start (check full output in $_file)"
       [ -n "$VERBOSE" ] && tail -80 $_file
       return 1
     fi
@@ -81,8 +89,8 @@ waitUntilMessageInFile() {
     sleep 2 && _timeout=`expr $_timeout - 2`
   done
   [ -n "$VERBOSE" ] && tail -80 $_file
-  log "ERROR: Could not find '$_message' in $_file after $3 secs (check output in $_file)"
-  return 1
+  error "ERROR: Could not find '$_message' in $_file after $3 secs (check output in $_file)"
+  exit 1
 }
 
 ## Infinite loop playing a bell in console
@@ -118,7 +126,7 @@ checkBusyPort() {
   curl -s telnet://localhost:$_port >/dev/null &
   curl_pid=$!
   uname -a | egrep -iq 'Linux|Darwin' && sleep 1 || sleep 4
-  kill $curl_pid 2>/dev/null && log "Port ${_port} is occupied" && return 1 || return 0
+  kill $curl_pid 2>/dev/null && error "Port ${_port} is occupied" && return 1 || return 0
 }
 
 ## Check that a HTTP servlet request responds with 200
@@ -126,7 +134,7 @@ checkHttpServlet() {
   _url="$1"
   log "Checking whether url $_url returns HTTP 200"
   curl --fail -s -I -L "$_url" | grep -q 'HTTP/1.1 200'
-  [ $? != 0 ] && log "Got and invalid response from $_url" && return 1 || return 0
+  [ $? != 0 ] && error "Got and invalid response from $_url" && return 1 || return 0
 }
 
 ## Set the value of a property in the pom file, returning error if unchanged
