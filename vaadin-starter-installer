@@ -161,7 +161,8 @@ check_server(){
 
 mvn_clean_install(){
 
-		mvn clean install >>../osgi.output 2>&1 || increment_fail
+		log "Running mvn clean install"
+		mvn clean install >>osgi.output 2>&1 || increment_fail
 
 }
 
@@ -186,7 +187,8 @@ base_starter_flow_osgi(){
 		# kill all the opened streams, etc
 		killAll
 
-		mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$VERSION >>../osgi.output 2>&1 || increment_fail
+		log "Running mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$VERSION"
+		mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$VERSION >>osgi.output 2>&1 || increment_fail
 
 		mvn_clean_install
 		
@@ -204,7 +206,8 @@ base_starter_flow_osgi(){
 		# kill all the opened streams, bells, etc
 		killAll
 
-		mvn clean install -Dpnpm.enable=true >>../osgi.output 2>&1 || increment_fail
+		log "Running mvn clean install -Dpnpm.enable=true"
+		mvn clean install -Dpnpm.enable=true >>osgi.output 2>&1 || increment_fail
 
 		checkBusyPort $PORT || exit 1
 		runInBackgroundToFile "java -jar app/target/app.jar" "osgi.output" "$VERBOSE"
@@ -227,14 +230,14 @@ base_starter_flow_osgi(){
 
 mvn_verify(){
 
-		mvn verify -Pit,production >>../cdi.output 2>&1 || increment_fail
+		log "Running mvn verify -Pit,production"
+		mvn verify -Pit,production >>cdi.output 2>&1 || increment_fail
 
 }
 
 skeleton_starter_flow_cdi(){
 
 		log "Running $FUNCNAME"
-
 
 		checkBusyPort $PORT ||  exit 1
 		runInBackgroundToFile "mvn wildfly:run" "cdi.output" "$VERBOSE"
@@ -251,7 +254,8 @@ skeleton_starter_flow_cdi(){
 		# kill all the opened streams, etc
 		killAll
 
-		mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$VERSION >>../cdi.output 2>&1 || increment_fail
+		log "mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$VERSION"
+		mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$VERSION >>cdi.output 2>&1 || increment_fail
 
 		checkBusyPort $PORT || exit 1
 		runInBackgroundToFile "mvn clean wildfly:run" "cdi.output" "$VERBOSE"
@@ -268,7 +272,8 @@ skeleton_starter_flow_cdi(){
 		# kill all the opened streams, etc
 		killAll
 
-		mvn clean wildfly:run -Dpnpm.enable=true >>../cdi.output 2>&1 || increment_fail
+		log "mvn clean wildfly:run -Dpnpm.enable=true"
+		mvn clean wildfly:run -Dpnpm.enable=true >>cdi.output 2>&1 || increment_fail
 
 		log "$FUNCNAME: exited with $FAIL_COUNT error(s). Check the logs for more details."
 			
@@ -277,6 +282,7 @@ skeleton_starter_flow_cdi(){
 
 gradlew_boot(){
 
+		log "Running ./gradlew clean bootRun"
 		./gradlew clean bootRun
 
 }
@@ -334,6 +340,7 @@ base_starter_spring_gradle(){
 
 mvn_install(){
 
+		log "Running mvn install"
 		mvn install
 
 }
@@ -367,7 +374,8 @@ vaadin_flow_karaf_example(){
 
 mvnw_package_production(){
 
-		./mvnw package -Pproduction  >>../quarkus.output 2>&1 || increment_fail
+		log "Running ./mvnw package -Pproduction"
+		./mvnw package -Pproduction >>quarkus.output 2>&1 || increment_fail
 
 }
 
@@ -408,8 +416,8 @@ base_starter_flow_quarkus(){
 		# kill all the opened streams, etc
 		killAll
 
-		mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$VERSION >>../quarkus.output 2>&1 || increment_fail
-
+		log "Running mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$VERSION"
+		mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$VERSION >>quarkus.output 2>&1 || increment_fail
 
 		checkBusyPort $PORT || exit 1
 		runInBackgroundToFile "./mvnw" "quarkus.output" "$VERBOSE"
@@ -426,6 +434,7 @@ base_starter_flow_quarkus(){
 		# kill all the opened streams, etc
 		killAll
 
+		log "mvnw_package_production"
 		mvnw_package_production
 
 		checkBusyPort $PORT || exit 1
@@ -450,13 +459,13 @@ base_starter_flow_quarkus(){
 
 mvn_package_production(){
 
-		mvn package -Pproduction >>../spring.output 2>&1 || increment_fail
+		mvn package -Pproduction >>spring.output 2>&1 || increment_fail
 
 }
 
 mvn_package_it(){
 
-		mvn package -Pit >>../spring.output 2>&1 || increment_fail
+		mvn package -Pit >>spring.output 2>&1 || increment_fail
 
 }
 
@@ -483,7 +492,7 @@ skeleton_starter_flow_spring(){
 
 		mvn_package_it
 
-		mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$VERSION >>../quarkus.output 2>&1 || increment_fail
+		mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$VERSION >>quarkus.output 2>&1 || increment_fail
 
 		checkBusyPort $PORT || exit 1
 		runInBackgroundToFile "mvn" "spring.output" "$VERBOSE"
@@ -587,7 +596,7 @@ done
 # If given all, run the all function
 [[ "$1" == "all" ]] && all
 
-# Convert my-chosen-project to my_chosen_project and store it in func_name
+# When given base-starter-flow-whatever, convert it to base_starter_flow_whatever
 func_name=${1//-/_}
 
 # Check what OS the user is running
@@ -596,7 +605,7 @@ check_os
 # Check if the directory already exists and delete it if necessary
 check_directory "$PROJECT"
 
-# Download the project(s)
+# Download the project
 git_clone "$PROJECT"
 
 # Call the function func_name
