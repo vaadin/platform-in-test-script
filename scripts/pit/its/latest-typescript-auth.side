@@ -31,7 +31,7 @@
       "id": "93a06f5e-f756-47aa-98ae-db7d05be4bce",
       "comment": "",
       "command": "type",
-      "target": "id=vaadin-text-field-0",
+      "target": "css=vaadin-text-field:nth-of-type(1n)>input",
       "targets": [],
       "value": "admin"
     }, {
@@ -59,9 +59,7 @@
       "command": "waitForElementPresent",
       "target": "css=.block",
       "targets": [
-        ["id=vaadin-text-field-0", "id"],
-        ["css=#vaadin-text-field-0", "css:finder"],
-        ["xpath=//input[@id='vaadin-text-field-0']", "xpath:attributes"],
+        ["css=vaadin-text-field:nth-of-type(1n)>input", "css:finder"],
         ["xpath=//div[@id='outlet']/main-layout/hello-world-typescript-view/vaadin-text-field/input", "xpath:idRelative"],
         ["xpath=//input", "xpath:position"]
       ],
@@ -77,11 +75,9 @@
       "id": "82aa9371-fa98-43c5-8433-d22aa894ee87",
       "comment": "",
       "command": "waitForElementPresent",
-      "target": "id=vaadin-text-field-0",
+      "target": "css=vaadin-text-field:nth-of-type(1n)>input",
       "targets": [
-        ["id=vaadin-text-field-0", "id"],
-        ["css=#vaadin-text-field-0", "css:finder"],
-        ["xpath=//input[@id='vaadin-text-field-0']", "xpath:attributes"],
+        ["css=vaadin-text-field:nth-of-type(1n)>input", "css:finder"],
         ["xpath=//div[@id='outlet']/main-layout/hello-world-typescript-view/vaadin-text-field/input", "xpath:idRelative"],
         ["xpath=//input", "xpath:position"]
       ],
@@ -90,7 +86,7 @@
       "id": "6ff487f5-dea3-47b0-b67f-e3de812d54ff",
       "comment": "",
       "command": "type",
-      "target": "id=vaadin-text-field-0",
+      "target": "css=vaadin-text-field:nth-of-type(1n)>input",
       "targets": [],
       "value": "HOLA"
     }, {
@@ -150,10 +146,10 @@
       "id": "a6882ace-4401-4af3-ac92-431d0ed3d55c",
       "comment": "",
       "command": "waitForElementPresent",
-      "target": "id=vaadin-text-field-0",
+      "target": "css=vaadin-text-field:nth-of-type(1n)>input",
       "targets": [
-        ["id=vaadin-text-field-0", "id"],
-        ["css=#vaadin-text-field-0", "css:finder"],
+        ["css=vaadin-text-field:nth-of-type(1n)>input", "css:finder"],
+        ["css=vaadin-text-field:nth-of-type(1n)>input", "css:finder"],
         ["xpath=//input[@id='vaadin-text-field-0']", "xpath:attributes"],
         ["xpath=//div[@id='outlet']/main-layout/hello-world-typescript-view/vaadin-text-field/input", "xpath:idRelative"],
         ["xpath=//input", "xpath:position"]
@@ -163,7 +159,7 @@
       "id": "2bf47614-376a-4c4d-a476-b9388c4b21f8",
       "comment": "",
       "command": "type",
-      "target": "id=vaadin-text-field-0",
+      "target": "css=vaadin-text-field:nth-of-type(1n)>input",
       "targets": [],
       "value": "Jose"
     }, {
