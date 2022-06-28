@@ -74,7 +74,7 @@ kill_server(){
 		fi
 }
 
-# check the answer of "Do you wish to visually inspect it?"
+# check the HTTP return value of the server
 check_code(){ 
 		httpCode="$1"
 		if [[ $httpCode -eq 0 ]]; then
@@ -591,11 +591,6 @@ all(){
 # Search for the --debug option and act accordingly
 for arg in $@
 do
-		if [[ "$arg" == "--debug" ]]; then
-				PS4=""
-				set -x	
-		fi
-
 		if [[ "$arg" == "--verbose" ]]; then
 				VERBOSE=true	
 		fi
