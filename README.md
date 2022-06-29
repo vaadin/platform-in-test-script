@@ -3,8 +3,20 @@
 # Dependencies
 - [Playwright](https://playwright.dev/docs/intro)
 
+# How To Use It
+`./vaadin-starter-installer <project> <version> <timeout> [--verbose]`
+
+The projects can be listed with `./vaadin-starter-installer --help`
+The version should be the latest version of the project.
+The timeout can be put to any number(usually 200 or 300 is enough). Putting a high number gives the project enough time to start the server.
+The optional argument `--verbose` can be used to view the output of the project.
+
+Example : ./vaadin-starter-installer skeleton-starter-flow-spring xx.x 300 --verbose
+
+The "x"s should be replaced with the latest version.
+
 # How It Works
-The script starts of by looking for the `--verbose` argument, checking if the user has entered at least the first three required arguments, and converts dashes to underscores(base-starter.. to base_stater).It then calls some functions before calling the corresponding project function.
+The script starts of by looking for the `--verbose` argument, checking if the user has entered at least the first three required arguments, checks if Playwright is installed, and converts dashes to underscores(base-starter.. to base_stater).It then calls some other functions before calling the corresponding project function.
 
 ## Functions
 
@@ -19,6 +31,8 @@ kill_server() : takes a port number as an argument and searches for the opened p
 check_code() : checks the HTTP return value of the server.
 
 check_message() : check if the string that implies that the server launched correctly is in the output file.
+
+check_playwright() : check if Playwright is already installed.
 
 fail() : gets called if there are any errors.
 
