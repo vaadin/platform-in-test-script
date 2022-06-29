@@ -59,11 +59,13 @@ help_func(){
 
 # checks and deletes old directory
 check_directory(){
+		log "Checking for an old directory"
 		[[ -d "$1" ]] && rm -rf "$1"
 }
 
 # kill the server
 kill_server(){
+		log "Killing the server"
 		port="$1"
 		if [[ "$SYSTEM" == "mac" ]]; then
 				doKill $(lsof -t -i:$port) 2>/dev/null
@@ -99,6 +101,17 @@ check_message(){
 
 }
 
+# check if playwright is installed
+check_playwright(){
+
+	npm ls playwright
+	returnCode=$?
+	if [[ "$returnCode" -ne 0 ]]; then 
+		error "ERROR: Playwright is not installed." 
+		exit 1
+	fi
+}
+
 # fail gets called if an error is encountered
 fail(){
 
@@ -126,6 +139,7 @@ check_fail(){
 
 
 git_clone(){
+		log "Checking out the project"
 		git clone --quiet https://github.com/vaadin/$1.git
 		basepwd=$PWD
 		cd "$1"
@@ -133,7 +147,7 @@ git_clone(){
 
 # Check what OS the user is using and store it in SYSTEM
 check_os(){
-
+	log "Checking the OS type"
 	case $OSTYPE in
 			darwin*) SYSTEM="mac";;
 			Linux*) SYSTEM="linux";;
@@ -160,7 +174,8 @@ check_server(){
 
 # turn off the browser startup in skeleton-starter-flow-spring
 turn_off_browser_startup(){
-
+	
+	log "Disabling automatic browser startup"
 	sed -i -- "s/vaadin.launch-browser=.*/vaadin.launch-browser=false/g" ./src/main/resources/application.properties
 
 }
@@ -471,13 +486,8 @@ base_starter_flow_quarkus(){
 
 mvn_package_production(){
 
+		log "Running mvn package -Pproduction"
 		mvn package -Pproduction >>spring.output 2>&1 || increment_fail
-
-}
-
-mvn_package_it(){
-
-		mvn package -Pit >>spring.output 2>&1 || increment_fail
 
 }
 
@@ -504,9 +514,7 @@ skeleton_starter_flow_spring(){
 
 		mvn_package_production
 
-		mvn_package_it
-
-		mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$VERSION >>quarkus.output 2>&1 || increment_fail
+		mvn versions:set-property -Dproperty=vaadin.version -DnewVersion=$VERSION >>spring.output 2>&1 || increment_fail
 
 		checkBusyPort $PORT || exit 1
 		runInBackgroundToFile "mvn" "spring.output" "$VERBOSE"
@@ -541,8 +549,6 @@ skeleton_starter_flow_spring(){
 		killAll
 
 		mvn_package_production
-
-		mvn_package_it
 
 		log "$FUNCNAME: exited with $FAIL_COUNT error(s). Check the logs for more details."
 
@@ -601,6 +607,9 @@ done
 
 # If given less than three args, call the usage function
 [[ "$#" -lt 3 ]] && usage
+
+# Check if playwright is installed
+check_playwright
 
 # If given all, run the all function
 [[ "$1" == "all" ]] && all
