@@ -48,7 +48,7 @@ main() {
 
   ## Create temporary folder for downloading and running starters
   pwd="$PWD"
-  tmp="$pwd/starters"
+  tmp="$pwd/tmp"
   mkdir -p "$tmp"
 
   ## Run presets (star.vaadin.com downloaded apps)
