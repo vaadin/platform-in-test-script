@@ -104,7 +104,7 @@ check_message(){
 # check if playwright is installed
 check_playwright(){
 
-	npm ls playwright
+	npm ls playwright >/dev/null 2>&1
 	returnCode=$?
 	if [[ "$returnCode" -ne 0 ]]; then 
 		error "ERROR: Playwright is not installed." 
