@@ -11,18 +11,20 @@ checkoutDemo() {
   [ -z "$_branch" ] || git checkout "$_branch"
 }
 
+
 ## Get install command for dev-mode
 getInstallCmdDev() {
   case $1 in
-    skeleton-starter-flow-cdi|base-starter-flow-quarkus) echo "mvn -B clean";;
+    skeleton-starter-flow-cdi|base-starter-flow-quarkus) echo "mvn -ntp -B clean";;
     base-starter-spring-gradle) echo "./gradlew clean" ;;
-    *) echo "mvn clean install -Dpnpm.enable=true";;
+    *) echo "mvn -ntp clean install -Dpnpm.enable=true";;
   esac
 }
 ## Get install command for prod-mode
 getInstallCmdPrd() {
+  [ -z "$VERBOSE" ] && H="-Dheadless"
   case $1 in
-    skeleton-starter-flow-spring|base-starter-flow-quarkus) echo "mvn -B package -Pproduction";;
+    bakery-app-starter-flow-spring|bakery-app-starter-flow-spring|skeleton-starter-flow-spring|base-starter-flow-quarkus) echo "mvn -B install -Pproduction,it $H";;
     base-starter-spring-gradle) echo "./gradlew clean build -Pvaadin.productionMode";;
     *) getInstallCmdDev $1;;
   esac
@@ -34,7 +36,7 @@ getRunCmdDev() {
     base-starter-flow-osgi) echo "java -jar app/target/app.jar";;
     skeleton-starter-flow-cdi) echo "mvn -B wildfly:run -Dpnpm.enable=true";;
     base-starter-spring-gradle) echo "./gradlew bootRun";;
-    skeleton-starter-flow-spring|base-starter-flow-quarkus) echo "mvn -Dpnpm.enable=true";;
+    skeleton-starter-flow-spring|base-starter-flow-quarkus|bakery-app-starter-flow-spring) echo "mvn -Dpnpm.enable=true";;
   esac
 }
 ## Get command for running the project prod-mode after install was run
@@ -76,6 +78,14 @@ getPort() {
     *) echo "8080";;
   esac
 }
+## Get SIDE test file
+getTest() {
+  case $1 in
+    bakery-app-starter-flow-spring);;
+    *) echo "hello.side"
+  esac
+}
+
 ## Change version in build files
 setDemoVersion() {
   case "$1" in
@@ -118,7 +128,7 @@ runDemo() {
   _readyDev=`getReadyMessageDev $_demo`
   _readyPrd=`getReadyMessagePrd $_demo`
   _port=`getPort $_demo`
-  _test=hello.side
+  _test=`getTest $_demo`
   _current=`setDemoVersion $_demo current`
 
   # 2

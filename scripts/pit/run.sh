@@ -18,10 +18,11 @@ latest-typescript-top
 latest-java_partial-auth
 latest-typescript_partial-auth"
 DEMOS="
+skeleton-starter-flow-spring
+bakery-app-starter-flow-spring
 skeleton-starter-flow-cdi
 base-starter-spring-gradle
 base-starter-flow-quarkus
-skeleton-starter-flow-spring
 vaadin-flow-karaf-example
 base-starter-flow-osgi"
 DEFAULT_STARTERS=`echo "$PRESETS$DEMOS" | tr "\n" "," | sed -e 's/^,//' | sed -e 's/,$//'`
