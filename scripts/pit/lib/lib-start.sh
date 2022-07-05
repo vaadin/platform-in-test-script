@@ -75,16 +75,16 @@ runStarter() {
   
   # 2
   _current=`setVersion $_versionProp current`
-  runValidations $_current $_preset $_port "mvn -B clean" "mvn -B" "Frontend compiled" "$_test" || return 1
+  runValidations dev $_current $_preset $_port "mvn -B clean" "mvn -B" "Frontend compiled" "$_test" || return 1
   # 3
-  runValidations $_current $_preset $_port 'mvn -B -Pproduction package' 'java -jar target/*.jar' "Generated demo data" "$_test" || return 1
+  runValidations prod $_current $_preset $_port 'mvn -B -Pproduction package' 'java -jar target/*.jar' "Generated demo data" "$_test" || return 1
   # 4
   if setVersion $_versionProp $_version >/dev/null
   then
     # 5
-    runValidations $_version $_preset $_port "mvn -B clean" "mvn -B" "Frontend compiled" "$_test" || return 1
+    runValidations dev $_version $_preset $_port "mvn -B clean" "mvn -B" "Frontend compiled" "$_test" || return 1
     # 6
-    runValidations $_version $_preset $_port 'mvn -B -Pproduction package' 'java -jar target/*.jar' "Generated demo data" "$_test" || return 1
+    runValidations prod $_version $_preset $_port 'mvn -B -Pproduction package' 'java -jar target/*.jar' "Generated demo data" "$_test" || return 1
   fi
   log "==== start preset '$_preset' was build and tested successfuly ===="
 }

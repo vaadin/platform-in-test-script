@@ -74,7 +74,7 @@ main() {
   done
   for i in $failed
   do
-    files=`echo starters/$i/*.out`
+    files=`echo $tmp/$i/*.out`
     log "!!! ERROR in $i !!! check log files: $files"
   done
 

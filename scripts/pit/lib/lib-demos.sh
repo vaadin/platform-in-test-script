@@ -58,7 +58,7 @@ getReadyMessageDev() {
 ## Get ready message when running the project in prod-mode
 getReadyMessagePrd() {
   case $1 in
-    skeleton-starter-flow-spring) echo "Started Application";;
+    skeleton-starter-flow-spring) echo "Completed initialization";;
     base-starter-flow-quarkus) echo "Listening on: http://0.0.0.0:8080";;
     base-starter-spring-gradle) echo "Tomcat started on port";;
     *) getReadyMessageDev $1;;
@@ -132,21 +132,21 @@ runDemo() {
   _current=`setDemoVersion $_demo current`
 
   # 2
-  runValidations $_current $_demo $_port "$_installCmdDev" "$_runCmdDev" "$_readyDev" "$_test" || return 1
+  runValidations dev $_current $_demo $_port "$_installCmdDev" "$_runCmdDev" "$_readyDev" "$_test" || return 1
   if hasProduction $_demo
   then
     # 3
-    runValidations $_current $_demo $_port "$_installCmdPrd" "$_runCmdPrd" "$_readyPrd" "$_test" || return 1
+    runValidations prod $_current $_demo $_port "$_installCmdPrd" "$_runCmdPrd" "$_readyPrd" "$_test" || return 1
   fi
   # 4
   if setDemoVersion $_demo $_version
   then
     # 5
-    runValidations $_version $_demo $_port "$_installCmdDev" "$_runCmdDev" "$_readyDev" "$_test" || return 1
+    runValidations dev $_version $_demo $_port "$_installCmdDev" "$_runCmdDev" "$_readyDev" "$_test" || return 1
     if hasProduction $_demo
     then
       # 6
-      runValidations $_version $_demo $_port "$_installCmdPrd" "$_runCmdPrd" "$_readyPrd" "$_test" || return 1
+      runValidations prod $_version $_demo $_port "$_installCmdPrd" "$_runCmdPrd" "$_readyPrd" "$_test" || return 1
     fi
   fi
   log "==== demo '$_demo' was build and tested successfuly ====

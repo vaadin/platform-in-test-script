@@ -73,7 +73,7 @@ waitUntilMessageInFile() {
       [ -n "$VERBOSE" ] && tail -80 $_file
       return 1
     fi
-    grep -q "$_message" $_file && log "Found '$_message' in $_file after "`expr $3 - $_timeout`" secs" && return 0
+    grep -q "$_message" $_file && log "Found '$_message' in $_file after "`expr $3 - $_timeout`" secs" && sleep 3 && return 0
     sleep 2 && _timeout=`expr $_timeout - 2`
   done
   log "ERROR: Could not find '$_message' in $_file after $3 secs (check output in $_file)"
