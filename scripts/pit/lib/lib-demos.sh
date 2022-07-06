@@ -1,4 +1,5 @@
 . `dirname $0`/lib/lib-validate.sh
+. `dirname $0`/lib/lib-patch.sh
 
 ## Checkout a bramch of a vaadin repository in github
 checkoutDemo() {
@@ -141,6 +142,7 @@ runDemo() {
   # 4
   if setDemoVersion $_demo $_version
   then
+    patchRouterLink
     # 5
     runValidations dev $_version $_demo $_port "$_installCmdDev" "$_runCmdDev" "$_readyDev" "$_test" || return 1
     if hasProduction $_demo
