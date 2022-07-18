@@ -32,14 +32,25 @@ vaadin-leaflet-example
 
 REPOS=`echo "$REPOS" | sort -u`
 
+usage() {
+  cat <<EOF
+
+Usage $0 [--list=repo_name] [--all] [--merge=repo_name:pr_number]
+
+The list for all repositories is:
+$REPOS
+
+EOF
+}
+
 arg=`echo "$1" | cut -d= -f2 | cut -d "/" -f1`
 extra=`echo "$1" | cut -d= -f2 | cut -d "/" -f2`
 while [ -n "$1" ]; do
     case $1 in
       --help) 
-        printf "\n%s\n" "$REPOS" && exit;;
+        usage && exit;;
       --list*)
-        [ -z "$arg" ] && echo "Usage $0 --list=repo_name" && exit 1
+        [ -z "$arg" ] && usage && exit 1
         H=`gh pr list --repo vaadin/$arg | tr "\t" "ç" | tr " " "_"`
         [ "$2" = "update" ] && H=`echo "$H" | grep Update`
         for i in $H
@@ -57,7 +68,7 @@ while [ -n "$1" ]; do
         done
         ;;
       --merge*)
-        [ -z "$extra" ] && echo "Usage $0 --merge=repo_name:pr_number" && exit 1
+        [ -z "$extra" ] && echo usage && exit 1
         echo "https://github.com/vaadin/$arg/pull/$extra"
         mkdir -p tmp
         cd tmp || exit 1
