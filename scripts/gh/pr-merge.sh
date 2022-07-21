@@ -1,7 +1,7 @@
 #!/bin/bash
 
 REPOS="
-skeleton-starter-flow-spring/pulls
+skeleton-starter-flow-spring
 skeleton-starter-flow
 component-starter-flow
 skeleton-starter-flow-cdi
@@ -28,6 +28,9 @@ hilla-basics-tutorial
 bakery-app-starter-flow-spring
 starter-wizard
 vaadin-leaflet-example
+designer-tutorial
+base-starter-flow-quarkus
+multi-module-example
 "
 
 REPOS=`echo "$REPOS" | sort -u`
@@ -35,7 +38,7 @@ REPOS=`echo "$REPOS" | sort -u`
 usage() {
   cat <<EOF
 
-Usage $0 [--list=repo_name] [--all] [--merge=repo_name:pr_number]
+Usage $0 [--help] [--list=repo_name [update]] [--all [update]] [--merge=repo_name pr_number]
 
 The list for all repositories is:
 $REPOS
@@ -43,8 +46,7 @@ $REPOS
 EOF
 }
 
-arg=`echo "$1" | cut -d= -f2 | cut -d "/" -f1`
-extra=`echo "$1" | cut -d= -f2 | cut -d "/" -f2`
+arg=`echo "$1" | cut -d= -f2`
 while [ -n "$1" ]; do
     case $1 in
       --help) 
@@ -52,13 +54,13 @@ while [ -n "$1" ]; do
       --list*)
         [ -z "$arg" ] && usage && exit 1
         H=`gh pr list --repo vaadin/$arg | tr "\t" "ç" | tr " " "_"`
-        [ "$2" = "update" ] && H=`echo "$H" | grep Update`
+        [ "$2" = "update" ] && shift && H=`echo "$H" | grep Update`
         for i in $H
         do
           D=`echo "$i" | cut -d "ç" -f2`
           N=`echo "$i" | cut -d "ç" -f1`
           echo "  > https://github.com/vaadin/$arg/pull/$N   -  $D" | tr "ç" "\t"
-          echo $0 --merge=$arg/$N
+          echo $0 --merge=$arg $N
         done
         ;;
       --all)
@@ -68,14 +70,16 @@ while [ -n "$1" ]; do
         done
         ;;
       --merge*)
-        [ -z "$extra" ] && echo usage && exit 1
-        echo "https://github.com/vaadin/$arg/pull/$extra"
+        N="$2"
+        [ -z "$N" ] && echo usage && exit 1
+        shift
+        echo "https://github.com/vaadin/$arg/pull/$N"
         mkdir -p tmp
         cd tmp || exit 1
         rm -rf $arg
         git clone git@github.com:vaadin/$arg.git || exit 1
         cd $arg || exit 1
-        gh pr checkout $extra || exit 1
+        gh pr checkout $N || exit 1
         gh pr review --approve || exit 1
         gh pr merge --squash || exit 1
     esac
