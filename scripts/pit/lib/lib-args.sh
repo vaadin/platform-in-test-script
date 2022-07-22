@@ -32,7 +32,7 @@ checkArgs() {
       --offline) OFFLINE=true;;
       --interactive) INTERACTIVE=true;;
       --skip*) SKIPTESTS=true;;
-      --pnpm) PNPM=-Dpnpm.enable=true;;
+      --pnpm) PNPM="-Dpnpm.enable=true";;
       --vite) VITE=true;;
       --list) echo "$DEFAULT_STARTERS" | tr "," "\n" && exit 0;;
       --help) usage && exit 0;;

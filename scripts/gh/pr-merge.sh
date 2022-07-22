@@ -1,6 +1,8 @@
 #!/bin/bash
 
 REPOS="
+platform
+flow-components
 skeleton-starter-flow-spring
 skeleton-starter-flow
 component-starter-flow

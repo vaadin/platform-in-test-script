@@ -18,7 +18,7 @@ getInstallCmdDev() {
   case $1 in
     skeleton-starter-flow-cdi|base-starter-flow-quarkus) echo "mvn -ntp -B clean";;
     base-starter-spring-gradle) echo "./gradlew clean" ;;
-    *) echo "mvn -ntp clean install -Dpnpm.enable=true";;
+    *) echo "mvn -ntp clean install $PNPM";;
   esac
 }
 ## Get install command for prod-mode
@@ -35,9 +35,9 @@ getRunCmdDev() {
   case $1 in
     vaadin-flow-karaf-example) echo "mvn -B -pl main-ui install -Prun";;
     base-starter-flow-osgi) echo "java -jar app/target/app.jar";;
-    skeleton-starter-flow-cdi) echo "mvn -B wildfly:run -Dpnpm.enable=true";;
+    skeleton-starter-flow-cdi) echo "mvn -B wildfly:run $PNPM";;
     base-starter-spring-gradle) echo "./gradlew bootRun";;
-    skeleton-starter-flow-spring|base-starter-flow-quarkus|bakery-app-starter-flow-spring) echo "mvn -Dpnpm.enable=true";;
+    skeleton-starter-flow-spring|base-starter-flow-quarkus|bakery-app-starter-flow-spring) echo "mvn $PNPM";;
   esac
 }
 ## Get command for running the project prod-mode after install was run
