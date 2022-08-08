@@ -130,14 +130,17 @@ runDemo() {
   _readyPrd=`getReadyMessagePrd $_demo`
   _port=`getPort $_demo`
   _test=`getTest $_demo`
-  _current=`setDemoVersion $_demo current`
 
-  # 2
-  runValidations dev $_current $_demo $_port "$_installCmdDev" "$_runCmdDev" "$_readyDev" "$_test" || return 1
-  if hasProduction $_demo
+  if [ -z "NOCURRENT" ]
   then
-    # 3
-    runValidations prod $_current $_demo $_port "$_installCmdPrd" "$_runCmdPrd" "$_readyPrd" "$_test" || return 1
+    _current=`setDemoVersion $_demo current`
+    # 2
+    runValidations dev $_current $_demo $_port "$_installCmdDev" "$_runCmdDev" "$_readyDev" "$_test" || return 1
+    if hasProduction $_demo
+    then
+      # 3
+      runValidations prod $_current $_demo $_port "$_installCmdPrd" "$_runCmdPrd" "$_readyPrd" "$_test" || return 1
+    fi
   fi
   # 4
   if setDemoVersion $_demo $_version

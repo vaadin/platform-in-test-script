@@ -72,12 +72,15 @@ runStarter() {
     downloadStarter $_preset || return 1
   fi
   cd "$_dir" || return 1
-  
-  # 2
-  _current=`setVersion $_versionProp current`
-  runValidations dev $_current $_preset $_port "mvn -B clean" "mvn -B" "Frontend compiled" "$_test" || return 1
-  # 3
-  runValidations prod $_current $_preset $_port "mvn -B -Pproduction package $PNPM" 'java -jar target/*.jar' "Generated demo data" "$_test" || return 1
+
+  if [ -z "NOCURRENT" ]
+  then
+    _current=`setVersion $_versionProp current`
+    # 2
+    runValidations dev $_current $_preset $_port "mvn -B clean" "mvn -B" "Frontend compiled" "$_test" || return 1
+    # 3
+    runValidations prod $_current $_preset $_port "mvn -B -Pproduction package $PNPM" 'java -jar target/*.jar' "Generated demo data" "$_test" || return 1
+  fi
   # 4
   if setVersion $_versionProp $_version >/dev/null
   then

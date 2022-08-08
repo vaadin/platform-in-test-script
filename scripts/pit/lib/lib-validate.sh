@@ -37,7 +37,7 @@ runValidations() {
   # when offline add the offline parameter to mvn or gradle
   [ -n "$OFFLINE" ] && cmd="$cmd --offline" && compile="$compile --offline"
   log "Running: $compile > $file"
-  # when not verbose add the quiet parameter to maven or gradle 
+  # when not verbose add the quiet parameter to maven or gradle
   [ -z "$VERBOSE" ] && compile="$compile --quiet"
 
   # 3
@@ -48,7 +48,8 @@ runValidations() {
   # 5
   [ -n "$INTERACTIVE" ] && waitForUserWithBell && waitForUserManualTesting "$port"
   # 6
-  checkHttpServlet "http://localhost:$port/" || return 1
+  sleep 5
+  checkHttpServlet "http://localhost:$port/" "$file" || return 1
   # 7
   if [ -z "$SKIPTESTS" ]
   then

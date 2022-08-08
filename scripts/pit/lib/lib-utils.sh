@@ -120,9 +120,12 @@ checkBusyPort() {
 ## Check that a HTTP servlet request responds with 200
 checkHttpServlet() {
   _url="$1"
+  _file="$2"
   log "Checking whether url $_url returns HTTP 200"
-  curl --fail -s -I -L "$_url" | grep -q 'HTTP/1.1 200'
-  [ $? != 0 ] && log "Got and invalid response from $_url" && return 1 || return 0
+  H=`curl --fail -s -I -L "$_url" 2>&1`
+  [ -f "$_file" ] && echo "$H" >> "$_file"
+  echo "$H" | grep -q 'HTTP/1.1 200'
+  [ $? != 0 ] && log "Got and invalid response from $_url" && echo "$H" && return 1 || return 0
 }
 
 ## Set the value of a property in the pom file, returning error if unchanged
