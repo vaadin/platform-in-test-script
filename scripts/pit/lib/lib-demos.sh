@@ -131,7 +131,7 @@ runDemo() {
   _port=`getPort $_demo`
   _test=`getTest $_demo`
 
-  if [ -z "NOCURRENT" ]
+  if [ -z "$NOCURRENT" ]
   then
     _current=`setDemoVersion $_demo current`
     # 2

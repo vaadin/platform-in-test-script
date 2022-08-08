@@ -73,7 +73,7 @@ runStarter() {
   fi
   cd "$_dir" || return 1
 
-  if [ -z "NOCURRENT" ]
+  if [ -z "$NOCURRENT" ]
   then
     _current=`setVersion $_versionProp current`
     # 2
