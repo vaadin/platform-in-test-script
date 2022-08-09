@@ -60,7 +60,7 @@ getReadyMessageDev() {
 ## Get ready message when running the project in prod-mode
 getReadyMessagePrd() {
   case $1 in
-    skeleton-starter-flow-spring) echo "Completed initialization";;
+    skeleton-starter-flow-spring) echo "Vaadin is running in production mode";;
     base-starter-flow-quarkus) echo "Listening on: http://0.0.0.0:8080";;
     base-starter-spring-gradle) echo "Tomcat started on port";;
     *) getReadyMessageDev $1;;
