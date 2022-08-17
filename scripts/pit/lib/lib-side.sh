@@ -3,13 +3,18 @@ isInstalledSelenium() {
   type selenium-side-runner >/dev/null 2>&1 && type chromedriver >/dev/null 2>&1
 }
 
+installSelenium() {
+  log "installing selenium-side-runner"
+  npm install -g selenium-side-runner chromedriver
+}
+
 ## Check if selenium-side-runner is installed, otherwise ask for installing it
 checkSeleniumInstallation() {
+  [ -n "$UPDATE" ] && installSelenium
   isInstalledSelenium && return 0
   ask "Do you want to install selenium-side-runner ? [y] "
   [ -z "$key" -o "$key" = "y" ] || return 1
-  log "installing selenium-side-runner"
-  npm install -g selenium-side-runner chromedriver
+  installSelenium
 }
 
 ## Run Selenium tests
