@@ -1,4 +1,4 @@
-## Kills a process and all its children and wait until complete
+## Kills a process with its children and wait until complete
 doKill() {
   while [ -n "$1" ]; do
     _procs=`type pgrep >/dev/null 2>&1 && pgrep -P $1`" $1"
@@ -140,7 +140,7 @@ setVersion() {
       echo $_current;
       return 1;;
     *)
-      _cmd="mvn -B -q versions:set-property -Dproperty=vaadin.version -DnewVersion=$_version"
+      _cmd="mvn -B -q versions:set-property -Dproperty=$_mavenProperty -DnewVersion=$_version"
       log "Changing $_mavenProperty from $_current to $_version ($_cmd)"
       $_cmd && return 0 || return 1;;
   esac
