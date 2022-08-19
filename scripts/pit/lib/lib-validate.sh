@@ -14,14 +14,14 @@ set -o pipefail
 # 7. run UI test with selenium IDE (if not skipped)
 # 8. kill remaining processes
 runValidations() {
-  [ -n "$1" ] && mode="$1"
-  [ -n "$2" ] && version="$2"
-  [ -n "$3" ] && name="$3"
-  [ -n "$4" ] && port="$4"
-  [ -n "$5" ] && compile="$5"
-  [ -n "$6" ] && cmd="$6"
-  [ -n "$7" ] && check="$7"
-  [ -n "$8" ] && test="$IT_FOLDER/$8"
+  [ -n "$1" ] && mode="$1" || mode=""
+  [ -n "$2" ] && version="$2" || version=""
+  [ -n "$3" ] && name="$3" || name=""
+  [ -n "$4" ] && port="$4" || port=""
+  [ -n "$5" ] && compile="$5" || compile=""
+  [ -n "$6" ] && cmd="$6" || cmd=""
+  [ -n "$7" ] && check="$7" || check=""
+  [ -n "$8" ] && test="$IT_FOLDER/$8" || test=""
   file="$name.out"
 
   echo ""
