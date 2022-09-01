@@ -18,10 +18,11 @@ Use: ./scripts/pit/run.sh [version=] [starters=] [port=] [timeout=] [verbose] [o
                    · latest-typescript-top
                    · latest-java_partial-auth
                    · latest-typescript_partial-auth
+                   · skeleton-starter-flow-spring
+                   · bakery-app-starter-flow-spring
                    · skeleton-starter-flow-cdi
                    · base-starter-spring-gradle
                    · base-starter-flow-quarkus
-                   · skeleton-starter-flow-spring
                    · vaadin-flow-karaf-example
                    · base-starter-flow-osgi
  --port=number     HTTP port for thee servlet container (default: 8080)
@@ -30,6 +31,7 @@ Use: ./scripts/pit/run.sh [version=] [starters=] [port=] [timeout=] [verbose] [o
  --offline         Do not remove already downloaded projects, and do not use network for mvn (default online)
  --interactive     Play a bell and ask user to manually test the application (default non interactive)
  --skiptests       Skip UI Tests (default run tests). Note: selenium-ide does not work in gitpod
+ --skipcurrent     Skip running build in current version
  --pnpm            Use pnpm instead of npm to speed up frontend compilation (default npm)
  --vite            Use vite inetad of webpack to speed up frontend compilation (default webpack)
  --list            Show the list of available starters
