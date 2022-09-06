@@ -38,7 +38,7 @@ getRunCmdDev() {
     base-starter-flow-osgi) echo "java -jar app/target/app.jar";;
     skeleton-starter-flow-cdi) echo "mvn -B wildfly:run $PNPM";;
     base-starter-spring-gradle) echo "./gradlew bootRun";;
-    skeleton-starter-flow-spring|base-starter-flow-quarkus|bakery-app-starter-flow-spring) echo "mvn $PNPM";;
+    skeleton-starter-flow-spring|base-starter-flow-quarkus|bakery-app-starter-flow-spring|component-starter-flow) echo "mvn $PNPM";;
   esac
 }
 ## Get command for running the project prod-mode after install was run

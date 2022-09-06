@@ -24,7 +24,8 @@ skeleton-starter-flow-cdi
 base-starter-spring-gradle
 base-starter-flow-quarkus
 vaadin-flow-karaf-example
-base-starter-flow-osgi"
+base-starter-flow-osgi
+component-starter-flow"
 DEFAULT_STARTERS=`echo "$PRESETS$DEMOS" | tr "\n" "," | sed -e 's/^,//' | sed -e 's/,$//'`
 
 ### MAIN
