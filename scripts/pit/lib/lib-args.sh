@@ -9,14 +9,27 @@ Use: $0 [version=] [starters=] [port=] [timeout=] [verbose] [offline] [interacti
  --verbose         Show server output (default silent)
  --offline         Do not remove already downloaded projects, and do not use network for mvn (default online)
  --interactive     Play a bell and ask user to manually test the application (default non interactive)
- --skiptests       Skip UI Tests (default run tests). Note: selenium-ide does not work in gitpod
- --skipcurrent     Skip running build in current version
+ --skip-tests      Skip UI Tests (default run tests). Note: selenium-ide does not work in gitpod
+ --skip-current    Skip running build in current version
+ --skip-prod       Skip production validations
+ --skip-dev        Skip dev-mode validations
  --pnpm            Use pnpm instead of npm to speed up frontend compilation (default npm)
  --vite            Use vite inetad of webpack to speed up frontend compilation (default webpack)
  --list            Show the list of available starters
+ --matrix          Show the list of available starters in json format suitable for GH actions
+ --hub             Use selenium hub instead of local chrome, it assumes that selenium docker is running as service in localhost
  --help            Show this message
 EOF
   exit 1
+}
+
+matrix() {
+  echo "{include:["
+  for i in $PRESETS $DEMOS
+  do
+    echo '{current:"'$i'"},'
+  done
+  echo "]}"
 }
 
 checkArgs() {
@@ -32,13 +45,17 @@ checkArgs() {
       --verbose|--debug) VERBOSE=true;;
       --offline) OFFLINE=true;;
       --interactive) INTERACTIVE=true;;
-      --skiptests) SKIPTESTS=true;;
-      --skipcurrent) NOCURRENT=true;;
+      --skip-tests) SKIPTESTS=true;;
+      --skip-current) NOCURRENT=true;;
+      --skip-dev) NODEV=true;;
+      --skip-prod) NOPROD=true;;
       --pnpm) PNPM="-Dpnpm.enable=true";;
       --vite) VITE=true;;
       --list) echo "$DEFAULT_STARTERS" | tr "," "\n" && exit 0;;
       --help) usage && exit 0;;
       --update) UPDATE="true";;
+      --matrix) matrix | tr -d "\n" | sed -e 's/,\]/\]/' ; exit 0;;
+      --hub) USEHUB="true";;
       *) echo "Unknown option: $1" && usage && exit 1;;
     esac
     shift

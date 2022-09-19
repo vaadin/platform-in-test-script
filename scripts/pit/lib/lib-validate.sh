@@ -25,7 +25,7 @@ runValidations() {
   file="$name.out"
 
   echo ""
-  log "Running builds and tests on demo $name, port $port, version $version"
+  log "Running builds and tests on app $name, mode=$mode, port=$port, version=$version"
 
   # 1
   checkBusyPort "$port" || return 1

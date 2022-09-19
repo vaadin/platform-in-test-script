@@ -23,7 +23,8 @@ getInstallCmdDev() {
 }
 ## Get install command for prod-mode
 getInstallCmdPrd() {
-  [ -z "$VERBOSE" ] && H="-Dheadless"
+  H="-Dcom.vaadin.testbench.Parameters.testsInParallel=2"
+  [ -z "$VERBOSE" ] && H="$H -Dheadless"
   [ -n "$SKIPTESTS" ] && H="$H -DskipTests"
   case $1 in
     bakery-app-starter-flow-spring|bakery-app-starter-flow-spring|skeleton-starter-flow-spring|base-starter-flow-quarkus) echo "mvn -B install -Pproduction,it $H";;
@@ -34,9 +35,9 @@ getInstallCmdPrd() {
 ## Get command for running the project dev-mode after install was run
 getRunCmdDev() {
   case $1 in
-    vaadin-flow-karaf-example) echo "mvn -B -pl main-ui install -Prun";;
+    vaadin-flow-karaf-example) echo "mvn -ntp -B -pl main-ui install -Prun";;
     base-starter-flow-osgi) echo "java -jar app/target/app.jar";;
-    skeleton-starter-flow-cdi) echo "mvn -B wildfly:run $PNPM";;
+    skeleton-starter-flow-cdi) echo "mvn -ntp -B wildfly:run $PNPM";;
     base-starter-spring-gradle) echo "./gradlew bootRun";;
     skeleton-starter-flow-spring|base-starter-flow-quarkus|bakery-app-starter-flow-spring) echo "mvn $PNPM";;
   esac
@@ -54,6 +55,9 @@ getRunCmdPrd() {
 getReadyMessageDev() {
   case $1 in
     base-starter-flow-osgi) echo "HTTP:8080";;
+    skeleton-starter-flow-cdi) echo "Registered web context";;
+    base-starter-flow-quarkus) echo "TaskCopyFrontendFiles";;
+    vaadin-flow-karaf-example) echo "Artifact deployed";;
     *) echo "Frontend compiled successfully";;
   esac
 }
@@ -68,10 +72,14 @@ getReadyMessagePrd() {
 }
 ## Check whether a demo can be run in prod-mode
 hasProduction() {
+  [ -n "$NOPROD" ] && return 1
   case $1 in
-    base-starter-flow-osgi|skeleton-starter-flow-cdi) return 1;;
+    base-starter-flow-osgi|skeleton-starter-flow-cdi|vaadin-flow-karaf-example) return 1;;
     *) return 0;
   esac
+}
+hasDev() {
+  test -z "$NODEV"
 }
 ## Get the default port used in each demo
 getPort() {
@@ -84,6 +92,7 @@ getPort() {
 getTest() {
   case $1 in
     bakery-app-starter-flow-spring);;
+    vaadin-flow-karaf-example) echo "hello-8181.side";;
     *) echo "hello.side"
   esac
 }
@@ -110,9 +119,6 @@ runDemo() {
   _version="$4"
   _offline="$5"
 
-  echo ""
-  log "================= TESTING demo '$_demo' $_offline =================="
-
   cd "$_tmp" || return 1
   _dir="$_tmp/$_demo"
   if [ -z "$_offline" ]
@@ -135,26 +141,26 @@ runDemo() {
   if [ -z "$NOCURRENT" ]
   then
     _current=`setDemoVersion $_demo current`
-    # 2
-    runValidations dev $_current $_demo $_port "$_installCmdDev" "$_runCmdDev" "$_readyDev" "$_test" || return 1
-    if hasProduction $_demo
-    then
+    if hasDev $_demo; then
+      # 2
+      runValidations dev $_current $_demo $_port "$_installCmdDev" "$_runCmdDev" "$_readyDev" "$_test" || return 1
+    fi
+    if hasProduction $_demo; then
       # 3
       runValidations prod $_current $_demo $_port "$_installCmdPrd" "$_runCmdPrd" "$_readyPrd" "$_test" || return 1
     fi
   fi
   # 4
-  if setDemoVersion $_demo $_version
+  if setDemoVersion $_demo $_version >/dev/null
   then
     patchRouterLink
-    # 5
-    runValidations dev $_version $_demo $_port "$_installCmdDev" "$_runCmdDev" "$_readyDev" "$_test" || return 1
-    if hasProduction $_demo
-    then
+    if hasDev $_demo; then
+      # 5
+      runValidations dev $_version $_demo $_port "$_installCmdDev" "$_runCmdDev" "$_readyDev" "$_test" || return 1
+    fi
+    if hasProduction $_demo; then
       # 6
       runValidations prod $_version $_demo $_port "$_installCmdPrd" "$_runCmdPrd" "$_readyPrd" "$_test" || return 1
     fi
   fi
-  log "==== demo '$_demo' was build and tested successfuly ====
-  "
 }

@@ -57,9 +57,9 @@
       "id": "9c8b9cf7-0fa9-42e7-b2fa-d98acc7e72d5",
       "comment": "",
       "command": "waitForElementPresent",
-      "target": "css=.me-xs",
+      "target": "css=vaadin-menu-bar",
       "targets": [
-        ["css=.me-xs", "css:finder"],
+        ["css=vaadin-menu-bar", "css:finder"],
         ["xpath=//vaadin-avatar[@name='Emma Powerful']", "xpath:attributes"],
         ["xpath=//flow-container-root-2521314[@id='ROOT-2521314']/vaadin-app-layout/section/footer/vaadin-avatar", "xpath:idRelative"],
         ["xpath=//vaadin-avatar", "xpath:position"]
@@ -196,45 +196,14 @@
       "id": "7ec19c79-11d8-41c9-8c30-df70332f908b",
       "comment": "",
       "command": "waitForElementPresent",
-      "target": "css=.me-xs",
+      "target": "css=vaadin-menu-bar",
       "targets": [
-        ["css=.me-xs", "css:finder"],
+        ["css=menu-bar", "css:finder"],
         ["xpath=//vaadin-avatar[@name='Emma Powerful']", "xpath:attributes"],
         ["xpath=//flow-container-root-2521314[@id='ROOT-2521314']/vaadin-app-layout/section/footer/vaadin-avatar", "xpath:idRelative"],
         ["xpath=//vaadin-avatar", "xpath:position"]
       ],
       "value": "30000"
-    }, {
-      "id": "6a82b63b-c28a-4eac-8939-df61416b2085",
-      "comment": "",
-      "command": "click",
-      "target": "css=.me-xs",
-      "targets": [
-        ["css=.me-xs", "css:finder"],
-        ["xpath=//vaadin-avatar[@name='Emma Powerful']", "xpath:attributes"],
-        ["xpath=//flow-container-root-2521314[@id='ROOT-2521314']/vaadin-app-layout/section/footer/vaadin-avatar", "xpath:idRelative"],
-        ["xpath=//vaadin-avatar", "xpath:position"]
-      ],
-      "value": ""
-    }, {
-      "id": "339e6c18-c5c5-495d-826c-21b41e6e672b",
-      "comment": "",
-      "command": "click",
-      "target": "css=.vaadin-menu-item",
-      "targets": [
-        ["css=.vaadin-menu-item", "css:finder"],
-        ["xpath=//vaadin-context-menu-overlay[@id='overlay']/vaadin-context-menu-list-box/vaadin-context-menu-item", "xpath:idRelative"],
-        ["xpath=//vaadin-context-menu-item", "xpath:position"],
-        ["xpath=//vaadin-context-menu-item[contains(.,'Logout')]", "xpath:innerText"]
-      ],
-      "value": ""
-    }, {
-      "id": "8dc3eb00-a662-474c-8864-81bc92ed42fb",
-      "comment": "",
-      "command": "waitForElementPresent",
-      "target": "css=vaadin-button",
-      "targets": [],
-      "value": "Log in"
     }, {
       "id": "ee71dfa4-7503-428c-8250-56f596db9360",
       "comment": "",

@@ -24,6 +24,11 @@ log() {
   printf "\033[0m> \033[0;32m$1\033[0m\n" >&2
 }
 
+## log with some nice color
+err() {
+  printf "\033[0m> \033[0;31m$1\033[0m\n" >&2
+}
+
 ## ask user a question, response is stored in key
 ask() {
   # flush stdin
@@ -122,7 +127,7 @@ checkHttpServlet() {
   _url="$1"
   _file="$2"
   log "Checking whether url $_url returns HTTP 200"
-  H=`curl --fail -s -I -L "$_url" 2>&1`
+  H=`curl --fail --connect-timeout 2 --expect100-timeout 2 --happy-eyeballs-timeout-ms 200 -s -I -L "$_url" 2>&1`
   [ -f "$_file" ] && echo "$H" >> "$_file"
   echo "$H" | grep -q 'HTTP/1.1 200'
   [ $? != 0 ] && log "Got and invalid response from $_url" && echo "$H" && return 1 || return 0

@@ -60,9 +60,6 @@ runStarter() {
   fi
   _test=`getStartTestFile $_preset`
 
-  echo ""
-  log "================= TESTING start preset '$_preset' $_offline =================="
-
   cd "$_tmp"
   _dir="$_tmp/$_preset"
   if [ -z "$_offline" ]
@@ -77,17 +74,16 @@ runStarter() {
   then
     _current=`setVersion $_versionProp current`
     # 2
-    runValidations dev $_current $_preset $_port "mvn -B clean" "mvn -B" "Frontend compiled" "$_test" || return 1
+    [ -z "$NODEV" ] && runValidations dev $_current $_preset $_port "mvn -ntp -B clean" "mvn -ntp -B" "Frontend compiled" "$_test" || return 1
     # 3
-    runValidations prod $_current $_preset $_port "mvn -B -Pproduction package $PNPM" 'java -jar target/*.jar' "Generated demo data" "$_test" || return 1
+    [ -z "$NOPROD" ] && runValidations prod $_current $_preset $_port "mvn -ntp -B -Pproduction package $PNPM" 'java -jar target/*.jar' "Started Application" "$_test" || return 1
   fi
   # 4
   if setVersion $_versionProp $_version >/dev/null
   then
     # 5
-    runValidations dev $_version $_preset $_port "mvn -B clean" "mvn -B" "Frontend compiled" "$_test" || return 1
+    [ -z "$NODEV" ] && runValidations dev $_version $_preset $_port "mvn -ntp -B clean" "mvn -ntp -B" "Frontend compiled" "$_test" || return 1
     # 6
-    runValidations prod $_version $_preset $_port "mvn -B -Pproduction package $PNPM" 'java -jar target/*.jar' "Generated demo data" "$_test" || return 1
+    [ -z "$NOPROD" ] && runValidations prod $_version $_preset $_port "mvn -ntp -B -Pproduction package $PNPM" 'java -jar target/*.jar' "Started Application" "$_test" || return 1
   fi
-  log "==== start preset '$_preset' was build and tested successfuly ===="
 }

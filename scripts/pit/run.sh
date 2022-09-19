@@ -27,6 +27,20 @@ vaadin-flow-karaf-example
 base-starter-flow-osgi"
 DEFAULT_STARTERS=`echo "$PRESETS$DEMOS" | tr "\n" "," | sed -e 's/^,//' | sed -e 's/,$//'`
 
+run() {
+  echo ""
+  log "================= Executing $1 '$2' $OFFLINE =================="
+  $1 "$2" "$3" "$PORT" "$VERSION" "$OFFLINE"
+  if [ $? = 0 ]; then
+    log "==== '$_demo' was build and tested successfuly ===="
+    success="$success $i"
+  else
+    failed="$failed $i"
+    err "==== Error testing '$_demo' ===="
+  fi
+  killAll
+}
+
 ### MAIN
 main() {
   _start=`date +%s`
@@ -53,20 +67,17 @@ main() {
   mkdir -p "$tmp"
 
   ## Run presets (star.vaadin.com downloaded apps)
-  for i in $presets
-  do
-    runStarter "$i" "$tmp" "$PORT" "$VERSION" "$OFFLINE" && success="$success $i" || failed="$failed $i"
-    killAll
+  for i in $presets; do
+    run runStarter "$i" "$tmp"
   done
   ## Run demos (proper starters in github)
-  for i in $demos
-  do
-    runDemo "$i" "$tmp" "$PORT" "$VERSION" "$OFFLINE" && success="$success $i" || failed="$failed $i"
-    killAll
+  for i in $demos; do
+    run runDemo "$i" "$tmp"
   done
 
   cd $pwd
 
+  _error=0
   ## Report success and failed projects
   for i in $success
   do
@@ -75,11 +86,15 @@ main() {
   for i in $failed
   do
     files=`echo $tmp/$i/*.out`
-    log "!!! ERROR in $i !!! check log files: $files"
+    err "!!! ERROR in $i !!! check log files: $files"
+    _error=1
   done
 
   printTime $_start
+  return $_error
 }
 
 checkArgs ${@}
 main
+
+# checkHttpServlet http://localhost:8080 pp.log
