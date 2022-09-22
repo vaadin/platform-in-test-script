@@ -92,8 +92,7 @@ getPort() {
 getTest() {
   case $1 in
     bakery-app-starter-flow-spring);;
-    vaadin-flow-karaf-example) echo "hello-8181.side";;
-    *) echo "hello.side"
+    *) echo "hello.js"
   esac
 }
 

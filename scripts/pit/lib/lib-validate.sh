@@ -1,5 +1,5 @@
 . `dirname $0`/lib/lib-utils.sh
-. `dirname $0`/lib/lib-side.sh
+. `dirname $0`/lib/lib-playwright.sh
 
 IT_FOLDER=`computeAbsolutePath`/its
 set -o pipefail
@@ -25,7 +25,7 @@ runValidations() {
   file="$name.out"
 
   echo ""
-  log "Running builds and tests on app $name, mode=$mode, port=$port, version=$version"
+  log "----> Running builds and tests on app $name, mode=$mode, port=$port, version=$version"
 
   # 1
   checkBusyPort "$port" || return 1
@@ -51,9 +51,8 @@ runValidations() {
   sleep 5
   checkHttpServlet "http://localhost:$port/" "$file" || return 1
   # 7
-  if [ -z "$SKIPTESTS" ]
-  then
-    runSeleniumTests "$test" || return 1
+  if [ -z "$SKIPTESTS" ]; then
+    runPlaywrightTests "$test" "$port" || return 1
   fi
   # 8
   killAll || return 0

@@ -23,13 +23,14 @@ EOF
   exit 1
 }
 
+## Generate a matrix object for parallel runners in GH actions
 matrix() {
-  echo "{include:["
+  echo '{"include":['
   for i in $PRESETS $DEMOS
   do
-    echo '{current:"'$i'"},'
+    echo '{"current":"'$i'"},'
   done
-  echo "]}"
+  echo ']}'
 }
 
 checkArgs() {

@@ -2,6 +2,7 @@
 . `dirname $0`/lib/lib-args.sh
 . `dirname $0`/lib/lib-start.sh
 . `dirname $0`/lib/lib-demos.sh
+[ -f /etc/environment ] && . /etc/environment
 
 ## Clean background processes on exit
 trap "doExit" INT TERM EXIT
@@ -32,11 +33,11 @@ run() {
   log "================= Executing $1 '$2' $OFFLINE =================="
   $1 "$2" "$3" "$PORT" "$VERSION" "$OFFLINE"
   if [ $? = 0 ]; then
-    log "==== '$_demo' was build and tested successfuly ===="
-    success="$success $i"
+    log "==== '$2' was build and tested successfuly ===="
+    success="$success $2"
   else
-    failed="$failed $i"
-    err "==== Error testing '$_demo' ===="
+    failed="$failed $2"
+    err "==== Error testing '$2' ===="
   fi
   killAll
 }
@@ -96,5 +97,3 @@ main() {
 
 checkArgs ${@}
 main
-
-# checkHttpServlet http://localhost:8080 pp.log

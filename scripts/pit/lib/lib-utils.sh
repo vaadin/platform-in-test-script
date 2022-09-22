@@ -201,7 +201,7 @@ enableVite() {
 
 printVersions() {
   log "===================== Running PiT Tests ============================================
-`mvn -version`
+`mvn -version | tr '\\\' '/'`
 Node version: `node --version`
 Npm version: `npm --version`"
 }

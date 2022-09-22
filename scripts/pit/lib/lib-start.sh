@@ -26,14 +26,8 @@ downloadStarter() {
 ## get the selenium IDE test file used for each starter
 getStartTestFile() {
   case $1 in
-   latest-java|latest-java-top|latest-javahtml|latest-typescript|latest-typescript-top)
-     echo "latest-java.side";;
-   latest-java_partial-auth|latest-java-top_partial-auth)
-     echo "latest-java-auth.side";;
-   latest-typescript_partial-auth)
-     echo "latest-typescript-auth.side";;
-   *)
-     echo "$1.side";;
+   *-auth) echo "start-auth.js";;
+   *) echo "start.js";;
   esac
 }
 
