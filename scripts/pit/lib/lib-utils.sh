@@ -19,14 +19,22 @@ doExit() {
   exit
 }
 
-## log with some nice color
-log() {
-  printf "\033[0m> \033[0;32m$1\033[0m\n" >&2
+print() {
+  printf "\033[0m> \033[$1;$2m$3\033[0m\n" >&2
 }
 
 ## log with some nice color
+log() {
+  print 0 32 "$*"
+}
+bold() {
+  print 1 32 "$*"
+}
 err() {
-  printf "\033[0m> \033[0;31m$1\033[0m\n" >&2
+  print 0 31 "$*"
+}
+warn() {
+  print 0 33 "$*"
 }
 
 ## ask user a question, response is stored in key
@@ -130,7 +138,7 @@ checkHttpServlet() {
   H=`curl --fail --connect-timeout 2 --expect100-timeout 2 --happy-eyeballs-timeout-ms 200 -s -I -L "$_url" 2>&1`
   [ -f "$_file" ] && echo "$H" >> "$_file"
   echo "$H" | grep -q 'HTTP/1.1 200'
-  [ $? != 0 ] && log "Got and invalid response from $_url" && echo "$H" && return 1 || return 0
+  [ $? != 0 ] && log "Got an invalid response from $_url: " && echo "$H" && return 1 || return 0
 }
 
 ## Set the value of a property in the pom file, returning error if unchanged

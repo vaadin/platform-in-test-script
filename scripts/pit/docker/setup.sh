@@ -26,7 +26,10 @@ patchChrome() {
   [ -n "$F" ] && mv $F $F-base && touch $F && chmod +x $F && cat > $F <<EOF
 #!/bin/bash
 umask 002
-exec -a "\$0" "$F-base" --no-sandbox "\$@"
+echo ">>>>>>>>" >> chrome.out
+ps -feaww >> chrome.out
+echo "exec -a \$0 $F-base --no-sandbox \$@" >> chrome.out
+exec -a "\$0" "$F-base" --no-sandbox "\$@" 2>> chrome.out
 EOF
 }
 
