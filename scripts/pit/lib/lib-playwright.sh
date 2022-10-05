@@ -26,8 +26,7 @@ runPlaywrightTests() {
 
   _args="--port=$_port"
 
-  IP=`hostname -i 2>/dev/null`
-  [ -z "$VERBOSE" -o -n "$IP" ] && _args="$_args --headless"
+  isHeadless && _args="$_args --headless"
 
   log "Running: node $_test_file $_args"
   node $_test_file $_args

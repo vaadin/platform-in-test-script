@@ -207,6 +207,11 @@ enableVite() {
   grep -q "$_key=true" "$_prop" || echo "$_key=true" >> "$_prop"
 }
 
+isHeadless() {
+  IP=`hostname -i 2>/dev/null`
+  test -z "$VERBOSE" -o -n "$IP"
+}
+
 printVersions() {
   log "===================== Running PiT Tests ============================================
 `mvn -version | tr '\\\' '/'`

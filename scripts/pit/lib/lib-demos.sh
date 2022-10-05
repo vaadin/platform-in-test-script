@@ -24,7 +24,7 @@ getInstallCmdDev() {
 ## Get install command for prod-mode
 getInstallCmdPrd() {
   H="-Dcom.vaadin.testbench.Parameters.testsInParallel=2"
-  [ -z "$VERBOSE" ] && H="$H -Dheadless"
+  isHeadless && H="$H -Dheadless"
   [ -n "$SKIPTESTS" ] && H="$H -DskipTests"
   case $1 in
     bakery-app-starter-flow-spring|bakery-app-starter-flow-spring|skeleton-starter-flow-spring|base-starter-flow-quarkus) echo "mvn -B install -Pproduction,it $H";;
