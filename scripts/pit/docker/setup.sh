@@ -1,18 +1,27 @@
 set -e
-VERS_NODE=16
-VERS_JAVA=17
+
+[ `id -u` = 0 ] || exit 1
+type apt-get 2>/dev/null || exit 2
 
 # bzip2 gnupg2
-PKGS="ca-certificates openjdk-${VERS_JAVA:-17}-jdk sudo unzip wget jq curl nodejs google-chrome-stable"
-
+PKGS="ca-certificates sudo unzip wget jq curl"
 PKGS_X11="xvfb x11vnc pulseaudio fluxbox libfontconfig libfreetype6 xfonts-cyrillic xfonts-scalable fonts-liberation fonts-ipafont-gothic fonts-wqy-zenhei fonts-tlwg-loma-otf ttf-ubuntu-font-family fonts-noto-color-emoji"
 PKGS_TOOLS="iputils-ping psmisc lsof vim net-tools"
+PKGS_LIB="libgconf-2-4 libatk1.0-0 libatk-bridge2.0-0 libgdk-pixbuf2.0-0 libgtk-3-0 libgbm-dev libnss3-dev libxss-dev libasound2"
 
-installSystemPackages() {
-  echo "Preparing Package Repos ... "
+addChromeRepo() {
+  echo "Adding Chrome Repo ... "
   wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - 
   echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list
+}
+
+addNodeRepo() {
+  echo "Adding Node Repo ${VERS_NODE} ... "
+  echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list
   curl -sL https://deb.nodesource.com/setup_${VERS_NODE}.x | sudo bash - >/dev/null
+}
+
+installSystemPackages() {
   PKGS=${1:-$PKGS}
   echo "Updating apt database ... "
   apt-get -qqy update
@@ -21,9 +30,10 @@ installSystemPackages() {
 }
 
 patchChrome() {
-  echo "Patching Chrome with --no-sandbox flag"
   F=`readlink -f /usr/bin/google-chrome`
-  [ -n "$F" ] && mv $F $F-base && touch $F && chmod +x $F && cat > $F <<EOF
+  [ -n "$F" -a ! -f $F-base ] && mv $F $F-base && touch $F && chmod +x $F \
+    && echo "Patching Chrome with --no-sandbox flag" \
+    && cat > $F <<EOF
 #!/bin/bash
 umask 002
 echo ">>>>>>>>" >> chrome.out
@@ -47,10 +57,13 @@ installChromeDriver() {
 }
 
 installMaven() {
+  [ ! -w /opt ] && return 1
   echo "Installing Maven ... "
   URL=`wget -q -O - https://maven.apache.org/download.cgi  | grep binaries | grep 'bin.tar.gz</a>' | cut -d '"' -f2`
   wget -q -nv -O - "$URL" | tar xzf - -C /opt
-  perl -pi -e 's,PATH=,PATH='`ls -1d /opt/*/bin | tr "\n" ":"`',g'  /etc/environment
+  ls -l /usr/bin/mvn
+  rm -f /usr/bin/mvn
+  ln -s /opt/*/bin/mvn /usr/bin/mvn
 }
 
 installSeleniumServer() {
@@ -100,21 +113,33 @@ downloadNoVNC() {
     && mv websockify-${WEBSOCKIFY_SHA} /opt/bin/noVNC/utils/websockify
 }
 
-while [ -n "$1" ]; do
-  case $1 in
-    --with-x11) X11=true; PKGS="$PKGS $PKGS_X11";;
-    --with-hub) HUB=true;;
-    --with-side) SIDE=true;;
-    --with-vnc) VNC=true;;
+[ -z "$1" ] && args="--node --java --chrome" || args=$*
+
+for i in $args; do
+  extra=`echo "$i" | grep = | cut -d = -f2`
+  case $i in
+    --node*) 
+      VERS_NODE=${extra:-16}
+      addNodeRepo
+      PKGS="$PKGS nodejs" ;;
+    --java*) 
+      VERS_JAVA=${extra:-17}
+      installMaven
+      PKGS="$PKGS openjdk-${VERS_JAVA:-17}-jdk";;
+    --chrome*)
+      addChromeRepo
+      PKGS="$PKGS google-chrome-stable";;
+    --x11) X11=true; PKGS="$PKGS $PKGS_X11";;
+    --hub) HUB=true;;
+    --vnc) VNC=true;;
+    --lib-chrome) PKGS="$PKGS $PKGS_LIB";;
   esac
-  shift
 done
 
 installSystemPackages "$PKGS"
-[ -n "$SIDE" ] && installSeleniumIDE
+echo "$PKGS" | grep -q chrome && patchChrome
 [ -n "$X11" -a -n "$VNC" ] && downloadNoVNC
 [ -n "$X11" ] && startX11
 [ -n "$HUB" ] && installAndStartSeleniumStandalone
-installMaven
-patchChrome
+exit 0  
 

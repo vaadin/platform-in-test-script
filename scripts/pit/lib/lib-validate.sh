@@ -41,7 +41,7 @@ runValidations() {
   [ -z "$VERBOSE" ] && compile="$compile --quiet"
 
   # 3
-  $compile | tee $file || return 1
+  $compile 2>&1 | tee -a $file || return 1
   # 4
   runInBackgroundToFile "$cmd" "$file" "$VERBOSE"
   waitUntilMessageInFile "$file" "$check" "$TIMEOUT" "$cmd" && sleep 4 || return 1

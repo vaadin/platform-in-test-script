@@ -2,7 +2,6 @@
 . `dirname $0`/lib/lib-args.sh
 . `dirname $0`/lib/lib-start.sh
 . `dirname $0`/lib/lib-demos.sh
-[ -f /etc/environment ] && . /etc/environment
 
 ## Clean background processes on exit
 trap "doExit" INT TERM EXIT
