@@ -36,9 +36,10 @@ runValidations() {
 
   # when offline add the offline parameter to mvn or gradle
   [ -n "$OFFLINE" ] && cmd="$cmd --offline" && compile="$compile --offline"
-  log "Running: $compile >> $file"
   # when not verbose add the quiet parameter to maven or gradle
   [ -z "$VERBOSE" ] && compile="$compile --quiet"
+
+  echo "Running: $compile > $file"
 
   # 3
   $compile 2>&1 | tee -a $file || return 1

@@ -23,16 +23,6 @@ EOF
   exit 1
 }
 
-## Generate a matrix object for parallel runners in GH actions
-matrix() {
-  echo '{"include":['
-  for i in $PRESETS $DEMOS
-  do
-    echo '{"current":"'$i'"},'
-  done
-  echo ']}'
-}
-
 checkArgs() {
   VERSION=current; PORT=$DEFAULT_PORT; STARTERS=$DEFAULT_STARTERS; TIMEOUT=$DEFAULT_TIMEOUT
   while [ -n "$1" ]
@@ -55,8 +45,13 @@ checkArgs() {
       --list) echo "$DEFAULT_STARTERS" | tr "," "\n" && exit 0;;
       --help) usage && exit 0;;
       --update) UPDATE="true";;
-      --matrix) matrix | tr -d "\n" | sed -e 's/,\]/\]/' ; exit 0;;
       --hub) USEHUB="true";;
+      --v24)
+        PRESETS=`echo "$PRESETS" | sed -e 's,^latest-,v24pre-,g'`
+        DEFAULT_STARTERS=`echo "$PRESETS" | tr "\n" "," | sed -e 's/^,//' | sed -e 's/,$//'`;;
+      --pre)
+        PRESETS=`echo "$PRESETS" | sed -e 's,^latest-,pre-,g'`
+        DEFAULT_STARTERS=`echo "$PRESETS" | tr "\n" "," | sed -e 's/^,//' | sed -e 's/,$//'`;;
       *) echo "Unknown option: $1" && usage && exit 1;;
     esac
     shift
