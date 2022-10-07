@@ -132,8 +132,6 @@ checkBusyPort() {
 
 ## Check that a HTTP servlet request responds with 200
 checkHttpServlet() {
-  type wget
-  type curl
   _url="$1"
   _file="$2"
   log "Checking whether url $_url returns HTTP 200"

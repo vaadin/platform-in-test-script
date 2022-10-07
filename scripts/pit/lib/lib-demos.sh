@@ -45,7 +45,7 @@ getRunCmdDev() {
 ## Get command for running the project prod-mode after install was run
 getRunCmdPrd() {
   case $1 in
-    skeleton-starter-flow-spring) echo "java -jar target/*.jar";;
+    skeleton-starter-flow-spring|bakery-app-starter-flow-spring) echo "java -jar target/*.jar";;
     base-starter-flow-quarkus) echo "java -jar target/quarkus-app/quarkus-run.jar";;
     base-starter-spring-gradle) echo "java -jar ./build/libs/base-starter-spring-gradle-0.0.1-SNAPSHOT.jar";;
     *) getRunCmdDev $1;;
@@ -66,7 +66,7 @@ getReadyMessagePrd() {
   case $1 in
     skeleton-starter-flow-spring) echo "Vaadin is running in production mode";;
     base-starter-flow-quarkus) echo "Listening on: http://0.0.0.0:8080";;
-    base-starter-spring-gradle) echo "Tomcat started on port";;
+    base-starter-spring-gradle|bakery-app-starter-flow-spring) echo "Tomcat started on port";;
     *) getReadyMessageDev $1;;
   esac
 }
