@@ -39,10 +39,9 @@ runValidations() {
   # when not verbose add the quiet parameter to maven or gradle
   [ -z "$VERBOSE" ] && compile="$compile --quiet"
 
-  echo "Running: $compile > $file"
-
   # 3
-  $compile 2>&1 | tee -a $file || return 1
+  runToFile "$compile" "$file" "$VERBOSE"
+
   # 4
   runInBackgroundToFile "$cmd" "$file" "$VERBOSE"
   waitUntilMessageInFile "$file" "$check" "$TIMEOUT" "$cmd" && sleep 4 || return 1

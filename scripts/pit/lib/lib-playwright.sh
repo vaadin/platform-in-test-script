@@ -6,8 +6,7 @@ isInstalledPlaywright() {
 
 ## Install playwright in the folder of the test node-script
 installPlaywright() {
-  log "Installing playwright ..."
-  (cd `dirname $1` && npm install --no-audit playwright)
+  (cd `dirname $1` && runToFile "npm install --no-audit playwright" "playwright.out" "$VERBOSE")
 }
 
 ## Check if playwright is installed, otherwise install it
@@ -22,13 +21,8 @@ runPlaywrightTests() {
   _test_file=$1
   _port=$2
   [ -f "$_test_file" ] && checkPlaywrightInstallation $_test_file || return 0
-  log "Running Playwright test from file: $_test_file"
-
   _args="--port=$_port"
-
   isHeadless && _args="$_args --headless"
-
-  log "Running: node $_test_file $_args"
-  node $_test_file $_args
+  runToFile "node $_test_file $_args" "playwright.out" "$VERBOSE"
 }
 

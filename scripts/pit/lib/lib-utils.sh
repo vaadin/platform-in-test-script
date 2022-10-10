@@ -54,6 +54,22 @@ computeAbsolutePath() {
   echo "$_path"
 }
 
+runToFile() {
+  _cmd="$1"
+  _file="$2"
+  _verbose="$3"
+  log "Running: $_cmd >> $_file"
+  if [ -z "$_verbose" ]
+  then
+    $_cmd >> $_file 2>&1
+    err=$?
+  else
+    $_cmd 2>&1 | tee -a $_file
+    err=$?
+  fi
+  [ $err != 0 ] && err "!!! ERROR running $_cmd !!!" && tail -100 $_file && return 1 || return 0
+}
+
 ## Run a process silently in background sending its output to a file
 runInBackgroundToFile() {
   _cmd="$1"
@@ -135,10 +151,9 @@ checkHttpServlet() {
   _url="$1"
   _file="$2"
   log "Checking whether url $_url returns HTTP 200"
-  H=`curl --fail -I -L "$_url" 2>&1`
-  [ -f "$_file" ] && echo "$H" >> "$_file"
-  echo "$H" | grep -q 'HTTP/1.1 200'
-  [ $? != 0 ] && log "Got an invalid response from $_url: " && echo "$H" && return 1 || return 0
+  runToFile "curl --fail -I -L $_url" "curl.out" "$VERBOSE"
+  grep -q 'HTTP/1.1 200' curl.out 
+  [ $? != 0 ] && log "Got an invalid response from $_url" && return 1 || return 0
 }
 
 ## Set the value of a property in the pom file, returning error if unchanged
