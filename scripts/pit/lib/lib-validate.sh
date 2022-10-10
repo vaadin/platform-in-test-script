@@ -22,7 +22,7 @@ runValidations() {
   [ -n "$6" ] && cmd="$6" || cmd=""
   [ -n "$7" ] && check="$7" || check=""
   [ -n "$8" ] && test="$IT_FOLDER/$8" || test=""
-  file="$name-$mode-$version.out"
+  file="$name-$mode-$version-"`uname`".out"
 
   echo ""
   bold "----> Running builds and tests on app $name, mode=$mode, port=$port, version=$version"
@@ -36,8 +36,6 @@ runValidations() {
 
   # when offline add the offline parameter to mvn or gradle
   [ -n "$OFFLINE" ] && cmd="$cmd --offline" && compile="$compile --offline"
-  # when not verbose add the quiet parameter to maven or gradle
-  [ -z "$VERBOSE" ] && compile="$compile --quiet"
 
   # 3
   runToFile "$compile" "$file" "$VERBOSE"

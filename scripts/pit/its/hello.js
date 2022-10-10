@@ -25,7 +25,7 @@ process.argv.forEach(a => {
   await page.goto(`http://${host}:${port}/`);
 
   // Click input[type="text"]
-  await page.locator('input[type="text"]').click();
+  await page.locator('input[type="text"]').click({timeout:60000});
 
   // Fill input[type="text"]
   await page.locator('input[type="text"]').fill('Greet');

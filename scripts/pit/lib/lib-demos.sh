@@ -12,11 +12,10 @@ checkoutDemo() {
   [ -z "$_branch" ] || git checkout "$_branch"
 }
 
-
 ## Get install command for dev-mode
 getInstallCmdDev() {
   case $1 in
-    skeleton-starter-flow-cdi|base-starter-flow-quarkus) echo "mvn -ntp -B clean";;
+    base-starter-flow-quarkus|skeleton-starter-flow-cdi) echo "mvn -ntp -B clean";;
     base-starter-spring-gradle) echo "./gradlew clean" ;;
     *) echo "mvn -ntp clean install $PNPM";;
   esac
@@ -29,6 +28,7 @@ getInstallCmdPrd() {
   case $1 in
     bakery-app-starter-flow-spring|skeleton-starter-flow-spring|base-starter-flow-quarkus) echo "mvn -B install -Pproduction,it $H";;
     base-starter-spring-gradle) echo "./gradlew clean build -Pvaadin.productionMode";;
+    skeleton-starter-flow-cdi) echo "mvn -ntp -B verify -Pproduction $H";;
     *) getInstallCmdDev $1;;
   esac
 }
@@ -47,6 +47,7 @@ getRunCmdPrd() {
   case $1 in
     skeleton-starter-flow-spring|bakery-app-starter-flow-spring) echo "java -jar target/*.jar";;
     base-starter-flow-quarkus) echo "java -jar target/quarkus-app/quarkus-run.jar";;
+    skeleton-starter-flow-cdi) echo "mvn -ntp -B wildfly:run -Pproduction $PNPM";;
     base-starter-spring-gradle) echo "java -jar ./build/libs/base-starter-spring-gradle-0.0.1-SNAPSHOT.jar";;
     *) getRunCmdDev $1;;
   esac
@@ -55,7 +56,7 @@ getRunCmdPrd() {
 getReadyMessageDev() {
   case $1 in
     base-starter-flow-osgi) echo "HTTP:8080";;
-    skeleton-starter-flow-cdi) echo "Registered web context";;
+    skeleton-starter-flow-cdi) echo "Started Vite";;
     base-starter-flow-quarkus) echo "TaskCopyFrontendFiles";;
     vaadin-flow-karaf-example) echo "Artifact deployed";;
     *) echo "Frontend compiled successfully";;
@@ -67,6 +68,7 @@ getReadyMessagePrd() {
     skeleton-starter-flow-spring) echo "Vaadin is running in production mode";;
     base-starter-flow-quarkus) echo "Listening on: http://0.0.0.0:8080";;
     base-starter-spring-gradle|bakery-app-starter-flow-spring) echo "Tomcat started on port";;
+    skeleton-starter-flow-cdi) echo "Registered web contex";;
     *) getReadyMessageDev $1;;
   esac
 }
@@ -74,7 +76,7 @@ getReadyMessagePrd() {
 hasProduction() {
   [ -n "$NOPROD" ] && return 1
   case $1 in
-    base-starter-flow-osgi|skeleton-starter-flow-cdi|vaadin-flow-karaf-example) return 1;;
+    base-starter-flow-osgi|vaadin-flow-karaf-example) return 1;;
     *) return 0;
   esac
 }
