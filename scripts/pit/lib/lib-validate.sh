@@ -50,7 +50,7 @@ runValidations() {
   checkHttpServlet "http://localhost:$port/" "$file" || return 1
   # 7
   if [ -z "$SKIPTESTS" ]; then
-    runPlaywrightTests "$test" "$port" || return 1
+    runPlaywrightTests "$test" "$port" "$mode" || return 1
   fi
   # 8
   killAll || return 0
