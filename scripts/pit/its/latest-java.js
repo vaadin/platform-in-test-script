@@ -20,6 +20,7 @@ process.argv.forEach(a => {
 
   // Open new page
   const page = await context.newPage();
+  page.on('console', msg => console.log("> CONSOLE:", msg.text()))
 
   // Go to http://localhost:8080/
   await page.goto(`http://${host}:${port}/`);

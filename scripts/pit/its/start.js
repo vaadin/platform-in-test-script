@@ -19,6 +19,7 @@ process.argv.forEach(a => {
   const context = await browser.newContext();
 
   const page = await context.newPage();
+  page.on('console', msg => console.log("> CONSOLE:", msg.text()))
 
   await page.goto(`http://${host}:${port}/`);
 
