@@ -26,5 +26,8 @@ runPlaywrightTests() {
   _args="--port=$_port"
   isHeadless && _args="$_args --headless"
   runToFile "node $_test_file $_args" "$_pfile" "$VERBOSE"
+  err=$?
+  grep '> CONSOLE:' "$_pfile"
+  return $err
 }
 
