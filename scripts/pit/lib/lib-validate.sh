@@ -53,7 +53,7 @@ runValidations() {
     runPlaywrightTests "$test" "$port" "$mode" || return 1
   fi
   # 8
-  killAll || return 0
+  killAll && sleep 5 || return 0
 }
 
 
