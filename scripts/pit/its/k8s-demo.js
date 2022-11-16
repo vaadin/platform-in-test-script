@@ -21,23 +21,23 @@ process.argv.forEach(a => {
     } 
   });
   const page = await context.newPage();
-  await page.goto('http://localhost:8080/login');
+  await page.goto(`http://${host}:${port}/login`);
   await page.evaluate(() =>
     window.localStorage.setItem("vaadin.live-reload.dismissedNotifications","liveReloadUnavailable,preserveOnRefreshWarning")
   );
   await page.getByText('click here').click();
-  await page.waitForURL('http://localhost:8080/login');
+  await page.waitForURL(`http://${host}:${port}/login`);
 
   await page.getByLabel('Username').fill('admin');
   await page.getByLabel('Username').press('Tab');
   await page.getByLabel('Password').fill('admin');
   await page.getByLabel('Password').press('Tab');
   await page.getByRole('button', { name: 'Log in' }).locator('div').click();
-  await page.waitForURL('http://localhost:8080/');
+  await page.waitForURL(`http://${host}:${port}/`);
   await page.getByRole('link', { name: ' Personas' }).click();
-  await page.waitForURL('http://localhost:8080/personas');
+  await page.waitForURL(`http://${host}:${port}/personas`);
   await page.getByRole('button', { name: '+' }).locator('div').click();
-  await page.waitForURL('http://localhost:8080/personas/new');
+  await page.waitForURL(`http://${host}:${port}/personas/new`);
   await page.getByLabel('First Name').click();
   await page.getByLabel('First Name').fill('FOOBAR');
   await page.getByLabel('First Name').press('Tab');
@@ -46,7 +46,7 @@ process.argv.forEach(a => {
   await page.getByLabel('First Name').click();
   await page.getByLabel('Email').press('Escape');
   await page.evaluate(() => window.location.reload());  
-  await page.waitForURL('http://localhost:8080/personas/new');
+  await page.waitForURL(`http://${host}:${port}/personas/new`);
   await page.getByRole('button', { name: 'No' }).locator('div').click();
 
   const name = await page.getByLabel('First Name').inputValue();

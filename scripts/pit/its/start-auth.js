@@ -29,7 +29,7 @@ process.argv.forEach(a => {
   await page.locator('input[name="password"]').click();
   await page.locator('input[name="password"]').fill('admin');
   await page.locator('vaadin-button[role="button"]:has-text("Log in")').click();
-  await page.waitForURL('http://localhost:8080/');
+  await page.waitForURL(`http://${host}:${port}/`);
 
   await page.locator('text=Hello').nth(0).click();
   await page.locator('input[type="text"]').fill('Greet');

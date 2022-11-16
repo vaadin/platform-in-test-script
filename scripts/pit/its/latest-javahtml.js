@@ -28,16 +28,16 @@ process.argv.forEach(a => {
 
   // Click text=Master-Detail (Javahtml) >> slot >> nth=1
   await page.locator('text=Master-Detail (Javahtml) >> slot').nth(1).click();
-  await page.waitForURL('http://localhost:8080/master-detail-view');
+  await page.waitForURL(`http://${host}:${port}/master-detail-view`);
   // Click text=Master-Detail SampleAddress (Javahtml) >> slot >> nth=1
   await page.locator('text=Master-Detail SampleAddress (Javahtml) >> slot').nth(1).click();
-  await page.waitForURL('http://localhost:8080/master-detail-view-sampleaddress');
+  await page.waitForURL(`http://${host}:${port}/master-detail-view-sampleaddress`);
   // Click text=Master-Detail SampleBook (Javahtml) >> slot >> nth=1
   await page.locator('text=Master-Detail SampleBook (Javahtml) >> slot').nth(1).click();
-  await page.waitForURL('http://localhost:8080/master-detail-view-samplebook');
+  await page.waitForURL(`http://${host}:${port}/master-detail-view-samplebook`);
   // Click text=Hello World (Javahtml) >> slot >> nth=1
   await page.locator('text=Hello World (Javahtml) >> slot').nth(1).click();
-  await page.waitForURL('http://localhost:8080/hello-world-view');
+  await page.waitForURL(`http://${host}:${port}/hello-world-view`);
   // Fill input[type="text"]
   await page.locator('input[type="text"]').fill('Greet');
   // Click text=Say hello
