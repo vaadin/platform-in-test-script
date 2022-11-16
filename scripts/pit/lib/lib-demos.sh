@@ -5,8 +5,10 @@
 checkoutDemo() {
   _repo=$1
   _branch=""
-  _gitUrl="https://github.com/vaadin/$_repo.git"
-  log "Checking out (git clone $_gitUrl && cd $_repo)"
+  _tk=${GITHUB_TOKEN:-${GHTK}}
+  [ -n "$_tk" ] && _tk=${_tk}@
+  _gitUrl="https://${_tk}github.com/vaadin/$_repo.git"
+  log "Checking out (git clone https://github.com/vaadin/$_repo.git && cd $_repo)"
   [ -z "$VERBOSE" ] && _quiet="-q"
   git clone $_quiet "$_gitUrl" || return 1
   [ -z "$_branch" ] || git checkout "$_branch"
@@ -28,7 +30,7 @@ getInstallCmdPrd() {
   case $1 in
     bakery-app-starter-flow-spring|skeleton-starter-flow-spring|base-starter-flow-quarkus) echo "mvn -B install -Pproduction,it $H";;
     base-starter-spring-gradle) echo "./gradlew clean build -Pvaadin.productionMode";;
-    skeleton-starter-flow-cdi) echo "mvn -ntp -B verify -Pproduction $H";;
+    skeleton-starter-flow-cdi|k8s-demo-app) echo "mvn -ntp -B verify -Pproduction $H";;
     *) getInstallCmdDev $1;;
   esac
 }
@@ -39,13 +41,13 @@ getRunCmdDev() {
     base-starter-flow-osgi) echo "java -jar app/target/app.jar";;
     skeleton-starter-flow-cdi) echo "mvn -ntp -B wildfly:run $PNPM";;
     base-starter-spring-gradle) echo "./gradlew bootRun";;
-    skeleton-starter-flow-spring|base-starter-flow-quarkus|bakery-app-starter-flow-spring) echo "mvn $PNPM";;
+    *) echo "mvn $PNPM";;
   esac
 }
 ## Get command for running the project prod-mode after install was run
 getRunCmdPrd() {
   case $1 in
-    skeleton-starter-flow-spring|bakery-app-starter-flow-spring) echo "java -jar target/*.jar";;
+    k8s-demo-app|skeleton-starter-flow-spring|bakery-app-starter-flow-spring) echo "java -jar target/*.jar";;
     base-starter-flow-quarkus) echo "java -jar target/quarkus-app/quarkus-run.jar";;
     skeleton-starter-flow-cdi) echo "mvn -ntp -B wildfly:run -Pproduction $PNPM";;
     base-starter-spring-gradle) echo "java -jar ./build/libs/base-starter-spring-gradle-0.0.1-SNAPSHOT.jar";;
@@ -65,7 +67,7 @@ getReadyMessageDev() {
 ## Get ready message when running the project in prod-mode
 getReadyMessagePrd() {
   case $1 in
-    skeleton-starter-flow-spring) echo "Vaadin is running in production mode";;
+    skeleton-starter-flow-spring|k8s-demo-app) echo "Vaadin is running in production mode";;
     base-starter-flow-quarkus) echo "Listening on: http://0.0.0.0:8080";;
     base-starter-spring-gradle|bakery-app-starter-flow-spring) echo "Tomcat started on port";;
     skeleton-starter-flow-cdi) echo "Registered web contex";;
@@ -94,6 +96,7 @@ getPort() {
 getTest() {
   case $1 in
     bakery-app-starter-flow-spring);;
+    k8s-demo-app) echo "k8s-demo.js";;
     *) echo "hello.js"
   esac
 }

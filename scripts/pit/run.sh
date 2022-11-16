@@ -18,6 +18,7 @@ latest-typescript-top
 latest-java_partial-auth
 latest-typescript_partial-auth"
 DEMOS="
+k8s-demo-app
 skeleton-starter-flow-spring
 bakery-app-starter-flow-spring
 skeleton-starter-flow-cdi
