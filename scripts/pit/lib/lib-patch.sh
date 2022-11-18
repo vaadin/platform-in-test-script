@@ -14,3 +14,12 @@ patchKarafLicenseOsgi() {
     's,</dependencies>,<dependency><groupId>com.vaadin</groupId><artifactId>license-checker</artifactId><version>1.10.0</version></dependency></dependencies>,' \
     $__pom
 }
+
+## k8s-demo-app 23.3.0.alpha2
+patchOldSpringProjects() {
+  __artifact=`mvn help:evaluate -q -DforceStdout -Dexpression=project.parent.artifactId`
+  if [ "$__artifact" = "spring-boot-starter-parent" ]; then
+    __vers=`mvn help:evaluate -q -DforceStdout -Dexpression=project.parent.version | cut -d . -f1,2`
+    [ "$__vers" != "2.7" ] && warn "Patching spring-boot-starter-parent from $__vers to 2.7.0" && mvn -q versions:update-parent -DparentVersion=2.7.0
+  fi
+}
