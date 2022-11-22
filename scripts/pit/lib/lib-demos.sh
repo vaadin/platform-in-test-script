@@ -11,7 +11,7 @@ checkoutDemo() {
   log "Checking out (git clone https://$_repo.git && cd $1)"
   [ -z "$VERBOSE" ] && _quiet="-q"
   git clone $_quiet "$_gitUrl" || return 1
-  [ -z "$_branch" ] || (cd $1 && git checkout "$_branch")
+  [ -z "$_branch" ] || (cd $1 && log "switching branch: $_branch" && git checkout $_quiet "$_branch")
 }
 getGitRepo() {
   case $1 in
@@ -53,8 +53,8 @@ getRunCmdDev() {
     base-starter-flow-osgi) echo "java -jar app/target/app.jar";;
     skeleton-starter-flow-cdi) echo "mvn -ntp -B wildfly:run $PNPM";;
     base-starter-spring-gradle) echo "./gradlew bootRun";;
-    mpr-demo) echo "mvn -ntp -B jetty:run";;
-    *) echo "mvn $PNPM";;
+    mpr-demo) echo "mvn -ntp -B -Dvaadin.spreadsheet.developer.license=447a9e11-c69c-402c-87ec-720e6c4cf9ea jetty:run";;
+    *) echo "mvn -ntp -B $PNPM";;
   esac
 }
 ## Get command for running the project prod-mode after install was run
@@ -64,7 +64,7 @@ getRunCmdPrd() {
     base-starter-flow-quarkus) echo "java -jar target/quarkus-app/quarkus-run.jar";;
     skeleton-starter-flow-cdi) echo "mvn -ntp -B wildfly:run -Pproduction $PNPM";;
     base-starter-spring-gradle) echo "java -jar ./build/libs/base-starter-spring-gradle-0.0.1-SNAPSHOT.jar";;
-    mpr-demo) echo "mvn -ntp -B jetty:run-war -Pproduction";;
+    mpr-demo) echo "mvn -ntp -B -Dvaadin.spreadsheet.developer.license=447a9e11-c69c-402c-87ec-720e6c4cf9ea jetty:run-war -Pproduction";;
     *) getRunCmdDev $1;;
   esac
 }
