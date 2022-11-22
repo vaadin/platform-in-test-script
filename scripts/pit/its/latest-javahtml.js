@@ -20,7 +20,8 @@ process.argv.forEach(a => {
 
   // Open new page
   const page = await context.newPage();
-  page.on('console', msg => console.log("> CONSOLE:", msg.text()))
+  page.on('console', msg => console.log("> CONSOLE:", msg.text()));
+  page.on('pageerror', err => console.log("> JSERROR:", err));
 
   // Go to http://localhost:8080/
   await page.goto(`http://${host}:${port}/`);
@@ -43,7 +44,7 @@ process.argv.forEach(a => {
   // Click text=Say hello
   await page.locator('text=Say hello').click();
   await page.locator('text=Hello Greet');
-  
+
 
   // ---------------------
   await context.close();

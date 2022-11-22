@@ -29,6 +29,8 @@ runPlaywrightTests() {
   runToFile "node $_test_file $_args" "$_pfile" "$VERBOSE"
   err=$?
   [ "$_mode" = "prod" ] && grep '> CONSOLE:' "$_pfile"
+  grep '> JSERROR:' "$_pfile"
+
   return $err
 }
 

@@ -15,12 +15,15 @@ process.argv.forEach(a => {
   const browser = await chromium.launch({
     headless: headless
   });
-  const context = await browser.newContext({ 
-    extraHTTPHeaders: { 
-      'X-AppUpdate': 'FOO' 
-    } 
+  const context = await browser.newContext({
+    extraHTTPHeaders: {
+      'X-AppUpdate': 'FOO'
+    }
   });
   const page = await context.newPage();
+  page.on('console', msg => console.log("> CONSOLE:", msg.text()));
+  page.on('pageerror', err => console.log("> JSERROR:", err));
+
   await page.goto(`http://${host}:${port}/login`);
   await page.evaluate(() =>
     window.localStorage.setItem("vaadin.live-reload.dismissedNotifications","liveReloadUnavailable,preserveOnRefreshWarning")
@@ -45,7 +48,7 @@ process.argv.forEach(a => {
   await page.getByLabel('Last Name').press('Tab');
   await page.getByLabel('First Name').click();
   await page.getByLabel('Email').press('Escape');
-  await page.evaluate(() => window.location.reload());  
+  await page.evaluate(() => window.location.reload());
   await page.waitForURL(`http://${host}:${port}/personas/new`);
   await page.getByRole('button', { name: 'No' }).locator('div').click();
 

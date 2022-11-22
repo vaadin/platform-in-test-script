@@ -19,7 +19,8 @@ process.argv.forEach(a => {
   const context = await browser.newContext();
 
   const page = await context.newPage();
-  page.on('console', msg => console.log("> CONSOLE:", msg.text()))
+  page.on('console', msg => console.log("> CONSOLE:", msg.text()));
+  page.on('pageerror', err => console.log("> JSERROR:", err));
 
   await page.goto(`http://${host}:${port}/`);
 
@@ -46,7 +47,7 @@ process.argv.forEach(a => {
   await page.locator('text=/Emma Powerful/').click();
   await page.locator('text=/Sign out/').click();
   await page.locator('h2:has-text("Log in")');
-  
+
   // ---------------------
   await context.close();
   await browser.close();
