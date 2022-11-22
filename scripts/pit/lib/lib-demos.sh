@@ -3,21 +3,32 @@
 
 ## Checkout a bramch of a vaadin repository in github
 checkoutDemo() {
-  _repo=$1
-  _branch=""
+  _branch=`getGitBranch $1`
+  _repo=`getGitRepo $1`
   _tk=${GITHUB_TOKEN:-${GHTK}}
   [ -n "$_tk" ] && _tk=${_tk}@
-  _gitUrl="https://${_tk}github.com/vaadin/$_repo.git"
-  log "Checking out (git clone https://github.com/vaadin/$_repo.git && cd $_repo)"
+  _gitUrl="https://${_tk}${_repo}.git"
+  log "Checking out (git clone https://$_repo.git && cd $1)"
   [ -z "$VERBOSE" ] && _quiet="-q"
   git clone $_quiet "$_gitUrl" || return 1
-  [ -z "$_branch" ] || git checkout "$_branch"
+  [ -z "$_branch" ] || (cd $1 && git checkout "$_branch")
+}
+getGitRepo() {
+  case $1 in
+    mpr-demo) echo "github.com/TatuLund/$1";;
+    *) echo "github.com/vaadin/$1";;
+  esac
+}
+getGitBranch() {
+  case $1 in
+    mpr-demo) echo "mpr-6";;
+  esac
 }
 
 ## Get install command for dev-mode
 getInstallCmdDev() {
   case $1 in
-    base-starter-flow-quarkus|skeleton-starter-flow-cdi) echo "mvn -ntp -B clean";;
+    base-starter-flow-quarkus|skeleton-starter-flow-cdi|mpr-demo) echo "mvn -ntp -B clean";;
     base-starter-spring-gradle) echo "./gradlew clean" ;;
     *) echo "mvn -ntp clean install $PNPM";;
   esac
@@ -31,6 +42,7 @@ getInstallCmdPrd() {
     bakery-app-starter-flow-spring|skeleton-starter-flow-spring|base-starter-flow-quarkus) echo "mvn -B install -Pproduction,it $H";;
     base-starter-spring-gradle) echo "./gradlew clean build -Pvaadin.productionMode";;
     skeleton-starter-flow-cdi|k8s-demo-app) echo "mvn -ntp -B verify -Pproduction $H";;
+    mpr-demo) echo "mvn -ntp -B clean";;
     *) getInstallCmdDev $1;;
   esac
 }
@@ -41,6 +53,7 @@ getRunCmdDev() {
     base-starter-flow-osgi) echo "java -jar app/target/app.jar";;
     skeleton-starter-flow-cdi) echo "mvn -ntp -B wildfly:run $PNPM";;
     base-starter-spring-gradle) echo "./gradlew bootRun";;
+    mpr-demo) echo "mvn -ntp -B jetty:run";;
     *) echo "mvn $PNPM";;
   esac
 }
@@ -51,6 +64,7 @@ getRunCmdPrd() {
     base-starter-flow-quarkus) echo "java -jar target/quarkus-app/quarkus-run.jar";;
     skeleton-starter-flow-cdi) echo "mvn -ntp -B wildfly:run -Pproduction $PNPM";;
     base-starter-spring-gradle) echo "java -jar ./build/libs/base-starter-spring-gradle-0.0.1-SNAPSHOT.jar";;
+    mpr-demo) echo "mvn -ntp -B jetty:run-war -Pproduction";;
     *) getRunCmdDev $1;;
   esac
 }
@@ -71,6 +85,7 @@ getReadyMessagePrd() {
     base-starter-flow-quarkus) echo "Listening on: http://0.0.0.0:8080";;
     base-starter-spring-gradle|bakery-app-starter-flow-spring) echo "Tomcat started on port";;
     skeleton-starter-flow-cdi) echo "Registered web contex";;
+    mpr-demo) echo "Started ServerConnector";;
     *) getReadyMessageDev $1;;
   esac
 }
@@ -95,7 +110,7 @@ getPort() {
 ## Get SIDE test file
 getTest() {
   case $1 in
-    bakery-app-starter-flow-spring);;
+    bakery-app-starter-flow-spring|mpr-demo);;
     k8s-demo-app) echo "k8s-demo.js";;
     *) echo "hello.js"
   esac
