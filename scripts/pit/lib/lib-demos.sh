@@ -120,6 +120,14 @@ getTest() {
 setDemoVersion() {
   case "$1" in
     base-starter-spring-gradle) setGradleVersion vaadinVersion "$2";;
+    mpr-demo)
+       if [ "$2" != current ]; then
+         B=`echo $2 | cut -d . -f1,2`
+         FLOWVERSION=`getFlowVersionFromPlatform $B`
+         [ -z "$FLOWVERSION" ] && FLOWVERSION=`getFlowVersionFromPlatform master`
+         setVersion flow.version "$FLOWVERSION"
+       fi
+       setVersion vaadin.version "$2";;
     *) setVersion vaadin.version "$2";;
   esac
 }

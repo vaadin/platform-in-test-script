@@ -175,6 +175,12 @@ setVersion() {
   esac
 }
 
+getFlowVersionFromPlatform() {
+  curl -s "https://raw.githubusercontent.com/vaadin/platform/$1/versions.json" 2>/dev/null \
+      | tr -d "\n" |tr -d " "  | sed -e 's/^.*"flow":{"javaVersion"://'| cut -d '"' -f2
+      set +x
+}
+
 ## Set the value of a property in the gradle.properties file, returning error if unchanged
 setGradleVersion() {
   _gradleProperty=$1
