@@ -22,11 +22,13 @@ mpr-demo
 k8s-demo-app
 skeleton-starter-flow-spring
 bakery-app-starter-flow-spring
-skeleton-starter-flow-cdi
 base-starter-spring-gradle
 base-starter-flow-quarkus
 vaadin-flow-karaf-example
 base-starter-flow-osgi"
+
+# skeleton-starter-flow-cdi
+
 DEFAULT_STARTERS=`echo "$PRESETS$DEMOS" | tr "\n" "," | sed -e 's/^,//' | sed -e 's/,$//'`
 
 run() {
