@@ -112,7 +112,8 @@ getPort() {
 ## Get SIDE test file
 getTest() {
   case $1 in
-    bakery-app-starter-flow-spring|mpr-demo);;
+    bakery-app-starter-flow-spring);;
+    mpr-demo) echo "mpr-demo.js";;
     k8s-demo-app) echo "k8s-demo.js";;
     *) echo "hello.js"
   esac
