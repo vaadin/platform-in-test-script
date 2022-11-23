@@ -22,7 +22,7 @@ runPlaywrightTests() {
   _test_file=$1
   _port=$2
   _mode=$3
-  _pfile="playwright-"`uname`".out"
+  _pfile="playwright-$_mode-"`uname`".out"
   [ -f "$_test_file" ] && checkPlaywrightInstallation $_test_file || return 0
   _args="--port=$_port"
   isHeadless && _args="$_args --headless"
