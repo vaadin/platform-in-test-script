@@ -38,7 +38,7 @@ runValidations() {
   [ -n "$OFFLINE" ] && cmd="$cmd --offline" && compile="$compile --offline"
 
   # 3
-  runToFile "$compile" "$file" "$VERBOSE"
+  runToFile "$compile" "$file" "$VERBOSE" || return 1
 
   # 4
   runInBackgroundToFile "$cmd" "$file" "$VERBOSE"

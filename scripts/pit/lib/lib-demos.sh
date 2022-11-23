@@ -8,10 +8,12 @@ checkoutDemo() {
   _tk=${GITHUB_TOKEN:-${GHTK}}
   [ -n "$_tk" ] && _tk=${_tk}@
   _gitUrl="https://${_tk}${_repo}.git"
-  log "Checking out (git clone https://$_repo.git && cd $1)"
+  log "Checking out $1"
+  cmd "git clone https://$_repo.git"
+  cmd "cd $1"
   [ -z "$VERBOSE" ] && _quiet="-q"
   git clone $_quiet "$_gitUrl" || return 1
-  [ -z "$_branch" ] || (cd $1 && log "switching branch: $_branch" && git checkout $_quiet "$_branch")
+  [ -z "$_branch" ] || (cd $1 && cmd "git checkout $_branch" && git checkout $_quiet "$_branch")
 }
 getGitRepo() {
   case $1 in

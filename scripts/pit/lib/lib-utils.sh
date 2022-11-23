@@ -36,6 +36,9 @@ err() {
 warn() {
   print 0 33 "$*"
 }
+cmd() {
+  print 1 34 " $*"
+}
 
 ## ask user a question, response is stored in key
 ask() {
@@ -58,7 +61,8 @@ runToFile() {
   _cmd="$1"
   _file="$2"
   _verbose="$3"
-  log "Running: $_cmd >> $_file"
+  log "Running and sending output to > $_file"
+  cmd "$_cmd"
   if [ -z "$_verbose" ]
   then
     $_cmd >> $_file 2>&1
@@ -75,7 +79,8 @@ runInBackgroundToFile() {
   _cmd="$1"
   _file="$2"
   _verbose="$3"
-  log "Running: $_cmd >> $_file"
+  log "Running in background and sending output to > $_file"
+  cmd "$_cmd"
   touch $_file
   if [ -n "$_verbose" ]
   then
@@ -170,7 +175,9 @@ setVersion() {
       return 1;;
     *)
       _cmd="mvn -B -q versions:set-property -Dproperty=$_mavenProperty -DnewVersion=$_version"
-      log "Changing $_mavenProperty from $_current to $_version ($_cmd)"
+      echo "" >&2
+      bold "==> Changing $_mavenProperty from $_current to $_version"
+      cmd "$_cmd"
       $_cmd && return 0 || return 1;;
   esac
 }
@@ -195,6 +202,7 @@ setGradleVersion() {
     *)
       _cmd="perl -pi -e 's,$_gradleProperty=.*,$_gradleProperty=$_version,' gradle.properties"
       log "Changing $_gradleProperty from $_current to $_version"
+      cmd "$_cmd"
       $_cmd && return 0 || return 1;;
   esac
 }
