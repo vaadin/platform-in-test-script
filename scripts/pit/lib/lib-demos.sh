@@ -183,6 +183,7 @@ runDemo() {
   then
     patchOldSpringProjects
     patchIndexTs
+    patchTsConfig
     if hasDev $_demo; then
       # 5
       runValidations dev $_version $_demo $_port "$_installCmdDev" "$_runCmdDev" "$_readyDev" "$_test" || return 1

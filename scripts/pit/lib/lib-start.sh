@@ -68,16 +68,25 @@ runStarter() {
   then
     _current=`setVersion $_versionProp current`
     # 2
-    [ -z "$NODEV" ] && runValidations dev $_current $_preset $_port "mvn -ntp -B clean" "mvn -ntp -B" "Frontend compiled" "$_test" || return 1
+    if [ -z "$NODEV" ]; then
+      runValidations dev $_current $_preset $_port "mvn -ntp -B clean" "mvn -ntp -B" "Frontend compiled" "$_test" || return 1
+    fi
     # 3
-    [ -z "$NOPROD" ] && runValidations prod $_current $_preset $_port "mvn -ntp -B -Pproduction package $PNPM" 'java -jar target/*.jar' "Started Application" "$_test" || return 1
+    if [ -z "$NOPROD" ]; then
+      runValidations prod $_current $_preset $_port "mvn -ntp -B -Pproduction package $PNPM" 'java -jar target/*.jar' "Started Application" "$_test" || return 1
+    fi
   fi
   # 4
   if setVersion $_versionProp $_version >/dev/null
   then
+    patchTsConfig
     # 5
-    [ -z "$NODEV" ] && runValidations dev $_version $_preset $_port "mvn -ntp -B clean" "mvn -ntp -B" "Frontend compiled" "$_test" || return 1
+    if [ -z "$NODEV" ]; then
+      runValidations dev $_version $_preset $_port "mvn -ntp -B clean" "mvn -ntp -B" "Frontend compiled" "$_test" || return 1
+    fi
     # 6
-    [ -z "$NOPROD" ] && runValidations prod $_version $_preset $_port "mvn -ntp -B -Pproduction package $PNPM" 'java -jar target/*.jar' "Started Application" "$_test" || return 1
+    if [ -z "$NOPROD" ]; then
+      runValidations prod $_version $_preset $_port "mvn -ntp -B -Pproduction package $PNPM" 'java -jar target/*.jar' "Started Application" "$_test" || return 1
+    fi
   fi
 }
