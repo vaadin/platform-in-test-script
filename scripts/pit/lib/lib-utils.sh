@@ -158,7 +158,6 @@ checkHttpServlet() {
   _cfile="curl-"`uname`".out"
   log "Checking whether url $_url returns HTTP 200"
   runToFile "curl --fail -I -L $_url" "$_cfile" "$VERBOSE"
-  grep -q 'HTTP/1.1 200' "$_cfile"
   [ $? != 0 ] && log "Got an invalid response from $_url" && return 1 || return 0
 }
 
