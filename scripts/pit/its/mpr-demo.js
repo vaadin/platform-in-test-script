@@ -45,8 +45,10 @@ process.argv.forEach(a => {
 
   await page.getByRole('link', { name: 'Tree' }).click();
   await page.waitForURL(`http://${host}:${port}/tree`);
-  await page.getByRole('gridcell', { name: '  /Users/manolo/Github/platform/platform-in-test-script/tmp/mpr-demo' }).locator('span').first().click();
-  await page.getByRole('gridcell', { name: '  /Users/manolo/Github/platform/platform-in-test-script/tmp/mpr-demo/frontend' }).locator('span').first().click();
+
+
+  await page.locator('span.v-tree8-expander').nth(0).click()
+  await page.locator('span.v-tree8-expander').nth(1).click()
 
   await page.getByRole('link', { name: 'Video' }).click();
   await page.waitForURL(`http://${host}:${port}/video`);
