@@ -1,4 +1,11 @@
-## bakery 23.1 (fixed)
+
+applyPatches() {
+  case $1 in
+    k8s-demo-app) patchOldSpringProjects;;
+  esac
+}
+
+## FIXED - bakery 23.1
 patchRouterLink() {
   find src -name "*.java" | xargs perl -pi -e 's/RouterLink\(null, /RouterLink("", /g'
   H=`git status --porcelain src`
@@ -7,7 +14,7 @@ patchRouterLink() {
   fi
 }
 
-## Karaf 23.2.2 (fixed)
+## FIXED - Karaf 23.2.2
 patchKarafLicenseOsgi() {
   __pom=main-ui/pom.xml
   [ -f $__pom ] && warn "Patching $__pom (adding license-checker 1.10.0)" && perl -pi -e \
@@ -24,7 +31,7 @@ patchOldSpringProjects() {
   fi
 }
 
-## skeleton-starter-flow-spring 23.3.0.alpha2
+## FIXED - skeleton-starter-flow-spring 23.3.0.alpha2
 patchIndexTs() {
   __file="frontend/index.ts"
   if test -f "$__file" && grep -q 'vaadin/flow-frontend' $__file; then
@@ -33,7 +40,7 @@ patchIndexTs() {
   fi
 }
 
-## latest-typescript*, vaadin-flow-karaf-example, base-starter-flow-quarkus 23.3.0.alpha3
+## FIXED - latest-typescript*, vaadin-flow-karaf-example, base-starter-flow-quarkus 23.3.0.alpha3
 patchTsConfig() {
   H=`ls -1 tsconfig.json */tsconfig.json 2>/dev/null`
   [ -n "$H" ] && warn "patch 23.3.0.alpha3 - Removing $H" && rm -f tsconfig.json */tsconfig.json

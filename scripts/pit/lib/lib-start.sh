@@ -69,6 +69,7 @@ runStarter() {
 
   if [ -z "$NOCURRENT" ]
   then
+    applyPatches $_preset current
     _current=`setVersion $_versionProp current`
     # 2
     if [ -z "$NODEV" ]; then
@@ -82,7 +83,7 @@ runStarter() {
   # 4
   if setVersion $_versionProp $_version >/dev/null
   then
-    patchTsConfig
+    applyPatches $_preset next
     # 5
     if [ -z "$NODEV" ]; then
       runValidations dev $_version $_preset $_port "mvn -ntp -B clean" "mvn -ntp -B" "Frontend compiled" "$_test" || return 1

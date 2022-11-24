@@ -171,7 +171,7 @@ runDemo() {
   if [ -z "$NOCURRENT" ]
   then
     _current=`setDemoVersion $_demo current`
-    patchOldSpringProjects
+    applyPatches $_demo current
     if hasDev $_demo; then
       # 2
       runValidations dev $_current $_demo $_port "$_installCmdDev" "$_runCmdDev" "$_readyDev" "$_test" || return 1
@@ -184,9 +184,7 @@ runDemo() {
   # 4
   if setDemoVersion $_demo $_version >/dev/null
   then
-    patchOldSpringProjects
-    patchIndexTs
-    patchTsConfig
+    applyPatches $_demo next
     if hasDev $_demo; then
       # 5
       runValidations dev $_version $_demo $_port "$_installCmdDev" "$_runCmdDev" "$_readyDev" "$_test" || return 1

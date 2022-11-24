@@ -37,14 +37,14 @@ warn() {
   print 0 33 "$*"
 }
 cmd() {
-  print 1 34 " $*"
+  cmd_=`echo "$*" | sed -e 's/ -D.*license=[a-z0-9-]*//'`
+  print 1 34 " $cmd_"
 }
 
 ## ask user a question, response is stored in key
 ask() {
   # flush stdin
   while read -t1 ignore; do :; done
-
   printf "\033[0;32m$1\033[0m...">&2
   read key
 }
