@@ -2,6 +2,7 @@
 applyPatches() {
   case $1 in
     k8s-demo-app) patchOldSpringProjects;;
+    base-starter-flow-osgi) patchTsConfig;;
   esac
 }
 
@@ -40,7 +41,7 @@ patchIndexTs() {
   fi
 }
 
-## FIXED - latest-typescript*, vaadin-flow-karaf-example, base-starter-flow-quarkus 23.3.0.alpha3
+## FIXED - latest-typescript*, vaadin-flow-karaf-example, base-starter-flow-quarkus, base-starter-flow-osgi, 23.3.0.alpha3
 patchTsConfig() {
   H=`ls -1 tsconfig.json */tsconfig.json 2>/dev/null`
   [ -n "$H" ] && warn "patch 23.3.0.alpha3 - Removing $H" && rm -f tsconfig.json */tsconfig.json
