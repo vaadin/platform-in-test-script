@@ -30,7 +30,7 @@ getGitBranch() {
 ## Get install command for dev-mode
 getInstallCmdDev() {
   case $1 in
-    base-starter-flow-quarkus|skeleton-starter-flow-cdi|mpr-demo) echo "mvn -ntp -B clean";;
+    base-starter-flow-quarkus|skeleton-starter-flow-cdi|mpr-demo|spreadsheet-demo) echo "mvn -ntp -B clean";;
     base-starter-spring-gradle) echo "./gradlew clean" ;;
     *) echo "mvn -ntp clean install $PNPM";;
   esac
@@ -44,7 +44,7 @@ getInstallCmdPrd() {
     bakery-app-starter-flow-spring|skeleton-starter-flow-spring|base-starter-flow-quarkus) echo "mvn -B install -Pproduction,it $H";;
     base-starter-spring-gradle) echo "./gradlew clean build -Pvaadin.productionMode";;
     skeleton-starter-flow-cdi|k8s-demo-app) echo "mvn -ntp -B verify -Pproduction $H";;
-    mpr-demo) echo "mvn -ntp -B clean";;
+    mpr-demo|spreadsheet-demo) echo "mvn -ntp -B clean";;
     *) getInstallCmdDev $1;;
   esac
 }
@@ -67,6 +67,7 @@ getRunCmdPrd() {
     skeleton-starter-flow-cdi) echo "mvn -ntp -B wildfly:run -Pproduction $PNPM";;
     base-starter-spring-gradle) echo "java -jar ./build/libs/base-starter-spring-gradle-0.0.1-SNAPSHOT.jar";;
     mpr-demo) echo "mvn -ntp -B -Dvaadin.spreadsheet.developer.license=447a9e11-c69c-402c-87ec-720e6c4cf9ea jetty:run-war -Pproduction";;
+    spreadsheet-demo) echo "mvn -ntp -Pproduction -B jetty:run-war";;
     *) getRunCmdDev $1;;
   esac
 }
@@ -87,7 +88,7 @@ getReadyMessagePrd() {
     base-starter-flow-quarkus) echo "Listening on: http://0.0.0.0:8080";;
     base-starter-spring-gradle|bakery-app-starter-flow-spring) echo "Tomcat started on port";;
     skeleton-starter-flow-cdi) echo "Registered web contex";;
-    mpr-demo) echo "Started ServerConnector";;
+    mpr-demo|spreadsheet-demo) echo "Started ServerConnector";;
     *) getReadyMessageDev $1;;
   esac
 }
@@ -114,6 +115,7 @@ getTest() {
   case $1 in
     bakery-app-starter-flow-spring);;
     mpr-demo) echo "mpr-demo.js";;
+    spreadsheet-demo) echo "spreadsheet-demo.js";;
     k8s-demo-app) echo "k8s-demo.js";;
     *) echo "hello.js"
   esac

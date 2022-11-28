@@ -1,6 +1,8 @@
 
 applyPatches() {
-  case $1 in
+  app_=$1
+  mode_=$2
+  case $app_ in
     k8s-demo-app) patchOldSpringProjects;;
     base-starter-flow-osgi) patchTsConfig;;
   esac

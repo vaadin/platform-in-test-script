@@ -25,7 +25,9 @@ bakery-app-starter-flow-spring
 base-starter-spring-gradle
 base-starter-flow-quarkus
 vaadin-flow-karaf-example
-base-starter-flow-osgi"
+base-starter-flow-osgi
+spreadsheet-demo
+"
 
 # skeleton-starter-flow-cdi
 
