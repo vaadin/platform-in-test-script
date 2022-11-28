@@ -16,7 +16,6 @@ Use: $0 [version=] [starters=] [port=] [timeout=] [verbose] [offline] [interacti
  --pnpm            Use pnpm instead of npm to speed up frontend compilation (default npm)
  --vite            Use vite inetad of webpack to speed up frontend compilation (default webpack)
  --list            Show the list of available starters
- --matrix          Show the list of available starters in json format suitable for GH actions
  --hub             Use selenium hub instead of local chrome, it assumes that selenium docker is running as service in localhost
  --help            Show this message
 EOF

@@ -73,7 +73,7 @@ runStarter() {
     _current=`setVersion $_versionProp current`
     # 2
     if [ -z "$NODEV" ]; then
-      runValidations dev $_current $_preset $_port "mvn -ntp -B clean" "mvn -ntp -B" "Frontend compiled" "$_test" || return 1
+      runValidations dev $_current $_preset $_port "mvn -ntp -B clean" "mvn -ntp -B $PNPM" "Frontend compiled" "$_test" || return 1
     fi
     # 3
     if [ -z "$NOPROD" ]; then
@@ -86,7 +86,7 @@ runStarter() {
     applyPatches $_preset next
     # 5
     if [ -z "$NODEV" ]; then
-      runValidations dev $_version $_preset $_port "mvn -ntp -B clean" "mvn -ntp -B" "Frontend compiled" "$_test" || return 1
+      runValidations dev $_version $_preset $_port "mvn -ntp -B clean" "mvn -ntp -B $PNPM" "Frontend compiled" "$_test" || return 1
     fi
     # 6
     if [ -z "$NOPROD" ]; then
