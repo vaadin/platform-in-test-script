@@ -20,6 +20,8 @@ process.argv.forEach(a => {
       'X-AppUpdate': 'FOO'
     }
   });
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+
   const page = await context.newPage();
   page.on('console', msg => console.log("> CONSOLE:", msg.text()));
   page.on('pageerror', err => console.log("> JSERROR:", err));
@@ -45,11 +47,14 @@ process.argv.forEach(a => {
   await page.locator('#cellinput').fill('0.03');
   await page.locator('#cellinput').press('Enter');  
   await page.getByText('$10,315.49');
+  await sleep(100);
   await page.keyboard.press('Enter');
+  await sleep(100);
   await page.locator('#cellinput').click();
   await page.locator('#cellinput').fill('20');
   await page.locator('#cellinput').press('Enter');  
   await page.getByText('$13,310.34').click();
+  await sleep(100);
 
   await page.getByRole('link', { name: 'Grouping' }).click();
   await page.waitForURL(`http://${host}:${port}/demo/grouping`);
