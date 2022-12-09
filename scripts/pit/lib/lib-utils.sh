@@ -145,17 +145,16 @@ waitForUserManualTesting() {
 checkPort() {
   curl -s telnet://localhost:$1 >/dev/null &
   pid_curl=$!
-  uname -a | egrep -iq 'Linux|Darwin' && sleep 1 || sleep 4
+  uname -a | egrep -iq 'Linux|Darwin' && sleep 2 || sleep 4
   kill $pid_curl 2>/dev/null || return 1
 }
 
 ## Wait until port is listening
 waitUntilPort() {
   log "Waiting for port $1 to be available"
-  __i=1; __h=80
-  while [ $__h != 0 ]; do
-    checkPort $1
-    __h=$?
+  __i=1
+  while true; do
+    checkPort $1 && return 0
     __i=`expr $__i + 1`
     [ $__i -gt $2 ] && err "Server not listening in port $1 after $2 secs" && return 1
   done
