@@ -28,7 +28,7 @@ runPlaywrightTests() {
   isHeadless && _args="$_args --headless"
   runToFile "node $_test_file $_args" "$_pfile" "$VERBOSE"
   err=$?
-  [ "$_mode" = "prod" ] && grep '> CONSOLE:' "$_pfile"
+  [ "$_mode" = "prod" ] && grep '> CONSOLE:' "$_pfile" | perl -pe 's/(> CONSOLE: Received xhr.*?feat":).*/$1 .../g'
   grep '> JSERROR:' "$_pfile"
 
   return $err

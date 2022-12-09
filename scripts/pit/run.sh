@@ -27,8 +27,7 @@ base-starter-flow-quarkus
 vaadin-flow-karaf-example
 base-starter-flow-osgi
 spreadsheet-demo
-skeleton-starter-flow-cdi
-"
+skeleton-starter-flow-cdi"
 DEFAULT_STARTERS=`echo "$PRESETS$DEMOS" | tr "\n" "," | sed -e 's/^,//' | sed -e 's/,$//'`
 
 run() {

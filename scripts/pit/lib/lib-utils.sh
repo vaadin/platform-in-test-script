@@ -141,14 +141,33 @@ waitForUserManualTesting() {
   ask "When you finish, push ENTER  to continue"
 }
 
+## Check the port is occupied
+checkPort() {
+  curl -s telnet://localhost:$1 >/dev/null &
+  pid_curl=$!
+  uname -a | egrep -iq 'Linux|Darwin' && sleep 1 || sleep 4
+  kill $pid_curl 2>/dev/null || return 1
+}
+
+## Wait until port is listening
+waitUntilPort() {
+  log "Waiting for port $1 to be available"
+  __i=1; __h=80
+  while [ $__h != 0 ]; do
+    checkPort $1
+    __h=$?
+    __i=`expr $__i + 1`
+    [ $__i -gt $2 ] && err "Server not listening in port $1 after $2 secs" && return 1
+  done
+}
+
 ## Check whether the port is already in use in this machine
 checkBusyPort() {
   _port="$1"
   log "Checking whether port $_port is busy"
-  curl -s telnet://localhost:$_port >/dev/null &
-  curl_pid=$!
-  uname -a | egrep -iq 'Linux|Darwin' && sleep 1 || sleep 4
-  kill $curl_pid 2>/dev/null && log "Port ${_port} is occupied" && return 1 || return 0
+  checkPort $_port
+  _err=$?
+  [ $_err = 0 ] && err "Port ${_port} is occupied" && return 1 || return 0
 }
 
 ## Check that a HTTP servlet request responds with 200
@@ -156,6 +175,7 @@ checkHttpServlet() {
   _url="$1"
   _file="$2"
   _cfile="curl-"`uname`".out"
+  rm -f $_cfile
   log "Checking whether url $_url returns HTTP 200"
   runToFile "curl --fail -I -L $_url" "$_cfile" "$VERBOSE"
   [ $? != 0 ] && log "Got an invalid response from $_url" && return 1 || return 0

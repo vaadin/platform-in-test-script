@@ -42,11 +42,13 @@ runValidations() {
 
   # 4
   runInBackgroundToFile "$cmd" "$file" "$VERBOSE"
-  waitUntilMessageInFile "$file" "$check" "$TIMEOUT" "$cmd" && sleep 4 || return 1
+  waitUntilMessageInFile "$file" "$check" "$TIMEOUT" "$cmd" | return 1
+  waitUntilPort $port 60 | return 1
+
   # 5
   [ -n "$INTERACTIVE" ] && waitForUserWithBell && waitForUserManualTesting "$port"
   # 6
-  sleep 5
+
   checkHttpServlet "http://localhost:$port/" "$file" || return 1
   # 7
   if [ -z "$SKIPTESTS" ]; then
