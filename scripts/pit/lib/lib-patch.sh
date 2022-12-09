@@ -30,7 +30,10 @@ patchOldSpringProjects() {
   __artifact=`mvn help:evaluate -q -DforceStdout -Dexpression=project.parent.artifactId`
   if [ "$__artifact" = "spring-boot-starter-parent" ]; then
     __vers=`mvn help:evaluate -q -DforceStdout -Dexpression=project.parent.version | cut -d . -f1,2`
-    [ "$__vers" != "2.7" ] && warn "patch 23.3.0.alpha2 - Patching spring-boot-starter-parent from $__vers to 2.7.0" && mvn -q versions:update-parent -DparentVersion=2.7.0
+    [ "$__vers" = "2.7" ] && return
+    mvn -q versions:update-parent "-DparentVersion=[,2.8)"
+    ___vers=`mvn help:evaluate -q -DforceStdout -Dexpression=project.parent.version`
+    warn "patch 23.3.0.alpha2 - Patching spring-boot-starter-parent from $__vers to $___vers"
   fi
 }
 
