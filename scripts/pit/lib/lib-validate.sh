@@ -43,7 +43,7 @@ runValidations() {
   # 4
   runInBackgroundToFile "$cmd" "$file" "$VERBOSE"
   waitUntilMessageInFile "$file" "$check" "$TIMEOUT" "$cmd" || return 1
-  waitUntilPort $port 60 || return 1
+  waitUntilAppReady "$name" "$port" 60 || return 1
 
   # 5
   [ -n "$INTERACTIVE" ] && waitForUserWithBell && waitForUserManualTesting "$port"
