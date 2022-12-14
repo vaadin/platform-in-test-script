@@ -86,7 +86,7 @@ getReadyMessagePrd() {
   case $1 in
     skeleton-starter-flow-spring|k8s-demo-app) echo "Vaadin is running in production mode";;
     base-starter-flow-quarkus) echo "Listening on: http://0.0.0.0:8080";;
-    base-starter-spring-gradle|bakery-app-starter-flow-spring) echo "Started Application";;
+    base-starter-spring-gradle|bakery-app-starter-flow-spring) echo "JVM running for";;
     skeleton-starter-flow-cdi) echo "Registered web contex";;
     mpr-demo|spreadsheet-demo) echo "Started ServerConnector";;
     *) getReadyMessageDev $1;;
