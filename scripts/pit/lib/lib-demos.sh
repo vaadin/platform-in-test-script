@@ -24,6 +24,7 @@ getGitRepo() {
 getGitBranch() {
   case $1 in
     mpr-demo) echo "mpr-6";;
+    base-starter-flow-quarkus) echo "v24";;
   esac
 }
 
@@ -103,6 +104,7 @@ hasProduction() {
 hasDev() {
   test -z "$NODEV"
 }
+
 ## Get the default port used in each demo
 getPort() {
   case $1 in
@@ -125,14 +127,11 @@ getTest() {
 setDemoVersion() {
   case "$1" in
     base-starter-spring-gradle) setGradleVersion vaadinVersion "$2";;
-    mpr-demo)
-       if [ "$2" != current ]; then
-         B=`echo $2 | cut -d . -f1,2`
-         FLOWVERSION=`getFlowVersionFromPlatform $B`
-         [ -z "$FLOWVERSION" ] && FLOWVERSION=`getFlowVersionFromPlatform master`
-         setVersion flow.version "$FLOWVERSION"
-       fi
-       setVersion vaadin.version "$2";;
+    base-starter-flow-quarkus|mpr-demo)
+       setVersion vaadin.version "$2" || return 1;
+       setFlowVersion "$2" false
+       setMprVersion "$2" false
+       ;;
     *) setVersion vaadin.version "$2";;
   esac
 }
@@ -184,7 +183,7 @@ runDemo() {
     fi
   fi
   # 4
-  if setDemoVersion $_demo $_version >/dev/null
+  if setDemoVersion $_demo $_version
   then
     applyPatches $_demo next
     if hasDev $_demo; then

@@ -20,25 +20,25 @@ doExit() {
 }
 
 print() {
-  printf "\033[0m> \033[$1;$2m$3\033[0m\n" >&2
+  printf "\033[0m$1 \033[$2;$3m$4\033[0m\n" >&2
 }
 
 ## log with some nice color
 log() {
-  print 0 32 "$*"
+  print '>' 0 32 "$*"
 }
 bold() {
-  print 1 32 "$*"
+  print '>' 1 32 "$*"
 }
 err() {
-  print 0 31 "$*"
+  print '>' 0 31 "$*"
 }
 warn() {
-  print 0 33 "$*"
+  print '>' 0 33 "$*"
 }
 cmd() {
   cmd_=`echo "$*" | sed -e 's/ -D.*license=[a-z0-9-]*//'`
-  print 1 34 " $cmd_"
+  print ' ' 1 34 " $cmd_"
 }
 
 ## ask user a question, response is stored in key
@@ -190,12 +190,11 @@ checkHttpServlet() {
 setVersion() {
   _mavenProperty=$1
   _version=$2
-  git checkout -q .
+  [ "$3" != false ] && git checkout -q .
   _current=`mvn help:evaluate -Dexpression=$_mavenProperty -q -DforceStdout`
-  echo ""
   case $_version in
     current|$_current)
-      echo $_current;
+      echo $_current
       return 1;;
     *)
       _cmd="mvn -B -q versions:set-property -Dproperty=$_mavenProperty -DnewVersion=$_version"
@@ -206,10 +205,27 @@ setVersion() {
   esac
 }
 
-getFlowVersionFromPlatform() {
+getVersionFromPlatform() {
+  echo "$1" "$2" >&2
   curl -s "https://raw.githubusercontent.com/vaadin/platform/$1/versions.json" 2>/dev/null \
-      | tr -d "\n" |tr -d " "  | sed -e 's/^.*"flow":{"javaVersion"://'| cut -d '"' -f2
-      set +x
+      | tr -d "\n" |tr -d " "  | sed -e 's/^.*"'$2'":{"javaVersion"://'| cut -d '"' -f2
+}
+
+setVersionFromPlatform() {
+  _version=$1
+  [ $_version = current ] && return
+  B=`echo $_version | cut -d . -f1,2`
+  VERS=`getVersionFromPlatform $B $2`
+  [ -z "$VERS" ] && VERS=`getVersionFromPlatform master`
+  setVersion $3 "$VERS" false
+}
+
+setFlowVersion() {
+  setVersionFromPlatform $1 flow flow.version
+}
+
+setMprVersion() {
+  setVersionFromPlatform $1 mpr-v8 mpr.version
 }
 
 ## Set the value of a property in the gradle.properties file, returning error if unchanged

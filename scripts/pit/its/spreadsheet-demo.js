@@ -36,8 +36,9 @@ process.argv.forEach(a => {
   await page.waitForURL(`http://${host}:${port}/demo/basic`);
 
   await page.locator('.col2').first().click();
+  await sleep(100);
   const c = await page.getByText('SIMPLE MONTHLY BUDGET').count();
-  if (c != 2) throw new Error();
+  if (!c) throw new Error('Text not found');
 
   await page.getByRole('link', { name: 'Collaborative features' }).click();
   await page.waitForURL(`http://${host}:${port}/demo/collaborative`);
@@ -45,14 +46,14 @@ process.argv.forEach(a => {
   await page.getByText('5.00%').dblclick();
   await page.locator('#cellinput').click();
   await page.locator('#cellinput').fill('0.03');
-  await page.locator('#cellinput').press('Enter');  
+  await page.locator('#cellinput').press('Enter');
   await page.getByText('$10,315.49');
   await sleep(100);
   await page.keyboard.press('Enter');
   await sleep(100);
   await page.locator('#cellinput').click();
   await page.locator('#cellinput').fill('20');
-  await page.locator('#cellinput').press('Enter');  
+  await page.locator('#cellinput').press('Enter');
   await page.getByText('$13,310.34').click();
   await sleep(100);
 

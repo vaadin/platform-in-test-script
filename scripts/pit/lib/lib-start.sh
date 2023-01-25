@@ -15,7 +15,6 @@ downloadStarter() {
   log "Downloading $1"
   cmd "curl -s -f '$_url' -o $_zip"
   cmd "unzip $_zip"
-  cmd "cd $_preset"
   [ -z "$VERBOSE" ] && _silent="-s"
 
   curl $_silent -f "$_url" -o $_zip \
@@ -23,13 +22,28 @@ downloadStarter() {
     && rm -f $_zip || return 1
 
   _new=`echo "$_preset" | tr "_" "-"`
+  cmd "cd $_new"
   [ "$_new" != "$_preset" ] && mv "$_new" "$_preset" || return 0
+}
+
+computeVersion() {
+  case $1 in
+    *typescript*|*hilla*|*react*|*-lit*) echo $2 | sed -e 's,^23,1,' | sed -e 's,^24,2,';;
+    *) echo "$2";;
+  esac
+}
+computeProp() {
+  case $1 in
+    *typescript*|*hilla*|*react*|*-lit*) echo "hilla.version";;
+    *) echo "vaadin.version";;
+  esac
 }
 
 ## get the selenium IDE test file used for each starter
 getStartTestFile() {
   case $1 in
    *-auth) echo "start-auth.js";;
+   flow-crm-tutorial*) echo "";;
    *) echo "start.js";;
   esac
 }
@@ -45,16 +59,10 @@ runStarter() {
   _preset="$1"
   _tmp="$2"
   _port="$3"
-  _version="$4"
+  _versionProp=`computeProp $_preset`
+  _version=`computeVersion $_preset $4`
   _offline="$5"
 
-  ## For typescript starters, use hilla.version property and the equivalent version numering
-  _versionProp=vaadin.version
-  if echo "$_preset" | grep -q typescript
-  then
-    _version=`echo $_version | sed -e 's,^23,1,'`
-    _versionProp=hilla.version
-  fi
   _test=`getStartTestFile $_preset`
 
   cd "$_tmp"
@@ -73,24 +81,25 @@ runStarter() {
     _current=`setVersion $_versionProp current`
     # 2
     if [ -z "$NODEV" ]; then
-      runValidations dev $_current $_preset $_port "mvn -ntp -B clean" "mvn -ntp -B $PNPM" "Frontend compiled" "$_test" || return 1
+      runValidations dev "$_current" "$_preset" "$_port" "mvn -ntp -B clean" "mvn -ntp -B $PNPM" "Frontend compiled" "$_test" || return 1
     fi
     # 3
     if [ -z "$NOPROD" ]; then
-      runValidations prod $_current $_preset $_port "mvn -ntp -B -Pproduction package $PNPM" 'java -jar target/*.jar' "Started Application" "$_test" || return 1
+      runValidations prod "$_current" "$_preset" "$_port" "mvn -ntp -B -Pproduction package $PNPM" 'java -jar target/*.jar' "Started Application" "$_test" || return 1
     fi
   fi
+
   # 4
   if setVersion $_versionProp $_version >/dev/null
   then
     applyPatches $_preset next
     # 5
     if [ -z "$NODEV" ]; then
-      runValidations dev $_version $_preset $_port "mvn -ntp -B clean" "mvn -ntp -B $PNPM" "Frontend compiled" "$_test" || return 1
+      runValidations dev "$_current" "$_preset" "$_port" "mvn -ntp -B clean" "mvn -ntp -B $PNPM" "Frontend compiled" "$_test" || return 1
     fi
     # 6
     if [ -z "$NOPROD" ]; then
-      runValidations prod $_version $_preset $_port "mvn -ntp -B -Pproduction package $PNPM" 'java -jar target/*.jar' "Started Application" "$_test" || return 1
+      runValidations prod "$_current" "$_preset" "$_port" "mvn -ntp -B -Pproduction package $PNPM" 'java -jar target/*.jar' "Started Application" "$_test" || return 1
     fi
   fi
 }

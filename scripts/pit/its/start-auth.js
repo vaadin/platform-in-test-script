@@ -30,8 +30,9 @@ process.argv.forEach(a => {
   await page.locator('input[name="password"]').click();
   await page.locator('input[name="password"]').fill('admin');
   await page.locator('vaadin-button[role="button"]:has-text("Log in")').click();
-  await page.waitForURL(`http://${host}:${port}/`);
+  await page.waitForLoadState();
 
+  await page.locator('text=Hello World (Java)').nth(0).click();
   await page.locator('text=Hello').nth(0).click();
   await page.locator('input[type="text"]').fill('Greet');
   await page.locator('text=Say hello').click();
@@ -42,7 +43,7 @@ process.argv.forEach(a => {
   await page.locator('input[type="text"]').nth(0).fill('FOO');
   await page.locator('text=Save').click();
   await page.locator('text=/stored/');
-
+  await page.waitForTimeout(5000);
 
   await page.locator('text=/Emma Powerful/').click();
   await page.locator('text=/Sign out/').click();

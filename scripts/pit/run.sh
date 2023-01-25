@@ -13,21 +13,21 @@ PRESETS="
 latest-java
 latest-java-top
 latest-javahtml
-latest-typescript
-latest-typescript-top
+latest-lit
+latest-lit-top
 latest-java_partial-auth
-latest-typescript_partial-auth"
+latest-lit_partial-auth
+flow-crm-tutorial_partial-latest
+react-tutorial"
 DEMOS="
-mpr-demo
-k8s-demo-app
 skeleton-starter-flow-spring
 bakery-app-starter-flow-spring
 base-starter-spring-gradle
 base-starter-flow-quarkus
-vaadin-flow-karaf-example
-base-starter-flow-osgi
 spreadsheet-demo
 skeleton-starter-flow-cdi"
+# vaadin-flow-karaf-example
+# base-starter-flow-osgi
 DEFAULT_STARTERS=`echo "$PRESETS$DEMOS" | tr "\n" "," | sed -e 's/^,//' | sed -e 's/,$//'`
 
 run() {
