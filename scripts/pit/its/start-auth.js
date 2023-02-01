@@ -32,7 +32,7 @@ process.argv.forEach(a => {
   await page.locator('vaadin-button[role="button"]:has-text("Log in")').click();
   await page.waitForLoadState();
 
-  await page.locator('text=Hello World (Java)').nth(0).click();
+  await page.locator('text=Hello World').nth(0).click();
   await page.locator('text=Hello').nth(0).click();
   await page.locator('input[type="text"]').fill('Greet');
   await page.locator('text=Say hello').click();

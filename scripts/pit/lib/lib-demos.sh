@@ -76,10 +76,13 @@ getRunCmdPrd() {
 getReadyMessageDev() {
   case $1 in
     base-starter-flow-osgi) echo "HTTP:8080";;
-    skeleton-starter-flow-cdi) echo "Started Vite";;
+    skeleton-starter-flow-cdi) echo "Development frontend bundle built";;
+    skeleton-starter-flow-spring) echo "Started Application";; # frontend bundle built
+    bakery-app-starter-flow-spring) echo "Started Application";; # frontend bundle built
     base-starter-flow-quarkus) echo "TaskCopyFrontendFiles";;
     vaadin-flow-karaf-example) echo "Artifact deployed";;
-    *) echo "Frontend compiled successfully";;
+    spreadsheet-demo) echo "frontend bundle built";;
+    *) echo "Frontend compiled successfully";; # frontend bundle built
   esac
 }
 ## Get ready message when running the project in prod-mode
@@ -87,7 +90,8 @@ getReadyMessagePrd() {
   case $1 in
     skeleton-starter-flow-spring|k8s-demo-app) echo "Vaadin is running in production mode";;
     base-starter-flow-quarkus) echo "Listening on: http://0.0.0.0:8080";;
-    base-starter-spring-gradle|bakery-app-starter-flow-spring) echo "JVM running for";;
+    base-starter-spring-gradle) echo "JVM running for";;
+    bakery-app-starter-flow-spring) echo "Started Application";;
     skeleton-starter-flow-cdi) echo "Registered web contex";;
     mpr-demo|spreadsheet-demo) echo "Started ServerConnector";;
     *) getReadyMessageDev $1;;

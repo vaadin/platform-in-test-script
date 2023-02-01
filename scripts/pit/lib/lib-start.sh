@@ -48,6 +48,13 @@ getStartTestFile() {
   esac
 }
 
+_getStartReadyMessageDev() {
+  case $1 in
+    latest-lit_partial-auth) echo "Started Vite";;
+    *) echo "Started Application";;
+  esac
+}
+
 ## Run an App downloaded from start.vaadin.com by following the next steps
 # 1. generate the project and download from start.vaadin.com (if not in offline)
 # 2. run validations in the current version to check that it's not broken
@@ -75,13 +82,15 @@ runStarter() {
   fi
   cd "$_dir" || return 1
 
+  _msg=`_getStartReadyMessageDev $_preset`
+
   if [ -z "$NOCURRENT" ]
   then
     applyPatches $_preset current
     _current=`setVersion $_versionProp current`
     # 2
     if [ -z "$NODEV" ]; then
-      runValidations dev "$_current" "$_preset" "$_port" "mvn -ntp -B clean" "mvn -ntp -B $PNPM" "Frontend compiled" "$_test" || return 1
+      runValidations dev "$_current" "$_preset" "$_port" "mvn -ntp -B clean" "mvn -ntp -B $PNPM" "$_msg" "$_test" || return 1
     fi
     # 3
     if [ -z "$NOPROD" ]; then
@@ -95,7 +104,7 @@ runStarter() {
     applyPatches $_preset next
     # 5
     if [ -z "$NODEV" ]; then
-      runValidations dev "$_current" "$_preset" "$_port" "mvn -ntp -B clean" "mvn -ntp -B $PNPM" "Frontend compiled" "$_test" || return 1
+      runValidations dev "$_current" "$_preset" "$_port" "mvn -ntp -B clean" "mvn -ntp -B $PNPM" "$_msg" "$_test" || return 1
     fi
     # 6
     if [ -z "$NOPROD" ]; then
