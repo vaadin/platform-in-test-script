@@ -23,6 +23,8 @@ runValidations() {
   [ -n "$7" ] && check="$7" || check=""
   [ -n "$8" ] && test="$IT_FOLDER/$8" || test=""
   file="$name-$mode-$version-"`uname`".out"
+  [ "$mode" = prod ] && expr "$compile" : mvn >/dev/null && compile="$compile -Dmaven.compiler.showDeprecation"
+  [ "$mode" = prod ] && expr "$cmd" : mvn >/dev/null && cmd="$cmd -Dmaven.compiler.showDeprecation"
 
   echo ""
   bold "----> Running builds and tests on app $name, mode=$mode, port=$port, version=$version"
@@ -48,6 +50,9 @@ runValidations() {
   # 5
   [ -n "$INTERACTIVE" ] && waitForUserWithBell && waitForUserManualTesting "$port"
   # 6
+
+  [ "$mode" = prod ] && H=`cat $file | grep WARNING | grep 'deprecated$' | sed -e 's/^.*\/src\//src\//g'`
+  [ -n "$H" ] && warn "$H"
 
   checkHttpServlet "http://localhost:$port/" "$file" || return 1
   # 7

@@ -8,6 +8,10 @@ applyPatches() {
       patchProperty maven.compiler.source 17
       patchProperty maven.compiler.target 17
     ;;
+    react*)
+      cmd 'perl -pi -e '"'"'s/("\@vitejs\/plugin-react"):.*,/${1}: "^3.1.0"/g'"'"' package.json'
+      perl -pi -e 's/("\@vitejs\/plugin-react"):.*,/${1}: "^3.1.0",/g' package.json
+    ;;
   esac
   if [ "$vers_" != current ]; then
     patchServletDep

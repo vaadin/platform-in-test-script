@@ -50,7 +50,7 @@ getStartTestFile() {
 
 _getStartReadyMessageDev() {
   case $1 in
-    latest-lit_partial-auth) echo "Started Vite";;
+    latest-lit*|react*) echo "Started Vite";;
     *) echo "Started Application";;
   esac
 }
