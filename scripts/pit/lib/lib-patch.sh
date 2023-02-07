@@ -14,10 +14,12 @@ applyPatches() {
     ;;
   esac
   if [ "$vers_" != current ]; then
-    patchServletDep
     patchTo24
+    patchServletDep
     patchSpring 3.1 3.1
     patchProperty java.version 17
+    patchProperty maven.compiler.source 17
+    patchProperty maven.compiler.target 17
     patchProperty jetty.version 11.0.13
     patchProperty jetty.plugin.version 11.0.13
     patchDependency org.apache.tomee.maven:tomee-maven-plugin 9.0.0.RC1
@@ -83,6 +85,7 @@ patchTo24() {
   find $D -name "*.java" | xargs perl -pi -e 's/WebSecurityConfigurerAdapter/VaadinWebSecurity/g'
   find $D -name "*.java" | xargs perl -pi -e 's/\.authorizeRequests\(\)/.authorizeHttpRequests()/g'
   find $D -name "*.java" | xargs perl -pi -e 's/[\s]*\w[\w\d]+\.setPreventInvalidInput\([^\)]+\)[;\s]*//g'
+  find $D -name "*.properties" | xargs perl -pi -e 's/javax\./jakarta./g'
 
   find . -name pom.xml | xargs perl -pi -e 's/.*<selenium.version>.*//msg'
 
