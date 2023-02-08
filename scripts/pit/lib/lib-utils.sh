@@ -51,67 +51,67 @@ ask() {
 
 ## Compute the absolute PATH of the executed script
 computeAbsolutePath() {
-  _path=`dirname $0 | sed -e 's,^\./,,'`
+  __path=`dirname $0 | sed -e 's,^\./,,'`
   ## Check whether the PATH is absolute
-  [ `expr "$_path" : '^/'` != 1 ] && _path="$PWD/$_path"
-  echo "$_path"
+  [ `expr "$__path" : '^/'` != 1 ] && __path="$PWD/$__path"
+  echo "$__path"
 }
 
 runToFile() {
-  _cmd="$1"
-  _file="$2"
-  _verbose="$3"
-  log "Running and sending output to > $_file"
-  cmd "$_cmd"
-  if [ -z "$_verbose" ]
+  __cmd="$1"
+  __file="$2"
+  __verbose="$3"
+  log "Running and sending output to > $__file"
+  cmd "$__cmd"
+  if [ -z "$__verbose" ]
   then
-    $_cmd >> $_file 2>&1
+    $__cmd >> $__file 2>&1
     err=$?
   else
-    $_cmd 2>&1 | tee -a $_file
+    $__cmd 2>&1 | tee -a $__file
     err=$?
   fi
-  [ $err != 0 ] && err "!!! ERROR running $_cmd !!!" && tail -100 $_file && return 1 || return 0
+  [ $err != 0 ] && err "!!! ERROR running $__cmd !!!" && tail -100 $__file && return 1 || return 0
 }
 
 ## Run a process silently in background sending its output to a file
 runInBackgroundToFile() {
-  _cmd="$1"
-  _file="$2"
-  _verbose="$3"
-  log "Running in background and sending output to > $_file"
-  cmd "$_cmd"
-  touch $_file
-  if [ -n "$_verbose" ]
+  __cmd="$1"
+  __file="$2"
+  __verbose="$3"
+  log "Running in background and sending output to > $__file"
+  cmd "$__cmd"
+  touch $__file
+  if [ -n "$__verbose" ]
   then
-    tail -f "$_file" &
+    tail -f "$__file" &
     pid_tail=$!
   fi
-  $_cmd >> $_file 2>&1 &
+  $__cmd >> $__file 2>&1 &
   pid_run=$!
 }
 
 ## Wait until the specified message appears in the log file
 waitUntilMessageInFile() {
-  _file="$1"
-  _message="$2"
-  _timeout="$3"
-  _cmd="$4"
-  log "Waiting for server to start, timeout=$_timeout secs, message='$_message'"
-  while [ $_timeout -gt 0 ]
+  __file="$1"
+  __message="$2"
+  __timeout="$3"
+  __cmd="$4"
+  log "Waiting for server to start, timeout=$__timeout secs, message='$__message'"
+  while [ $__timeout -gt 0 ]
   do
     kill -0 $pid_run 2>/dev/null
     if [ $? != 0 ]
     then
-      log "ERROR: $_cmd failed to start (check full output in $_file)"
-      [ -n "$VERBOSE" ] && tail -80 $_file
+      log "ERROR: $__cmd failed to start (check full output in $__file)"
+      [ -n "$VERBOSE" ] && tail -80 $__file
       return 1
     fi
-    grep -q "$_message" $_file && log "Found '$_message' in $_file after "`expr $3 - $_timeout`" secs" && sleep 3 && return 0
-    sleep 2 && _timeout=`expr $_timeout - 2`
+    grep -q "$__message" $__file && log "Found '$__message' in $__file after "`expr $3 - $__timeout`" secs" && sleep 3 && return 0
+    sleep 2 && __timeout=`expr $__timeout - 2`
   done
-  log "ERROR: Could not find '$_message' in $_file after $3 secs (check output in $_file)"
-  [ -n "$VERBOSE" ] && tail -80 $_file
+  log "ERROR: Could not find '$__message' in $__file after $3 secs (check output in $__file)"
+  [ -n "$VERBOSE" ] && tail -80 $__file
   return 1
 }
 
@@ -125,10 +125,10 @@ playBell() {
 
 ## Alert user with a bell and wait until they push enter
 waitForUserWithBell() {
-  _message=$1
+  __message=$1
   playBell &
   pid_bell=$!
-  [ -n "$_message" ] && log "$_message"
+  [ -n "$__message" ] && log "$__message"
   ask "Push ENTER to stop the bell and continue"
   doKill $pid_bell
   unset pid_bell
@@ -136,8 +136,8 @@ waitForUserWithBell() {
 
 ## Inform the user that app is running in localhost, then wait until the user push enter
 waitForUserManualTesting() {
-  _port="$1"
-  log "App is running in http://localhost:$_port, open it in your browser"
+  __port="$1"
+  log "App is running in http://localhost:$__port, open it in your browser"
   ask "When you finish, push ENTER  to continue"
 }
 
@@ -168,55 +168,54 @@ waitUntilAppReady() {
 
 ## Check whether the port is already in use in this machine
 checkBusyPort() {
-  _port="$1"
-  log "Checking whether port $_port is busy"
-  checkPort $_port
-  _err=$?
-  [ $_err = 0 ] && err "Port ${_port} is occupied" && return 1 || return 0
+  __port="$1"
+  log "Checking whether port $__port is busy"
+  checkPort $__port
+  __err=$?
+  [ $__err = 0 ] && err "Port ${__port} is occupied" && return 1 || return 0
 }
 
 ## Check that a HTTP servlet request responds with 200
 checkHttpServlet() {
-  _url="$1"
-  _file="$2"
-  _cfile="curl-"`uname`".out"
-  rm -f $_cfile
-  log "Checking whether url $_url returns HTTP 200"
-  runToFile "curl --fail -I -L $_url" "$_cfile" "$VERBOSE"
-  [ $? != 0 ] && log "Got an invalid response from $_url" && return 1 || return 0
+  __url="$1"
+  __file="$2"
+  __cfile="curl-"`uname`".out"
+  rm -f $__cfile
+  log "Checking whether url $__url returns HTTP 200"
+  runToFile "curl --fail -I -L $__url" "$__cfile" "$VERBOSE"
+  [ $? != 0 ] && log "Got an invalid response from $__url" && return 1 || return 0
 }
 
 ## Set the value of a property in the pom file, returning error if unchanged
 setVersion() {
-  _mavenProperty=$1
-  _version=$2
+  __mavenProperty=$1
+  __version=$2
   [ "$3" != false ] && git checkout -q .
-  _current=`mvn help:evaluate -Dexpression=$_mavenProperty -q -DforceStdout`
-  case $_version in
-    current|$_current)
-      echo $_current
+  __current=`mvn help:evaluate -Dexpression=$__mavenProperty -q -DforceStdout`
+  case $__version in
+    current|$__current)
+      echo $__current
       return 1;;
     *)
-      _cmd="mvn -B -q versions:set-property -Dproperty=$_mavenProperty -DnewVersion=$_version"
+      __cmd="mvn -B -q versions:set-property -Dproperty=$__mavenProperty -DnewVersion=$__version"
       echo "" >&2
-      bold "==> Changing $_mavenProperty from $_current to $_version"
-      cmd "$_cmd"
-      $_cmd && return 0 || return 1;;
+      bold "==> Changing $__mavenProperty from $__current to $__version"
+      cmd "$__cmd"
+      $__cmd && return 0 || return 1;;
   esac
 }
 
 getVersionFromPlatform() {
-  echo "$1" "$2" >&2
   curl -s "https://raw.githubusercontent.com/vaadin/platform/$1/versions.json" 2>/dev/null \
-      | tr -d "\n" |tr -d " "  | sed -e 's/^.*"'$2'":{"javaVersion"://'| cut -d '"' -f2
+      | egrep -v '^[1-4]' | tr -d "\n" |tr -d " "  | sed -e 's/^.*"'$2'":{"javaVersion"://'| cut -d '"' -f2
 }
 
 setVersionFromPlatform() {
-  _version=$1
-  [ $_version = current ] && return
-  B=`echo $_version | cut -d . -f1,2`
+  __version=$1
+  [ $__version = current ] && return
+  B=`echo $__version | cut -d . -f1,2`
   VERS=`getVersionFromPlatform $B $2`
-  [ -z "$VERS" ] && VERS=`getVersionFromPlatform master`
+  [ -z "$VERS" ] && VERS=`getVersionFromPlatform master $2`
   setVersion $3 "$VERS" false
 }
 
@@ -230,51 +229,51 @@ setMprVersion() {
 
 ## Set the value of a property in the gradle.properties file, returning error if unchanged
 setGradleVersion() {
-  _gradleProperty=$1
-  _version=$2
+  __gradleProperty=$1
+  __version=$2
   git checkout -q .
-  _current=`cat gradle.properties | grep "$_gradleProperty" | cut -d "=" -f2`
+  __current=`cat gradle.properties | grep "$_gradleProperty" | cut -d "=" -f2`
   echo ""
-  case $_version in
-    current|$_current)
-      echo $_current;
+  case $__version in
+    current|$__current)
+      echo $__current;
       return 1;;
     *)
-      _cmd="perl -pi -e 's,$_gradleProperty=.*,$_gradleProperty=$_version,' gradle.properties"
-      log "Changing $_gradleProperty from $_current to $_version"
-      cmd "$_cmd"
-      $_cmd && return 0 || return 1;;
+      __cmd="perl -pi -e 's,$_gradleProperty=.*,$_gradleProperty=$__version,' gradle.properties"
+      log "Changing $_gradleProperty from $__current to $__version"
+      cmd "$__cmd"
+      $__cmd && return 0 || return 1;;
   esac
 }
 
 ## Do not open Browser after app is started
 disableLaunchBrowser() {
   [ ! -d src/main/resources ] && return
-  _prop="src/main/resources/application.properties"
-  _key="vaadin.launch-browser"
-  log "Disabling $_key in $_prop"
-  touch $_prop
-  perl -pi -e "s/$_key=.*//g" "$_prop"
+  __prop="src/main/resources/application.properties"
+  __key="vaadin.launch-browser"
+  log "Disabling $__key in $__prop"
+  touch $__prop
+  perl -pi -e "s/$__key=.*//g" "$__prop"
 }
 
 ## pnpm is quite faster than npm
 enablePnpm() {
   [ ! -d src/main/resources ] && return
-  _prop="src/main/resources/application.properties"
-  _key="vaadin.pnpm.enable"
-  log "Enabling $_key in $_prop"
-  touch $_prop
-  grep -q "$_key=true" "$_prop" || echo "$_key=true" >> "$_prop"
+  __prop="src/main/resources/application.properties"
+  __key="vaadin.pnpm.enable"
+  log "Enabling $__key in $__prop"
+  touch $__prop
+  grep -q "$__key=true" "$__prop" || echo "$__key=true" >> "$__prop"
 }
 
 ## vite is faster than webpack
 enableVite() {
   [ ! -d src/main/resources ] && return
-  _prop="src/main/resources/vaadin-featureflags.properties"
-  _key="com.vaadin.experimental.viteForFrontendBuild"
-  log "Enabling $_key in $_prop"
-  touch $_prop
-  grep -q "$_key=true" "$_prop" || echo "$_key=true" >> "$_prop"
+  __prop="src/main/resources/vaadin-featureflags.properties"
+  __key="com.vaadin.experimental.viteForFrontendBuild"
+  log "Enabling $__key in $__prop"
+  touch $__prop
+  grep -q "$__key=true" "$__prop" || echo "$__key=true" >> "$__prop"
 }
 
 isHeadless() {
@@ -291,10 +290,10 @@ Npm version: `npm --version`"
 
 printTime() {
   [ -n "$1" ] && _start=$1 || return
-  _end=`date +%s`
-  _time=`expr $_end - $_start`
-  _mins=`expr $_time / 60`
-  _secs=`expr $_time % 60`
+  __end=`date +%s`
+  __time=`expr $__end - $_start`
+  __mins=`expr $__time / 60`
+  __secs=`expr $__time % 60`
   echo ""
-  log "Total time: $_mins' $_secs\""
+  log "Total time: $__mins' $__secs\""
 }

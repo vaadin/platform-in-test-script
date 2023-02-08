@@ -82,6 +82,7 @@ getReadyMessageDev() {
     base-starter-flow-quarkus) echo "TaskCopyFrontendFiles";;
     vaadin-flow-karaf-example) echo "Artifact deployed";;
     spreadsheet-demo) echo "frontend bundle built";;
+    mpr-demo) echo "Vaadin is running in DEBUG MODE";;
     *) echo "Frontend compiled successfully";; # frontend bundle built
   esac
 }

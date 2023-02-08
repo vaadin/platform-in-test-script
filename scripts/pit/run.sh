@@ -25,11 +25,11 @@ bakery-app-starter-flow-spring
 base-starter-spring-gradle
 base-starter-flow-quarkus
 spreadsheet-demo
+mpr-demo
 skeleton-starter-flow-cdi"
 # k8s-demo-app
 # vaadin-flow-karaf-example
 # base-starter-flow-osgi
-# mpr-demo
 DEFAULT_STARTERS=`echo "$PRESETS$DEMOS" | tr "\n" "," | sed -e 's/^,//' | sed -e 's/,$//'`
 
 run() {
