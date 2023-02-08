@@ -4,7 +4,7 @@ applyPatches() {
   vers_=$2
   case $app_ in
     base-starter-flow-quarkus)
-      [ "$vers_" != current ] && return
+      [ "$vers_" = current ] && return
       patchProperty quarkus.version 999-jakarta-SNAPSHOT
       patchProperty maven.compiler.source 17
       patchProperty maven.compiler.target 17
@@ -30,15 +30,15 @@ EOF
     git add src/main/java/org/vaadin/mprdemo/ApplicationConfig.java
     ;;
     react*)
-      [ "$vers_" != current ] && return
+      [ "$vers_" = current ] && return
       cmd 'perl -pi -e '"'"'s/("\@vitejs\/plugin-react"):.*,/${1}: "^3.1.0"/g'"'"' package.json'
       perl -pi -e 's/("\@vitejs\/plugin-react"):.*,/${1}: "^3.1.0",/g' package.json
     ;;
   esac
   if [ "$vers_" != current ]; then
+    patchSpring 3.1 3.1
     patchServletDep
     patchTo24
-    patchSpring 3.1 3.1
     patchProperty java.version 17
     patchProperty maven.compiler.source 17
     patchProperty maven.compiler.target 17
@@ -110,9 +110,10 @@ patchTo24() {
   find $D -name "*.properties" | xargs perl -pi -e 's/javax\./jakarta./g'
 
   find . -name pom.xml | xargs perl -pi -e 's/.*<selenium.version>.*//g'
+  find . -name pom.xml | xargs perl -0777 -pi -e 's/<dependency>\s*<groupId>javax.xml.bind<\/groupId>\s*<artifactId>jaxb-api<\/artifactId>\s*(<version>.+?<\/version>)?\s*<\/dependency>[ \n]*//msg'
+
   find . -name pom.xml | xargs perl -pi -e 's/javax\./jakarta./g'
 
-  find . -name pom.xml | xargs perl -0777 -pi -e 's/<dependency>\s*<groupId>javax.xml.bind<\/groupId>\s*<artifactId>jaxb-api<\/artifactId>\s*(<version>.+?<\/version>)?\s*<\/dependency>[ \n]*//msg'
   ## cdi
   find . -name pom.xml | xargs perl -0777 -pi -e 's/(<dependency>\s*<groupId>)javax(<\/groupId>\s*<artifactId>)javaee-api(<\/artifactId>\s*<version>).+?(<\/version>\s*<scope>provided<\/scope>\s*<\/dependency>[ \n]*)/$1jakarta.platform$2jakarta.jakartaee-api${3}8.0.0$4/msg'
   find . -name pom.xml | xargs perl -0777 -pi -e 's/(<plugin>\s*<groupId>org.wildfly.plugins<\/groupId>\s*<artifactId>wildfly-maven-plugin<\/artifactId>\s*<version>).+?(<\/version>\s*<configuration>\s*<version>).+?(<\/version>\s*<\/configuration>\s*<\/plugin>[ \n]*)/${1}2.1.0.Final${2}27.0.0.Final${3}/msg'

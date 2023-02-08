@@ -198,7 +198,6 @@ setVersion() {
       return 1;;
     *)
       __cmd="mvn -B -q versions:set-property -Dproperty=$__mavenProperty -DnewVersion=$__version"
-      echo "" >&2
       bold "==> Changing $__mavenProperty from $__current to $__version"
       cmd "$__cmd"
       $__cmd && return 0 || return 1;;

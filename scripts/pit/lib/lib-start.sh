@@ -44,6 +44,7 @@ getStartTestFile() {
   case $1 in
    *-auth) echo "start-auth.js";;
    flow-crm-tutorial*) echo "";;
+   react-tutorial) echo "react.js";;
    *) echo "start.js";;
   esac
 }
