@@ -33,8 +33,8 @@ process.argv.forEach(a => {
 
   await page.getByLabel('Username').fill('admin');
   await page.getByLabel('Username').press('Tab');
-  await page.getByLabel('Password').fill('admin');
-  await page.getByLabel('Password').press('Tab');
+  await page.getByLabel('Password').first().fill('admin');
+  await page.getByLabel('Password').first().press('Tab');
   await page.getByRole('button', { name: 'Log in' }).locator('div').click();
   await page.waitForURL(`http://${host}:${port}/`);
   await page.getByRole('link', { name: ' Personas' }).click();

@@ -47,7 +47,7 @@ EOF
     patchDependency org.apache.tomee.maven:tomee-maven-plugin 9.0.0.RC1
     patchDependency org.wildfly.plugins:wildfly-maven-plugin 4.0.0.Final
     patchDependency com.vaadin.k8s:vaadin-cluster-support 2.0-SNAPSHOT
-    patchDependency com.vaadin:exampledata 6.1.0
+    patchDependency com.vaadin:exampledata 6.2.0
 
     [ -d src/main ] && D=src/main || D=*/src/main
     H=`git diff pom.xml $D | egrep '^[+-]'`

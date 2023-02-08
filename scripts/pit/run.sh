@@ -26,8 +26,8 @@ base-starter-spring-gradle
 base-starter-flow-quarkus
 spreadsheet-demo
 mpr-demo
+k8s-demo-app
 skeleton-starter-flow-cdi"
-# k8s-demo-app
 # vaadin-flow-karaf-example
 # base-starter-flow-osgi
 DEFAULT_STARTERS=`echo "$PRESETS$DEMOS" | tr "\n" "," | sed -e 's/^,//' | sed -e 's/,$//'`
