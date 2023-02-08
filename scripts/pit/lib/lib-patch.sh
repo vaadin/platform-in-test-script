@@ -12,7 +12,7 @@ applyPatches() {
     mpr-demo)
       [ "$vers_" = current ] && return
       find . -name MyUI.java | xargs perl -pi -e 's/(\@Push|\@MprTheme.*|\@LegacyUI.*|, *AppShellConfigurator)//g'
-      perl -pi -e 's/vaadin-server</vaadin-server-mpr-jakarta</' pom.xml
+      perl -0777 -pi -e 's|(\s+)(<dependency>\s*<groupId[^\s]+\s*<artifactId>)(vaadin-server)(</artifactId>\s*<version>[^<]+</version>)(\s*</dependency>)|$1$2$3-mpr-jakarta$4$5$1$2$3$4<scope>provided</scope>$5|msg' pom.xml
       cat << EOF > src/main/java/org/vaadin/mprdemo/ApplicationConfig.java
 package org.vaadin.mprdemo;
 
