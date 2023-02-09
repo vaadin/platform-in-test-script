@@ -50,8 +50,8 @@ EOF
     patchDependency com.vaadin:exampledata 6.2.0
 
     [ -d src/main ] && D=src/main || D=*/src/main
-    H=`git diff pom.xml $D | egrep '^[+-]'`
-    [ -n "$H" ] && warn "patched sources \n$H"
+    diff_=`git diff pom.xml $D | egrep '^[+-]'`
+    [ -n "$diff_" ] && warn "patched sources \n$diff_"
   fi
 }
 
@@ -81,16 +81,16 @@ patchProperty() {
 }
 
 patchDependency() {
-  H=`mvn dependency:list 2>/dev/null | grep $1 | sed -e 's/ *\[INFO\] *//g'`
-  [ -z "$H" ] && return
+  _deps=`mvn dependency:list 2>/dev/null | grep $1 | sed -e 's/ *\[INFO\] *//g'`
+  [ -z "$_deps" ] && return
   _cmd="mvn -q versions:use-dep-version -Dincludes=$1 -DdepVersion=$2 -DforceVersion=true "
   cmd "$_cmd" && $_cmd
   warn "Patched $1 -> "`mvn dependency:list | grep "$1" | sed -e 's/ *\[INFO\] *//g'`
 }
 
 patchServletDep() {
-  H=`mvn dependency:list | grep javax.servlet | sed -e 's/ *\[INFO\] *//g'`
-  [ -z "$H" ] && return
+  _deps=`mvn dependency:list | grep javax.servlet | sed -e 's/ *\[INFO\] *//g'`
+  [ -z "$_deps" ] && return
   echo pom.xml | xargs perl -pi -e 's/((?:groupId|artifactId)>)javax(\.servlet)/$1jakarta$2/g'
   patchDependency jakarta.servlet:jakarta.servlet-api 5.0.0
 }
