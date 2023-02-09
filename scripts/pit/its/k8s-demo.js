@@ -41,18 +41,18 @@ process.argv.forEach(a => {
   await page.waitForURL(`http://${host}:${port}/personas`);
   await page.getByRole('button', { name: '+' }).locator('div').click();
   await page.waitForURL(`http://${host}:${port}/personas/new`);
-  await page.getByLabel('First Name').click();
-  await page.getByLabel('First Name').fill('FOOBAR');
-  await page.getByLabel('First Name').press('Tab');
-  await page.getByLabel('Last Name').fill('BAZ');
-  await page.getByLabel('Last Name').press('Tab');
-  await page.getByLabel('First Name').click();
-  await page.getByLabel('Email').press('Escape');
+  await page.locator('.detail').getByLabel('First Name').click();
+  await page.locator('.detail').getByLabel('First Name').fill('FOOBAR');
+  await page.locator('.detail').getByLabel('First Name').press('Tab');
+  await page.locator('.detail').getByLabel('Last Name').fill('BAZ');
+  await page.locator('.detail').getByLabel('Last Name').press('Tab');
+  await page.locator('.detail').getByLabel('First Name').click();
+  await page.locator('.detail').getByLabel('Email').press('Escape');
   await page.evaluate(() => window.location.reload());
   await page.waitForURL(`http://${host}:${port}/personas/new`);
   await page.getByRole('button', { name: 'No' }).locator('div').click();
 
-  const name = await page.getByLabel('First Name').inputValue();
+  const name = await page.locator('.detail').getByLabel('First Name').inputValue();
   if (name != 'FOOBAR') throw new Error();
 
   await context.close();
