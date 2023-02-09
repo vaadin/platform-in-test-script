@@ -5,98 +5,60 @@ applyPatches() {
   case $app_ in
     base-starter-flow-quarkus)
       [ "$vers_" = current ] && return
-      patchProperty quarkus.version 999-jakarta-SNAPSHOT
-      patchProperty maven.compiler.source 17
-      patchProperty maven.compiler.target 17
+      changeMavenProperty quarkus.version 999-jakarta-SNAPSHOT
     ;;
     mpr-demo)
       [ "$vers_" = current ] && return
       find . -name MyUI.java | xargs perl -pi -e 's/(\@Push|\@MprTheme.*|\@LegacyUI.*|, *AppShellConfigurator)//g'
-      perl -0777 -pi -e 's|(\s+)(<dependency>\s*<groupId[^\s]+\s*<artifactId>)(vaadin-server)(</artifactId>\s*<version>[^<]+</version>)(\s*</dependency>)|$1$2$3-mpr-jakarta$4$5$1$2$3$4<scope>provided</scope>$5|msg' pom.xml
-      cat << EOF > src/main/java/org/vaadin/mprdemo/ApplicationConfig.java
-package org.vaadin.mprdemo;
+      find . -name MyUI.java | xargs perl -pi -e 's/(\@Push|\@MprTheme.*|\@LegacyUI.*|, *AppShellConfigurator)//g'
 
-import com.vaadin.flow.component.page.AppShellConfigurator;
-import com.vaadin.flow.component.page.Push;
-import com.vaadin.mpr.core.LegacyUI;
-import com.vaadin.mpr.core.MprTheme;
-
-@Push
-@MprTheme("mytheme")
-@LegacyUI(OldUI.class)
-public class ApplicationConfig implements AppShellConfigurator {
-}
-EOF
-    git add src/main/java/org/vaadin/mprdemo/ApplicationConfig.java
-    ;;
+      changeMavenBlock dependency com.vaadin vaadin-server "" "" vaadin-server-mpr-jakarta '${11}${12}${1}${2}${3}${4}${5}${6}${7}${8}${9}${10}<scope>provided</scope>${10}'
+      addAppConfigClass src/main/java/org/vaadin/mprdemo/ApplicationConfig.java
+      ;;
     react*)
       [ "$vers_" = current ] && return
       cmd 'perl -pi -e '"'"'s/("\@vitejs\/plugin-react"):.*,/${1}: "^3.1.0"/g'"'"' package.json'
       perl -pi -e 's/("\@vitejs\/plugin-react"):.*,/${1}: "^3.1.0",/g' package.json
-    ;;
+      ;;
+    skeleton-starter-flow-cdi)
+      [ "$vers_" = current ] && return
+      changeMavenBlock plugin org.wildfly.plugins wildfly-maven-plugin "" "" "" '<configuration><version>27.0.0.Final</version></configuration>'
+      ;;
   esac
+
   if [ "$vers_" != current ]; then
-    patchSpring 3.1 3.1
-    patchServletDep
-    patchTo24
-    patchProperty java.version 17
-    patchProperty maven.compiler.source 17
-    patchProperty maven.compiler.target 17
-    patchProperty jetty.version 11.0.13
-    patchProperty jetty.plugin.version 11.0.13
-    patchDependency org.apache.tomee.maven:tomee-maven-plugin 9.0.0.RC1
-    patchDependency org.wildfly.plugins:wildfly-maven-plugin 4.0.0.Final
-    patchDependency com.vaadin.k8s:vaadin-cluster-support 2.0-SNAPSHOT
-    patchDependency com.vaadin:exampledata 6.2.0
+    perl -0777 -pi -e 's/(vaadin-prereleases<\/url>\s*<snapshots>\s*<enabled>)false/${1}true/msg' pom.xml
+    ## This is a bit tricky since javax.servlet might be without the version tag
+    changeMavenBlock dependency javax.servlet javax.servlet-api 5.0.0
+    changeMavenBlock dependency jakarta.servlet jakarta.servlet-api 5.0.0
+    changeMavenBlock dependency javax.servlet javax.servlet-api "" jakarta.servlet jakarta.servlet-api
+    ##
+
+    changeMavenBlock parent org.springframework.boot spring-boot-starter-parent 3.0.2
+    removeMavenBlock dependency javax.xml.bind jaxb-api
+    changeMavenBlock dependency javax javaee-api 8.0.0 jakarta.platform jakarta.jakartaee-api
+
+    removeMavenProperty selenium.version
+    changeMavenProperty java.version 17
+    changeMavenProperty maven.compiler.source 17
+    changeMavenProperty maven.compiler.target 17
+    changeMavenProperty jetty.version 11.0.13
+    changeMavenProperty jetty.plugin.version 11.0.13
+    changeMavenBlock dependency org.apache.tomee.maven tomee-maven-plugin 9.0.0.RC1
+    changeMavenBlock dependency org.wildfly.plugins wildfly-maven-plugin 4.0.0.Final
+    changeMavenBlock dependency com.vaadin.k8s vaadin-cluster-support 2.0-SNAPSHOT
+    changeMavenBlock dependency com.vaadin exampledata 6.2.0
+
+    patchSources
 
     [ -d src/main ] && D=src/main || D=*/src/main
     diff_=`git diff pom.xml $D | egrep '^[+-]'`
-    [ -n "$diff_" ] && warn "patched sources \n$diff_"
+    [ -n "$diff_" ] && echo "" && warn "Patched sources\n" && dim "====== BEGIN ======\n\n$diff_\n\n======  END  ======\n"
   fi
-}
-
-patchSpring() {
-  currMinor="$1"
-  nextMinor="$2"
-  __artifact=`mvn help:evaluate -q -DforceStdout -Dexpression=project.parent.artifactId`
-  if [ "$__artifact" = "spring-boot-starter-parent" ]; then
-    __from=`mvn help:evaluate -q -DforceStdout -Dexpression=project.parent.version | cut -d . -f1,2`
-    expr "$__from" : "$currMinor" >/dev/null && return
-    expr "$__from" : "$nextMinor" >/dev/null && return
-    _cmd="mvn -q versions:update-parent -DparentVersion=[,$nextMinor)"
-    cmd "$_cmd" && $_cmd
-    __to=`mvn help:evaluate -q -DforceStdout -Dexpression=project.parent.version`
-    warn "Patched spring-boot-starter-parent from $__from to $__to"
-  fi
-}
-
-patchProperty() {
-  __curr=`grep "<$1>" pom.xml | perl -pe 's/\s*<'$1'>(.*)<\/'$1'>\s*/$1/g'`
-  # __curr=`mvn help:evaluate -q -DforceStdout -Dexpression=$1`
-  if [ -n "$__curr" -a "$__curr" != "$2" ]; then
-    _cmd="mvn -B -q versions:set-property -Dproperty=$1 -DnewVersion=$2"
-    cmd "$_cmd" && $_cmd
-    warn "Patched $1 from $__curr to $2"
-  fi
-}
-
-patchDependency() {
-  _deps=`mvn dependency:list 2>/dev/null | grep $1 | sed -e 's/ *\[INFO\] *//g'`
-  [ -z "$_deps" ] && return
-  _cmd="mvn -q versions:use-dep-version -Dincludes=$1 -DdepVersion=$2 -DforceVersion=true "
-  cmd "$_cmd" && $_cmd
-  warn "Patched $1 -> "`mvn dependency:list | grep "$1" | sed -e 's/ *\[INFO\] *//g'`
-}
-
-patchServletDep() {
-  _deps=`mvn dependency:list | grep javax.servlet | sed -e 's/ *\[INFO\] *//g'`
-  [ -z "$_deps" ] && return
-  echo pom.xml | xargs perl -pi -e 's/((?:groupId|artifactId)>)javax(\.servlet)/$1jakarta$2/g'
-  patchDependency jakarta.servlet:jakarta.servlet-api 5.0.0
 }
 
 ## 24.0
-patchTo24() {
+patchSources() {
   [ -d src/main ] && D=src/main || D=*/src/main
   find $D -name "*.java" | xargs perl -pi -e 's/javax\.(persistence|validation|annotation|transaction|inject|servlet)/jakarta.$1/g'
   find $D -name "*.java" | xargs perl -pi -e 's/import org.hibernate.annotations.Type;//g'
@@ -108,33 +70,20 @@ patchTo24() {
   find $D -name "*.java" | xargs perl -pi -e 's/\.authorizeRequests\(\)/.authorizeHttpRequests()/g'
   find $D -name "*.java" | xargs perl -pi -e 's/[\s]*\w[\w\d]+\.setPreventInvalidInput\([^\)]+\)[;\s]*//g'
   find $D -name "*.properties" | xargs perl -pi -e 's/javax\./jakarta./g'
-
-  find . -name pom.xml | xargs perl -pi -e 's/.*<selenium.version>.*//g'
-  find . -name pom.xml | xargs perl -0777 -pi -e 's/<dependency>\s*<groupId>javax.xml.bind<\/groupId>\s*<artifactId>jaxb-api<\/artifactId>\s*(<version>.+?<\/version>)?\s*<\/dependency>[ \n]*//msg'
-
-  find . -name pom.xml | xargs perl -pi -e 's/javax\./jakarta./g'
-
-  ## cdi
-  find . -name pom.xml | xargs perl -0777 -pi -e 's/(<dependency>\s*<groupId>)javax(<\/groupId>\s*<artifactId>)javaee-api(<\/artifactId>\s*<version>).+?(<\/version>\s*<scope>provided<\/scope>\s*<\/dependency>[ \n]*)/$1jakarta.platform$2jakarta.jakartaee-api${3}8.0.0$4/msg'
-  find . -name pom.xml | xargs perl -0777 -pi -e 's/(<plugin>\s*<groupId>org.wildfly.plugins<\/groupId>\s*<artifactId>wildfly-maven-plugin<\/artifactId>\s*<version>).+?(<\/version>\s*<configuration>\s*<version>).+?(<\/version>\s*<\/configuration>\s*<\/plugin>[ \n]*)/${1}2.1.0.Final${2}27.0.0.Final${3}/msg'
-
-
-
   ## spreadsheet
   find $D -name "*.java" | xargs perl -pi -e 's/listSelect.setDataProvider/listSelect.setItems/g'
 
   # bakery https://github.com/vaadin/flow/issues/15763
-  if [ -d src/test ]; then
-    find src/test -name "*.java" | xargs perl -pi -e 's/Assert.assertEquals\("maximum length is 255 characters", getErrorMessage\(textFieldElement\)\)/Assert.assertTrue(getErrorMessage(textFieldElement).matches("(maximum length is 255 characters|size must be between 0 and 255)"));/g'
+  # if [ -d src/test ]; then
+    # find src/test -name "*.java" | xargs perl -pi -e 's/Assert.assertEquals\("maximum length is 255 characters", getErrorMessage\(textFieldElement\)\)/Assert.assertTrue(getErrorMessage(textFieldElement).matches("(maximum length is 255 characters|size must be between 0 and 255)"));/g'
     # find src/test -name "*.java" | xargs perl -pi -e 's/(productsPage|usersView|page)\.getSearchBar\(\).getCreateNewButton\(\)/${1}.getNewItemButton().get()/g'
-    find src/test -name "*.java" | xargs perl -0777 -pi -e 's/(\@Test[\s\t]*public void editOrder\(\))/\@org.junit.Ignore ${1}/msg'
-  fi
-  echo pom.xml | xargs perl -0777 -pi -e 's/(vaadin-prereleases<\/url>\s*<snapshots>\s*<enabled>)false/${1}true/msg'
+    # find src/test -name "*.java" | xargs perl -0777 -pi -e 's/(\@Test[\s\t]*public void editOrder\(\))/\@org.junit.Ignore ${1}/msg'
+  # fi
 }
 
 ## k8s-demo-app 23.3.0.alpha2
 patchOldSpringProjects() {
-  patchSpring 2.7 2.8 23.3.0.alpha2
+  changeMavenBlock parent org.springframework.boot spring-boot-starter-parent 2.7.4
 }
 
 ## FIXED - bakery 23.1
@@ -167,4 +116,23 @@ patchIndexTs() {
 patchTsConfig() {
   H=`ls -1 tsconfig.json */tsconfig.json 2>/dev/null`
   [ -n "$H" ] && warn "patch 23.3.0.alpha3 - Removing $H" && rm -f tsconfig.json */tsconfig.json
+}
+
+addAppConfigClass() {
+cat << EOF > $1
+package org.vaadin.mprdemo;
+
+import com.vaadin.flow.component.page.AppShellConfigurator;
+import com.vaadin.flow.component.page.Push;
+import com.vaadin.mpr.core.LegacyUI;
+import com.vaadin.mpr.core.MprTheme;
+
+@Push
+@MprTheme("mytheme")
+@LegacyUI(OldUI.class)
+public class ApplicationConfig implements AppShellConfigurator {
+}
+EOF
+[ $? != 0 ] && return 1
+git add $1
 }

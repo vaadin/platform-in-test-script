@@ -20,25 +20,28 @@ doExit() {
 }
 
 print() {
-  printf "\033[0m$1 \033[$2;$3m$4\033[0m\n" >&2
+  printf "\033[0m$1\033[$2;$3m$4\033[0m\n" >&2
 }
 
 ## log with some nice color
 log() {
-  print '>' 0 32 "$*"
+  print '> ' 0 32 "$*"
 }
 bold() {
-  print '>' 1 32 "$*"
+  print '> ' 1 32 "$*"
 }
 err() {
-  print '>' 0 31 "$*"
+  print '> ' 0 31 "$*"
 }
 warn() {
-  print '>' 0 33 "$*"
+  print '> ' 0 33 "$*"
 }
 cmd() {
   cmd_=`echo "$*" | sed -e 's/ -D.*license=[a-z0-9-]*//'`
-  print ' ' 1 34 " $cmd_"
+  print '  ' 1 34 " $cmd_"
+}
+dim() {
+  print '' 0 36 "$*"
 }
 
 ## ask user a question, response is stored in key
@@ -189,16 +192,16 @@ checkHttpServlet() {
 ## Set the value of a property in the pom file, returning error if unchanged
 setVersion() {
   __mavenProperty=$1
-  __version=$2
+  __nversion=$2
   [ "$3" != false ] && git checkout -q .
   __current=`mvn help:evaluate -Dexpression=$__mavenProperty -q -DforceStdout`
-  case $__version in
+  case $__nversion in
     current|$__current)
       echo $__current
       return 1;;
     *)
-      __cmd="mvn -B -q versions:set-property -Dproperty=$__mavenProperty -DnewVersion=$__version"
-      bold "==> Changing $__mavenProperty from $__current to $__version"
+      __cmd="mvn -B -q versions:set-property -Dproperty=$__mavenProperty -DnewVersion=$__nversion"
+      bold "==> Changing $__mavenProperty from $__current to $__nversion"
       cmd "$__cmd"
       $__cmd && return 0 || return 1;;
   esac
@@ -210,9 +213,9 @@ getVersionFromPlatform() {
 }
 
 setVersionFromPlatform() {
-  __version=$1
-  [ $__version = current ] && return
-  B=`echo $__version | cut -d . -f1,2`
+  __nversion=$1
+  [ $__nversion = current ] && return
+  B=`echo $__nversion | cut -d . -f1,2`
   VERS=`getVersionFromPlatform $B $2`
   [ -z "$VERS" ] && VERS=`getVersionFromPlatform master $2`
   setVersion $3 "$VERS" false
@@ -226,20 +229,76 @@ setMprVersion() {
   setVersionFromPlatform $1 mpr-v8 mpr.version
 }
 
+## an utility method for changing blocks in maven, they need to have the structure
+## <tag><groupId></groupId><artifactId></artifactId><version></version>(optional_line)</tag>
+## we can change groupId, artifactId, version, and optional_line
+changeMavenBlock() {
+  __tag=${1:-dependency}
+  __grp=$2
+  __id=$3
+  __nvers=${4:-\$8}
+  __grp2=${5:-$__grp}
+  __id2=${6:-$__id}
+  __extra=${7:-\$11}
+  for __file in `find pom.xml src */src -name pom.xml 2>/dev/null`
+  do
+    cp $__file $$-1
+    if [ "$4" = remove ]; then
+      perl -0777 -pi -e 's|(\s+)(<'$__tag'>\s*<groupId>)('$__grp')(</groupId>\s*<artifactId>)('$__id')(</artifactId>)(\s*.*?)?(\s*</'$__tag'>)||msg' $__file
+    elif [ -n "$4" ]; then
+      perl -0777 -pi -e 's|(\s+)(<'$__tag'>\s*<groupId>)('$__grp')(</groupId>\s*<artifactId>)('$__id')(</artifactId>\s*)(?:(<version>)([^<]+)(</version>))(\s*)(.*?)?(\s*</'$__tag'>)|${1}${2}'"${__grp2}"'${4}'"${__id2}"'${6}${7}'"${__nvers}"'${9}${10}'"${__extra}"'${12}|msg' $__file
+    else
+      perl -0777 -pi -e 's|(\s+)(<'$__tag'>\s*<groupId>)('$__grp')(</groupId>\s*<artifactId>)('$__id')(</artifactId>\s*)(?:(<version>)([^<]+)(</version>))?(\s*)(.*?)?(\s*</'$__tag'>)|${1}${2}'"${__grp2}"'${4}'"${__id2}"'${6}${7}'"${__nvers}"'${9}${10}'"${__extra}"'${12}|msg' $__file
+    fi
+    cp $__file $$-2
+    __diff=`diff -w $$-1 $$-2`
+    [ -n "$__diff" -a "$4" =  remove ] && warn "Removed $__file $__tag $__grp:$__id"
+    [ -n "$__diff" -a "$4" != remove ] && warn "Changed $__file $__tag $__grp:$__id -> $__grp2:$__id2:$4 $9"
+    rm -f $$-1 $$-2
+  done
+}
+
+changeMavenProperty() {
+  __prop=$1
+  __val=$2
+  for __file in `find pom.xml src */src -name pom.xml 2>/dev/null`
+  do
+    cp $__file $$-1
+    if [ "$2" = remove ]; then
+      perl -pi -e 's|\s*(<'$__prop'>)([^<]+)(</'$__prop'>)\s*||g' $__file
+    else
+      perl -pi -e 's|(<'$__prop'>)([^<]+)(</'$__prop'>)|${1}'"${__val}"'${3}|g' $__file
+    fi
+    cp $__file $$-2
+    __diff=`diff -w $$-1 $$-2`
+    [ -n "$__diff" -a "$2" =  remove ] && warn "Removed $__prop"
+    [ -n "$__diff" -a "$2" != remove ] && warn "Changed $__prop to $__val"
+    rm -f $$-1 $$-2
+  done
+}
+
+removeMavenBlock() {
+  changeMavenBlock "$1" "$2" "$3" remove
+}
+
+removeMavenProperty() {
+  changeMavenProperty "$1" remove
+}
+
 ## Set the value of a property in the gradle.properties file, returning error if unchanged
 setGradleVersion() {
   __gradleProperty=$1
-  __version=$2
+  __nversion=$2
   git checkout -q .
   __current=`cat gradle.properties | grep "$_gradleProperty" | cut -d "=" -f2`
   echo ""
-  case $__version in
+  case $__nversion in
     current|$__current)
       echo $__current;
       return 1;;
     *)
-      __cmd="perl -pi -e 's,$_gradleProperty=.*,$_gradleProperty=$__version,' gradle.properties"
-      log "Changing $_gradleProperty from $__current to $__version"
+      __cmd="perl -pi -e 's,$_gradleProperty=.*,$_gradleProperty=$__nversion,' gradle.properties"
+      log "Changing $_gradleProperty from $__current to $__nversion"
       cmd "$__cmd"
       $__cmd && return 0 || return 1;;
   esac

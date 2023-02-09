@@ -88,7 +88,7 @@ runStarter() {
   if [ -z "$NOCURRENT" ]
   then
     applyPatches $_preset current
-    _current=`setVersion $_versionProp current`
+    _=`setVersion $_versionProp current`
     # 2
     if [ -z "$NODEV" ]; then
       runValidations dev "$_current" "$_preset" "$_port" "mvn -ntp -B clean" "mvn -ntp -B $PNPM" "$_msg" "$_test" || return 1
@@ -105,11 +105,11 @@ runStarter() {
     applyPatches $_preset next
     # 5
     if [ -z "$NODEV" ]; then
-      runValidations dev "$_current" "$_preset" "$_port" "mvn -ntp -B clean" "mvn -ntp -B $PNPM" "$_msg" "$_test" || return 1
+      runValidations dev "$_version" "$_preset" "$_port" "mvn -ntp -B clean" "mvn -ntp -B $PNPM" "$_msg" "$_test" || return 1
     fi
     # 6
     if [ -z "$NOPROD" ]; then
-      runValidations prod "$_current" "$_preset" "$_port" "mvn -ntp -B -Pproduction package $PNPM" 'java -jar target/*.jar' "Started Application" "$_test" || return 1
+      runValidations prod "$_version" "$_preset" "$_port" "mvn -ntp -B -Pproduction package $PNPM" 'java -jar target/*.jar' "Started Application" "$_test" || return 1
     fi
   fi
 }
