@@ -74,8 +74,6 @@ runStarter() {
 
   _test=`getStartTestFile $_preset`
 
-  [ "$_preset" = default ] && removeProKey
-
   cd "$_tmp"
   _dir="$_tmp/$_preset"
   if [ -z "$_offline" ]
@@ -87,6 +85,8 @@ runStarter() {
   cd "$_dir" || return 1
 
   _msg=`_getStartReadyMessageDev $_preset`
+
+  [ "$_preset" = default ] && removeProKey
 
   if [ -z "$NOCURRENT" ]
   then
@@ -115,4 +115,6 @@ runStarter() {
       runValidations prod "$_version" "$_preset" "$_port" "mvn -ntp -B -Pproduction package $PNPM" 'java -jar target/*.jar' "Started Application" "$_test" || return 1
     fi
   fi
+
+  [ "$_preset" = default ] && restoreProKey
 }

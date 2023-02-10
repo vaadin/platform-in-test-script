@@ -8,8 +8,6 @@ removeProKey() {
 
 ## Kills a process with its children and wait until complete
 doKill() {
-  echo ""
-  restoreProKey
   while [ -n "$1" ]; do
     _procs=`type pgrep >/dev/null 2>&1 && pgrep -P $1`" $1"
     kill $_procs 2>/dev/null
@@ -25,6 +23,8 @@ killAll() {
 
 ## Exit the script after some process cleanup
 doExit() {
+  echo ""
+  restoreProKey
   killAll
   exit
 }
