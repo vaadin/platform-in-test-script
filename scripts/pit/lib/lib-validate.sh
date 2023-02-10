@@ -51,7 +51,7 @@ runValidations() {
   [ -n "$INTERACTIVE" ] && waitForUserWithBell && waitForUserManualTesting "$port"
   # 6
 
-  [ "$mode" = prod ] && report "$name Deprecated API" `cat $file | grep WARNING | grep 'deprecated$' | sed -e 's/^.*\/src\//src\//g'`
+  [ "$mode" = prod ] && H=`cat $file | grep WARNING | grep 'deprecated$' | sed -e 's/^.*\/src\//src\//g'` && report "$name Deprecated API" "$H"
 
   checkHttpServlet "http://localhost:$port/" "$file" || return 1
   # 7
