@@ -40,10 +40,10 @@ runValidations() {
   [ -n "$OFFLINE" ] && cmd="$cmd --offline" && compile="$compile --offline"
 
   # 3
-  runToFile "$compile" "$file" "$VERBOSE" || return 1
+  runToFile "$compile" "$file" "$VERBOSE" "$name" || return 1
 
   # 4
-  runInBackgroundToFile "$cmd" "$file" "$VERBOSE"
+  runInBackgroundToFile "$cmd" "$file" "$VERBOSE" "$name"
   waitUntilMessageInFile "$file" "$check" "$TIMEOUT" "$cmd" || return 1
   waitUntilAppReady "$name" "$port" 60 || return 1
 
@@ -56,7 +56,7 @@ runValidations() {
   checkHttpServlet "http://localhost:$port/" "$file" || return 1
   # 7
   if [ -z "$SKIPTESTS" ]; then
-    runPlaywrightTests "$test" "$port" "$mode" "$name" || return 1
+    runPlaywrightTests "$test" "$port" "$mode" || return 1
   fi
   # 8
   killAll && sleep 5 || return 0

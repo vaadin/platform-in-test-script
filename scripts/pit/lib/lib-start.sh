@@ -116,5 +116,5 @@ runStarter() {
     fi
   fi
 
-  [ "$_preset" = default ] && restoreProKey
+  [ "$_preset" = default ] && restoreProKey || true
 }

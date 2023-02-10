@@ -60,11 +60,12 @@ report() {
   warn "$__head" "\n" "$*"
   [ -z "$GITHUB_STEP_SUMMARY" ] && return
   cat << EOF >> $GITHUB_STEP_SUMMARY
-#### $__head
-
-\`\`\`
+<details>
+<summary><h4>$__head</h4></summary>
+<pre>
 `echo "$*"`
-\`\`\`
+</pre>
+</details>
 EOF
 }
 
@@ -98,7 +99,7 @@ runToFile() {
     $__cmd 2>&1 | tee -a $__file
     err=$?
   fi
-  [ $err != 0 ] && err "!!! ERROR running $__cmd !!!" && tail -100 $__file && return 1 || return 0
+  [ $err != 0 ] && H=`tail -300 $__file` && report "ERROR ($err) running $__cmd" "$H" && return 1 || return 0
 }
 
 ## Run a process silently in background sending its output to a file
@@ -130,15 +131,15 @@ waitUntilMessageInFile() {
     kill -0 $pid_run 2>/dev/null
     if [ $? != 0 ]
     then
-      log "ERROR: $__cmd failed to start (check full output in $__file)"
-      [ -n "$VERBOSE" ] && tail -80 $__file
+      H=`tail -300 $__file`
+      report "ERROR: $__cmd failed to start" "$H"
       return 1
     fi
     grep -q "$__message" $__file && log "Found '$__message' in $__file after "`expr $3 - $__timeout`" secs" && sleep 3 && return 0
     sleep 2 && __timeout=`expr $__timeout - 2`
   done
-  log "ERROR: Could not find '$__message' in $__file after $3 secs (check output in $__file)"
-  [ -n "$VERBOSE" ] && tail -80 $__file
+  H=`tail -300 $__file`
+  report "ERROR: Could not find '$__message' in $__file after $__timeout secs" "$H"
   return 1
 }
 

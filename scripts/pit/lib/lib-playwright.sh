@@ -22,16 +22,16 @@ runPlaywrightTests() {
   _test_file=$1
   _port=$2
   _mode=$3
-  _preset=$4
   _pfile="playwright-$_mode-"`uname`".out"
   [ -f "$_test_file" ] && checkPlaywrightInstallation $_test_file || return 0
   _args="--port=$_port"
   isHeadless && _args="$_args --headless"
   runToFile "node $_test_file $_args" "$_pfile" "$VERBOSE"
   err=$?
-  [ "$_mode" = "prod" ] && H=`grep '> CONSOLE:' "$_pfile" | perl -pe 's/(> CONSOLE: Received xhr.*?feat":).*/$1 .../g'` && report "$_preset Console Warnings" "$H"
-  H=`grep '> JSERROR:' "$_pfile"` && report "$_preset Console Errors" "$H"
-
+  H=`grep '> CONSOLE:' "$_pfile" | perl -pe 's/(> CONSOLE: Received xhr.*?feat":).*/$1 .../g'`
+  [ "$_mode" = "prod" ] && report "- Console Warnings" "$H"
+  H=`grep '> JSERROR:' "$_pfile"`
+  report "- Console Errors" "$H"
   return $err
 }
 
