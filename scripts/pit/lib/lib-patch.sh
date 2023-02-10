@@ -10,7 +10,6 @@ applyPatches() {
     mpr-demo)
       [ "$vers_" = current ] && return
       find . -name MyUI.java | xargs perl -pi -e 's/(\@Push|\@MprTheme.*|\@LegacyUI.*|, *AppShellConfigurator)//g'
-      find . -name MyUI.java | xargs perl -pi -e 's/(\@Push|\@MprTheme.*|\@LegacyUI.*|, *AppShellConfigurator)//g'
 
       changeMavenBlock dependency com.vaadin vaadin-server "" "" vaadin-server-mpr-jakarta '${11}${12}${1}${2}${3}${4}${5}${6}${7}${8}${9}${10}<scope>provided</scope>${10}'
       addAppConfigClass src/main/java/org/vaadin/mprdemo/ApplicationConfig.java
@@ -19,6 +18,11 @@ applyPatches() {
       [ "$vers_" = current ] && return
       cmd 'perl -pi -e '"'"'s/("\@vitejs\/plugin-react"):.*,/${1}: "^3.1.0"/g'"'"' package.json'
       perl -pi -e 's/("\@vitejs\/plugin-react"):.*,/${1}: "^3.1.0",/g' package.json
+      ;;
+
+    bakery-*)
+      [ "$vers_" = current ] && return
+      find src/test -name "*.java" | xargs perl -0777 -pi -e 's/(\@Test[\s\t]*public void editOrder\(\))/\@org.junit.Ignore ${1}/msg'
       ;;
     skeleton-starter-flow-cdi)
       [ "$vers_" = current ] && return

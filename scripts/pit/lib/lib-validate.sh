@@ -23,6 +23,7 @@ runValidations() {
   [ -n "$7" ] && check="$7" || check=""
   [ -n "$8" ] && test="$IT_FOLDER/$8" || test=""
   file="$name-$mode-$version-"`uname`".out"
+  rm -f $file
   [ "$mode" = prod ] && expr "$compile" : mvn >/dev/null && compile="$compile -Dmaven.compiler.showDeprecation"
   [ "$mode" = prod ] && expr "$cmd" : mvn >/dev/null && cmd="$cmd -Dmaven.compiler.showDeprecation"
 
@@ -40,10 +41,10 @@ runValidations() {
   [ -n "$OFFLINE" ] && cmd="$cmd --offline" && compile="$compile --offline"
 
   # 3
-  runToFile "$compile" "$file" "$VERBOSE" "$name" || return 1
+  runToFile "$compile" "$file" "$VERBOSE" || return 1
 
   # 4
-  runInBackgroundToFile "$cmd" "$file" "$VERBOSE" "$name"
+  runInBackgroundToFile "$cmd" "$file" "$VERBOSE"
   waitUntilMessageInFile "$file" "$check" "$TIMEOUT" "$cmd" || return 1
   waitUntilAppReady "$name" "$port" 60 || return 1
 
@@ -51,7 +52,7 @@ runValidations() {
   [ -n "$INTERACTIVE" ] && waitForUserWithBell && waitForUserManualTesting "$port"
   # 6
 
-  [ "$mode" = prod ] && H=`cat $file | grep WARNING | grep 'deprecated$' | sed -e 's/^.*\/src\//src\//g'` && report "$name Deprecated API" "$H"
+  [ "$mode" = prod ] && H=`cat $file | grep WARNING | grep 'deprecated$' | sed -e 's/^.*\/src\//src\//g'` && reportError "Deprecated API" "$H"
 
   checkHttpServlet "http://localhost:$port/" "$file" || return 1
   # 7

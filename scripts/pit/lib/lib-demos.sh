@@ -76,12 +76,12 @@ getRunCmdPrd() {
 getReadyMessageDev() {
   case $1 in
     base-starter-flow-osgi) echo "HTTP:8080";;
-    skeleton-starter-flow-cdi) echo "Development frontend bundle built";;
+    skeleton-starter-flow-cdi) echo "Vaadin is running in DEVELOPMENT mode";;
     skeleton-starter-flow-spring) echo "Started Application";; # frontend bundle built
     bakery-app-starter-flow-spring) echo "Started Application";; # frontend bundle built
     base-starter-flow-quarkus) echo "TaskCopyFrontendFiles";;
     vaadin-flow-karaf-example) echo "Artifact deployed";;
-    spreadsheet-demo) echo "frontend bundle built";;
+    spreadsheet-demo) echo "Started ServerConnector";;
     mpr-demo) echo "Vaadin is running in DEBUG MODE";;
     k8s-demo-app) echo "frontend bundle built";;
     *) echo "Frontend compiled successfully";; # frontend bundle built
@@ -181,24 +181,24 @@ runDemo() {
     applyPatches $_demo current
     if hasDev $_demo; then
       # 2
-      runValidations dev $_current $_demo $_port "$_installCmdDev" "$_runCmdDev" "$_readyDev" "$_test" || return 1
+      runValidations dev "$_current" "$_demo" "$_port" "$_installCmdDev" "$_runCmdDev" "$_readyDev" "$_test" || return 1
     fi
     if hasProduction $_demo; then
       # 3
-      runValidations prod $_current $_demo $_port "$_installCmdPrd" "$_runCmdPrd" "$_readyPrd" "$_test" || return 1
+      runValidations prod "$_current" "$_demo" "$_port" "$_installCmdPrd" "$_runCmdPrd" "$_readyPrd" "$_test" || return 1
     fi
   fi
   # 4
-  if setDemoVersion $_demo $_version
+  if setDemoVersion $_demo $_version || [ -n "$NOCURRENT" ]
   then
     applyPatches $_demo next
     if hasDev $_demo; then
       # 5
-      runValidations dev $_version $_demo $_port "$_installCmdDev" "$_runCmdDev" "$_readyDev" "$_test" || return 1
+      runValidations dev "$_version" "$_demo" "$_port" "$_installCmdDev" "$_runCmdDev" "$_readyDev" "$_test" || return 1
     fi
     if hasProduction $_demo; then
       # 6
-      runValidations prod $_version $_demo $_port "$_installCmdPrd" "$_runCmdPrd" "$_readyPrd" "$_test" || return 1
+      runValidations prod "$_version" "$_demo" "$_port" "$_installCmdPrd" "$_runCmdPrd" "$_readyPrd" "$_test" || return 1
     fi
   fi
 }

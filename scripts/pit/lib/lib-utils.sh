@@ -54,10 +54,9 @@ dim() {
   print '' 0 36 "$*"
 }
 
-report() {
+reportError() {
   __head=$1; shift
   [ -z "$__head" -o -z "$*" ] && return
-  warn "$__head" "\n" "$*"
   [ -z "$GITHUB_STEP_SUMMARY" ] && return
   cat << EOF >> $GITHUB_STEP_SUMMARY
 <details>
@@ -67,6 +66,12 @@ report() {
 </pre>
 </details>
 EOF
+}
+
+reportOutErrors() {
+  H=`cat "$1" | egrep -v ' *at ' | tail -300`
+  reportError "$2" "$H"
+  set +x
 }
 
 ## ask user a question, response is stored in key
@@ -99,7 +104,7 @@ runToFile() {
     $__cmd 2>&1 | tee -a $__file
     err=$?
   fi
-  [ $err != 0 ] && H=`tail -300 $__file` && report "ERROR ($err) running $__cmd" "$H" && return 1 || return 0
+  [ $err != 0 ] && reportOutErrors "$__file" "Error ($err) running $__cmd" && return 1 || return 0
 }
 
 ## Run a process silently in background sending its output to a file
@@ -131,15 +136,14 @@ waitUntilMessageInFile() {
     kill -0 $pid_run 2>/dev/null
     if [ $? != 0 ]
     then
-      H=`tail -300 $__file`
-      report "ERROR: $__cmd failed to start" "$H"
+      reportOutErrors "$__file" "Error $__cmd failed to start"
       return 1
     fi
+    set +x
     grep -q "$__message" $__file && log "Found '$__message' in $__file after "`expr $3 - $__timeout`" secs" && sleep 3 && return 0
     sleep 2 && __timeout=`expr $__timeout - 2`
   done
-  H=`tail -300 $__file`
-  report "ERROR: Could not find '$__message' in $__file after $__timeout secs" "$H"
+  reportOutErrors "$__file"  "Error could not find '$__message' in $__file after $__timeout secs"
   return 1
 }
 
@@ -206,12 +210,12 @@ checkBusyPort() {
 ## Check that a HTTP servlet request responds with 200
 checkHttpServlet() {
   __url="$1"
-  __file="$2"
+  __ofile="$2"
   __cfile="curl-"`uname`".out"
   rm -f $__cfile
   log "Checking whether url $__url returns HTTP 200"
-  runToFile "curl --fail -I -L $__url" "$__cfile" "$VERBOSE"
-  [ $? != 0 ] && log "Got an invalid response from $__url" && return 1 || return 0
+  runToFile "curl -s --fail -I -L $__url" "$__cfile" "$VERBOSE"
+  [ $? != 0 ] && reportOutErrors "$__ofile" "Server Logs" && return 1 || return 0
 }
 
 ## Set the value of a property in the pom file, returning error if unchanged

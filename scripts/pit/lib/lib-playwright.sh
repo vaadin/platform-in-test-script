@@ -29,9 +29,11 @@ runPlaywrightTests() {
   runToFile "node $_test_file $_args" "$_pfile" "$VERBOSE"
   err=$?
   H=`grep '> CONSOLE:' "$_pfile" | perl -pe 's/(> CONSOLE: Received xhr.*?feat":).*/$1 .../g'`
-  [ "$_mode" = "prod" ] && report "- Console Warnings" "$H"
+  [ "$_mode" = "prod" ] && reportError "Console Warnings in $mode mode" "$H"
   H=`grep '> JSERROR:' "$_pfile"`
-  report "- Console Errors" "$H"
+  reportError "Console Errors in $_mode mode" "$H"
+  H=`tail -15 $_pfile`
+  [ $err != 0 ] && reportError "Error ($err) running Visual test ("`basename $_pfile`")" "$H"
   return $err
 }
 
