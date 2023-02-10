@@ -45,6 +45,7 @@ getStartTestFile() {
    *-auth) echo "start-auth.js";;
    flow-crm-tutorial*) echo "";;
    react-tutorial) echo "react.js";;
+   default) echo "hello.js";;
    *) echo "start.js";;
   esac
 }
@@ -72,6 +73,8 @@ runStarter() {
   _offline="$5"
 
   _test=`getStartTestFile $_preset`
+
+  [ "$_preset" = default ] && removeProKey
 
   cd "$_tmp"
   _dir="$_tmp/$_preset"

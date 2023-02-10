@@ -19,6 +19,7 @@ latest-java_partial-auth
 latest-lit_partial-auth
 flow-crm-tutorial_partial-latest
 react-tutorial
+default
 "
 DEMOS="
 skeleton-starter-flow-spring
