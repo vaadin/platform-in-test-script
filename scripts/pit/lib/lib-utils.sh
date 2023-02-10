@@ -54,6 +54,20 @@ dim() {
   print '' 0 36 "$*"
 }
 
+report() {
+  __head=$1; shift
+  [ -z "$__head" -o -z "$*" ] && return
+  warn "$__head" "\n" "$*"
+  [ -z "$GITHUB_STEP_SUMMARY" ] && return
+  cat << EOF >> $GITHUB_STEP_SUMMARY
+#### $__head
+
+\`\`\`
+`echo "$*"`
+\`\`\`
+EOF
+}
+
 ## ask user a question, response is stored in key
 ask() {
   # flush stdin

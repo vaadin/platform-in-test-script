@@ -51,13 +51,12 @@ runValidations() {
   [ -n "$INTERACTIVE" ] && waitForUserWithBell && waitForUserManualTesting "$port"
   # 6
 
-  [ "$mode" = prod ] && H=`cat $file | grep WARNING | grep 'deprecated$' | sed -e 's/^.*\/src\//src\//g'`
-  [ -n "$H" ] && warn "$H"
+  [ "$mode" = prod ] && report "$name Deprecated API" `cat $file | grep WARNING | grep 'deprecated$' | sed -e 's/^.*\/src\//src\//g'`
 
   checkHttpServlet "http://localhost:$port/" "$file" || return 1
   # 7
   if [ -z "$SKIPTESTS" ]; then
-    runPlaywrightTests "$test" "$port" "$mode" || return 1
+    runPlaywrightTests "$test" "$port" "$mode" "$name" || return 1
   fi
   # 8
   killAll && sleep 5 || return 0
