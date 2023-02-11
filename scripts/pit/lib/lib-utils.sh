@@ -140,7 +140,7 @@ waitUntilMessageInFile() {
       return 1
     fi
     set +x
-    grep -q "$__message" $__file && log "Found '$__message' in $__file after "`expr $3 - $__timeout`" secs" && sleep 3 && return 0
+    egrep -q "$__message" $__file && log "Found '$__message' in $__file after "`expr $3 - $__timeout`" secs" && sleep 3 && return 0
     sleep 2 && __timeout=`expr $__timeout - 2`
   done
   reportOutErrors "$__file"  "Error could not find '$__message' in $__file after $__timeout secs"

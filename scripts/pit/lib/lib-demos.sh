@@ -83,7 +83,7 @@ getReadyMessageDev() {
     vaadin-flow-karaf-example) echo "Artifact deployed";;
     spreadsheet-demo) echo "Started ServerConnector";;
     mpr-demo) echo "Vaadin is running in DEBUG MODE";;
-    k8s-demo-app) echo "frontend bundle built";;
+    k8s-demo-app) echo "frontend bundle built|Started Vite";;
     *) echo "Frontend compiled successfully";; # frontend bundle built
   esac
 }
@@ -134,11 +134,11 @@ setDemoVersion() {
   case "$1" in
     base-starter-spring-gradle) setGradleVersion vaadinVersion "$2";;
     base-starter-flow-quarkus|mpr-demo)
-       setVersion vaadin.version "$2" || return 1;
+       setVersion vaadin.version "$2" >/dev/null || return 1;
        setFlowVersion "$2" false
        setMprVersion "$2" false
        ;;
-    *) setVersion vaadin.version "$2";;
+    *) setVersion vaadin.version "$2" >/dev/null;;
   esac
 }
 
@@ -189,7 +189,7 @@ runDemo() {
     fi
   fi
   # 4
-  if setDemoVersion $_demo $_version || [ -n "$NOCURRENT" ]
+  if setDemoVersion $_demo $_version >/dev/null || [ -n "$NOCURRENT" ]
   then
     applyPatches $_demo next
     if hasDev $_demo; then
