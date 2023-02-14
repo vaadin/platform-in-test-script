@@ -31,6 +31,8 @@ applyPatches() {
   esac
 
   if [ "$vers_" != current ]; then
+    addPrereleases
+
     perl -0777 -pi -e 's/(vaadin-prereleases<\/url>\s*<snapshots>\s*<enabled>)false/${1}true/msg' pom.xml
     ## This is a bit tricky since javax.servlet might be without the version tag
     changeMavenBlock dependency javax.servlet javax.servlet-api 5.0.0
@@ -41,6 +43,8 @@ applyPatches() {
     changeMavenBlock parent org.springframework.boot spring-boot-starter-parent 3.0.2
     removeMavenBlock dependency javax.xml.bind jaxb-api
     changeMavenBlock dependency javax javaee-api 8.0.0 jakarta.platform jakarta.jakartaee-api
+
+    changeMavenBlock plugin org.eclipse.jetty jetty-maven-plugin 11.0.13
 
     removeMavenProperty selenium.version
     changeMavenProperty java.version 17

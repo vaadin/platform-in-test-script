@@ -384,6 +384,16 @@ Node version: `node --version`
 Npm version: `npm --version`"
 }
 
+addPrereleases() {
+  if ! grep -q '<repositories>' pom.xml; then
+    U="https://maven.vaadin.com/vaadin-prereleases/"
+    log "Adding $U repository"
+    for R in repositor pluginRepositor; do
+      perl -pi -e 's|(\s*)(</properties>)|$1$2\n$1<'$R'ies><'$R'y><id>v</id><url>'$U'</url></'$R'y></'$R'ies>|' pom.xml
+    done
+  fi
+}
+
 printTime() {
   [ -n "$1" ] && _start=$1 || return
   __end=`date +%s`

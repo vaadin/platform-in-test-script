@@ -26,6 +26,17 @@ downloadStarter() {
   [ "$_new" != "$_preset" ] && mv "$_new" "$_preset" || return 0
 }
 
+generateStarter() {
+  _name=$1
+  log "Generating $1"
+  mvn -ntp -q -B archetype:generate -DarchetypeGroupId=com.vaadin -DarchetypeArtifactId=vaadin-archetype-application -DarchetypeVersion=LATEST \
+      -DgroupId=com.vaadin.starter -DartifactId=$_name -Dversion=1.0-SNAPSHOT || return 1
+  cd $_name || return 1
+  git init -q
+  git add .??* *
+  git commit -q -m 'First commit' -a
+}
+
 computeVersion() {
   case $1 in
     *typescript*|*hilla*|*react*|*-lit*) echo $2 | sed -e 's,^23,1,' | sed -e 's,^24,2,';;
@@ -46,14 +57,29 @@ getStartTestFile() {
    flow-crm-tutorial*) echo "";;
    react-tutorial) echo "react.js";;
    default) echo "hello.js";;
+   archetype*) echo "click.js";;
    *) echo "start.js";;
+  esac
+}
+
+_getCompProd() {
+  case $1 in
+    archetype-java) echo "mvn -ntp -B clean";;
+    *) echo 'mvn -ntp -B -Pproduction package $PNPM';;
+  esac
+}
+
+_getRunProd() {
+  case $1 in
+    archetype-java) echo "mvn -ntp -B -Pproduction -Dvaadin.productionMode jetty:run-war";;
+    *) echo 'java -jar -Dvaadin.productionMode target/*.jar';;
   esac
 }
 
 _getStartReadyMessageDev() {
   case $1 in
-    latest-lit*|react*) echo "Started Vite";;
-    *) echo "Started Application";;
+    latest-lit*|react*) echo "Started Vite|Frontend compiled";;
+    *) echo "Started Application|Frontend compiled|Started ServerConnector";;
   esac
 }
 
@@ -80,25 +106,31 @@ runStarter() {
   then
     [ -d "$_dir" ] && log "Removing project folder $_dir" && rm -rf $_dir
     # 1
-    downloadStarter $_preset || return 1
+    case "$_preset" in
+      archetype*)  generateStarter $_preset || return 1 ;;
+      *) downloadStarter $_preset || return 1 ;;
+    esac
   fi
   cd "$_dir" || return 1
 
   _msg=`_getStartReadyMessageDev $_preset`
+  _prod=`_getRunProd $_preset`
+  _compile=`_getCompProd $_preset`
+  _msgprod="Started Application|Started ServerConnector" "$_test"
 
   [ "$_preset" = default ] && removeProKey
 
   if [ -z "$NOCURRENT" ]
   then
     applyPatches $_preset current
-    _=`setVersion $_versionProp current`
+    _current=`setVersion $_versionProp current`
     # 2
     if [ -z "$NODEV" ]; then
       runValidations dev "$_current" "$_preset" "$_port" "mvn -ntp -B clean" "mvn -ntp -B $PNPM" "$_msg" "$_test" || return 1
     fi
     # 3
     if [ -z "$NOPROD" ]; then
-      runValidations prod "$_current" "$_preset" "$_port" "mvn -ntp -B -Pproduction package $PNPM" 'java -jar target/*.jar' "Started Application" "$_test" || return 1
+      runValidations prod "$_current" "$_preset" "$_port" "_$compile" "_$prod" "$_msgprod" || return 1
     fi
   fi
 
@@ -112,7 +144,7 @@ runStarter() {
     fi
     # 6
     if [ -z "$NOPROD" ]; then
-      runValidations prod "$_version" "$_preset" "$_port" "mvn -ntp -B -Pproduction package $PNPM" 'java -jar target/*.jar' "Started Application" "$_test" || return 1
+      runValidations prod "$_version" "$_preset" "$_port" "$_compile" "$_prod" "$_msgprod" || return 1
     fi
   fi
 
