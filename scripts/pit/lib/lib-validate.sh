@@ -40,6 +40,8 @@ runValidations() {
   # when offline add the offline parameter to mvn or gradle
   [ -n "$OFFLINE" ] && cmd="$cmd --offline" && compile="$compile --offline"
 
+  [ "$mode" = dev ] && rm -rf node_modules src/main/dev-bundle
+
   # 3
   runToFile "$compile" "$file" "$VERBOSE" || return 1
 
@@ -53,6 +55,7 @@ runValidations() {
   # 6
 
   [ "$mode" = prod ] && H=`cat $file | grep WARNING | grep 'deprecated$' | sed -e 's/^.*\/src\//src\//g'` && reportError "Deprecated API" "$H"
+  [ "$mode" != dev -o "$name" != default ] || checkBundleNotCreated "$file" || return 1
 
   checkHttpServlet "http://localhost:$port/" "$file" || return 1
   # 7

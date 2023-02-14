@@ -57,6 +57,7 @@ dim() {
 reportError() {
   __head=$1; shift
   [ -z "$__head" -o -z "$*" ] && return
+  log "reporting error: $__head"
   [ -z "$GITHUB_STEP_SUMMARY" ] && return
   cat << EOF >> $GITHUB_STEP_SUMMARY
 <details>
@@ -239,6 +240,14 @@ setVersion() {
 getVersionFromPlatform() {
   curl -s "https://raw.githubusercontent.com/vaadin/platform/$1/versions.json" 2>/dev/null \
       | egrep -v '^[1-4]' | tr -d "\n" |tr -d " "  | sed -e 's/^.*"'$2'":{"javaVersion"://'| cut -d '"' -f2
+}
+
+checkBundleNotCreated() {
+  log "Checking Express Bundle"
+  if grep -q "An express mode bundle build is needed" "$1"; then
+    reportOutErrors "$1" "Default vaadin-dev-bundle is not used"
+    return 1
+  fi
 }
 
 setVersionFromPlatform() {
