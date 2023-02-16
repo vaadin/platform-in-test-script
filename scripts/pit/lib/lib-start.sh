@@ -29,8 +29,9 @@ downloadStarter() {
 generateStarter() {
   _name=$1
   log "Generating $1"
-  mvn -ntp -q -B archetype:generate -DarchetypeGroupId=com.vaadin -DarchetypeArtifactId=vaadin-archetype-application -DarchetypeVersion=LATEST \
-      -DgroupId=com.vaadin.starter -DartifactId=$_name -Dversion=1.0-SNAPSHOT || return 1
+  cmd="mvn -ntp -q -B archetype:generate -DarchetypeGroupId=com.vaadin -DarchetypeArtifactId=vaadin-archetype-application -DarchetypeVersion=LATEST -DgroupId=com.vaadin.starter -DartifactId=$_name"
+  cmd "$cmd"
+  $cmd || return 1
   cd $_name || return 1
   git init -q
   git add .??* *
@@ -116,7 +117,7 @@ runStarter() {
   _msg=`_getStartReadyMessageDev $_preset`
   _prod=`_getRunProd $_preset`
   _compile=`_getCompProd $_preset`
-  _msgprod="Started Application|Started ServerConnector" "$_test"
+  _msgprod="Started Application|Started ServerConnector"
 
   [ "$_preset" = default ] && removeProKey
 
@@ -130,7 +131,7 @@ runStarter() {
     fi
     # 3
     if [ -z "$NOPROD" ]; then
-      runValidations prod "$_current" "$_preset" "$_port" "_$compile" "_$prod" "$_msgprod" || return 1
+      runValidations prod "$_current" "$_preset" "$_port" "$_compile" "$_prod" "$_msgprod" || return 1
     fi
   fi
 

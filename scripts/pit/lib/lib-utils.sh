@@ -219,6 +219,24 @@ checkHttpServlet() {
   [ $? != 0 ] && reportOutErrors "$__ofile" "Server Logs" && return 1 || return 0
 }
 
+waitUntilFrontendCompiled() {
+  __url="$1"
+  __ofile="$2"
+  log "Waiting for dev-mode to be ready at $__url"
+  __time=0
+  while true; do
+    H=`curl -f -s -v $__url -o /dev/null 2>&1`
+    [ $? != 0 ] && reportOutErrors "$__ofile" "Error ($?) checking dev-mode" && return 1
+    if echo "$H" | grep -q "X-DevModePending"; then
+      sleep 3
+      __time=`expr $__time + 3`
+    else
+      log "Found a valid response after $__time secs"
+      return
+    fi
+  done
+}
+
 ## Set the value of a property in the pom file, returning error if unchanged
 setVersion() {
   __mavenProperty=$1

@@ -57,7 +57,9 @@ runValidations() {
   [ "$mode" = prod ] && H=`cat $file | grep WARNING | grep 'deprecated$' | sed -e 's/^.*\/src\//src\//g'` && reportError "Deprecated API" "$H"
   [ "$mode" != dev -o "$name" != default ] || checkBundleNotCreated "$file" || return 1
 
+  [ "$mode" != dev ] || waitUntilFrontendCompiled "http://localhost:$port/" "$file" || return 1
   checkHttpServlet "http://localhost:$port/" "$file" || return 1
+
   # 7
   if [ -z "$SKIPTESTS" ]; then
     runPlaywrightTests "$test" "$port" "$mode" || return 1
