@@ -114,7 +114,7 @@ runInBackgroundToFile() {
   __file="$2"
   __verbose="$3"
   log "Running in background and sending output to > $__file"
-  cmd "$__cmd"
+  [ -n "$MAVEN_OPTS" ] && cmd "MAVEN_OPTS='$MAVEN_OPTS' $__cmd" || cmd "$__cmd"
   touch $__file
   if [ -n "$__verbose" ]
   then
@@ -411,6 +411,29 @@ addPrereleases() {
     done
   fi
 }
+
+setJBRRuntime() {
+  case "'"`uname -a`"'" in
+  *Linux*) : ;;
+  *Darwin*)
+    H=`ls -1d /Library/Java/JavaVirtualMachines/jbr*/Contents/Home | tail -1 2>/dev/null`
+    if [ -n "$H" -a -x "$H/bin/java" ];
+    then
+      __hsau="https://github.com/HotswapProjects/HotswapAgent/releases/download/RELEASE-1.4.1/hotswap-agent-1.4.1.jar"
+      log "Detected JettyBrain Runtime, setting JAVA_HOME to $H"
+      export PATH="$H:$PATH" JAVA_HOME="$H" HOT="-XX:+AllowEnhancedClassRedefinition -XX:HotswapAgent=fatjar"
+      log "Setting autoHotswap=true"
+      mkdir -p src/main/resources && echo "autoHotswap=true" > src/main/resources/hotswap-agent.properties
+      perl -pi -e 's|(<scan>)(\d+)(</scan>)|${1}-1${3}|g' pom.xml
+      log "Disabling Jetty autoreload: "`grep '<scan>' pom.xml`
+      [ ! -f $H/lib/hotswap/hotswap-agent.jar ] &&
+        log "Downloading and installing hotswap-agent.jar" &&
+        sudo curl -s $__hsau -o $H/lib/hotswap/hotswap-agent.jar
+    fi
+    ;;
+  esac
+}
+
 
 printTime() {
   [ -n "$1" ] && _start=$1 || return

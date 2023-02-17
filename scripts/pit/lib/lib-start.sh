@@ -58,7 +58,7 @@ getStartTestFile() {
    flow-crm-tutorial*) echo "";;
    react-tutorial) echo "react.js";;
    default) echo "hello.js";;
-   archetype*) echo "click.js";;
+   archetype*) [ -n "$HOT " ] && echo "click-hotswap.js" || echo "click.js";;
    *) echo "start.js";;
   esac
 }
@@ -108,11 +108,13 @@ runStarter() {
     [ -d "$_dir" ] && log "Removing project folder $_dir" && rm -rf $_dir
     # 1
     case "$_preset" in
-      archetype*)  generateStarter $_preset || return 1 ;;
+      archetype*) generateStarter $_preset || return 1 ;;
       *) downloadStarter $_preset || return 1 ;;
     esac
   fi
   cd "$_dir" || return 1
+
+  expr $_preset : archetype >/dev/null && setJBRRuntime
 
   _msg=`_getStartReadyMessageDev $_preset`
   _prod=`_getRunProd $_preset`
