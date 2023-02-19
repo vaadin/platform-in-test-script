@@ -34,6 +34,8 @@ generateStarter() {
   $cmd || return 1
   cd $_name || return 1
   git init -q
+  git config user.email | grep -q ... || git config user.email "vaadin-bot@vaadin.com"
+  git config user.name  | grep -q ... || git config user.name "Vaadin Bot"
   git add .??* *
   git commit -q -m 'First commit' -a
 }
@@ -114,7 +116,9 @@ runStarter() {
   fi
   cd "$_dir" || return 1
 
-  expr $_preset : archetype >/dev/null && setJBRRuntime
+  expr $_preset : archetype >/dev/null && installJBRRuntime
+
+  printVersions
 
   _msg=`_getStartReadyMessageDev $_preset`
   _prod=`_getRunProd $_preset`
@@ -125,15 +129,15 @@ runStarter() {
 
   if [ -z "$NOCURRENT" ]
   then
-    applyPatches $_preset current
     _current=`setVersion $_versionProp current`
+    applyPatches $_preset current
     # 2
     if [ -z "$NODEV" ]; then
-      runValidations dev "$_current" "$_preset" "$_port" "mvn -ntp -B clean" "mvn -ntp -B $PNPM" "$_msg" "$_test" || return 1
+      MAVEN_OPTS="$HOT" runValidations dev "$_current" "$_preset" "$_port" "mvn -ntp -B clean" "mvn -ntp -B $PNPM" "$_msg" "$_test" || return 1
     fi
     # 3
     if [ -z "$NOPROD" ]; then
-      runValidations prod "$_current" "$_preset" "$_port" "$_compile" "$_prod" "$_msgprod" || return 1
+      MAVEN_OPTS="" runValidations prod "$_current" "$_preset" "$_port" "$_compile" "$_prod" "$_msgprod" || return 1
     fi
   fi
 
@@ -143,11 +147,11 @@ runStarter() {
     applyPatches $_preset next
     # 5
     if [ -z "$NODEV" ]; then
-      runValidations dev "$_version" "$_preset" "$_port" "mvn -ntp -B clean" "mvn -ntp -B $PNPM" "$_msg" "$_test" || return 1
+      MAVEN_OPTS="$HOT" runValidations dev "$_version" "$_preset" "$_port" "mvn -ntp -B clean" "mvn -ntp -B $PNPM" "$_msg" "$_test" || return 1
     fi
     # 6
     if [ -z "$NOPROD" ]; then
-      runValidations prod "$_version" "$_preset" "$_port" "$_compile" "$_prod" "$_msgprod" || return 1
+      MAVEN_OPTS="" runValidations prod "$_version" "$_preset" "$_port" "$_compile" "$_prod" "$_msgprod" || return 1
     fi
   fi
 

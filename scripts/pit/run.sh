@@ -51,7 +51,7 @@ run() {
 ### MAIN
 main() {
   _start=`date +%s`
-  printVersions
+  log "===================== Running PiT Tests ============================================"
 
   ## Exit soon if the port is busy
   checkBusyPort "$PORT" || exit 1

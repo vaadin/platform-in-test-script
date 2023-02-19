@@ -46,7 +46,7 @@ runValidations() {
   runToFile "$compile" "$file" "$VERBOSE" || return 1
 
   # 4
-  MAVEN_OPTS="$HOT" runInBackgroundToFile "$cmd" "$file" "$VERBOSE"
+  runInBackgroundToFile "$cmd" "$file" "$VERBOSE"
   waitUntilMessageInFile "$file" "$check" "$TIMEOUT" "$cmd" || return 1
   waitUntilAppReady "$name" "$port" 60 || return 1
 
@@ -62,7 +62,7 @@ runValidations() {
 
   # 7
   if [ -z "$SKIPTESTS" ]; then
-    runPlaywrightTests "$test" "$port" "$mode" || return 1
+    runPlaywrightTests "$test" "$port" "$mode" "$file" || return 1
   fi
   # 8
   killAll && sleep 5 || return 0

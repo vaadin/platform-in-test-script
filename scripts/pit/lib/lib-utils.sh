@@ -140,7 +140,6 @@ waitUntilMessageInFile() {
       reportOutErrors "$__file" "Error $__cmd failed to start"
       return 1
     fi
-    set +x
     egrep -q "$__message" $__file && log "Found '$__message' in $__file after "`expr $3 - $__timeout`" secs" && sleep 3 && return 0
     sleep 2 && __timeout=`expr $__timeout - 2`
   done
@@ -396,10 +395,11 @@ isHeadless() {
 }
 
 printVersions() {
-  log "===================== Running PiT Tests ============================================
-`mvn -version | tr '\\\' '/'`
+  log ":: Versions ::
+`mvn -version | tr '\\' '/' | egrep -i 'maven|java'`
 Node version: `node --version`
-Npm version: `npm --version`"
+Npm version: `npm --version`
+`[ -f $JAVA_HOME/lib/hotswap/hotswap-agent.jar ] && echo Hotswap: $JAVA_HOME/lib/hotswap/hotswap-agent.jar`"
 }
 
 addPrereleases() {
@@ -412,28 +412,43 @@ addPrereleases() {
   fi
 }
 
-setJBRRuntime() {
+installJBRRuntime() {
+  __hsau="https://github.com/HotswapProjects/HotswapAgent/releases/download/RELEASE-1.4.1/hotswap-agent-1.4.1.jar"
+  __jurl="https://cache-redirector.jetbrains.com/intellij-jbr"
+  __vers="b653.32"
+
   case "'"`uname -a`"'" in
-  *Linux*) : ;;
-  *Darwin*)
-    H=`ls -1d /Library/Java/JavaVirtualMachines/jbr*/Contents/Home | tail -1 2>/dev/null`
-    if [ -n "$H" -a -x "$H/bin/java" ];
-    then
-      __hsau="https://github.com/HotswapProjects/HotswapAgent/releases/download/RELEASE-1.4.1/hotswap-agent-1.4.1.jar"
-      log "Detected JettyBrain Runtime, setting JAVA_HOME to $H"
-      export PATH="$H:$PATH" JAVA_HOME="$H" HOT="-XX:+AllowEnhancedClassRedefinition -XX:HotswapAgent=fatjar"
-      log "Setting autoHotswap=true"
-      mkdir -p src/main/resources && echo "autoHotswap=true" > src/main/resources/hotswap-agent.properties
-      perl -pi -e 's|(<scan>)(\d+)(</scan>)|${1}-1${3}|g' pom.xml
-      log "Disabling Jetty autoreload: "`grep '<scan>' pom.xml`
-      [ ! -f $H/lib/hotswap/hotswap-agent.jar ] &&
-        log "Downloading and installing hotswap-agent.jar" &&
-        sudo curl -s $__hsau -o $H/lib/hotswap/hotswap-agent.jar
-    fi
-    ;;
+    *Linux*)   __jurl="$__jurl/jbr-17.0.6-linux-x64-${__vers}.tar.gz" ;;
+    *Darwin*)  __jurl="$__jurl/jbr-17.0.6-osx-x64-${__vers}.tar.gz" ;;
+    *)         __jurl="$__jurl/jbr-17.0.6-windows-x64-${__vers}.tar.gz" ;;
   esac
+  if [ ! -f /tmp/JBR.tgz ]; then
+    log "Downloading $__jurl"
+    curl -s -L -o /tmp/JBR.tgz $__jurl || return 1
+  fi
+  if [ ! -d /tmp/jbr ]; then
+    log "Extracting JBR to /opt/jbr"
+    mkdir -p /tmp/jbr
+    tar -xf /tmp/JBR.tgz -C /tmp/jbr --strip-components 1 || return 1
+  fi
+
+  [ -d /tmp/jbr/Contents/Home/ ] && H=/tmp/jbr/Contents/Home || H=/tmp/jbr
+  warn "Setting JAVA_HOME=$H PATH=$H/bin:\$PATH"
+  export PATH="$H/bin:$PATH" JAVA_HOME="$H" HOT="-XX:+AllowEnhancedClassRedefinition -XX:HotswapAgent=fatjar"
+
+  if [ ! -f $H/lib/hotswap/hotswap-agent.jar ] ; then
+    mkdir -p $H/lib/hotswap
+    curl -s -L -o $H/lib/hotswap/hotswap-agent.jar $__hsau || return 1
+    log "Downloading and installing "`ls -1 $H/lib/hotswap/hotswap-agent.jar`
+  fi
 }
 
+enableJBRAutoreload() {
+  _p=src/main/resources/hotswap-agent.properties
+  mkdir -p `dirname $_p` && echo "autoHotswap=true" > $_p
+  perl -pi -e 's|(<scan>)(\d+)(</scan>)|${1}-1${3}|g' pom.xml
+  warn "Disabled Jetty autoreload: pom.xml -> "`grep '<scan>' pom.xml`", $_p -> "`cat $_p`
+}
 
 printTime() {
   [ -n "$1" ] && _start=$1 || return

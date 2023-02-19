@@ -3,6 +3,9 @@ applyPatches() {
   app_=$1
   vers_=$2
   case $app_ in
+    archetype*)
+    enableJBRAutoreload
+    ;;
     base-starter-flow-quarkus)
       [ "$vers_" = current ] && return
       changeMavenProperty quarkus.version 999-jakarta-SNAPSHOT

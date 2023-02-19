@@ -166,6 +166,8 @@ runDemo() {
   fi
   cd "$_dir" || return 1
 
+  printVersions
+
   _installCmdDev=`getInstallCmdDev $_demo`
   _installCmdPrd=`getInstallCmdPrd $_demo`
   _runCmdDev=`getRunCmdDev $_demo`
