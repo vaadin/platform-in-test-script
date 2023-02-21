@@ -108,7 +108,7 @@ hasProduction() {
   esac
 }
 hasDev() {
-  test -z "$NODEV"
+  [ "$1" != bakery-app-starter-flow-spring ] && test -z "$NODEV"
 }
 
 ## Get the default port used in each demo
