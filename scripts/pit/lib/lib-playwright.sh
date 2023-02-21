@@ -26,7 +26,7 @@ runPlaywrightTests() {
   [ -f "$_test_file" ] && checkPlaywrightInstallation $_test_file || return 0
   _args="--port=$_port"
   isHeadless && _args="$_args --headless"
-  runToFile "node $_test_file $_args" "$_pfile" "$VERBOSE"
+  PATH=$PATH runToFile "node $_test_file $_args" "$_pfile" "$VERBOSE"
   err=$?
   H=`grep '> CONSOLE:' "$_pfile" | perl -pe 's/(> CONSOLE: Received xhr.*?feat":).*/$1 .../g'`
   [ "$_mode" = "prod" ] && reportError "Console Warnings in $mode mode" "$H"

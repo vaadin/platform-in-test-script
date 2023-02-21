@@ -396,10 +396,10 @@ isHeadless() {
 
 printVersions() {
   log ":: Versions ::
-`mvn -version | tr '\\' '/' | egrep -i 'maven|java'`
+`MAVEN_OPTS="$HOT" mvn -version | tr \\\\ / 2>/dev/null | egrep -i 'maven|java'`
 Node version: `node --version`
 Npm version: `npm --version`
-`[ -f $JAVA_HOME/lib/hotswap/hotswap-agent.jar ] && echo Hotswap: $JAVA_HOME/lib/hotswap/hotswap-agent.jar`"
+"
 }
 
 addPrereleases() {
@@ -412,8 +412,22 @@ addPrereleases() {
   fi
 }
 
+runCmd() {
+  log "$1"
+  shift
+  _cmd="${*}"
+  cmd "$_cmd"
+  $_cmd
+}
+
+download() {
+  [ -z "$VERBOSE" ] && __S="-s"
+  [ -n "$2" ] && __O="-o $2"
+  runCmd "Downloading $1" "curl $__S -L $__O $1"
+}
+
 installJBRRuntime() {
-  __hsau="https://github.com/HotswapProjects/HotswapAgent/releases/download/RELEASE-1.4.1/hotswap-agent-1.4.1.jar"
+  __hsau="https://github.com/HotswapProjects/HotswapAgent/releases/download/1.4.2-SNAPSHOT/hotswap-agent-1.4.2-SNAPSHOT.jar"
   __jurl="https://cache-redirector.jetbrains.com/intellij-jbr"
   __vers="b653.32"
 
@@ -423,23 +437,22 @@ installJBRRuntime() {
     *)         __jurl="$__jurl/jbr-17.0.6-windows-x64-${__vers}.tar.gz" ;;
   esac
   if [ ! -f /tmp/JBR.tgz ]; then
-    log "Downloading $__jurl"
-    curl -s -L -o /tmp/JBR.tgz $__jurl || return 1
+    download "$__jurl" "/tmp/JBR.tgz" || return 1
   fi
   if [ ! -d /tmp/jbr ]; then
-    log "Extracting JBR to /opt/jbr"
     mkdir -p /tmp/jbr
-    tar -xf /tmp/JBR.tgz -C /tmp/jbr --strip-components 1 || return 1
+    runCmd "Extracting JBR" "tar -xf /tmp/JBR.tgz -C /tmp/jbr --strip-components 1" || return 1
   fi
 
   [ -d /tmp/jbr/Contents/Home/ ] && H=/tmp/jbr/Contents/Home || H=/tmp/jbr
-  warn "Setting JAVA_HOME=$H PATH=$H/bin:\$PATH"
+  log "Setting JAVA_HOME=$H PATH=$H/bin:\$PATH"
+  cmd "export PATH=$H/bin:\$PATH JAVA_HOME=$H"
   export PATH="$H/bin:$PATH" JAVA_HOME="$H" HOT="-XX:+AllowEnhancedClassRedefinition -XX:HotswapAgent=fatjar"
 
   if [ ! -f $H/lib/hotswap/hotswap-agent.jar ] ; then
     mkdir -p $H/lib/hotswap
-    curl -s -L -o $H/lib/hotswap/hotswap-agent.jar $__hsau || return 1
-    log "Downloading and installing "`ls -1 $H/lib/hotswap/hotswap-agent.jar`
+    download "$__hsau" "$H/lib/hotswap/hotswap-agent.jar" || return 1
+    log "Installed "`ls -1 $H/lib/hotswap/hotswap-agent.jar`
   fi
 }
 

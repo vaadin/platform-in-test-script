@@ -1,8 +1,10 @@
 const { chromium } = require('playwright');
 const fs = require('fs');
 const { spawn } = require('child_process');
+const os = require('os');
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+const compile = async () => await exec(`${/^win/.test(process.platform) ? 'mvn.cmd' : 'mvn'} compiler:compile`);
 
 async function exec(order, ops) {
   return new Promise((resolve, reject) => {
@@ -33,6 +35,8 @@ process.argv.forEach(a => {
   }
 });
 
+
+
 (async () => {
   const browser = await chromium.launch({
     headless: headless,
@@ -52,8 +56,8 @@ process.argv.forEach(a => {
 
   console.log("Changing Click by Foo in src/main/java/com/vaadin/starter/MainView.java")
   await exec('perl -pi -e s/Click/Foo/g src/main/java/com/vaadin/starter/MainView.java');
-  console.log("Compiling ...")
-  await exec('mvn compiler:compile');
+  console.log(`Compiling ... ${/^win/.test(process.platform)}`);
+  await compile();
   await sleep(5000);
 
   await page.locator('text=Foo me').click({timeout:60000});
@@ -62,7 +66,7 @@ process.argv.forEach(a => {
   console.log("Changing back Foo by Click in src/main/java/com/vaadin/starter/MainView.java")
   await exec('git checkout src/main/java/com/vaadin/starter/MainView.java')
   console.log("Compiling ...")
-  await exec('mvn compiler:compile');
+  await compile();
   await sleep(5000);
 
   await page.locator('text=Click me').click({timeout:60000});
