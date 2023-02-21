@@ -27,7 +27,7 @@ runValidations() {
   [ "$mode" = prod ] && expr "$compile" : mvn >/dev/null && compile="$compile -Dmaven.compiler.showDeprecation"
   [ "$mode" = prod ] && expr "$cmd" : mvn >/dev/null && cmd="$cmd -Dmaven.compiler.showDeprecation"
 
-  echo ""
+  echo "" >&2
   bold "----> Running builds and tests on app $name, mode=$mode, port=$port, version=$version"
 
   # 1

@@ -134,11 +134,11 @@ setDemoVersion() {
   case "$1" in
     base-starter-spring-gradle) setGradleVersion vaadinVersion "$2";;
     base-starter-flow-quarkus|mpr-demo)
-       setVersion vaadin.version "$2" >/dev/null || return 1;
+       setVersion vaadin.version "$2" || return 1;
        setFlowVersion "$2" false
        setMprVersion "$2" false
        ;;
-    *) setVersion vaadin.version "$2" >/dev/null;;
+    *) setVersion vaadin.version "$2" ;;
   esac
 }
 

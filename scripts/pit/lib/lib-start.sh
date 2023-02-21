@@ -68,14 +68,14 @@ getStartTestFile() {
 _getCompProd() {
   case $1 in
     archetype-java) echo "mvn -ntp -B clean";;
-    *) echo 'mvn -ntp -B -Pproduction package $PNPM';;
+    *) echo "mvn -ntp -B -Pproduction package $PNPM";;
   esac
 }
 
 _getRunProd() {
   case $1 in
     archetype-java) echo "mvn -ntp -B -Pproduction -Dvaadin.productionMode jetty:run-war";;
-    *) echo 'java -jar -Dvaadin.productionMode target/*.jar';;
+    *) echo "java -jar -Dvaadin.productionMode target/*.jar";;
   esac
 }
 

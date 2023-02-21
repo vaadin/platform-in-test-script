@@ -345,15 +345,14 @@ setGradleVersion() {
   __gradleProperty=$1
   __nversion=$2
   git checkout -q .
-  __current=`cat gradle.properties | grep "$_gradleProperty" | cut -d "=" -f2`
-  echo ""
+  __current=`cat gradle.properties | grep "$__gradleProperty" | cut -d "=" -f2`
   case $__nversion in
     current|$__current)
       echo $__current;
       return 1;;
     *)
-      __cmd="perl -pi -e 's,$_gradleProperty=.*,$_gradleProperty=$__nversion,' gradle.properties"
-      log "Changing $_gradleProperty from $__current to $__nversion"
+      __cmd="perl -pi -e 's,$__gradleProperty=.*,$__gradleProperty=$__nversion,' gradle.properties"
+      log "Changing $__gradleProperty from $__current to $__nversion"
       cmd "$__cmd"
       $__cmd && return 0 || return 1;;
   esac
@@ -398,8 +397,7 @@ printVersions() {
   log ":: Versions ::
 `MAVEN_OPTS="$HOT" mvn -version | tr \\\\ / 2>/dev/null | egrep -i 'maven|java'`
 Node version: `node --version`
-Npm version: `npm --version`
-"
+Npm version: `npm --version`"
 }
 
 addPrereleases() {
