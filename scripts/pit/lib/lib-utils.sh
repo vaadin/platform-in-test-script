@@ -47,7 +47,7 @@ warn() {
   print '> ' 0 33 "$*"
 }
 cmd() {
-  cmd_=`echo "$*" | sed -e 's/ -D.*license=[a-z0-9-]*//'`
+  cmd_=`echo "$*"`
   print '  ' 1 34 " $cmd_"
 }
 dim() {

@@ -56,7 +56,7 @@ getRunCmdDev() {
     base-starter-flow-osgi) echo "java -jar app/target/app.jar";;
     skeleton-starter-flow-cdi) echo "mvn -ntp -B wildfly:run $PNPM";;
     base-starter-spring-gradle) echo "./gradlew bootRun";;
-    mpr-demo) echo "mvn -ntp -B -Dvaadin.spreadsheet.developer.license=447a9e11-c69c-402c-87ec-720e6c4cf9ea jetty:run $PNPM";;
+    mpr-demo) echo "mvn -ntp -B -Dvaadin.spreadsheet.developer.license=${SS_LICENSE} jetty:run $PNPM";;
     *) echo "mvn -ntp -B $PNPM";;
   esac
 }
@@ -67,7 +67,7 @@ getRunCmdPrd() {
     base-starter-flow-quarkus) echo "java -jar target/quarkus-app/quarkus-run.jar";;
     skeleton-starter-flow-cdi) echo "mvn -ntp -B wildfly:run -Pproduction $PNPM";;
     base-starter-spring-gradle) echo "java -jar ./build/libs/base-starter-spring-gradle-0.0.1-SNAPSHOT.jar";;
-    mpr-demo) echo "mvn -ntp -B -Dvaadin.spreadsheet.developer.license=447a9e11-c69c-402c-87ec-720e6c4cf9ea jetty:run-war -Pproduction $PNPM";;
+    mpr-demo) echo "mvn -ntp -B -Dvaadin.spreadsheet.developer.license=${SS_LICENSE} jetty:run-war -Pproduction $PNPM";;
     spreadsheet-demo) echo "mvn -ntp -Pproduction -B jetty:run-war $PNPM";;
     *) getRunCmdDev $1;;
   esac
