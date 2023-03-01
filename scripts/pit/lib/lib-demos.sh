@@ -31,9 +31,9 @@ getGitBranch() {
 ## Get install command for dev-mode
 getInstallCmdDev() {
   case $1 in
-    base-starter-flow-quarkus|skeleton-starter-flow-cdi|mpr-demo|spreadsheet-demo) echo "mvn -ntp -B clean $PNPM";;
+    base-starter-flow-quarkus|skeleton-starter-flow-cdi|mpr-demo|spreadsheet-demo) echo "$MVN -ntp -B clean $PNPM";;
     base-starter-spring-gradle) echo "./gradlew clean" ;;
-    *) echo "mvn -ntp clean install $PNPM";;
+    *) echo "$MVN -ntp clean install $PNPM";;
   esac
 }
 ## Get install command for prod-mode
@@ -42,22 +42,22 @@ getInstallCmdPrd() {
   isHeadless && H="$H -Dheadless"
   [ -n "$SKIPTESTS" ] && H="$H -DskipTests"
   case $1 in
-    bakery-app-starter-flow-spring|skeleton-starter-flow-spring|base-starter-flow-quarkus) echo "mvn -B install -Pproduction,it $H $PNPM";;
+    bakery-app-starter-flow-spring|skeleton-starter-flow-spring|base-starter-flow-quarkus) echo "$MVN -B install -Pproduction,it $H $PNPM";;
     base-starter-spring-gradle) echo "./gradlew clean build -Pvaadin.productionMode $PNPM";;
-    skeleton-starter-flow-cdi|k8s-demo-app) echo "mvn -ntp -B verify -Pproduction $H $PNPM";;
-    mpr-demo|spreadsheet-demo) echo "mvn -ntp -B clean";;
+    skeleton-starter-flow-cdi|k8s-demo-app) echo "$MVN -ntp -B verify -Pproduction $H $PNPM";;
+    mpr-demo|spreadsheet-demo) echo "$MVN -ntp -B clean";;
     *) getInstallCmdDev $1;;
   esac
 }
 ## Get command for running the project dev-mode after install was run
 getRunCmdDev() {
   case $1 in
-    vaadin-flow-karaf-example) echo "mvn -ntp -B -pl main-ui install -Prun $PNPM";;
+    vaadin-flow-karaf-example) echo "$MVN -ntp -B -pl main-ui install -Prun $PNPM";;
     base-starter-flow-osgi) echo "java -jar app/target/app.jar";;
-    skeleton-starter-flow-cdi) echo "mvn -ntp -B wildfly:run $PNPM";;
+    skeleton-starter-flow-cdi) echo "$MVN -ntp -B wildfly:run $PNPM";;
     base-starter-spring-gradle) echo "./gradlew bootRun";;
-    mpr-demo) echo "mvn -ntp -B -Dvaadin.spreadsheet.developer.license=${SS_LICENSE} jetty:run $PNPM";;
-    *) echo "mvn -ntp -B $PNPM";;
+    mpr-demo) echo "$MVN -ntp -B -Dvaadin.spreadsheet.developer.license=${SS_LICENSE} jetty:run $PNPM";;
+    *) echo "$MVN -ntp -B $PNPM";;
   esac
 }
 ## Get command for running the project prod-mode after install was run
@@ -65,10 +65,10 @@ getRunCmdPrd() {
   case $1 in
     k8s-demo-app|skeleton-starter-flow-spring|bakery-app-starter-flow-spring) echo "java -jar target/*.jar";;
     base-starter-flow-quarkus) echo "java -jar target/quarkus-app/quarkus-run.jar";;
-    skeleton-starter-flow-cdi) echo "mvn -ntp -B wildfly:run -Pproduction $PNPM";;
+    skeleton-starter-flow-cdi) echo "$MVN -ntp -B wildfly:run -Pproduction $PNPM";;
     base-starter-spring-gradle) echo "java -jar ./build/libs/base-starter-spring-gradle-0.0.1-SNAPSHOT.jar";;
-    mpr-demo) echo "mvn -ntp -B -Dvaadin.spreadsheet.developer.license=${SS_LICENSE} jetty:run-war -Pproduction $PNPM";;
-    spreadsheet-demo) echo "mvn -ntp -Pproduction -B jetty:run-war $PNPM";;
+    mpr-demo) echo "$MVN -ntp -B -Dvaadin.spreadsheet.developer.license=${SS_LICENSE} jetty:run-war -Pproduction $PNPM";;
+    spreadsheet-demo) echo "$MVN -ntp -Pproduction -B jetty:run-war $PNPM";;
     *) getRunCmdDev $1;;
   esac
 }
@@ -150,6 +150,7 @@ setDemoVersion() {
 # 5. run validations for the new version in dev-mode
 # 6. run validations for the new version in prod-mode (if project can be run in prod and dev)
 runDemo() {
+  MVN=mvn
   _demo="$1"
   _tmp="$2"
   _port="$3"
@@ -157,6 +158,7 @@ runDemo() {
   _offline="$5"
 
   cd "$_tmp" || return 1
+
   _dir="$_tmp/$_demo"
   if [ -z "$_offline" ]
   then
@@ -165,6 +167,7 @@ runDemo() {
     checkoutDemo $_demo || return 1
   fi
   cd "$_dir" || return 1
+  computeMvn
 
   printVersions
 

@@ -24,11 +24,11 @@ runValidations() {
   [ -n "$8" ] && test="$IT_FOLDER/$8" || test=""
   file="$name-$mode-$version-"`uname`".out"
   rm -f $file
-  [ "$mode" = prod ] && expr "$compile" : mvn >/dev/null && compile="$compile -Dmaven.compiler.showDeprecation"
-  [ "$mode" = prod ] && expr "$cmd" : mvn >/dev/null && cmd="$cmd -Dmaven.compiler.showDeprecation"
+  [ "$mode" = prod ] && expr "$compile" : "$MVN" >/dev/null && compile="$compile -Dmaven.compiler.showDeprecation"
+  [ "$mode" = prod ] && expr "$cmd" : "$MVN" >/dev/null && cmd="$cmd -Dmaven.compiler.showDeprecation"
 
   echo "" >&2
-  bold "----> Running builds and tests on app $name, mode=$mode, port=$port, version=$version"
+  bold "----> Running builds and tests on app $name, mode=$mode, port=$port, version=$version, mvn=$MVN"
 
   # 1
   checkBusyPort "$port" || return 1

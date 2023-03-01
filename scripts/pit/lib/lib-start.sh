@@ -29,7 +29,7 @@ downloadStarter() {
 generateStarter() {
   _name=$1
   log "Generating $1"
-  cmd="mvn -ntp -q -B archetype:generate -DarchetypeGroupId=com.vaadin -DarchetypeArtifactId=vaadin-archetype-application -DarchetypeVersion=LATEST -DgroupId=com.vaadin.starter -DartifactId=$_name"
+  cmd="$MVN -ntp -q -B archetype:generate -DarchetypeGroupId=com.vaadin -DarchetypeArtifactId=vaadin-archetype-application -DarchetypeVersion=LATEST -DgroupId=com.vaadin.starter -DartifactId=$_name"
   cmd "$cmd"
   $cmd || return 1
   cd $_name || return 1
@@ -67,14 +67,14 @@ getStartTestFile() {
 
 _getCompProd() {
   case $1 in
-    archetype-java) echo "mvn -ntp -B clean";;
-    *) echo "mvn -ntp -B -Pproduction package $PNPM";;
+    archetype-java) echo "$MVN -ntp -B clean";;
+    *) echo "$MVN -ntp -B -Pproduction package $PNPM";;
   esac
 }
 
 _getRunProd() {
   case $1 in
-    archetype-java) echo "mvn -ntp -B -Pproduction -Dvaadin.productionMode jetty:run-war";;
+    archetype-java) echo "$MVN -ntp -B -Pproduction -Dvaadin.productionMode jetty:run-war";;
     *) echo "java -jar -Dvaadin.productionMode target/*.jar";;
   esac
 }
@@ -94,6 +94,7 @@ _getStartReadyMessageDev() {
 # 5. run validations for the new version in dev-mode
 # 6. run validations for the new version in prod-mode
 runStarter() {
+  MVN=mvn
   _preset="$1"
   _tmp="$2"
   _port="$3"
@@ -104,6 +105,7 @@ runStarter() {
   _test=`getStartTestFile $_preset`
 
   cd "$_tmp"
+
   _dir="$_tmp/$_preset"
   if [ -z "$_offline" ]
   then
@@ -118,6 +120,7 @@ runStarter() {
 
   expr $_preset : archetype >/dev/null && installJBRRuntime
 
+  computeMvn
   printVersions
 
   _msg=`_getStartReadyMessageDev $_preset`
@@ -133,7 +136,7 @@ runStarter() {
     applyPatches $_preset current
     # 2
     if [ -z "$NODEV" ]; then
-      MAVEN_OPTS="$HOT" runValidations dev "$_current" "$_preset" "$_port" "mvn -ntp -B clean" "mvn -ntp -B $PNPM" "$_msg" "$_test" || return 1
+      MAVEN_OPTS="$HOT" runValidations dev "$_current" "$_preset" "$_port" "$MVN -ntp -B clean" "$MVN -ntp -B $PNPM" "$_msg" "$_test" || return 1
     fi
     # 3
     if [ -z "$NOPROD" ]; then
@@ -147,7 +150,7 @@ runStarter() {
     applyPatches $_preset next
     # 5
     if [ -z "$NODEV" ]; then
-      MAVEN_OPTS="$HOT" runValidations dev "$_version" "$_preset" "$_port" "mvn -ntp -B clean" "mvn -ntp -B $PNPM" "$_msg" "$_test" || return 1
+      MAVEN_OPTS="$HOT" runValidations dev "$_version" "$_preset" "$_port" "$MVN -ntp -B clean" "$MVN -ntp -B $PNPM" "$_msg" "$_test" || return 1
     fi
     # 6
     if [ -z "$NOPROD" ]; then

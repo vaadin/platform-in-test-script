@@ -1,4 +1,3 @@
-
 restoreProKey() {
   [ -f ~/.vaadin/proKey-$$ ] && mv ~/.vaadin/proKey-$$ ~/.vaadin/proKey && warn "Restored proKey license"
 }
@@ -89,6 +88,13 @@ computeAbsolutePath() {
   ## Check whether the PATH is absolute
   [ `expr "$__path" : '^/'` != 1 ] && __path="$PWD/$__path"
   echo "$__path"
+}
+
+computeMvn() {
+  case "'"`uname -a`"'" in
+    *Linux*|*Darwin*)  [ -f ./mvnw ] && MVN=./mvnw ;;
+    *) [ -f ./mvnw.cmd ] && MVN=./mvnw.cmd
+  esac
 }
 
 runToFile() {
@@ -241,13 +247,13 @@ setVersion() {
   __mavenProperty=$1
   __nversion=$2
   [ "$3" != false ] && git checkout -q .
-  __current=`mvn help:evaluate -Dexpression=$__mavenProperty -q -DforceStdout`
+  __current=`$MVN help:evaluate -Dexpression=$__mavenProperty -q -DforceStdout`
   case $__nversion in
     current|$__current)
       echo $__current
       return 1;;
     *)
-      __cmd="mvn -B -q versions:set-property -Dproperty=$__mavenProperty -DnewVersion=$__nversion"
+      __cmd="$MVN -B -q versions:set-property -Dproperty=$__mavenProperty -DnewVersion=$__nversion"
       bold "==> Changing $__mavenProperty from $__current to $__nversion"
       cmd "$__cmd"
       $__cmd && return 0 || return 1;;
@@ -395,7 +401,7 @@ isHeadless() {
 
 printVersions() {
   log ":: Versions ::
-`MAVEN_OPTS="$HOT" mvn -version | tr \\\\ / 2>/dev/null | egrep -i 'maven|java'`
+`MAVEN_OPTS="$HOT" $MVN -version | tr \\\\ / 2>/dev/null | egrep -i 'maven|java'`
 Node version: `node --version`
 Npm version: `npm --version`"
 }
