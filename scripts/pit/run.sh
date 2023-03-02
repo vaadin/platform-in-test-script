@@ -20,7 +20,9 @@ latest-lit_partial-auth
 flow-crm-tutorial_partial-latest
 react-tutorial
 default
-archetype-java"
+archetype-hotswap
+archetype-jetty
+archetype-spring"
 DEMOS="
 skeleton-starter-flow-spring
 bakery-app-starter-flow-spring

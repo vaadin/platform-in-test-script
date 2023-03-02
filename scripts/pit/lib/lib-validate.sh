@@ -62,7 +62,7 @@ runValidations() {
 
   # 7
   if [ -z "$SKIPTESTS" ]; then
-    runPlaywrightTests "$test" "$port" "$mode" "$file" || return 1
+    runPlaywrightTests "$test" "$port" "$mode" "$file" "$name" || return 1
   fi
   # 8
   killAll && sleep 5 || return 0

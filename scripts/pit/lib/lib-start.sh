@@ -28,8 +28,9 @@ downloadStarter() {
 
 generateStarter() {
   _name=$1
+  expr "$1" : '.*spring' >/dev/null && H=-spring || H=""
   log "Generating $1"
-  cmd="$MVN -ntp -q -B archetype:generate -DarchetypeGroupId=com.vaadin -DarchetypeArtifactId=vaadin-archetype-application -DarchetypeVersion=LATEST -DgroupId=com.vaadin.starter -DartifactId=$_name"
+  cmd="$MVN -ntp -q -B archetype:generate -DarchetypeGroupId=com.vaadin -DarchetypeArtifactId=vaadin-archetype$H-application -DarchetypeVersion=LATEST -DgroupId=com.vaadin.starter -DartifactId=$_name"
   cmd "$cmd"
   $cmd || return 1
   cd $_name || return 1
@@ -67,14 +68,14 @@ getStartTestFile() {
 
 _getCompProd() {
   case $1 in
-    archetype-java) echo "$MVN -ntp -B clean";;
+    archetype*) echo "$MVN -ntp -B clean";;
     *) echo "$MVN -ntp -B -Pproduction package $PNPM";;
   esac
 }
 
 _getRunProd() {
   case $1 in
-    archetype-java) echo "$MVN -ntp -B -Pproduction -Dvaadin.productionMode jetty:run-war";;
+    archetype-hotswap|archetype-jetty) echo "$MVN -ntp -B -Pproduction -Dvaadin.productionMode jetty:run-war";;
     *) echo "java -jar -Dvaadin.productionMode target/*.jar";;
   esac
 }
@@ -118,7 +119,7 @@ runStarter() {
   fi
   cd "$_dir" || return 1
 
-  expr $_preset : archetype >/dev/null && installJBRRuntime
+  [ "$_preset" = archetype-hotswap ] && installJBRRuntime
 
   computeMvn
   printVersions
