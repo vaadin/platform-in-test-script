@@ -7,7 +7,7 @@ isInstalledPlaywright() {
 ## Install playwright in the folder of the test node-script
 installPlaywright() {
   _pfile="playwright-"`uname`".out"
-  (cd `dirname $1` && runToFile "npm install --no-audit playwright" "$_pfile" "$VERBOSE")
+  (cd `dirname $1` && runToFile "$NPM install --no-audit playwright" "$_pfile" "$VERBOSE")
 }
 
 ## Check if playwright is installed, otherwise install it
@@ -26,7 +26,7 @@ runPlaywrightTests() {
   [ -f "$_test_file" ] && checkPlaywrightInstallation $_test_file || return 0
   _args="--port=$_port --name=$5"
   isHeadless && _args="$_args --headless"
-  PATH=$PATH runToFile "node $_test_file $_args" "$_pfile" "$VERBOSE"
+  PATH=$PATH runToFile "$NODE $_test_file $_args" "$_pfile" "$VERBOSE"
   err=$?
   H=`grep '> CONSOLE:' "$_pfile" | perl -pe 's/(> CONSOLE: Received xhr.*?feat":).*/$1 .../g'`
   [ "$_mode" = "prod" ] && reportError "Console Warnings in $mode mode" "$H"

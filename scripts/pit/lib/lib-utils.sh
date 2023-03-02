@@ -103,6 +103,15 @@ computeMvn() {
   esac
 }
 
+## Compute npm command used for installing playwright
+computeNpm() {
+  _VNODE=~/.vaadin/node
+  _NPMJS=$_VNODE/lib/node_modules/npm/bin/npm-cli.js
+  NPM=`which npm`
+  NODE=`which node`
+  [ -x $_VNODE/bin/node -a -f $_NPMJS ] && export PATH=$_VNODE/bin:$PATH && NODE=$_VNODE/bin/node && NPM="$NODE $_NPMJS"
+}
+
 ## Run a command and outputs its stdout/stderr to a file
 runToFile() {
   __cmd="$1"
@@ -438,10 +447,11 @@ isHeadless() {
 
 ## print used versions of node, java and maven
 printVersions() {
+  computeNpm
   log ":: Versions ::
 `MAVEN_OPTS="$HOT" $MVN -version | tr \\\\ / 2>/dev/null | egrep -i 'maven|java'`
-Node version: `node --version`
-Npm version: `npm --version`"
+Node version: `$NODE --version`
+Npm version: `$NPM --version`"
 }
 
 ## adds the pre-releases repositories to the pom.xml

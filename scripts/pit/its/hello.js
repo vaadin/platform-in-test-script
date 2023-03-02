@@ -1,4 +1,4 @@
-const { chromium } = require('playwright');
+const { chromium, webkit } = require('playwright');
 
 let headless = false, host = 'localhost', port = '8080', hub = false;
 process.argv.forEach(a => {
@@ -12,10 +12,11 @@ process.argv.forEach(a => {
 });
 
 (async () => {
-  const browser = await chromium.launch({
+  const h = await chromium.launch({
     headless: headless,
     chromiumSandbox: false
   });
+  const browser = await webkit.launch();
   const context = await browser.newContext();
 
   // Open new page
