@@ -1,7 +1,7 @@
 . `dirname $0`/lib/lib-utils.sh
 . `dirname $0`/lib/lib-playwright.sh
 
-IT_FOLDER=`computeAbsolutePath`/its
+PIT_SCR_FOLDER=`computeAbsolutePath`
 set -o pipefail
 
 ## Run validations against one APP or DEMO by following next steps:
@@ -21,7 +21,7 @@ runValidations() {
   [ -n "$5" ] && compile="$5" || compile=""
   [ -n "$6" ] && cmd="$6" || cmd=""
   [ -n "$7" ] && check="$7" || check=""
-  [ -n "$8" ] && test="$IT_FOLDER/$8" || test=""
+  [ -n "$8" ] && test="$PIT_SCR_FOLDER/its/$8" || test=""
   file="$name-$mode-$version-"`uname`".out"
   rm -f $file
   [ "$mode" = prod ] && expr "$compile" : "$MVN" >/dev/null && compile="$compile -Dmaven.compiler.showDeprecation"

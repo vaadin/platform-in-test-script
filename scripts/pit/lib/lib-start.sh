@@ -134,7 +134,7 @@ runStarter() {
   if [ -z "$NOCURRENT" ]
   then
     _current=`setVersion $_versionProp current`
-    applyPatches $_preset current
+    applyPatches $_preset current $_current
     # 2
     if [ -z "$NODEV" ]; then
       MAVEN_OPTS="$HOT" runValidations dev "$_current" "$_preset" "$_port" "$MVN -ntp -B clean" "$MVN -ntp -B $PNPM" "$_msg" "$_test" || return 1
@@ -148,7 +148,7 @@ runStarter() {
   # 4
   if setVersion $_versionProp $_version >/dev/null
   then
-    applyPatches $_preset next
+    applyPatches $_preset next $_version
     # 5
     if [ -z "$NODEV" ]; then
       MAVEN_OPTS="$HOT" runValidations dev "$_version" "$_preset" "$_port" "$MVN -ntp -B clean" "$MVN -ntp -B $PNPM" "$_msg" "$_test" || return 1

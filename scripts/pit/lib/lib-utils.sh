@@ -1,8 +1,10 @@
-restoreProKey() {
-  [ -f ~/.vaadin/proKey-$$ ] && mv ~/.vaadin/proKey-$$ ~/.vaadin/proKey && warn "Restored proKey license"
-}
+## Remove pro-key for testing core-only apps
 removeProKey() {
   [ -f ~/.vaadin/proKey ] && mv ~/.vaadin/proKey ~/.vaadin/proKey-$$ && warn "Removed proKey license"
+}
+## Restore pro-key removed in previous function
+restoreProKey() {
+  [ -f ~/.vaadin/proKey-$$ ] && mv ~/.vaadin/proKey-$$ ~/.vaadin/proKey && warn "Restored proKey license"
 }
 
 ## Kills a process with its children and wait until complete
@@ -28,6 +30,7 @@ doExit() {
   exit
 }
 
+## print wrapper for coloring outputs
 print() {
   printf "\033[0m$1\033[$2;$3m$4\033[0m\n" >&2
 }
@@ -53,6 +56,7 @@ dim() {
   print '' 0 36 "$*"
 }
 
+## Reports an error to the GHA step-summary section
 reportError() {
   __head=$1; shift
   [ -z "$__head" -o -z "$*" ] && return
@@ -68,6 +72,7 @@ reportError() {
 EOF
 }
 
+## Reports a file content to the GHA step-summary section
 reportOutErrors() {
   H=`cat "$1" | egrep -v ' *at ' | tail -300`
   reportError "$2" "$H"
@@ -90,6 +95,7 @@ computeAbsolutePath() {
   echo "$__path"
 }
 
+## Compute the maven command to use for the project and stores in MVN env variable
 computeMvn() {
   case "'"`uname -a`"'" in
     *Linux*|*Darwin*)  [ -f ./mvnw ] && MVN=./mvnw ;;
@@ -97,6 +103,7 @@ computeMvn() {
   esac
 }
 
+## Run a command and outputs its stdout/stderr to a file
 runToFile() {
   __cmd="$1"
   __file="$2"
@@ -224,6 +231,7 @@ checkHttpServlet() {
   [ $? != 0 ] && reportOutErrors "$__ofile" "Server Logs" && return 1 || return 0
 }
 
+## Hits an HTTP server until vaadin finishes to compile the frontend in dev-mode
 waitUntilFrontendCompiled() {
   __url="$1"
   __ofile="$2"
@@ -260,11 +268,7 @@ setVersion() {
   esac
 }
 
-getVersionFromPlatform() {
-  curl -s "https://raw.githubusercontent.com/vaadin/platform/$1/versions.json" 2>/dev/null \
-      | egrep -v '^[1-4]' | tr -d "\n" |tr -d " "  | sed -e 's/^.*"'$2'":{"javaVersion"://'| cut -d '"' -f2
-}
-
+## checks whether an express dev-bundle has been created for the project
 checkBundleNotCreated() {
   log "Checking Express Bundle"
   if grep -q "An express mode bundle build is needed" "$1"; then
@@ -273,6 +277,18 @@ checkBundleNotCreated() {
   fi
 }
 
+## Get a specific version from the platform versions.json
+## $1 : platform branch
+## $2 : module name
+getVersionFromPlatform() {
+  curl -s "https://raw.githubusercontent.com/vaadin/platform/$1/versions.json" 2>/dev/null \
+      | egrep -v '^[1-4]' | tr -d "\n" |tr -d " "  | sed -e 's/^.*"'$2'":{"javaVersion"://'| cut -d '"' -f2
+}
+
+## Set version of a property with the value gotten from the versions.json
+## $1: version of the platform (used to compute the branch)
+## $2: module name
+## $3: property name to set with the version in the pom.xml
 setVersionFromPlatform() {
   __nversion=$1
   [ $__nversion = current ] && return
@@ -282,10 +298,14 @@ setVersionFromPlatform() {
   setVersion $3 "$VERS" false
 }
 
+## Set flow.version based on the platform's version.json
+## $1: version of the platform
 setFlowVersion() {
   setVersionFromPlatform $1 flow flow.version
 }
 
+## Set mpr.version based on the platform's version.json
+## $1: version of the platform
 setMprVersion() {
   setVersionFromPlatform $1 mpr-v8 mpr.version
 }
@@ -293,6 +313,13 @@ setMprVersion() {
 ## an utility method for changing blocks in maven, they need to have the structure
 ## <tag><groupId></groupId><artifactId></artifactId><version></version>(optional_line)</tag>
 ## we can change groupId, artifactId, version, and optional_line
+## $1: tag (dependency if empty)
+## $2: groupId
+## $3: artifactId
+## $4: version (keep the same if empty, or delete if 'remove' value is provided)
+## $5: new groupId (keep the same if empty)
+## $6: new artifactId (keep the same if empty)
+## $7: extra block after version tag until the end of the tag block (keep the same if empty)
 changeMavenBlock() {
   __tag=${1:-dependency}
   __grp=$2
@@ -319,6 +346,9 @@ changeMavenBlock() {
   done
 }
 
+## change a maven property in the pom.xml, faster than using a maven plugin
+## $1: property name
+## $2: value
 changeMavenProperty() {
   __prop=$1
   __val=$2
@@ -338,10 +368,16 @@ changeMavenProperty() {
   done
 }
 
+## removes a maven block from the pom.xml
+## $1: tag
+## $2: groupId
+## $3: artifactId
 removeMavenBlock() {
   changeMavenBlock "$1" "$2" "$3" remove
 }
 
+## removes a maven property
+## $1: maven property
 removeMavenProperty() {
   changeMavenProperty "$1" remove
 }
@@ -394,11 +430,13 @@ enableVite() {
   grep -q "$__key=true" "$__prop" || echo "$__key=true" >> "$__prop"
 }
 
+## Compute whether the headless argument must be set
 isHeadless() {
   IP=`hostname -i 2>/dev/null`
   test -z "$VERBOSE" -o -n "$IP"
 }
 
+## print used versions of node, java and maven
 printVersions() {
   log ":: Versions ::
 `MAVEN_OPTS="$HOT" $MVN -version | tr \\\\ / 2>/dev/null | egrep -i 'maven|java'`
@@ -406,6 +444,7 @@ Node version: `node --version`
 Npm version: `npm --version`"
 }
 
+## adds the pre-releases repositories to the pom.xml
 addPrereleases() {
   if ! grep -q '<repositories>' pom.xml; then
     U="https://maven.vaadin.com/vaadin-prereleases/"
@@ -416,6 +455,14 @@ addPrereleases() {
   fi
 }
 
+## enables snapshots for the pre-releases repositories in pom.xml
+enableSnapshots() {
+  perl -0777 -pi -e 's/(vaadin-prereleases<\/url>\s*<snapshots>\s*<enabled>)false/${1}true/msg' pom.xml
+}
+
+## runs a command, and shows a message explaining it
+## $1: message to show
+## $*: command line order and arguments
 runCmd() {
   log "$1"
   shift
@@ -424,12 +471,16 @@ runCmd() {
   $_cmd
 }
 
+## Downloads a file from the internet
+## $1: the URL
 download() {
   [ -z "$VERBOSE" ] && __S="-s"
   [ -n "$2" ] && __O="-o $2"
   runCmd "Downloading $1" "curl $__S -L $__O $1"
 }
 
+## Installs jet brains java runtime, used for testing the hotswap agent
+## It updates JAVA_HOME and PATH variables, and sets the HOT one with the parameters to enable it.
 installJBRRuntime() {
   __hsau="https://github.com/HotswapProjects/HotswapAgent/releases/download/1.4.2-SNAPSHOT/hotswap-agent-1.4.2-SNAPSHOT.jar"
   __jurl="https://cache-redirector.jetbrains.com/intellij-jbr"
@@ -460,6 +511,8 @@ installJBRRuntime() {
   fi
 }
 
+## enables autoreload for preparing jet brains java runtime
+## it modifies jetty in pom.xml and configures the hotswap-agent.properties
 enableJBRAutoreload() {
   _p=src/main/resources/hotswap-agent.properties
   mkdir -p `dirname $_p` && echo "autoHotswap=true" > $_p
@@ -467,6 +520,8 @@ enableJBRAutoreload() {
   warn "Disabled Jetty autoreload: pom.xml -> "`grep '<scan>' pom.xml`", $_p -> "`cat $_p`
 }
 
+## prints ellapsed time
+## $1: if not empty it stablishes the start time and returns, if empty it logs the ellapsed time
 printTime() {
   [ -n "$1" ] && _start=$1 || return
   __end=`date +%s`
