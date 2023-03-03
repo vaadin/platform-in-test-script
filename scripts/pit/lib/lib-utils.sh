@@ -90,7 +90,6 @@ EOF
 reportOutErrors() {
   H=`cat "$1" | egrep -v ' *at ' | tail -300`
   reportError "$2" "$H"
-  set +x
 }
 
 ## ask user a question, response is stored in key
@@ -273,20 +272,14 @@ waitUntilFrontendCompiled() {
 
 ## Set the value of a property in the pom file, returning error if unchanged
 setVersion() {
-  __mavenProperty=$1
+  __prop=$1
   __nversion=$2
-  [ "$3" != false ] && git checkout -q .
-  __current=`$MVN help:evaluate -Dexpression=$__mavenProperty -q -DforceStdout`
+  __current=`getCurrProperty $__prop pom.xml`
   case $__nversion in
-    current|$__current)
-      echo $__current
-      return 1;;
-    *)
-      __cmd="$MVN -B -q versions:set-property -Dproperty=$__mavenProperty -DnewVersion=$__nversion"
-      bold "==> Changing $__mavenProperty from $__current to $__nversion"
-      cmd "$__cmd"
-      $__cmd && return 0 || return 1;;
+    current|$__current) echo $__current; return 1 ;;
   esac
+  bold "==> Changing $__mavenProperty from $__current to $__nversion"
+  changeMavenProperty $__prop $__nversion
 }
 
 ## checks whether an express dev-bundle has been created for the project
@@ -367,26 +360,37 @@ changeMavenBlock() {
   done
 }
 
-## change a maven property in the pom.xml, faster than using a maven plugin
+## Reads a property from a pom file, it's faster than
+##   mvn help:evaluate -Dexpression=property -q -DforceStdout
+## $1: property name
+## $2: pom.xml file to read
+getCurrProperty() {
+  grep "<$1>" $2 | perl -pe 's|\s*<'$1'>(.+?)</'$1'>\s*|$1|'
+}
+
+## change a maven property in the pom.xml, faster than
+##  mvn -q versions:set-property -Dproperty=property -DnewVersion=value
 ## $1: property name
 ## $2: value
 changeMavenProperty() {
-  __prop=$1
-  __val=$2
+  __prop=$1; __val=$2; __ret=1
   for __file in `find pom.xml src */src -name pom.xml 2>/dev/null`
   do
     cp $__file $$-1
     if [ "$2" = remove ]; then
       perl -pi -e 's|\s*(<'$__prop'>)([^<]+)(</'$__prop'>)\s*||g' $__file
     else
+      __cur=`getCurrProperty $__prop $__file`
       perl -pi -e 's|(<'$__prop'>)([^<]+)(</'$__prop'>)|${1}'"${__val}"'${3}|g' $__file
     fi
     cp $__file $$-2
     __diff=`diff -w $$-1 $$-2`
-    [ -n "$__diff" -a "$2" =  remove ] && warn "Removed $__prop"
-    [ -n "$__diff" -a "$2" != remove ] && warn "Changed $__prop to $__val"
+    [ -n "$__diff" ] && __ret=0
+    [ -n "$__diff" -a "$2" =  remove ] && warn "Remove $__prop"
+    [ -n "$__diff" -a "$2" != remove ] && warn "Change $__prop from $__cur to $__val"
     rm -f $$-1 $$-2
   done
+  return $__ret
 }
 
 ## removes a maven block from the pom.xml

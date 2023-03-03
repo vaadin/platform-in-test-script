@@ -27,10 +27,11 @@ runValidations() {
   [ "$mode" = prod ] && expr "$compile" : "$MVN" >/dev/null && compile="$compile -Dmaven.compiler.showDeprecation"
   [ "$mode" = prod ] && expr "$cmd" : "$MVN" >/dev/null && cmd="$cmd -Dmaven.compiler.showDeprecation"
 
-  isUnsupported $name $mode $version && return 0
 
   echo "" >&2
   bold "----> Running builds and tests on app $name, mode=$mode, port=$port, version=$version, mvn=$MVN"
+
+  isUnsupported $name $mode $version && warn "Skipping $name $mode $version because of unsupported" && return 0
 
   # 1
   checkBusyPort "$port" || return 1

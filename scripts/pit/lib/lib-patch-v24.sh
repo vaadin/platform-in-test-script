@@ -31,7 +31,7 @@ applyv24Patches() {
   patchSourcesV24 $D
 
   diff_=`git diff pom.xml $D | egrep '^[+-]'`
-  [ -n "$diff_" ] && echo "" && warn "Patched sources\n" && dim "====== BEGIN ======\n\n$diff_\n\n======  END  ======\n"
+  [ -n "$diff_" ] && echo "" && warn "Patched sources\n" && dim "====== BEGIN ======\n\n$diff_\n======  END  ======"
 }
 
 patchPomV24() {

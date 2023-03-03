@@ -19,13 +19,14 @@ applyPatches() {
   return
 }
 
-## Run at the beginning of Validate, to skip the process if unsupported
+## Run at the beginning of Validate in order to skip upsupported app/version combination
 isUnsupported() {
   app_=$1; mod_=$2; vers_=$3;
-  if [ $app = archetype-jetty -a $vers_ = 23.3.6 -a $mod_ = dev ] && isLinux ; then
-    reportError "Skip $* in Linux" "Skiping $* in Linux because of https://github.com/vaadin/flow/issues/16097"
-    return 0
-  fi
+  ## Jetty fails in 23.3 + Linux https://github.com/vaadin/flow/issues/16097
+  [ $app_ = archetype-jetty -a $vers_ = 23.3.6 -a $mod_ = dev ] && isLinux && return 0
+  ## Karaf and OSGi unsupported in 24.x
+  expr $vers_ : '24\.[0-1]\.' >/dev/null && [ $app_ = vaadin-flow-karaf-example -o $app_ = base-starter-flow-osgi ] && return 0
+  ## Everything else is supported
   return 1
 }
 
