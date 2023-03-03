@@ -183,7 +183,7 @@ runDemo() {
   if [ -z "$NOCURRENT" ]
   then
     _current=`setDemoVersion $_demo current`
-    applyPatches $_demo current $_current
+    applyPatches $_demo current $_current dev || return
     if hasDev $_demo; then
       # 2
       runValidations dev "$_current" "$_demo" "$_port" "$_installCmdDev" "$_runCmdDev" "$_readyDev" "$_test" || return 1
@@ -196,7 +196,7 @@ runDemo() {
   # 4
   if setDemoVersion $_demo $_version >/dev/null || [ -n "$NOCURRENT" ]
   then
-    applyPatches $_demo next $_version
+    applyPatches $_demo next $_version prod || return
     if hasDev $_demo; then
       # 5
       runValidations dev "$_version" "$_demo" "$_port" "$_installCmdDev" "$_runCmdDev" "$_readyDev" "$_test" || return 1

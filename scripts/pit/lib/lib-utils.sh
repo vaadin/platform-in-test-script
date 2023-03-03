@@ -1,3 +1,13 @@
+isLinux() {
+  test `uname` = Linux
+}
+isMac() {
+  test `uname` = Darwin
+}
+isWindows() {
+  ! isLinux && ! isMac
+}
+
 ## Remove pro-key for testing core-only apps
 removeProKey() {
   [ -f ~/.vaadin/proKey ] && mv ~/.vaadin/proKey ~/.vaadin/proKey-$$ && warn "Removed proKey license"
@@ -57,10 +67,12 @@ dim() {
 }
 
 ## Reports an error to the GHA step-summary section
+## $1: report header
+## $*: body
 reportError() {
   __head=$1; shift
   [ -z "$__head" -o -z "$*" ] && return
-  log "reporting error: $__head"
+  warn "reporting error: $__head"
   [ -z "$GITHUB_STEP_SUMMARY" ] && return
   cat << EOF >> $GITHUB_STEP_SUMMARY
 <details>
@@ -73,6 +85,8 @@ EOF
 }
 
 ## Reports a file content to the GHA step-summary section
+## $1: file
+## $2: report header
 reportOutErrors() {
   H=`cat "$1" | egrep -v ' *at ' | tail -300`
   reportError "$2" "$H"
@@ -97,10 +111,8 @@ computeAbsolutePath() {
 
 ## Compute the maven command to use for the project and stores in MVN env variable
 computeMvn() {
-  case "'"`uname -a`"'" in
-    *Linux*|*Darwin*)  [ -f ./mvnw ] && MVN=./mvnw ;;
-    *) [ -f ./mvnw.cmd ] && MVN=./mvnw.cmd
-  esac
+  [ -f ./mvnw ] && MVN=./mvnw
+  isWindows && [ -f ./mvnw.cmd ] && MVN=./mvnw.cmd
 }
 
 ## Compute npm command used for installing playwright
@@ -199,7 +211,7 @@ waitForUserManualTesting() {
 checkPort() {
   curl -s telnet://localhost:$1 >/dev/null &
   pid_curl=$!
-  uname -a | egrep -iq 'Linux|Darwin' && sleep 2 || sleep 4
+  isWindows && sleep 4 || sleep 2
   kill $pid_curl 2>/dev/null || return 1
 }
 
@@ -496,11 +508,9 @@ installJBRRuntime() {
   __jurl="https://cache-redirector.jetbrains.com/intellij-jbr"
   __vers="b653.32"
 
-  case "'"`uname -a`"'" in
-    *Linux*)   __jurl="$__jurl/jbr-17.0.6-linux-x64-${__vers}.tar.gz" ;;
-    *Darwin*)  __jurl="$__jurl/jbr-17.0.6-osx-x64-${__vers}.tar.gz" ;;
-    *)         __jurl="$__jurl/jbr-17.0.6-windows-x64-${__vers}.tar.gz" ;;
-  esac
+  isLinux   && __jurl="$__jurl/jbr-17.0.6-linux-x64-${__vers}.tar.gz"
+  isMac     && __jurl="$__jurl/jbr-17.0.6-osx-x64-${__vers}.tar.gz"
+  isWindows && __jurl="$__jurl/jbr-17.0.6-windows-x64-${__vers}.tar.gz"
   if [ ! -f /tmp/JBR.tgz ]; then
     download "$__jurl" "/tmp/JBR.tgz" || return 1
   fi

@@ -1,7 +1,8 @@
 __scripts=
 
+## Run after updating Vaadin/Hilla versions in order to patch sources
 applyPatches() {
-  app_=$1; type_=$2; vers_=$3
+  app_=$1; type_=$2; vers_=$3; mod_=$4
   log "Applying Patches for $app_ $type_ $vers_"
   case $app_ in
     archetype-hotswap) enableJBRAutoreload ;;
@@ -10,11 +11,22 @@ applyPatches() {
     *alpha*|*beta*|*rc*|*SNAP*) addPrereleases; enableSnapshots ;;
   esac
   case $vers_ in
-    24*) 
+    24*)
       . $PIT_SCR_FOLDER/lib/lib-patch-v24.sh
       [ "$type_" = 'next' ] && applyv24Patches "$app_" "$type_" "$vers_"
       ;;
   esac
+  return
+}
+
+## Run at the beginning of Validate, to skip the process if unsupported
+isUnsupported() {
+  app_=$1; mod_=$2; vers_=$3;
+  if [ $app = archetype-jetty -a $vers_ = 23.3.6 -a $mod_ = dev ] && isLinux ; then
+    reportError "Skip $* in Linux" "Skiping $* in Linux because of https://github.com/vaadin/flow/issues/16097"
+    return 0
+  fi
+  return 1
 }
 
 ## FIXED - k8s-demo-app 23.3.0.alpha2
