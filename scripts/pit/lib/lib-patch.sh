@@ -10,13 +10,13 @@ applyPatches() {
   case $app_ in
     *alpha*|*beta*|*rc*|*SNAP*) addPrereleases; enableSnapshots ;;
   esac
+  [ "$type_" = current ] && return 0
   case $vers_ in
-    24*)
+    24.*|2.0*)
       . $PIT_SCR_FOLDER/lib/lib-patch-v24.sh
       [ "$type_" = 'next' ] && applyv24Patches "$app_" "$type_" "$vers_"
       ;;
   esac
-  return
 }
 
 ## Run at the beginning of Validate in order to skip upsupported app/version combination
