@@ -68,7 +68,7 @@ getStartTestFile() {
 
 _getCompProd() {
   case $1 in
-    archetype*) echo "$MVN -ntp -B clean";;
+    archetype-hotswap|archetype-jetty) echo "$MVN -ntp -B clean";;
     *) echo "$MVN -ntp -B -Pproduction package $PNPM";;
   esac
 }

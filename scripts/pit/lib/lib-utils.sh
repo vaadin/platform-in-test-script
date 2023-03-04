@@ -409,6 +409,8 @@ removeMavenProperty() {
 
 ## Set the value of a property in the gradle.properties file, returning error if unchanged
 setGradleVersion() {
+  echo "ZZZ" >&2
+  exit
   __gradleProperty=$1
   __nversion=$2
   git checkout -q .
@@ -483,7 +485,7 @@ addPrereleases() {
 
 ## enables snapshots for the pre-releases repositories in pom.xml
 enableSnapshots() {
-  perl -0777 -pi -e 's/(vaadin-prereleases<\/url>\s*<snapshots>\s*<enabled>)false/${1}true/msg' pom.xml
+  find . -name pom.xml | xargs perl -0777 -pi -e 's/(vaadin-prereleases<\/url>\s*<snapshots>\s*<enabled>)false/${1}true/msg'
 }
 
 ## runs a command, and shows a message explaining it

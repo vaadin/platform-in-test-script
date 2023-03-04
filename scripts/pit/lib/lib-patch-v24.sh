@@ -27,15 +27,16 @@ applyv24Patches() {
   [ -d src/main ] && D=src/main || D=*/src/main
 
   patchPomV24
-
   patchSourcesV24 $D
 
-  diff_=`git diff pom.xml $D | egrep '^[+-]'`
+  for i in pom.xml gradle.properties build.gradle; do
+    [ -f $i ] && D="$i $D"
+  done
+  diff_=`git diff $D | egrep '^[+-]'`
   [ -n "$diff_" ] && echo "" && warn "Patched sources\n" && dim "====== BEGIN ======\n\n$diff_\n======  END  ======"
 }
 
 patchPomV24() {
-    perl -0777 -pi -e 's/(vaadin-prereleases<\/url>\s*<snapshots>\s*<enabled>)false/${1}true/msg' pom.xml
     ## This is a bit tricky since javax.servlet might be without the version tag
     changeMavenBlock dependency javax.servlet javax.servlet-api 5.0.0
     changeMavenBlock dependency jakarta.servlet jakarta.servlet-api 5.0.0
