@@ -59,6 +59,10 @@ main() {
   ## Exit soon if the port is busy
   checkBusyPort "$PORT" || exit 1
 
+  ## Install playwright in the background
+  computeNpm
+  checkPlaywrightInstallation `computeAbsolutePath`"/its/foo" &
+
   ## Check which arguments are valid names of presets or demos
   for i in `echo "$STARTERS" | tr ',' ' '`
   do

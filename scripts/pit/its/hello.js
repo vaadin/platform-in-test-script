@@ -12,11 +12,10 @@ process.argv.forEach(a => {
 });
 
 (async () => {
-  const h = await chromium.launch({
+  const browser = await chromium.launch({
     headless: headless,
     chromiumSandbox: false
   });
-  const browser = await webkit.launch();
   const context = await browser.newContext();
 
   // Open new page

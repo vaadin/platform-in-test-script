@@ -1,13 +1,15 @@
 ## Check whether playwright is installed in node_modules folder of the test node-script
 isInstalledPlaywright() {
   (cd `dirname $1` && \
-    echo -e "const { chromium } = require('playwright');\n" | node - 2>/dev/null)
+    echo -e "const { chromium } = require('playwright');\n" | $NODE - 2>/dev/null)
 }
 
 ## Install playwright in the folder of the test node-script
 installPlaywright() {
   _pfile="playwright-"`uname`".out"
-  (cd `dirname $1` && runToFile "$NPM install --no-audit playwright" "$_pfile" "$VERBOSE")
+  _dir=`dirname $1`
+  (cd $_dir && runToFile "$NPM install --no-audit playwright" "$_pfile" "$VERBOSE")
+  isLinux && (cd $_dir && runToFile "$NODE ./node_modules/.bin/playwright install-deps" "$_pfile" "$VERBOSE") || true
 }
 
 ## Check if playwright is installed, otherwise install it
