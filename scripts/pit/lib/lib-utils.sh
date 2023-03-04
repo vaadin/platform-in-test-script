@@ -114,6 +114,12 @@ computeMvn() {
   isWindows && [ -f ./mvnw.cmd ] && MVN=./mvnw.cmd
 }
 
+## Compute the gradle command to use for the project and stores in GRADLE env variable
+computeGradle() {
+  [ -f ./gradlew ] && GRADLE=./gradlew
+  isWindows && [ -f ./gradlew.cmd ] && GRADLE=./gradlew.cmd
+}
+
 ## Compute npm command used for installing playwright
 computeNpm() {
   _VNODE=~/.vaadin/node
@@ -274,12 +280,27 @@ waitUntilFrontendCompiled() {
 setVersion() {
   __prop=$1
   __nversion=$2
+  [ "false" != "$3" ] && git checkout -q .
   __current=`getCurrProperty $__prop pom.xml`
   case $__nversion in
     current|$__current) echo $__current; return 1 ;;
   esac
   bold "==> Changing $__mavenProperty from $__current to $__nversion"
   changeMavenProperty $__prop $__nversion
+}
+
+## Set the value of a property in the gradle.properties file, returning error if unchanged
+setGradleVersion() {
+  __gradleProperty=$1
+  __nversion=$2
+  [ "false" != "$3" ] && git checkout -q .
+  __current=`cat gradle.properties | grep "$__gradleProperty" | cut -d "=" -f2`
+  case $__nversion in
+    current|$__current)
+      echo $__current;
+      return 1;;
+    *) perl -pi -e "s,$__gradleProperty=.*,$__gradleProperty=$__nversion," gradle.properties ;;
+  esac
 }
 
 ## checks whether an express dev-bundle has been created for the project
@@ -405,26 +426,6 @@ removeMavenBlock() {
 ## $1: maven property
 removeMavenProperty() {
   changeMavenProperty "$1" remove
-}
-
-## Set the value of a property in the gradle.properties file, returning error if unchanged
-setGradleVersion() {
-  echo "ZZZ" >&2
-  exit
-  __gradleProperty=$1
-  __nversion=$2
-  git checkout -q .
-  __current=`cat gradle.properties | grep "$__gradleProperty" | cut -d "=" -f2`
-  case $__nversion in
-    current|$__current)
-      echo $__current;
-      return 1;;
-    *)
-      __cmd="perl -pi -e 's,$__gradleProperty=.*,$__gradleProperty=$__nversion,' gradle.properties"
-      log "Changing $__gradleProperty from $__current to $__nversion"
-      cmd "$__cmd"
-      $__cmd && return 0 || return 1;;
-  esac
 }
 
 ## Do not open Browser after app is started
@@ -556,4 +557,12 @@ printTime() {
   __secs=`expr $__time % 60`
   echo ""
   log "Total time: $__mins' $__secs\""
+}
+
+upgradeGradle() {
+  V=`$GRADLE --version | grep '^Gradle' | awk '{print $2}'`
+  expr "$V" : "$1" >/dev/null && return
+  warn "Upgrading Gradle Wrapper from $V to $1"
+  cmd "$GRADLE wrapper -q --gradle-version $1"
+  $GRADLE wrapper -q --gradle-version $1
 }

@@ -26,7 +26,8 @@ applyv24Patches() {
 
   [ -d src/main ] && D=src/main || D=*/src/main
 
-  patchPomV24
+  [ -f pom.xml ] && patchPomV24
+  [ -f gradlew ] && patchGradV24
   patchSourcesV24 $D
 
   for i in pom.xml gradle.properties build.gradle; do
@@ -34,6 +35,12 @@ applyv24Patches() {
   done
   diff_=`git diff $D | egrep '^[+-]'`
   [ -n "$diff_" ] && echo "" && warn "Patched sources\n" && dim "====== BEGIN ======\n\n$diff_\n======  END  ======"
+}
+
+patchGradV24() {
+   upgradeGradle 7.4
+   perl -pi -e "s|(^\s*sourceCompatibility *= *).*$|\$1'17'|" build.gradle
+   perl -pi -e "s|(^.*org\.springframework\.boot.*version\s*).*$|\$1'3.0.2'|" build.gradle
 }
 
 patchPomV24() {

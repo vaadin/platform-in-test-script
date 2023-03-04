@@ -84,6 +84,7 @@ getReadyMessageDev() {
     spreadsheet-demo) echo "Started ServerConnector";;
     mpr-demo) echo "Vaadin is running in DEBUG MODE";;
     k8s-demo-app) echo "frontend bundle built|Started Vite";;
+    base-starter-spring-gradle) echo "Tomcat started";;
     *) echo "Frontend compiled successfully";; # frontend bundle built
   esac
 }
@@ -92,10 +93,10 @@ getReadyMessagePrd() {
   case $1 in
     skeleton-starter-flow-spring|k8s-demo-app) echo "Vaadin is running in production mode";;
     base-starter-flow-quarkus) echo "Listening on: http://0.0.0.0:8080";;
-    base-starter-spring-gradle) echo "JVM running for";;
     bakery-app-starter-flow-spring) echo "Started Application";;
     skeleton-starter-flow-cdi) echo "Registered web contex";;
     mpr-demo|spreadsheet-demo) echo "Started ServerConnector";;
+    base-starter-spring-gradle) echo "Tomcat started";;
     *) getReadyMessageDev $1;;
   esac
 }
@@ -151,6 +152,7 @@ setDemoVersion() {
 # 6. run validations for the new version in prod-mode (if project can be run in prod and dev)
 runDemo() {
   MVN=mvn
+  GRADLE=gradle
   _demo="$1"
   _tmp="$2"
   _port="$3"
@@ -168,6 +170,7 @@ runDemo() {
   fi
   cd "$_dir" || return 1
   computeMvn
+  [ $_demo = base-starter-spring-gradle ] && computeGradle
 
   printVersions
 
