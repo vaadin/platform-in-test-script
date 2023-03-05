@@ -61,7 +61,7 @@ main() {
 
   ## Install playwright in the background
   computeNpm
-  checkPlaywrightInstallation `computeAbsolutePath`"/its/foo" &
+  checkPlaywrightInstallation `computeAbsolutePath`"/its/foo" >/dev/null 2>&1 &
 
   ## Check which arguments are valid names of presets or demos
   for i in `echo "$STARTERS" | tr ',' ' '`
@@ -80,7 +80,7 @@ main() {
   tmp="$pwd/tmp"
   mkdir -p "$tmp"
 
-  ## Run presets (star.vaadin.com downloaded apps)
+  ## Run presets (star.vaadin.com) or archetypes
   for i in $presets; do
     run runStarter "$i" "$tmp"
   done
@@ -108,5 +108,11 @@ main() {
   return $_error
 }
 
+## Use $0 --path to see available SW installed in the container
+[ -d /opt/hostedtoolcache ] && expr "$*" : '.* --path' >/dev/null && ls -1d /opt/hostedtoolcache/*/*/x64/bin 2>/dev/null | sort -r | tr "\n" ":" && echo OK
+
+## compute and check arguments
 checkArgs ${@}
+
+## run starters/demos
 main
