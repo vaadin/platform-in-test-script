@@ -35,7 +35,6 @@ skeleton-starter-flow-cdi
 vaadin-flow-karaf-example
 base-starter-flow-osgi
 "
-DEFAULT_STARTERS=`echo "$PRESETS$DEMOS" | tr "\n" "," | sed -e 's/^,//' | sed -e 's/,$//'`
 
 run() {
   echo ""
@@ -62,6 +61,19 @@ main() {
   ## Install playwright in the background
   computeNpm
   checkPlaywrightInstallation `computeAbsolutePath`"/its/foo" >/dev/null 2>&1 &
+
+  ## Exclude starters beginning with the negated chart \!
+  for i in `echo "$STARTERS" | tr ',' ' '`; do
+    if expr "$i" : '!' >/dev/null; then
+      STARTERS=`echo "$STARTERS" | sed -e 's|'"$i"'||g'`
+      i="${i:1}"
+      PRESETS=`echo "$PRESETS" | egrep -v "^$i$"`
+      DEMOS=`echo "$DEMOS" | egrep -v "^$i$"`
+    fi
+  done
+
+  ## If there are no provided starters run all
+  [ -z "$STARTERS" ] && STARTERS=`echo "$PRESETS$DEMOS" | tr "\n" "," | sed -e 's/^,//' | sed -e 's/,$//'`
 
   ## Check which arguments are valid names of presets or demos
   for i in `echo "$STARTERS" | tr ',' ' '`

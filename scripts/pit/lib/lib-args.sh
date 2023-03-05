@@ -23,7 +23,7 @@ EOF
 }
 
 checkArgs() {
-  VERSION=current; PORT=$DEFAULT_PORT; STARTERS=$DEFAULT_STARTERS; TIMEOUT=$DEFAULT_TIMEOUT
+  VERSION=current; PORT=$DEFAULT_PORT; TIMEOUT=$DEFAULT_TIMEOUT
   while [ -n "$1" ]
   do
     arg=`echo "$1" | cut -d= -f2`
