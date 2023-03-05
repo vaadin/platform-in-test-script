@@ -9,7 +9,7 @@ installPlaywright() {
   _pfile="playwright-"`uname`".out"
   _dir=`dirname $1`
   (cd $_dir && runToFile "$NPM install --no-audit playwright" "$_pfile" "$VERBOSE")
-  isLinux && (cd $_dir && runToFile "$NODE ./node_modules/.bin/playwright install-deps" "$_pfile") || true
+  # isLinux && (cd $_dir && runToFile "$NODE ./node_modules/.bin/playwright install-deps" "$_pfile") || true
 }
 
 ## Check if playwright is installed, otherwise install it
