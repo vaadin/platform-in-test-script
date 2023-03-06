@@ -37,7 +37,7 @@ process.argv.forEach(a => {
   await page.getByLabel('Password').first().press('Tab');
   await page.getByRole('button', { name: 'Log in' }).locator('div').click();
   await page.waitForURL(`http://${host}:${port}/`);
-  await page.getByRole('link', { name: ' Personas' }).click();
+  await page.getByRole('link').locator('text=/Personas/').click();
   await page.waitForURL(`http://${host}:${port}/personas`);
   await page.getByRole('button', { name: '+' }).locator('div').click();
   await page.waitForURL(`http://${host}:${port}/personas/new`);
