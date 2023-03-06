@@ -467,10 +467,14 @@ isHeadless() {
 ## print used versions of node, java and maven
 printVersions() {
   computeNpm
-  log ":: Versions ::
-`MAVEN_OPTS="$HOT" $MVN -version | tr \\\\ / 2>/dev/null | egrep -i 'maven|java'`
+  _vers=`MAVEN_OPTS="$HOT" $MVN -version | tr \\\\ / 2>/dev/null | egrep -i 'maven|java|agent.HotswapAgent'`
+  log "==== VERSIONS ====
+
+MAVEN_OPTS='$HOT' $MVN -version
+$_vers
 Node version: `$NODE --version`
-Npm version: `$NPM --version`"
+Npm version: `$NPM --version`
+"
 }
 
 ## adds the pre-releases repositories to the pom.xml
