@@ -22,13 +22,18 @@ applyPatches() {
 ## Run at the beginning of Validate in order to skip upsupported app/version combination
 isUnsupported() {
   app_=$1; mod_=$2; vers_=$3;
-  ## Jetty fails in 23.3 + Linux https://github.com/vaadin/flow/issues/16097
-  [ $app_ = archetype-jetty -a $vers_ = 23.3.6 -a $mod_ = dev ] && isLinux && return 0
+
+  ## FIXED - Jetty fails in 23.3 + Linux https://github.com/vaadin/flow/issues/16097
+  # [ $app_ = archetype-jetty -a $vers_ = 23.3.6 -a $mod_ = dev ] && isLinux && return 0
+
   ## Karaf and OSGi unsupported in 24.x
   expr $vers_ : '24\.[0-1]\.' >/dev/null && [ $app_ = vaadin-flow-karaf-example -o $app_ = base-starter-flow-osgi ] && return 0
+
   ## Everything else is supported
   return 1
 }
+
+
 
 ## FIXED - k8s-demo-app 23.3.0.alpha2
 patchOldSpringProjects() {
