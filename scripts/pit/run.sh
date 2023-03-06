@@ -35,6 +35,7 @@ skeleton-starter-flow-cdi
 vaadin-flow-karaf-example
 base-starter-flow-osgi
 "
+DEFAULT_STARTERS=`echo "$PRESETS$DEMOS" | tr "\n" "," | sed -e 's/^,//' | sed -e 's/,$//'`
 
 run() {
   echo ""
@@ -50,18 +51,7 @@ run() {
   killAll
 }
 
-### MAIN
-main() {
-  _start=`date +%s`
-  log "===================== Running PiT Tests ============================================"
-
-  ## Exit soon if the port is busy
-  checkBusyPort "$PORT" || exit 1
-
-  ## Install playwright in the background
-  computeNpm
-  checkPlaywrightInstallation `computeAbsolutePath`"/its/foo" >/dev/null 2>&1 &
-
+computeStarters() {
   ## Exclude starters beginning with the negated chart \!
   for i in `echo "$STARTERS" | tr ',' ' '`; do
     if expr "$i" : '!' >/dev/null; then
@@ -71,9 +61,22 @@ main() {
       DEMOS=`echo "$DEMOS" | egrep -v "^$i$"`
     fi
   done
+  ## If there are not any provided starter run all
+  [ -z "$STARTERS" ] && STARTERS="$DEFAULT_STARTERS"
+}
 
-  ## If there are no provided starters run all
-  [ -z "$STARTERS" ] && STARTERS=`echo "$PRESETS$DEMOS" | tr "\n" "," | sed -e 's/^,//' | sed -e 's/,$//'`
+### MAIN
+main() {
+  _start=`date +%s`
+  log "===================== Running PiT Tests ============================================"
+
+  ## Exit soon if the port is busy
+  # checkBusyPort "$PORT" || exit 1
+
+  ## Install playwright in the background
+  # checkPlaywrightInstallation `computeAbsolutePath`"/its/foo" >/dev/null 2>&1 &
+  ## Calculate which starters should be run based on the command line
+  computeStarters
 
   ## Check which arguments are valid names of presets or demos
   for i in `echo "$STARTERS" | tr ',' ' '`
@@ -121,7 +124,7 @@ main() {
 }
 
 ## Use $0 --path to see available SW installed in the container
-if [ -d /opt/hostedtoolcache ] && expr "$*" : '.*--path' >/dev/null; then
+if expr "$*" : '.*--path' >/dev/null; then
   P=`ls -1d /opt/hostedtoolcache/*/*/x64/bin 2>/dev/null | sort -r | tr "\n" ":"`"\$PATH"
   echo "export PATH=$P"
   exit 0
