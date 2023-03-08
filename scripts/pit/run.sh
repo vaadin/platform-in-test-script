@@ -71,10 +71,10 @@ main() {
   log "===================== Running PiT Tests ============================================"
 
   ## Exit soon if the port is busy
-  # checkBusyPort "$PORT" || exit 1
+  checkBusyPort "$PORT" || exit 1
 
   ## Install playwright in the background
-  # checkPlaywrightInstallation `computeAbsolutePath`"/its/foo" >/dev/null 2>&1 &
+  checkPlaywrightInstallation `computeAbsolutePath`"/its/foo" >/dev/null 2>&1 &
   ## Calculate which starters should be run based on the command line
   computeStarters
 

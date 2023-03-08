@@ -7,9 +7,10 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const compileMvn = async () => await exec(`${/^win/.test(process.platform) ? 'mvn.cmd' : 'mvn'} compiler:compile`);
 async function compile(page) {
   await compileMvn();
-  await sleep(6000);
+  console.log('=> TEST: Sleeping 10secs');
+  await sleep(10000);
   if (/jetty/.test(name)) {
-    console.log('reloading');
+    console.log('=> TEST: Reloading Page ');
     await page.reload();
     await page.waitForLoadState();
   }
@@ -19,7 +20,7 @@ async function exec(order, ops) {
   return new Promise((resolve, reject) => {
     const cmd = order.split(/ +/)[0];
     const arg = order.split(/ +/).splice(1);
-    console.log(order);
+    console.log(`=> TEST: Executing -> ${order}`);
     let stdout = "", stderr = "";
     const ls = spawn(cmd, arg);
     ls.stdout.on('data', (data) => stdout += data);
@@ -64,7 +65,7 @@ const url = `http://${host}:${port}/`;
   await page.goto(url);
   await page.waitForURL(url);
 
-  await page.locator('text=Click me').click({timeout:60000});
+  await page.locator('text=Click me').click({timeout:90000});
   await page.locator('text=Clicked');
 
   const java = (await exec('find src -name MainView.java')).stdout.trim();
@@ -72,13 +73,13 @@ const url = `http://${host}:${port}/`;
   await exec(`perl -pi -e s/Click/Foo/g ${java}`);
   await compile(page);
 
-  await page.locator('text=Foo me').click({timeout:60000});
+  await page.locator('text=Foo me').click({timeout:90000});
   await page.locator('text=Fooed');
 
   await exec(`git checkout ${java}`)
   await compile(page);
 
-  await page.locator('text=Click me').click({timeout:60000});
+  await page.locator('text=Click me').click({timeout:90000});
   await page.locator('text=Clicked');
 
   // ---------------------

@@ -88,7 +88,7 @@ EOF
 ## $1: file
 ## $2: report header
 reportOutErrors() {
-  H=`cat "$1" | egrep -v ' *at ' | tail -300`
+  H=`cat "$1" | egrep -v ' *at |org.atmosphere.cpr.AtmosphereFramework' | tail -300`
   reportError "$2" "$H"
 }
 
@@ -179,7 +179,10 @@ waitUntilMessageInFile() {
       reportOutErrors "$__file" "Error $__cmd failed to start"
       return 1
     fi
-    egrep -q "$__message" $__file && log "Found '$__message' in $__file after "`expr $3 - $__timeout`" secs" && sleep 3 && return 0
+    __lasted=`expr $3 - $__timeout`
+    egrep -q "$__message" $__file && echo ">>>> PiT: Found '$__message' after $__lasted secs" >> $__file \
+      && log "Found '$__message' in $__file after $__lasted secs" \
+      && sleep 3 && return 0
     sleep 2 && __timeout=`expr $__timeout - 2`
   done
   reportOutErrors "$__file"  "Error could not find '$__message' in $__file after $__timeout secs"
@@ -225,7 +228,7 @@ waitUntilPort() {
   log "Waiting for port $1 to be available"
   __i=1
   while true; do
-    checkPort $1 && return 0
+    checkPort $1 && echo ">>>> PiT: Checked that port $1 is listening" >> $3 && return 0
     __i=`expr $__i + 1`
     [ $__i -gt $2 ] && err "Server not listening in port $1 after $2 secs" && return 1
   done
@@ -233,7 +236,7 @@ waitUntilPort() {
 
 ## App context in Karaf takes a while after the server is listening
 waitUntilAppReady() {
-  waitUntilPort $2 $3 || return 1
+  waitUntilPort $2 $3 $4 || return 1
   [ "$1" = vaadin-flow-karaf-example ] && warn "sleeping 30 secs for the context" && sleep 30 || true
 }
 
@@ -265,11 +268,12 @@ waitUntilFrontendCompiled() {
   __time=0
   while true; do
     H=`curl -f -s -v $__url -o /dev/null 2>&1`
-    [ $? != 0 ] && reportOutErrors "$__ofile" "Error ($?) checking dev-mode" && return 1
+    [ $? != 0 ] && echo ">>>> PiT: Found Error when compiling frontend" >> $__ofile && reportOutErrors "$__ofile" "Error ($?) checking dev-mode" && return 1
     if echo "$H" | grep -q "X-DevModePending"; then
       sleep 3
       __time=`expr $__time + 3`
     else
+      echo ">>>> PiT: Checked that frontend is compiled and dev-mode is ready after $__time secs" >> $__ofile
       log "Found a valid response after $__time secs"
       return
     fi
