@@ -237,7 +237,7 @@ waitUntilPort() {
 ## App context in Karaf takes a while after the server is listening
 waitUntilAppReady() {
   waitUntilPort $2 $3 $4 || return 1
-  [ "$1" = vaadin-flow-karaf-example ] && warn "sleeping 30 secs for the context" && sleep 10 && set -x || true
+  [ "$1" = vaadin-flow-karaf-example ] && warn "sleeping 30 secs for the context" && sleep 10 || true
 }
 
 ## Check whether the port is already in use in this machine

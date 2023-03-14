@@ -46,7 +46,12 @@ checkArgs() {
       --skip-prod) NOPROD=true;;
       --pnpm) PNPM="-Dpnpm.enable=true";;
       --vite) VITE=true;;
-      --list) echo "$DEFAULT_STARTERS" | tr "," "\n" && exit 0;;
+      --list*)
+        [ -z "$STARTERS" ] && STARTERS="$DEFAULT_STARTERS"
+        L=`echo "$STARTERS" | tr "," "\n" | grep ...`
+        [ -n "$arg" ] && echo "$L" | xargs -n $arg | tr ' ' , || echo "$L"
+        exit 0
+        ;;
       --help) usage && exit 0;;
       --update) UPDATE="true";;
       --hub) USEHUB="true";;
