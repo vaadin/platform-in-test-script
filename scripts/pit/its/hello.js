@@ -35,7 +35,11 @@ process.argv.forEach(a => {
   // Click text=Say hello
   await page.locator('vaadin-button').click();
 
-  await page.getByRole('alert').locator('div').nth(1).click();
+  try {
+    await page.getByRole('alert').nth(1).click({timeout: 300});
+  } catch (e) {
+    await page.locator('text=/Greet/').click({timeout: 300});
+  }
 
   // ---------------------
   await context.close();
