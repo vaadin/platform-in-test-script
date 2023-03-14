@@ -90,7 +90,8 @@ main() {
   checkBusyPort "$PORT" || exit 1
 
   ## Install playwright in the background
-  checkPlaywrightInstallation `computeAbsolutePath`"/its/foo" >/dev/null 2>&1 &
+  runToFile "checkPlaywrightInstallation `computeAbsolutePath`/its/foo" "$VERBOSE" &
+
   ## Calculate which starters should be run based on the command line
   computeStarters
 
