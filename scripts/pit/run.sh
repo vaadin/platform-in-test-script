@@ -102,7 +102,7 @@ main() {
     elif echo "$DEMOS" | grep -q "^$i$"; then
       demos="$demos $i"
     else
-      log "Unknown starter: $i"
+      err "Unknown starter: $i" && exit 1
     fi
   done
 
