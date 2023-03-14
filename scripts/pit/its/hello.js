@@ -33,10 +33,9 @@ process.argv.forEach(a => {
   await page.locator('input[type="text"]').fill('Greet');
 
   // Click text=Say hello
-  await page.locator('text=Say hello').click();
+  await page.locator('vaadin-button').click();
 
-  // Click text=Hello Vaadiner
-  await page.locator('text=Greet').click();
+  await page.getByRole('alert').locator('div').nth(1).click();
 
   // ---------------------
   await context.close();
