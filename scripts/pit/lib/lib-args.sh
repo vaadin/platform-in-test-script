@@ -4,6 +4,8 @@ Use: $0 [version=] [starters=] [port=] [timeout=] [verbose] [offline] [interacti
 
  --version=string  Vaadin version to test, if not given it only tests current stable, otherwise it runs tests against current stable and then against given version.
  --starters=list   List of demos or presets separated by comma to run (default: all) valid options:`echo ,$DEFAULT_STARTERS | sed -e 's/,/\n                   · /g'`
+ --demos           Run all demo projects
+ --generated       Run all generated projects (start and archetypes)
  --port=number     HTTP port for thee servlet container (default: $DEFAULT_PORT)
  --timeout=number  Time in secs to wait for server to start (default $DEFAULT_TIMEOUT)
  --verbose         Show server output (default silent)
@@ -18,6 +20,7 @@ Use: $0 [version=] [starters=] [port=] [timeout=] [verbose] [offline] [interacti
  --list            Show the list of available starters
  --hub             Use selenium hub instead of local chrome, it assumes that selenium docker is running as service in localhost
  --help            Show this message
+ --commit          Commit changes to the base branch
 EOF
   exit 1
 }
@@ -29,6 +32,8 @@ checkArgs() {
     arg=`echo "$1" | cut -d= -f2`
     case "$1" in
       --port=*) PORT="$arg";;
+      --generated) STARTERS=`echo "$PRESETS" | tr "\n" "," | sed -e 's/^,//' | sed -e 's/,$//'`;;
+      --demos) STARTERS=`echo "$DEMOS" | tr "\n" "," | sed -e 's/^,//' | sed -e 's/,$//'`;;
       --start*=*) STARTERS="$arg";;
       --version=*) VERSION="$arg";;
       --timeout=*) TIMEOUT="$arg";;
@@ -47,10 +52,11 @@ checkArgs() {
       --hub) USEHUB="true";;
       --v24)
         PRESETS=`echo "$PRESETS" | sed -e 's,^latest-,v24pre-,g'`
-        DEFAULT_STARTERS=`echo "$PRESETS" | tr "\n" "," | sed -e 's/^,//' | sed -e 's/,$//'`;;
+        DEFAULT_STARTERS=`echo "$PRESETS" | tr "\n" "," | sed -e 's/^,//' | sed -e 's/,$//'` ;;
       --pre)
         PRESETS=`echo "$PRESETS" | sed -e 's,^latest-,pre-,g'`
-        DEFAULT_STARTERS=`echo "$PRESETS" | tr "\n" "," | sed -e 's/^,//' | sed -e 's/,$//'`;;
+        DEFAULT_STARTERS=`echo "$PRESETS" | tr "\n" "," | sed -e 's/^,//' | sed -e 's/,$//'` ;;
+      --commit) COMMIT=true ;;
       *) echo "Unknown option: $1" && usage && exit 1;;
     esac
     shift

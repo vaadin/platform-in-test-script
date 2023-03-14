@@ -1,7 +1,8 @@
 
 applyv24Patches() {
-  app_=$1
-  vers_=$2
+  app_=$1; type_=$2; vers_=$3
+  [ -d src/main ] && D=src/main || D=*/src/main
+
   case $app_ in
     base-starter-flow-quarkus) changeMavenProperty quarkus.version 999-jakarta-SNAPSHOT ;;
     mpr-demo)
@@ -24,22 +25,23 @@ applyv24Patches() {
       ;;
   esac
 
-  [ -d src/main ] && D=src/main || D=*/src/main
 
-  [ -f pom.xml ] && patchPomV24
-  [ -f gradlew ] && patchGradV24
+  [ ! -f pom.xml ] || patchPomV24 || return 1
+  [ ! -f gradlew ] || patchGradV24 || return 1
   patchSourcesV24 $D
 
   for i in pom.xml gradle.properties build.gradle; do
     [ -f $i ] && D="$i $D"
   done
   diff_=`git diff $D | egrep '^[+-]'`
-  [ -n "$diff_" ] && echo "" && warn "Patched sources\n" && dim "====== BEGIN ======\n\n$diff_\n======  END  ======"
+  [ -n "$diff_" ] && echo "" && warn "Patched sources\n" && dim "====== BEGIN ======\n\n$diff_\n======  END  ======" || true
 }
 
 patchGradV24() {
-   upgradeGradle 7.4
+   upgradeGradle 7.5 || return 1
    perl -pi -e "s|(^\s*sourceCompatibility *= *).*$|\$1'17'|" build.gradle
+   perl -pi -e "s|(^\s*servletContainer *= *).*$|\$1'jetty11'|" build.gradle
+   perl -pi -e "s|(^.*org\.gretty.*version\s*).*$|\$1'4.0.3'|" build.gradle
    perl -pi -e "s|(^.*org\.springframework\.boot.*version\s*).*$|\$1'3.0.2'|" build.gradle
 }
 
@@ -50,13 +52,14 @@ patchPomV24() {
     changeMavenBlock dependency javax.servlet javax.servlet-api "" jakarta.servlet jakarta.servlet-api
     ##
 
-    changeMavenBlock parent org.springframework.boot spring-boot-starter-parent 3.0.2
+    changeMavenBlock parent org.springframework.boot spring-boot-starter-parent 3.0.4
     removeMavenBlock dependency javax.xml.bind jaxb-api
     changeMavenBlock dependency javax javaee-api 8.0.0 jakarta.platform jakarta.jakartaee-api
 
     changeMavenBlock plugin org.eclipse.jetty jetty-maven-plugin 11.0.13
 
-    removeMavenProperty selenium.version
+    # removeMavenProperty selenium.version
+    changeMavenProperty selenium.version 4.8.1
     changeMavenProperty java.version 17
     changeMavenProperty maven.compiler.source 17
     changeMavenProperty maven.compiler.target 17

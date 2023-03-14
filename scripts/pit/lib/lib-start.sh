@@ -122,7 +122,7 @@ runStarter() {
   [ "$_preset" = archetype-hotswap ] && installJBRRuntime
 
   computeMvn
-  printVersions
+  printVersions || return 1
 
   _msg=`_getStartReadyMessageDev $_preset`
   _prod=`_getRunProd $_preset`

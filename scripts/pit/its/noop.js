@@ -1,4 +1,4 @@
-const { chromium, webkit } = require('playwright');
+const { chromium } = require('playwright');
 
 let headless = false, host = 'localhost', port = '8080', hub = false;
 process.argv.forEach(a => {
@@ -18,27 +18,13 @@ process.argv.forEach(a => {
   });
   const context = await browser.newContext();
 
-  // Open new page
   const page = await context.newPage();
   page.on('console', msg => console.log("> CONSOLE:", msg.text()));
   page.on('pageerror', err => console.log("> JSERROR:", err));
 
-  // Go to http://localhost:8080/
   await page.goto(`http://${host}:${port}/`);
+  await page.locator('div').nth(1).type('FOO');
 
-  // Click input[type="text"]
-  await page.locator('input[type="text"]').click({timeout:60000});
-
-  // Fill input[type="text"]
-  await page.locator('input[type="text"]').fill('Greet');
-
-  // Click text=Say hello
-  await page.locator('text=Say hello').click();
-
-  // Click text=Hello Vaadiner
-  await page.locator('text=Greet').click();
-
-  // ---------------------
   await context.close();
   await browser.close();
 })();

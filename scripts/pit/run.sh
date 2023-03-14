@@ -34,7 +34,23 @@ k8s-demo-app
 skeleton-starter-flow-cdi
 vaadin-flow-karaf-example
 base-starter-flow-osgi
+base-starter-gradle
+vaadin-form-example
+flow-crm-tutorial
+vaadin-rest-example
+vaadin-localization-example
+vaadin-database-example
+layout-examples
+flow-quickstart-tutorial
+flow-spring-examples
+vaadin-oauth-example
+hilla-crm-tutorial
+hilla-quickstart-tutorial
+hilla-basics-tutorial
 "
+
+# hilla-basics-tutorial
+
 DEFAULT_STARTERS=`echo "$PRESETS$DEMOS" | tr "\n" "," | sed -e 's/^,//' | sed -e 's/,$//'`
 
 run() {
@@ -110,12 +126,12 @@ main() {
   ## Report success and failed projects
   for i in $success
   do
-    log "Starter $i built successfully"
+    bold "🟢 Starter $i built successfully"
   done
   for i in $failed
   do
     files=`echo $tmp/$i/*.out`
-    err "!!! ERROR in $i !!! check log files: $files"
+    err "🔴 ERROR in $i, check log files: $files"
     _error=1
   done
 

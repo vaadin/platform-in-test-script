@@ -6,8 +6,16 @@ applyPatches() {
   log "Applying Patches for $app_ $type_ $vers_"
   case $app_ in
     archetype-hotswap) enableJBRAutoreload ;;
+    vaadin-oauth-example)
+    setPropertyInFile src/main/resources/application.properties \
+      spring.security.oauth2.client.registration.google.client-id \
+      553339476434-a7kb9vna7limjgucee2n0io775ra5qet.apps.googleusercontent.com
+    setPropertyInFile src/main/resources/application.properties \
+      spring.security.oauth2.client.registration.google.client-secret \
+      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
+    ;;
   esac
-  case $app_ in
+  case $vers_ in
     *alpha*|*beta*|*rc*|*SNAP*) addPrereleases; enableSnapshots ;;
   esac
   [ "$type_" = current ] && return 0

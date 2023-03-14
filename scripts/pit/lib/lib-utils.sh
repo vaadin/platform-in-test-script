@@ -237,7 +237,7 @@ waitUntilPort() {
 ## App context in Karaf takes a while after the server is listening
 waitUntilAppReady() {
   waitUntilPort $2 $3 $4 || return 1
-  [ "$1" = vaadin-flow-karaf-example ] && warn "sleeping 30 secs for the context" && sleep 30 || true
+  [ "$1" = vaadin-flow-karaf-example ] && warn "sleeping 30 secs for the context" && sleep 10 && set -x || true
 }
 
 ## Check whether the port is already in use in this machine
@@ -256,7 +256,7 @@ checkHttpServlet() {
   __cfile="curl-"`uname`".out"
   rm -f $__cfile
   log "Checking whether url $__url returns HTTP 200"
-  runToFile "curl -s --fail -I -L $__url" "$__cfile" "$VERBOSE"
+  runToFile "curl -s --fail -I -L -H Accept:text/html $__url" "$__cfile" "$VERBOSE"
   [ $? != 0 ] && reportOutErrors "$__ofile" "Server Logs" && return 1 || return 0
 }
 
@@ -267,7 +267,7 @@ waitUntilFrontendCompiled() {
   log "Waiting for dev-mode to be ready at $__url"
   __time=0
   while true; do
-    H=`curl -f -s -v $__url -o /dev/null 2>&1`
+    H=`curl -f -s -v $__url -L -H Accept:text/html -o /dev/null 2>&1`
     [ $? != 0 ] && echo ">>>> PiT: Found Error when compiling frontend" >> $__ofile && reportOutErrors "$__ofile" "Error ($?) checking dev-mode" && return 1
     if echo "$H" | grep -q "X-DevModePending"; then
       sleep 3
@@ -303,7 +303,7 @@ setGradleVersion() {
     current|$__current)
       echo $__current;
       return 1;;
-    *) perl -pi -e "s,$__gradleProperty=.*,$__gradleProperty=$__nversion," gradle.properties ;;
+    *) setPropertyInFile gradle.properties $__gradleProperty $__nversion;;
   esac
 }
 
@@ -402,18 +402,17 @@ changeMavenProperty() {
   for __file in `find pom.xml src */src -name pom.xml 2>/dev/null`
   do
     cp $__file $$-1
-    if [ "$2" = remove ]; then
+    if [ "$__val" = remove ]; then
       perl -pi -e 's|\s*(<'$__prop'>)([^<]+)(</'$__prop'>)\s*||g' $__file
     else
       __cur=`getCurrProperty $__prop $__file`
       perl -pi -e 's|(<'$__prop'>)([^<]+)(</'$__prop'>)|${1}'"${__val}"'${3}|g' $__file
     fi
-    cp $__file $$-2
-    __diff=`diff -w $$-1 $$-2`
+    __diff=`diff -w $$-1 $__file`
+    rm -f $$-1
     [ -n "$__diff" ] && __ret=0
-    [ -n "$__diff" -a "$2" =  remove ] && warn "Remove $__prop"
-    [ -n "$__diff" -a "$2" != remove ] && warn "Change $__prop from $__cur to $__val"
-    rm -f $$-1 $$-2
+    [ -n "$__diff" -a "$__val" =  remove ] && warn "Remove $__prop"
+    [ -n "$__diff" -a "$__val" != remove ] && warn "Change $__prop from $__cur to $__val"
   done
   return $__ret
 }
@@ -432,34 +431,38 @@ removeMavenProperty() {
   changeMavenProperty "$1" remove
 }
 
+setPropertyInFile() {
+  __file=$1; __key=$2; __val=$3
+  [ ! -f "$__file" ] && return 0
+  cp $__file $$-1
+  __cur=`egrep ' *'$__key $__file | tr ':' '=' | cut -d "=" -f2`
+  if [ "$__val" = remove ]; then
+    perl -pi -e 's|\s*('$__key')\s*([=:]).*||g' $__file
+  elif [ -n "$__cur" ]; then
+    perl -pi -e 's|\s*('$__key')\s*([=:]).*|${1}${2}'"${__val}|g" $__file
+  else
+    echo "$__key=$__val" >> $__file
+  fi
+  __diff=`diff -w $$-1 $__file`
+  rm -f $$-1
+  [ -n "$__diff" -a "$__val" =  remove ] && warn "Remove $__key in $__file"
+  [ -n "$__diff" -a "$__val" != remove ] && warn "Change $__key from '$__cur' to '$__val' in $__file"
+  [ -n "$__diff" ]
+}
+
 ## Do not open Browser after app is started
 disableLaunchBrowser() {
-  [ ! -d src/main/resources ] && return
-  __prop="src/main/resources/application.properties"
-  __key="vaadin.launch-browser"
-  log "Disabling $__key in $__prop"
-  touch $__prop
-  perl -pi -e "s/$__key=.*//g" "$__prop"
+  setPropertyInFile src/main/resources/application.properties vaadin.launch-browser remove
 }
 
 ## pnpm is quite faster than npm
 enablePnpm() {
-  [ ! -d src/main/resources ] && return
-  __prop="src/main/resources/application.properties"
-  __key="vaadin.pnpm.enable"
-  log "Enabling $__key in $__prop"
-  touch $__prop
-  grep -q "$__key=true" "$__prop" || echo "$__key=true" >> "$__prop"
+  setPropertyInFile src/main/resources/application.properties vaadin.pnpm.enable true
 }
 
 ## vite is faster than webpack
 enableVite() {
-  [ ! -d src/main/resources ] && return
-  __prop="src/main/resources/vaadin-featureflags.properties"
-  __key="com.vaadin.experimental.viteForFrontendBuild"
-  log "Enabling $__key in $__prop"
-  touch $__prop
-  grep -q "$__key=true" "$__prop" || echo "$__key=true" >> "$__prop"
+  setPropertyInFile src/main/resources/application.properties com.vaadin.experimental.viteForFrontendBuild true
 }
 
 ## Compute whether the headless argument must be set
@@ -472,6 +475,7 @@ isHeadless() {
 printVersions() {
   computeNpm
   _vers=`MAVEN_OPTS="$HOT" $MVN -version | tr \\\\ / 2>/dev/null | egrep -i 'maven|java|agent.HotswapAgent'`
+  [ $? != 0 ] && err "Error $? when running $MVN, $_vers" && return 1
   log "==== VERSIONS ====
 
 MAVEN_OPTS='$HOT' $MVN -version

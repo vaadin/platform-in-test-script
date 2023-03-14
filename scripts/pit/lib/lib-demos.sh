@@ -6,8 +6,8 @@ checkoutDemo() {
   _branch=`getGitBranch $1`
   _repo=`getGitRepo $1`
   _tk=${GITHUB_TOKEN:-${GHTK}}
-  [ -n "$_tk" ] && _tk=${_tk}@
-  _gitUrl="https://${_tk}${_repo}.git"
+  [ -n "$_tk" ] && __tk=${_tk}@
+  _gitUrl="https://${__tk}${_repo}.git"
   log "Checking out $1"
   cmd "git clone https://$_repo.git"
   cmd "cd $1"
@@ -23,17 +23,49 @@ getGitRepo() {
 }
 getGitBranch() {
   case $1 in
-    mpr-demo) echo "mpr-6";;
-    base-starter-flow-quarkus) echo "v24";;
+    mpr-demo) echo "mpr-7";;
   esac
+}
+
+commitChanges() {
+  _app=$1; _vers=$2;
+
+  git ls-remote --heads >/dev/null 2>&1 || return 0
+  git update-index --refresh >/dev/null
+  git diff-index --quiet HEAD -- && return 0
+
+  _baseBranch=v`echo "$_vers" | cut -d '.' -f1`
+  _headBranch="update-to-$_baseBranch"
+
+  remotes=`git ls-remote --heads 2>/dev/null | grep refs | sed -e 's|.*refs/heads/||g' | egrep "^$_baseBranch$"`
+  [ -n "$remotes" ] && log "Branch $_baseBranch already exists" || (log "Creating branch $_baseBranch" && git checkout -b $_baseBranch && git push) || return 1
+
+  owner=`echo "$_repo" | cut -d / -f2`
+  repo=`echo "$_repo" | cut -d / -f3-100`
+
+  log "Creating $_headBranch branch, committing and pushing changes"
+  git checkout -b $_headBranch
+  git push origin $_headBranch -d 2>/dev/null
+  git add `ls -1d src frontend */src */frontend pom.xml */pom.xml 2>/dev/null | tr "\n" " "`
+  git commit -q -m "chore: update to $_vers" -a
+  git push -q -f
+
+  pr_url=`curl -L \
+    -X POST \
+    -H "Accept: application/vnd.github+json" \
+    -H "Authorization: Bearer $_tk"\
+    -H "X-GitHub-Api-Version: 2022-11-28" \
+    https://api.github.com/repos/$owner/$repo/pulls \
+    -d '{"title":"chore: Update Vaadin '$_vers'","head":"'$_headBranch'","base":"'$_baseBranch'"}' | jq -r '.html_url' 2>/dev/null`
+  warn "Created PR $pr_url"
 }
 
 ## Get install command for dev-mode
 getInstallCmdDev() {
   case $1 in
-    base-starter-flow-quarkus|skeleton-starter-flow-cdi|mpr-demo|spreadsheet-demo) echo "$MVN -ntp -B clean $PNPM";;
-    base-starter-spring-gradle) echo "./gradlew clean" ;;
-    *) echo "$MVN -ntp clean install $PNPM";;
+    # base-starter-flow-quarkus|skeleton-starter-flow-cdi|mpr-demo|spreadsheet-demo) echo "$MVN -ntp -B clean $PNPM";;
+    *-gradle) echo "$GRADLE clean" ;;
+    *) echo "$MVN -ntp -B clean install -DskipTests $PNPM";;
   esac
 }
 ## Get install command for prod-mode
@@ -42,8 +74,9 @@ getInstallCmdPrd() {
   isHeadless && H="$H -Dheadless"
   [ -n "$SKIPTESTS" ] && H="$H -DskipTests"
   case $1 in
-    bakery-app-starter-flow-spring|skeleton-starter-flow-spring|base-starter-flow-quarkus) echo "$MVN -B install -Pproduction,it $H $PNPM";;
-    base-starter-spring-gradle) echo "./gradlew clean build -Pvaadin.productionMode $PNPM";;
+    *hilla*|base-starter-flow-quarkus|vaadin-form-example|flow-spring-examples|vaadin-oauth-example|layout-examples) echo "$MVN -B package -Pproduction $PNPM";;
+    bakery-app-starter-flow-spring|skeleton-starter-flow-spring) echo "$MVN -B install -Pproduction,it $H $PNPM";;
+    *-gradle) echo "$GRADLE clean build -Pvaadin.productionMode $PNPM";;
     skeleton-starter-flow-cdi|k8s-demo-app) echo "$MVN -ntp -B verify -Pproduction $H $PNPM";;
     mpr-demo|spreadsheet-demo) echo "$MVN -ntp -B clean";;
     *) getInstallCmdDev $1;;
@@ -55,7 +88,8 @@ getRunCmdDev() {
     vaadin-flow-karaf-example) echo "$MVN -ntp -B -pl main-ui install -Prun $PNPM";;
     base-starter-flow-osgi) echo "java -jar app/target/app.jar";;
     skeleton-starter-flow-cdi) echo "$MVN -ntp -B wildfly:run $PNPM";;
-    base-starter-spring-gradle) echo "./gradlew bootRun";;
+    base-starter-spring-gradle) echo "$GRADLE bootRun";;
+    base-starter-gradle) echo "$GRADLE jettyStart";; # should be appRun but reads from stdin and fails
     mpr-demo) echo "$MVN -ntp -B -Dvaadin.spreadsheet.developer.license=${SS_LICENSE} jetty:run $PNPM";;
     *) echo "$MVN -ntp -B $PNPM";;
   esac
@@ -63,12 +97,13 @@ getRunCmdDev() {
 ## Get command for running the project prod-mode after install was run
 getRunCmdPrd() {
   case $1 in
-    k8s-demo-app|skeleton-starter-flow-spring|bakery-app-starter-flow-spring) echo "java -jar target/*.jar";;
+    *hilla*|k8s-demo-app|skeleton-starter-flow-spring|bakery-app-starter-flow-spring|vaadin-form-example|flow-spring-examples|vaadin-oauth-example) echo "java -jar target/*.jar";;
     base-starter-flow-quarkus) echo "java -jar target/quarkus-app/quarkus-run.jar";;
     skeleton-starter-flow-cdi) echo "$MVN -ntp -B wildfly:run -Pproduction $PNPM";;
-    base-starter-spring-gradle) echo "java -jar ./build/libs/base-starter-spring-gradle-0.0.1-SNAPSHOT.jar";;
+    base-starter-spring-gradle) echo "java -jar ./build/libs/*-gradle-*.jar";;
+    base-starter-gradle) echo "$GRADLE jettyStartWar";; # should be appRunWar but reads from stdin and fails
     mpr-demo) echo "$MVN -ntp -B -Dvaadin.spreadsheet.developer.license=${SS_LICENSE} jetty:run-war -Pproduction $PNPM";;
-    spreadsheet-demo) echo "$MVN -ntp -Pproduction -B jetty:run-war $PNPM";;
+    spreadsheet-demo|layout-examples) echo "$MVN -ntp -Pproduction -B jetty:run-war $PNPM";;
     *) getRunCmdDev $1;;
   esac
 }
@@ -81,11 +116,12 @@ getReadyMessageDev() {
     bakery-app-starter-flow-spring) echo "Started Application";; # frontend bundle built
     base-starter-flow-quarkus) echo "TaskCopyFrontendFiles";;
     vaadin-flow-karaf-example) echo "Artifact deployed";;
-    spreadsheet-demo) echo "Started ServerConnector";;
+    spreadsheet-demo|layout-examples) echo "Started ServerConnector";;
     mpr-demo) echo "Vaadin is running in DEBUG MODE";;
     k8s-demo-app) echo "frontend bundle built|Started Vite";;
-    base-starter-spring-gradle) echo "Tomcat started";;
-    *) echo "Frontend compiled successfully";; # frontend bundle built
+    *-gradle|flow-spring-examples) echo "Tomcat started|started and listening";;
+    hilla-*-tutorial) echo "Started Vite";;
+    *) echo "Frontend compiled successfully|Started Application";;
   esac
 }
 ## Get ready message when running the project in prod-mode
@@ -96,7 +132,8 @@ getReadyMessagePrd() {
     bakery-app-starter-flow-spring) echo "Started Application";;
     skeleton-starter-flow-cdi) echo "Registered web contex";;
     mpr-demo|spreadsheet-demo) echo "Started ServerConnector";;
-    base-starter-spring-gradle) echo "Tomcat started";;
+    *-gradle) echo "Tomcat started|started and listening";;
+    hilla-*-tutorial) echo "Started Application";;
     *) getReadyMessageDev $1;;
   esac
 }
@@ -122,24 +159,30 @@ getPort() {
 ## Get SIDE test file
 getTest() {
   case $1 in
-    bakery-app-starter-flow-spring);;
+    bakery-app-starter-flow-spring|*hilla*) echo "noop.js";;
     mpr-demo) echo "mpr-demo.js";;
     spreadsheet-demo) echo "spreadsheet-demo.js";;
     k8s-demo-app) echo "k8s-demo.js";;
-    *) echo "hello.js"
+    vaadin-form-example|vaadin-rest-example|vaadin-localization-example|vaadin-database-example|layout-examples|flow-quickstart-tutorial|flow-spring-examples|flow-crm-tutorial|layout-examples|flow-quickstart-tutorial|vaadin-oauth-example) echo "noop.js";;
+    vaadin-oauth-example) echo "oauth.js";;
+    *) echo "hello.js";;
   esac
 }
 
 ## Change version in build files
 setDemoVersion() {
   case "$1" in
-    base-starter-spring-gradle) setGradleVersion vaadinVersion "$2";;
+    *-gradle) setGradleVersion vaadinVersion "$2";;
     base-starter-flow-quarkus|mpr-demo)
-       setVersion vaadin.version "$2" || return 1;
+       setVersion vaadin.version "$2" || return 1
        setFlowVersion "$2" false
        setMprVersion "$2" false
        ;;
-    *) setVersion vaadin.version "$2" ;;
+    *)
+      __prop=`computeProp $1`
+      __vers=`computeVersion $1 $2`
+      setVersion $__prop $__vers
+      ;;
   esac
 }
 
@@ -169,10 +212,11 @@ runDemo() {
     checkoutDemo $_demo || return 1
   fi
   cd "$_dir" || return 1
-  computeMvn
-  [ $_demo = base-starter-spring-gradle ] && computeGradle
 
-  printVersions
+  computeMvn
+  computeGradle
+
+  printVersions || return 1
 
   _installCmdDev=`getInstallCmdDev $_demo`
   _installCmdPrd=`getInstallCmdPrd $_demo`
@@ -186,7 +230,7 @@ runDemo() {
   if [ -z "$NOCURRENT" ]
   then
     _current=`setDemoVersion $_demo current`
-    applyPatches $_demo current $_current dev || return
+    applyPatches $_demo current $_current dev || return 1
     if hasDev $_demo; then
       # 2
       runValidations dev "$_current" "$_demo" "$_port" "$_installCmdDev" "$_runCmdDev" "$_readyDev" "$_test" || return 1
@@ -199,7 +243,7 @@ runDemo() {
   # 4
   if setDemoVersion $_demo $_version >/dev/null || [ -n "$NOCURRENT" ]
   then
-    applyPatches $_demo next $_version prod || return
+    applyPatches $_demo next $_version prod || return 1
     if hasDev $_demo; then
       # 5
       runValidations dev "$_version" "$_demo" "$_port" "$_installCmdDev" "$_runCmdDev" "$_readyDev" "$_test" || return 1
@@ -207,6 +251,7 @@ runDemo() {
     if hasProduction $_demo; then
       # 6
       runValidations prod "$_version" "$_demo" "$_port" "$_installCmdPrd" "$_runCmdPrd" "$_readyPrd" "$_test" || return 1
+      [ -n "$COMMIT" ] && commitChanges $_demo $_version
     fi
   fi
 }
