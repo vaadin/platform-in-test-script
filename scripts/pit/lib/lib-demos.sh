@@ -100,7 +100,7 @@ getRunCmdPrd() {
     *hilla*|k8s-demo-app|skeleton-starter-flow-spring|bakery-app-starter-flow-spring|vaadin-form-example|flow-spring-examples|vaadin-oauth-example) echo "java -jar target/*.jar";;
     base-starter-flow-quarkus) echo "java -jar target/quarkus-app/quarkus-run.jar";;
     skeleton-starter-flow-cdi) echo "$MVN -ntp -B wildfly:run -Pproduction $PNPM";;
-    base-starter-spring-gradle) echo "java -jar ./build/libs/*-gradle-*.jar";;
+    base-starter-spring-gradle) echo "java -jar ./build/libs/*-gradle*T.jar";;
     base-starter-gradle) echo "$GRADLE jettyStartWar";; # should be appRunWar but reads from stdin and fails
     mpr-demo) echo "$MVN -ntp -B -Dvaadin.spreadsheet.developer.license=${SS_LICENSE} jetty:run-war -Pproduction $PNPM";;
     spreadsheet-demo|layout-examples) echo "$MVN -ntp -Pproduction -B jetty:run-war $PNPM";;
