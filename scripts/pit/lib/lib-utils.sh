@@ -487,13 +487,16 @@ Npm version: `$NPM --version`
 
 ## adds the pre-releases repositories to the pom.xml
 addPrereleases() {
-  if ! grep -q '<repositories>' pom.xml; then
-    U="https://maven.vaadin.com/vaadin-prereleases/"
-    log "Adding $U repository"
-    for R in repositor pluginRepositor; do
+  U="https://maven.vaadin.com/vaadin-prereleases/"
+  grep -q "$U" pom.xml && return 0
+  log "Adding $U repository"
+  for R in repositor pluginRepositor; do
+    if ! grep -q $R'ies>' pom.xml; then
       perl -pi -e 's|(\s*)(</properties>)|$1$2\n$1<'$R'ies><'$R'y><id>v</id><url>'$U'</url></'$R'y></'$R'ies>|' pom.xml
-    done
-  fi
+    else
+      perl -pi -e 's|(\s*)(<'$R'ies>)|$1$2\n$1$1<'$R'y><id>v</id><url>'$U'</url></'$R'y>|' pom.xml
+    fi
+  done
 }
 
 ## enables snapshots for the pre-releases repositories in pom.xml
