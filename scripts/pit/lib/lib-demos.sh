@@ -251,7 +251,7 @@ runDemo() {
     if hasProduction $_demo; then
       # 6
       runValidations prod "$_version" "$_demo" "$_port" "$_installCmdPrd" "$_runCmdPrd" "$_readyPrd" "$_test" || return 1
-      [ -n "$COMMIT" ] && commitChanges $_demo $_version
+      [ -z "$COMMIT" ] || commitChanges $_demo $_version
     fi
   fi
 }
