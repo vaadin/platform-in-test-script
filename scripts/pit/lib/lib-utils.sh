@@ -487,6 +487,7 @@ Npm version: `$NPM --version`
 
 ## adds the pre-releases repositories to the pom.xml
 addPrereleases() {
+  [ ! -f pom.xml ] && log "Not a Maven proyect, not adding prereleases repository" && return 0
   U="https://maven.vaadin.com/vaadin-prereleases/"
   grep -q "$U" pom.xml && return 0
   log "Adding $U repository"
@@ -501,6 +502,7 @@ addPrereleases() {
 
 ## enables snapshots for the pre-releases repositories in pom.xml
 enableSnapshots() {
+  [ ! -f pom.xml ] && return 0
   find . -name pom.xml | xargs perl -0777 -pi -e 's/(vaadin-prereleases<\/url>\s*<snapshots>\s*<enabled>)false/${1}true/msg'
 }
 
