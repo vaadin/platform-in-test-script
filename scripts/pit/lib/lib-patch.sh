@@ -39,7 +39,7 @@ isUnsupported() {
   # [ $app_ = archetype-jetty -a $vers_ = 23.3.6 -a $mod_ = dev ] && isLinux && return 0
 
   ## Karaf and OSGi unsupported in 24.x
-  expr $vers_ : '24\.[0-1]\.' >/dev/null && [ $app_ = vaadin-flow-karaf-example -o $app_ = base-starter-flow-osgi ] && return 0
+  expr $vers_ : '24\.[0-1][\.\-]' >/dev/null && [ $app_ = vaadin-flow-karaf-example -o $app_ = base-starter-flow-osgi ] && return 0
 
   ## Everything else is supported
   return 1
