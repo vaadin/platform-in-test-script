@@ -7,13 +7,17 @@ applyPatches() {
   case $app_ in
     archetype-hotswap) enableJBRAutoreload ;;
     vaadin-oauth-example)
-    setPropertyInFile src/main/resources/application.properties \
-      spring.security.oauth2.client.registration.google.client-id \
-      553339476434-a7kb9vna7limjgucee2n0io775ra5qet.apps.googleusercontent.com
-    setPropertyInFile src/main/resources/application.properties \
-      spring.security.oauth2.client.registration.google.client-secret \
-      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
-    ;;
+      setPropertyInFile src/main/resources/application.properties \
+        spring.security.oauth2.client.registration.google.client-id \
+        553339476434-a7kb9vna7limjgucee2n0io775ra5qet.apps.googleusercontent.com
+      setPropertyInFile src/main/resources/application.properties \
+        spring.security.oauth2.client.registration.google.client-secret \
+        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
+      ;;
+    mpr-demo)
+      warn removing tsconfig.json
+      rm -f tsconfig.json
+      ;;
   esac
   case $vers_ in
     *alpha*|*beta*|*rc*|*SNAP*) addPrereleases; enableSnapshots ;;
