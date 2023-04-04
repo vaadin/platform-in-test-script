@@ -35,7 +35,7 @@ runPlaywrightTests() {
   H=`grep '> JSERROR:' "$_pfile"`
   reportError "Console Errors in $_mode mode" "$H"
   H=`tail -15 $_pfile`
-  [ $err != 0 ] && reportOutErrors "$4" "Error ($err) running Visual-Test ("`basename $_pfile`")"
+  [ $err != 0 ] && reportOutErrors "$4" "Error ($err) running Visual-Test ("`basename $_pfile`")" || echo ">>>> PiT: playwright $_test_file done" >> $__file
   return $err
 }
 
