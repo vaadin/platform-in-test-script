@@ -71,7 +71,7 @@ getInstallCmdDev() {
 ## Get install command for prod-mode
 getInstallCmdPrd() {
   H="-Dcom.vaadin.testbench.Parameters.testsInParallel=2 -Dmaven.test.redirectTestOutputToFile=true"
-  isHeadless && H="$H -Dheadless"
+  isHeadless && H="$H -Dcom.vaadin.testbench.Parameters.headless=true -Dheadless"
   [ -n "$SKIPTESTS" ] && H="$H -DskipTests"
   case $1 in
     *hilla*|base-starter-flow-quarkus|vaadin-form-example|flow-spring-examples|vaadin-oauth-example|layout-examples) echo "$MVN -B package -Pproduction $PNPM";;
