@@ -180,10 +180,12 @@ waitUntilMessageInFile() {
       return 1
     fi
     __lasted=`expr $3 - $__timeout`
-    egrep -q "$__message" $__file && echo ">>>> PiT: Found '$__message' after $__lasted secs" >> $__file \
+    egrep -q "$__message" $__file  \
       && log "Found '$__message' in $__file after $__lasted secs" \
+      && egrep "$__message" $__file \
+      && echo ">>>> PiT: Found '$__message' after $__lasted secs" >> $__file \
       && sleep 3 && return 0
-    sleep 2 && __timeout=`expr $__timeout - 2`
+    sleep 10 && __timeout=`expr $__timeout - 2`
   done
   reportOutErrors "$__file"  "Error could not find '$__message' in $__file after $__timeout secs"
   return 1
@@ -268,6 +270,14 @@ waitUntilFrontendCompiled() {
   __time=0
   while true; do
     H=`curl -f -s -v $__url -L -H Accept:text/html -o /dev/null 2>&1`
+    if [ $? != 0 ]; then
+       if grep -q "'tsconfig.json' has been updated" $__ofile; then
+         H=`git diff tsconfig.json`
+         echo ">>>> PiT: tsconfig.json modified, retrying ...." >> $__ofile && reportOutErrors "File 'tsconfig.json' was modified and servlet threw an Exception" "$H" && return 2
+       else
+         echo ">>>> PiT: Found Error when compiling frontend" >> $__ofile && reportOutErrors "$__ofile" "Error ($?) checking dev-mode" && return 1
+       fi
+    fi
     [ $? != 0 ] && echo ">>>> PiT: Found Error when compiling frontend" >> $__ofile && reportOutErrors "$__ofile" "Error ($?) checking dev-mode" && return 1
     if echo "$H" | grep -q "X-DevModePending"; then
       sleep 3

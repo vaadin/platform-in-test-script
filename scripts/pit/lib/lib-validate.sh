@@ -60,7 +60,22 @@ runValidations() {
   [ "$mode" = prod ] && H=`cat $file | grep WARNING | grep 'deprecated$' | sed -e 's/^.*\/src\//src\//g'` && reportError "Deprecated API" "$H"
   [ "$mode" != dev -o "$name" != default ] || checkBundleNotCreated "$file" || return 1
 
-  [ "$mode" != dev ] || waitUntilFrontendCompiled "http://localhost:$port/" "$file" || return 1
+  if [ "$mode" = dev ]; then
+    waitUntilFrontendCompiled "http://localhost:$port/" "$file"
+    _err=$?
+    if [ "$_err" = 2 ]; then
+      warn "File tsconfig was modified and server threw an exception !! retrying ..."
+      killAll
+      mv "$file" "$file.tsconfig"
+      runInBackgroundToFile "$cmd" "$file" "$VERBOSE"
+      waitUntilMessageInFile "$file" "$check" "$TIMEOUT" "$cmd" || return 1
+      waitUntilAppReady "$name" "$port" 60 "$file" || return 1
+      waitUntilFrontendCompiled "http://localhost:$port/" "$file" || return 1
+    elif [ "$_err" != 0 ]; then
+      return 1
+    fi
+  fi
+
   checkHttpServlet "http://localhost:$port/" "$file" || return 1
 
   # 7

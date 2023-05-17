@@ -81,10 +81,7 @@ _getRunProd() {
 }
 
 _getStartReadyMessageDev() {
-  case $1 in
-    latest-lit*|react*) echo "Started Vite|Frontend compiled";;
-    *) echo "Started Application|Frontend compiled|Started ServerConnector";;
-  esac
+  echo "Started Application|Frontend compiled|Started ServerConnector|Started Vite"
 }
 
 ## Run an App downloaded from start.vaadin.com by following the next steps
