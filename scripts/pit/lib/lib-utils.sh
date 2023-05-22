@@ -270,15 +270,15 @@ waitUntilFrontendCompiled() {
   __time=0
   while true; do
     H=`curl -f -s -v $__url -L -H Accept:text/html -o /dev/null 2>&1`
-    if [ $? != 0 ]; then
+    __err=$?
+    if [ $__err != 0 ]; then
        if grep -q "'tsconfig.json' has been updated" $__ofile; then
          H=`git diff tsconfig.json`
          echo ">>>> PiT: tsconfig.json modified, retrying ...." >> $__ofile && reportOutErrors "File 'tsconfig.json' was modified and servlet threw an Exception" "$H" && return 2
        else
-         echo ">>>> PiT: Found Error when compiling frontend" >> $__ofile && reportOutErrors "$__ofile" "Error ($?) checking dev-mode" && return 1
+         echo ">>>> PiT: Found Error when compiling frontend" >> $__ofile && reportOutErrors "$__ofile" "Error ($__err) checking dev-mode" && return 1
        fi
     fi
-    [ $? != 0 ] && echo ">>>> PiT: Found Error when compiling frontend" >> $__ofile && reportOutErrors "$__ofile" "Error ($?) checking dev-mode" && return 1
     if echo "$H" | grep -q "X-DevModePending"; then
       sleep 3
       __time=`expr $__time + 3`
