@@ -114,7 +114,7 @@ getReadyMessageDev() {
     skeleton-starter-flow-cdi) echo "Vaadin is running in DEVELOPMENT mode";;
     skeleton-starter-flow-spring) echo "Started Application";; # frontend bundle built
     bakery-app-starter-flow-spring) echo "Started Application";; # frontend bundle built
-    base-starter-flow-quarkus) echo "TaskCopyFrontendFiles";;
+    base-starter-flow-quarkus) echo "Listening on:";;
     vaadin-flow-karaf-example) echo "Artifact deployed";;
     spreadsheet-demo|layout-examples) echo "Started ServerConnector";;
     mpr-demo) echo "Vaadin is running in DEBUG MODE";;

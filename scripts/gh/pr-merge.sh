@@ -62,7 +62,7 @@ while [ -n "$1" ]; do
           D=`echo "$i" | cut -d "ç" -f2`
           N=`echo "$i" | cut -d "ç" -f1`
           echo "  > https://github.com/vaadin/$arg/pull/$N   -  $D" | tr "ç" "\t"
-          echo $0 --merge=$arg $N
+          echo $0 --merge=$arg $N "## $D"
         done
         ;;
       --all)
