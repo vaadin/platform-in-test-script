@@ -269,7 +269,7 @@ waitUntilFrontendCompiled() {
   log "Waiting for dev-mode to be ready at $__url"
   __time=0
   while true; do
-    H=`curl -f -s -v $__url -L -H Accept:text/html -o /dev/null 2>&1`
+    H=`curl --retry 4 --retry-all-errors -f -s -v $__url -L -H Accept:text/html -o /dev/null 2>&1`
     __err=$?
     if [ $__err != 0 ]; then
        if grep -q "'tsconfig.json' has been updated" $__ofile; then
