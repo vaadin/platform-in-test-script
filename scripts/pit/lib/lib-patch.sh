@@ -17,6 +17,8 @@ applyPatches() {
     mpr-demo)
       warn removing tsconfig.json
       rm -f tsconfig.json
+      warn removing ~/vaadin/node*
+      rm -rf ~/vaadin/node*
       ;;
   esac
   case $vers_ in
