@@ -55,9 +55,6 @@ checkArgs() {
       --help) usage && exit 0;;
       --update) UPDATE="true";;
       --hub) USEHUB="true";;
-      --v24)
-        PRESETS=`echo "$PRESETS" | sed -e 's,^latest-,v24pre-,g'`
-        DEFAULT_STARTERS=`echo "$PRESETS" | tr "\n" "," | sed -e 's/^,//' | sed -e 's/,$//'` ;;
       --pre)
         PRESETS=`echo "$PRESETS" | sed -e 's,^latest-,pre-,g'`
         DEFAULT_STARTERS=`echo "$PRESETS" | tr "\n" "," | sed -e 's/^,//' | sed -e 's/,$//'` ;;
