@@ -79,7 +79,7 @@ getInstallCmdPrd() {
     *-gradle) echo "$GRADLE clean build -Pvaadin.productionMode $PNPM";;
     skeleton-starter-flow-cdi|k8s-demo-app) echo "$MVN -ntp -B verify -Pproduction $H $PNPM";;
     mpr-demo|spreadsheet-demo) echo "$MVN -ntp -B clean";;
-    *) getInstallCmdDev $1;;
+    *) echo "$MVN -ntp -B clean install -Pproduction,it $H $PNPM";;
   esac
 }
 ## Get command for running the project dev-mode after install was run
@@ -104,7 +104,7 @@ getRunCmdPrd() {
     base-starter-gradle) echo "$GRADLE jettyStartWar";; # should be appRunWar but reads from stdin and fails
     mpr-demo) echo "$MVN -ntp -B -Dvaadin.spreadsheet.developer.license=${SS_LICENSE} jetty:run-war -Pproduction $PNPM";;
     spreadsheet-demo|layout-examples) echo "$MVN -ntp -Pproduction -B jetty:run-war $PNPM";;
-    *) getRunCmdDev $1;;
+    *) echo "java -jar target/*.jar" ;;
   esac
 }
 ## Get ready message when running the project in dev-mode
