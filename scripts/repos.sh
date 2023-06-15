@@ -50,4 +50,6 @@ starter-wizard
 vaadin-leaflet-example
 designer-tutorial
 multi-module-example
+skeleton-starter-hilla-lit-gradle
+skeleton-starter-hilla-react-gradle
 "
