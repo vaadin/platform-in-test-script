@@ -1,41 +1,8 @@
 #!/bin/bash
 
-REPOS="
-platform
-flow-components
-skeleton-starter-flow-spring
-skeleton-starter-flow
-component-starter-flow
-skeleton-starter-flow-cdi
-business-app-starter-flow
-addon-starter-flow
-bookstore-example
-vaadin-form-example
-flow-crm-tutorial
-flow-crm-tutorial
-vaadin-rest-example
-vaadin-localization-example
-vaadin-database-example
-layout-examples
-flow-quickstart-tutorial
-flow-spring-examples
-vaadin-oauth-example
-base-starter-flow-osgi
-base-starter-flow-karaf
-base-starter-gradle
-base-starter-spring-gradle
-hilla-crm-tutorial
-hilla-quickstart-tutorial
-hilla-basics-tutorial
-bakery-app-starter-flow-spring
-starter-wizard
-vaadin-leaflet-example
-designer-tutorial
-base-starter-flow-quarkus
-multi-module-example
-"
+. `dirname $0`/../repos.sh
 
-REPOS=`echo "$REPOS" | sort -u`
+REPOS=`echo "$REPOS$DEMOS" | sort -u`
 
 usage() {
   cat <<EOF

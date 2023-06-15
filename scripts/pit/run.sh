@@ -1,4 +1,5 @@
 #!/bin/bash
+. `dirname $0`/../repos.sh
 . `dirname $0`/lib/lib-args.sh
 . `dirname $0`/lib/lib-start.sh
 . `dirname $0`/lib/lib-demos.sh
@@ -9,45 +10,6 @@ trap "doExit" INT TERM EXIT
 ## Default configuration
 DEFAULT_PORT=8080
 DEFAULT_TIMEOUT=300
-PRESETS="
-latest-java
-latest-java-top
-latest-javahtml
-latest-lit
-latest-lit-top
-latest-java_partial-auth
-latest-lit_partial-auth
-flow-crm-tutorial_partial-latest
-react-tutorial
-default
-archetype-hotswap
-archetype-jetty
-archetype-spring"
-DEMOS="
-skeleton-starter-flow-spring
-bakery-app-starter-flow-spring
-base-starter-spring-gradle
-base-starter-flow-quarkus
-spreadsheet-demo
-mpr-demo
-k8s-demo-app
-skeleton-starter-flow-cdi
-vaadin-flow-karaf-example
-base-starter-flow-osgi
-base-starter-gradle
-vaadin-form-example
-flow-crm-tutorial
-vaadin-rest-example
-vaadin-localization-example
-vaadin-database-example
-layout-examples
-flow-quickstart-tutorial
-flow-spring-examples
-vaadin-oauth-example
-hilla-crm-tutorial
-hilla-quickstart-tutorial
-hilla-basics-tutorial
-"
 
 # hilla-basics-tutorial
 
