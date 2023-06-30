@@ -18,7 +18,6 @@ bakery-app-starter-flow-spring
 base-starter-spring-gradle
 base-starter-flow-quarkus
 spreadsheet-demo
-mpr-demo
 k8s-demo-app
 skeleton-starter-flow-cdi
 vaadin-flow-karaf-example
