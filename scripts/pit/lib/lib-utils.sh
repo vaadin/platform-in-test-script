@@ -14,7 +14,10 @@ removeProKey() {
 }
 ## Restore pro-key removed in previous function
 restoreProKey() {
-  [ -f ~/.vaadin/proKey-$$ ] && mv ~/.vaadin/proKey-$$ ~/.vaadin/proKey && warn "Restored proKey license"
+  [ ! -f ~/.vaadin/proKey-$$ ] && return
+  H=`cat ~/.vaadin/proKey 2>/dev/null`
+  mv ~/.vaadin/proKey-$$ ~/.vaadin/proKey
+  [ "$H" ] && reportError "A proKey was generated while running validation" "$H" && return 1
 }
 
 ## Kills a process with its children and wait until complete
