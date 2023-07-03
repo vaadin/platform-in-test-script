@@ -84,6 +84,13 @@ _getStartReadyMessageDev() {
   echo "Started Application|Frontend compiled|Started ServerConnector|Started Vite"
 }
 
+_needsLicense() {
+  case $1 in
+    default|archetype*) return 1;;
+    *) return 0;;
+  esac
+}
+
 ## Run an App downloaded from start.vaadin.com by following the next steps
 # 1. generate the project and download from start.vaadin.com (if not in offline)
 # 2. run validations in the current version to check that it's not broken
@@ -126,7 +133,7 @@ runStarter() {
   _compile=`_getCompProd $_preset`
   _msgprod="Started Application|Started ServerConnector"
 
-  [ "$_preset" = default ] && removeProKey
+  _needsLicense "$_preset" || removeProKey
 
   if [ -z "$NOCURRENT" ]
   then
@@ -156,5 +163,5 @@ runStarter() {
     fi
   fi
 
-  [ "$_preset" = default ] && restoreProKey
+  _needsLicense "$_preset" || restoreProKey
 }
