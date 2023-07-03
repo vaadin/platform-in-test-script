@@ -86,7 +86,7 @@ _getStartReadyMessageDev() {
 
 _needsLicense() {
   case $1 in
-    default|archetype*) return 1;;
+    default*|archetype*) return 1;;
     *) return 0;;
   esac
 }
