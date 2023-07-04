@@ -15,6 +15,7 @@ archetype-hotswap
 archetype-jetty
 archetype-spring"
 DEMOS="
+skeleton-starter-flow
 skeleton-starter-flow-spring
 bakery-app-starter-flow-spring
 base-starter-spring-gradle
@@ -37,13 +38,12 @@ vaadin-oauth-example
 hilla-crm-tutorial
 hilla-quickstart-tutorial
 hilla-basics-tutorial
+business-app-starter-flow
 "
 REPOS="
 platform
 flow-components
-skeleton-starter-flow
 component-starter-flow
-business-app-starter-flow
 addon-starter-flow
 bookstore-example
 base-starter-flow-karaf

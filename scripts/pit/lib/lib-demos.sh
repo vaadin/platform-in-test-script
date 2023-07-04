@@ -1,7 +1,7 @@
 . `dirname $0`/lib/lib-validate.sh
 . `dirname $0`/lib/lib-patch.sh
 
-## Checkout a bramch of a vaadin repository in github
+## Checkout a branch of a vaadin repository in github
 checkoutDemo() {
   _branch=`getGitBranch $1`
   _repo=`getGitRepo $1`
@@ -15,12 +15,14 @@ checkoutDemo() {
   git clone $_quiet "$_gitUrl" || return 1
   [ -z "$_branch" ] || (cd $1 && cmd "git checkout $_branch" && git checkout $_quiet "$_branch")
 }
+## returns the github repo URL of a demo
 getGitRepo() {
   case $1 in
     mpr-demo) echo "github.com/TatuLund/$1";;
     *) echo "github.com/vaadin/$1";;
   esac
 }
+## returns the current branch of a demo
 getGitBranch() {
   case $1 in
     mpr-demo) echo "mpr-7";;
@@ -103,7 +105,7 @@ getRunCmdPrd() {
     base-starter-spring-gradle) echo "java -jar ./build/libs/*-gradle.jar";;
     base-starter-gradle) echo "$GRADLE jettyStartWar";; # should be appRunWar but reads from stdin and fails
     mpr-demo) echo "$MVN -ntp -B -Dvaadin.spreadsheet.developer.license=${SS_LICENSE} jetty:run-war -Pproduction $PNPM";;
-    spreadsheet-demo|layout-examples) echo "$MVN -ntp -Pproduction -B jetty:run-war $PNPM";;
+    spreadsheet-demo|layout-examples|skeleton-starter-flow|business-app-starter-flow) echo "$MVN -ntp -Pproduction -B jetty:run-war $PNPM";;
     *) echo "java -jar target/*.jar" ;;
   esac
 }
@@ -121,7 +123,7 @@ getReadyMessageDev() {
     k8s-demo-app) echo "frontend bundle built|Started Vite";;
     *-gradle|flow-spring-examples) echo "Tomcat started|started and listening";;
     hilla-*-tutorial) echo "Started Vite";;
-    *) echo "Frontend compiled successfully|Started Application";;
+    *) echo "Frontend compiled successfully|Started Application|Started Server";;
   esac
 }
 ## Get ready message when running the project in prod-mode
@@ -159,7 +161,7 @@ getPort() {
 ## Get SIDE test file
 getTest() {
   case $1 in
-    bakery-app-starter-flow-spring|*hilla*) echo "noop.js";;
+    bakery-app-starter-flow-spring|business-app-starter-flow|*hilla*) echo "noop.js";;
     mpr-demo) echo "mpr-demo.js";;
     spreadsheet-demo) echo "spreadsheet-demo.js";;
     k8s-demo-app) echo "k8s-demo.js";;
