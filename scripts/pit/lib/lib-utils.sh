@@ -17,7 +17,8 @@ restoreProKey() {
   [ ! -f ~/.vaadin/proKey-$$ ] && return
   H=`cat ~/.vaadin/proKey 2>/dev/null`
   mv ~/.vaadin/proKey-$$ ~/.vaadin/proKey
-  [ "$H" ] && reportError "A proKey was generated while running validation" "$H" && return 1
+  [ -n "$H" ] && reportError "A proKey was generated while running validation" "$H" && return 1
+  warn "Restored proKey license"
 }
 
 ## Kills a process with its children and wait until complete

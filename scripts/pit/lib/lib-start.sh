@@ -60,7 +60,7 @@ getStartTestFile() {
    *-auth) echo "start-auth.js";;
    flow-crm-tutorial*) echo "";;
    react-tutorial) echo "react.js";;
-   default) echo "hello.js";;
+   default*) echo "hello.js";;
    archetype*) [ -n "$HOT " ] && echo "click-hotswap.js" || echo "click.js";;
    *) echo "start.js";;
   esac
@@ -89,6 +89,10 @@ _needsLicense() {
     default*|archetype*) return 1;;
     *) return 0;;
   esac
+}
+
+_isNext() {
+  expr "$1" : .*partial-nextprerelease$ >/dev/null
 }
 
 ## Run an App downloaded from start.vaadin.com by following the next steps
@@ -135,7 +139,7 @@ runStarter() {
 
   _needsLicense "$_preset" || removeProKey
 
-  if [ -z "$NOCURRENT" ]
+  if test -z "$NOCURRENT" && ! _isNext "$_preset"
   then
     _current=`setVersion $_versionProp current`
     applyPatches $_preset current $_current dev || return 0
