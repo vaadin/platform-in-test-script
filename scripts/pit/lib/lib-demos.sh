@@ -76,9 +76,9 @@ getInstallCmdPrd() {
   isHeadless && H="$H -Dcom.vaadin.testbench.Parameters.headless=true -Dheadless"
   [ -n "$SKIPTESTS" ] && H="$H -DskipTests"
   case $1 in
+    *-gradle) echo "$GRADLE clean build -Pvaadin.productionMode $PNPM";;
     *hilla*|base-starter-flow-quarkus|vaadin-form-example|flow-spring-examples|vaadin-oauth-example|layout-examples) echo "$MVN -B package -Pproduction $PNPM";;
     bakery-app-starter-flow-spring|skeleton-starter-flow-spring) echo "$MVN -B install -Pproduction,it $H $PNPM";;
-    *-gradle) echo "$GRADLE clean build -Pvaadin.productionMode $PNPM";;
     skeleton-starter-flow-cdi|k8s-demo-app) echo "$MVN -ntp -B verify -Pproduction $H $PNPM";;
     mpr-demo|spreadsheet-demo) echo "$MVN -ntp -B clean";;
     *) echo "$MVN -ntp -B clean install -Pproduction,it $H $PNPM";;
@@ -90,8 +90,8 @@ getRunCmdDev() {
     vaadin-flow-karaf-example) echo "$MVN -ntp -B -pl main-ui install -Prun $PNPM";;
     base-starter-flow-osgi) echo "java -jar app/target/app.jar";;
     skeleton-starter-flow-cdi) echo "$MVN -ntp -B wildfly:run $PNPM";;
-    base-starter-spring-gradle) echo "$GRADLE bootRun";;
     base-starter-gradle) echo "$GRADLE jettyStart";; # should be appRun but reads from stdin and fails
+    *-gradle) echo "$GRADLE bootRun";;
     mpr-demo) echo "$MVN -ntp -B -Dvaadin.spreadsheet.developer.license=${SS_LICENSE} jetty:run $PNPM";;
     *) echo "$MVN -ntp -B $PNPM";;
   esac
@@ -99,11 +99,12 @@ getRunCmdDev() {
 ## Get command for running the project prod-mode after install was run
 getRunCmdPrd() {
   case $1 in
+    base-starter-gradle) echo "$GRADLE jettyStartWar";; # should be appRunWar but reads from stdin and fails
+    *-spring-gradle|*hilla*gradle) echo "java -jar ./build/libs/*-gradle.jar";;
+    *-gradle) echo "$GRADLE jettyStartWar";;
     *hilla*|k8s-demo-app|skeleton-starter-flow-spring|bakery-app-starter-flow-spring|vaadin-form-example|flow-spring-examples|vaadin-oauth-example) echo "java -jar target/*.jar";;
     base-starter-flow-quarkus) echo "java -jar target/quarkus-app/quarkus-run.jar";;
     skeleton-starter-flow-cdi) echo "$MVN -ntp -B wildfly:run -Pproduction $PNPM";;
-    base-starter-spring-gradle) echo "java -jar ./build/libs/*-gradle.jar";;
-    base-starter-gradle) echo "$GRADLE jettyStartWar";; # should be appRunWar but reads from stdin and fails
     mpr-demo) echo "$MVN -ntp -B -Dvaadin.spreadsheet.developer.license=${SS_LICENSE} jetty:run-war -Pproduction $PNPM";;
     spreadsheet-demo|layout-examples|skeleton-starter-flow|business-app-starter-flow) echo "$MVN -ntp -Pproduction -B jetty:run-war $PNPM";;
     *) echo "java -jar target/*.jar" ;;
@@ -161,6 +162,7 @@ getPort() {
 ## Get SIDE test file
 getTest() {
   case $1 in
+    skeleton*) echo "hello.js";;
     bakery-app-starter-flow-spring|business-app-starter-flow|*hilla*) echo "noop.js";;
     mpr-demo) echo "mpr-demo.js";;
     spreadsheet-demo) echo "spreadsheet-demo.js";;
@@ -174,7 +176,6 @@ getTest() {
 ## Change version in build files
 setDemoVersion() {
   case "$1" in
-    *-gradle) setGradleVersion vaadinVersion "$2";;
     base-starter-flow-quarkus|mpr-demo)
        setVersion vaadin.version "$2" || return 1
        setFlowVersion "$2" false
@@ -182,8 +183,8 @@ setDemoVersion() {
        ;;
     *)
       __prop=`computeProp $1`
-      __vers=`computeVersion $1 $2`
-      setVersion $__prop $__vers
+      __vers=`computeVersion "$__prop" $2`
+      expr "$1" : ".*gradle" >/dev/null && setGradleVersion $__prop $__vers || setVersion $__prop $__vers
       ;;
   esac
 }

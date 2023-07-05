@@ -43,12 +43,14 @@ generateStarter() {
 
 computeVersion() {
   case $1 in
-    *typescript*|*hilla*|*react*|*-lit*) echo $2 | sed -e 's,^23,1,' | sed -e 's,^24,2,';;
+    *hilla*) echo $2 | sed -e 's,^23,1,' | sed -e 's,^24,2,';;
     *) echo "$2";;
   esac
 }
 computeProp() {
   case $1 in
+    *hilla*gradle) echo "hillaVersion";;
+    *gradle) echo "vaadinVersion";;
     *typescript*|*hilla*|*react*|*-lit*) echo "hilla.version";;
     *) echo "vaadin.version";;
   esac
@@ -108,7 +110,7 @@ runStarter() {
   _tmp="$2"
   _port="$3"
   _versionProp=`computeProp $_preset`
-  _version=`computeVersion $_preset $4`
+  _version=`computeVersion _versionProp $4`
   _offline="$5"
 
   _test=`getStartTestFile $_preset`
