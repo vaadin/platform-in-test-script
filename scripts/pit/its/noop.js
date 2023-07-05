@@ -1,13 +1,13 @@
 const { chromium } = require('playwright');
 
-let headless = false, host = 'localhost', port = '8080', hub = false;
+let headless = false, host = 'localhost', port = '8080', mode = false;
 process.argv.forEach(a => {
   if (/^--headless/.test(a)) {
     headless = true;
-  } else if (/^--ip=/.test(a)) {
-    ip = a.split('=')[1];
   } else if (/^--port=/.test(a)) {
     port = a.split('=')[1];
+  } else if (/^--mode=/.test(a)) {
+    mode = a.split('=')[1];
   }
 });
 
@@ -16,6 +16,8 @@ process.argv.forEach(a => {
     headless: headless,
     chromiumSandbox: false
   });
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+
   const context = await browser.newContext();
 
   const page = await context.newPage();
@@ -23,7 +25,10 @@ process.argv.forEach(a => {
   page.on('pageerror', err => console.log("> JSERROR:", err));
 
   await page.goto(`http://${host}:${port}/`);
-  await page.locator('div').nth(1).type('FOO');
+
+  await page.waitForSelector('#outlet > *');
+  const txt = await page.locator('#outlet').first().innerHTML();
+  console.log('\n====== PAGE CONTENT ======\n', txt, '\n====== END ======\n');
 
   await context.close();
   await browser.close();

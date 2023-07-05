@@ -42,16 +42,15 @@ business-app-starter-flow
 skeleton-starter-hilla-lit-gradle
 skeleton-starter-hilla-react-gradle
 bookstore-example
+designer-tutorial
 "
 REPOS="
 platform
 flow-components
 component-starter-flow
 addon-starter-flow
-bookstore-example
 base-starter-flow-karaf
 starter-wizard
 vaadin-leaflet-example
-designer-tutorial
 multi-module-example
 "
