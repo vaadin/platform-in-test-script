@@ -41,6 +41,7 @@ hilla-basics-tutorial
 business-app-starter-flow
 skeleton-starter-hilla-lit-gradle
 skeleton-starter-hilla-react-gradle
+bookstore-example
 "
 REPOS="
 platform
