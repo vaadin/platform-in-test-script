@@ -299,12 +299,13 @@ setVersion() {
   __prop=$1
   __nversion=$2
   [ "false" != "$3" ] && git checkout -q .
-  __current=`getCurrProperty $__prop pom.xml`
-  case $__nversion in
-    current|$__current) echo $__current; return 1 ;;
-  esac
-  bold "==> Changing $__mavenProperty from $__current to $__nversion"
-  changeMavenProperty $__prop $__nversion
+  for __pom in `find . -name pom.xml`; do
+    __current=`getCurrProperty $__prop $__pom`
+    case $__nversion in
+      current|$__current) echo $__current; return 1 ;;
+    esac
+    changeMavenProperty $__prop $__nversion
+  done
 }
 
 ## Set the value of a property in the gradle.properties file, returning error if unchanged
@@ -381,7 +382,7 @@ changeMavenBlock() {
   __grp2=${5:-$__grp}
   __id2=${6:-$__id}
   __extra=${7:-\$11}
-  for __file in `find pom.xml src */src -name pom.xml 2>/dev/null`
+  for __file in `find * -name pom.xml 2>/dev/null`
   do
     cp $__file $$-1
     if [ "$4" = remove ]; then
@@ -413,20 +414,21 @@ getCurrProperty() {
 ## $2: value
 changeMavenProperty() {
   __prop=$1; __val=$2; __ret=1
-  for __file in `find pom.xml src */src -name pom.xml 2>/dev/null`
+  for __file in `find * -name pom.xml 2>/dev/null`
   do
     cp $__file $$-1
     if [ "$__val" = remove ]; then
       perl -pi -e 's|\s*(<'$__prop'>)([^<]+)(</'$__prop'>)\s*||g' $__file
     else
       __cur=`getCurrProperty $__prop $__file`
+      [ -z "$__cur" ] && continue
       perl -pi -e 's|(<'$__prop'>)([^<]+)(</'$__prop'>)|${1}'"${__val}"'${3}|g' $__file
     fi
     __diff=`diff -w $$-1 $__file`
     rm -f $$-1
     [ -n "$__diff" ] && __ret=0
-    [ -n "$__diff" -a "$__val" =  remove ] && warn "Remove $__prop"
-    [ -n "$__diff" -a "$__val" != remove ] && warn "Change $__prop from $__cur to $__val"
+    [ -n "$__diff" -a "$__val" =  remove ] && warn "Remove $__prop in $__file"
+    [ -n "$__diff" -a "$__val" != remove ] && warn "Change $__prop from $__cur to $__val in $__file"
   done
   return $__ret
 }
@@ -466,17 +468,23 @@ setPropertyInFile() {
 
 ## Do not open Browser after app is started
 disableLaunchBrowser() {
-  setPropertyInFile src/main/resources/application.properties vaadin.launch-browser remove
+  for __file in `find . -name application.properties`; do
+    setPropertyInFile $__file vaadin.launch-browser remove
+  done
 }
 
 ## pnpm is quite faster than npm
 enablePnpm() {
-  setPropertyInFile src/main/resources/application.properties vaadin.pnpm.enable true
+  for __file in `find . -name application.properties`; do
+    setPropertyInFile $__file vaadin.pnpm.enable true
+  done
 }
 
 ## vite is faster than webpack
 enableVite() {
-  setPropertyInFile src/main/resources/application.properties com.vaadin.experimental.viteForFrontendBuild true
+  for __file in `find . -name application.properties`; do
+    setPropertyInFile com.vaadin.experimental.viteForFrontendBuild true
+  done
 }
 
 ## Compute whether the headless argument must be set

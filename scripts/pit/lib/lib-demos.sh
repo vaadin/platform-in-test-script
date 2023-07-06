@@ -94,6 +94,7 @@ getRunCmdDev() {
     base-starter-gradle) echo "$GRADLE jettyStart";; # should be appRun but reads from stdin and fails
     *-gradle) echo "$GRADLE bootRun";;
     mpr-demo) echo "$MVN -ntp -B -Dvaadin.spreadsheet.developer.license=${SS_LICENSE} jetty:run $PNPM";;
+    multi-module-example) echo "$MVN -ntp -B spring-boot:run -pl vaadin-app";;
     *) echo "$MVN -ntp -B $PNPM";;
   esac
 }
@@ -109,6 +110,7 @@ getRunCmdPrd() {
     mpr-demo) echo "$MVN -ntp -B -Dvaadin.spreadsheet.developer.license=${SS_LICENSE} jetty:run-war -Pproduction $PNPM";;
     spreadsheet-demo|layout-examples|skeleton-starter-flow|business-app-starter-flow|bookstore-example) echo "$MVN -ntp -Pproduction -B jetty:run-war $PNPM";;
     addon-template|client-server-addon-template|addon-starter-flow) echo "$MVN -ntp -Pproduction -B jetty:run";;
+    multi-module-example) echo "java -jar vaadin-app/target/*.jar";;
     *) echo "java -jar target/*.jar" ;;
   esac
 }

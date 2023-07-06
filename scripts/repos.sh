@@ -47,13 +47,10 @@ npm-addon-template
 addon-template
 addon-starter-flow
 client-server-addon-template
-"
+multi-module-example"
 REPOS="
 platform
 flow-components
 component-starter-flow
 base-starter-flow-karaf
-starter-wizard
-vaadin-leaflet-example
-multi-module-example
-"
+starter-wizard"
