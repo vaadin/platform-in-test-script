@@ -13,7 +13,8 @@ default
 default_partial-nextprerelease
 archetype-hotswap
 archetype-jetty
-archetype-spring"
+archetype-spring
+vaadin-quarkus"
 DEMOS="
 skeleton-starter-flow
 skeleton-starter-flow-spring

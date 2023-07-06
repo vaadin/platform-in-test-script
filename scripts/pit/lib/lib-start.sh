@@ -28,9 +28,12 @@ downloadStarter() {
 
 generateStarter() {
   _name=$1
-  expr "$1" : '.*spring' >/dev/null && H=-spring || H=""
   log "Generating $1"
-  cmd="$MVN -ntp -q -B archetype:generate -DarchetypeGroupId=com.vaadin -DarchetypeArtifactId=vaadin-archetype$H-application -DarchetypeVersion=LATEST -DgroupId=com.vaadin.starter -DartifactId=$_name"
+  case $_name in
+    *spring)        cmd="$MVN -ntp -q -B archetype:generate -DarchetypeGroupId=com.vaadin -DarchetypeArtifactId=vaadin-archetype-spring-application -DarchetypeVersion=LATEST -DgroupId=com.vaadin.starter -DartifactId=$_name" ;;
+    archetype*)     cmd="$MVN -ntp -q -B archetype:generate -DarchetypeGroupId=com.vaadin -DarchetypeArtifactId=vaadin-archetype-spring-application -DarchetypeVersion=LATEST -DgroupId=com.vaadin.starter -DartifactId=$_name" ;;
+    vaadin-quarkus) cmd="$MVN -ntp -q -B io.quarkus.platform:quarkus-maven-plugin:3.1.1.Final:create -Dextensions=vaadin -DwithCodestart -DprojectGroupId=com.vaadin.starter -DprojectArtifactId=$_name" ;;
+  esac
   cmd "$cmd"
   $cmd || return 1
   cd $_name || return 1
@@ -62,7 +65,7 @@ getStartTestFile() {
    *-auth) echo "start-auth.js";;
    flow-crm-tutorial*) echo "";;
    react-tutorial) echo "react.js";;
-   default*) echo "hello.js";;
+   default*|vaadin-quarkus) echo "hello.js";;
    archetype*) [ -n "$HOT " ] && echo "click-hotswap.js" || echo "click.js";;
    *) echo "start.js";;
   esac
@@ -75,15 +78,18 @@ _getCompProd() {
   esac
 }
 
+_getRunDev() {
+  case $1 in
+    vaadin-quarkus) echo "$MVN -ntp -B quarkus:dev";;
+    *) echo "$MVN -ntp -B $PNPM";;
+  esac
+}
 _getRunProd() {
   case $1 in
     archetype-hotswap|archetype-jetty) echo "$MVN -ntp -B -Pproduction -Dvaadin.productionMode jetty:run-war";;
+    vaadin-quarkus) echo "java -jar target/quarkus-app/quarkus-run.jar";;
     *) echo "java -jar -Dvaadin.productionMode target/*.jar";;
   esac
-}
-
-_getStartReadyMessageDev() {
-  echo "Started Application|Frontend compiled|Started ServerConnector|Started Vite"
 }
 
 _needsLicense() {
@@ -123,7 +129,7 @@ runStarter() {
     [ -d "$_dir" ] && log "Removing project folder $_dir" && rm -rf $_dir
     # 1
     case "$_preset" in
-      archetype*) generateStarter $_preset || return 1 ;;
+      archetype*|vaadin-quarkus) generateStarter $_preset || return 1 ;;
       *) downloadStarter $_preset || return 1 ;;
     esac
   fi
@@ -134,10 +140,11 @@ runStarter() {
   computeMvn
   printVersions || return 1
 
-  _msg=`_getStartReadyMessageDev $_preset`
+  _msg="Started Application|Frontend compiled|Started ServerConnector|Started Vite|Listening on:"
+  _msgprod="Started Application|Started ServerConnector|Listening on:"
   _prod=`_getRunProd $_preset`
+  _dev=`_getRunDev $_preset`
   _compile=`_getCompProd $_preset`
-  _msgprod="Started Application|Started ServerConnector"
 
   _needsLicense "$_preset" || removeProKey
 
@@ -147,7 +154,7 @@ runStarter() {
     applyPatches $_preset current $_current dev || return 0
     # 2
     if [ -z "$NODEV" ]; then
-      MAVEN_OPTS="$HOT" runValidations dev "$_current" "$_preset" "$_port" "$MVN -ntp -B clean" "$MVN -ntp -B $PNPM" "$_msg" "$_test" || return 1
+      MAVEN_OPTS="$HOT" runValidations dev "$_current" "$_preset" "$_port" "$MVN -ntp -B clean" "$_dev" "$_msg" "$_test" || return 1
     fi
     # 3
     if [ -z "$NOPROD" ]; then
@@ -161,7 +168,7 @@ runStarter() {
     applyPatches $_preset next $_version prod || return 0
     # 5
     if [ -z "$NODEV" ]; then
-      MAVEN_OPTS="$HOT" runValidations dev "$_version" "$_preset" "$_port" "$MVN -ntp -B clean" "$MVN -ntp -B $PNPM" "$_msg" "$_test" || return 1
+      MAVEN_OPTS="$HOT" runValidations dev "$_version" "$_preset" "$_port" "$MVN -ntp -B clean" "$_dev" "$_msg" "$_test" || return 1
     fi
     # 6
     if [ -z "$NOPROD" ]; then
