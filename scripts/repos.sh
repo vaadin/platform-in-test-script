@@ -44,6 +44,7 @@ skeleton-starter-hilla-react-gradle
 bookstore-example
 npm-addon-template
 addon-template
+client-server-addon-template
 "
 REPOS="
 platform
