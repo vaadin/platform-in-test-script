@@ -42,7 +42,8 @@ business-app-starter-flow
 skeleton-starter-hilla-lit-gradle
 skeleton-starter-hilla-react-gradle
 bookstore-example
-designer-tutorial
+npm-addon-template
+addon-template
 "
 REPOS="
 platform

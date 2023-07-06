@@ -73,7 +73,8 @@ getInstallCmdDev() {
 ## Get install command for prod-mode
 getInstallCmdPrd() {
   H="-Dcom.vaadin.testbench.Parameters.testsInParallel=2 -Dmaven.test.redirectTestOutputToFile=true"
-  isHeadless && H="$H -Dcom.vaadin.testbench.Parameters.headless=true -Dheadless"
+  isHeadless && H="-Dheadless" || H="-Dtest.headless=false" #for addon-template
+  isHeadless && H="$H -Dcom.vaadin.testbench.Parameters.headless=true $H"
   [ -n "$SKIPTESTS" ] && H="$H -DskipTests"
   case $1 in
     *-gradle) echo "$GRADLE clean build -Pvaadin.productionMode $PNPM";;
@@ -107,6 +108,7 @@ getRunCmdPrd() {
     skeleton-starter-flow-cdi) echo "$MVN -ntp -B wildfly:run -Pproduction $PNPM";;
     mpr-demo) echo "$MVN -ntp -B -Dvaadin.spreadsheet.developer.license=${SS_LICENSE} jetty:run-war -Pproduction $PNPM";;
     spreadsheet-demo|layout-examples|skeleton-starter-flow|business-app-starter-flow|bookstore-example) echo "$MVN -ntp -Pproduction -B jetty:run-war $PNPM";;
+    addon-template) echo "$MVN -ntp -Pproduction -B jetty:run";;
     *) echo "java -jar target/*.jar" ;;
   esac
 }
@@ -167,7 +169,7 @@ getTest() {
     mpr-demo) echo "mpr-demo.js";;
     spreadsheet-demo) echo "spreadsheet-demo.js";;
     k8s-demo-app) echo "k8s-demo.js";;
-    vaadin-form-example|vaadin-rest-example|vaadin-localization-example|vaadin-database-example|layout-examples|flow-quickstart-tutorial|flow-spring-examples|flow-crm-tutorial|layout-examples|flow-quickstart-tutorial|vaadin-oauth-example|designer-tutorial) echo "noop.js";;
+    vaadin-form-example|vaadin-rest-example|vaadin-localization-example|vaadin-database-example|layout-examples|flow-quickstart-tutorial|flow-spring-examples|flow-crm-tutorial|layout-examples|flow-quickstart-tutorial|vaadin-oauth-example|designer-tutorial|*addon-template) echo "noop.js";;
     vaadin-oauth-example) echo "oauth.js";;
     bookstore-example) echo "bookstore.js";;
     *) echo "hello.js";;
