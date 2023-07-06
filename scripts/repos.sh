@@ -52,5 +52,4 @@ REPOS="
 platform
 flow-components
 component-starter-flow
-base-starter-flow-karaf
 starter-wizard"
