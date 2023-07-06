@@ -108,7 +108,7 @@ getRunCmdPrd() {
     skeleton-starter-flow-cdi) echo "$MVN -ntp -B wildfly:run -Pproduction $PNPM";;
     mpr-demo) echo "$MVN -ntp -B -Dvaadin.spreadsheet.developer.license=${SS_LICENSE} jetty:run-war -Pproduction $PNPM";;
     spreadsheet-demo|layout-examples|skeleton-starter-flow|business-app-starter-flow|bookstore-example) echo "$MVN -ntp -Pproduction -B jetty:run-war $PNPM";;
-    addon-template|client-server-addon-template) echo "$MVN -ntp -Pproduction -B jetty:run";;
+    addon-template|client-server-addon-template|addon-starter-flow) echo "$MVN -ntp -Pproduction -B jetty:run";;
     *) echo "java -jar target/*.jar" ;;
   esac
 }
@@ -169,7 +169,7 @@ getTest() {
     mpr-demo) echo "mpr-demo.js";;
     spreadsheet-demo) echo "spreadsheet-demo.js";;
     k8s-demo-app) echo "k8s-demo.js";;
-    vaadin-form-example|vaadin-rest-example|vaadin-localization-example|vaadin-database-example|layout-examples|flow-quickstart-tutorial|flow-spring-examples|flow-crm-tutorial|layout-examples|flow-quickstart-tutorial|vaadin-oauth-example|designer-tutorial|*addon-template) echo "noop.js";;
+    vaadin-form-example|vaadin-rest-example|vaadin-localization-example|vaadin-database-example|layout-examples|flow-quickstart-tutorial|flow-spring-examples|flow-crm-tutorial|layout-examples|flow-quickstart-tutorial|vaadin-oauth-example|designer-tutorial|*addon-template|addon-starter-flow) echo "noop.js";;
     vaadin-oauth-example) echo "oauth.js";;
     bookstore-example) echo "bookstore.js";;
     *) echo "hello.js";;

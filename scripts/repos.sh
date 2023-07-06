@@ -45,13 +45,13 @@ skeleton-starter-hilla-react-gradle
 bookstore-example
 npm-addon-template
 addon-template
+addon-starter-flow
 client-server-addon-template
 "
 REPOS="
 platform
 flow-components
 component-starter-flow
-addon-starter-flow
 base-starter-flow-karaf
 starter-wizard
 vaadin-leaflet-example
