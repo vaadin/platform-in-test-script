@@ -110,7 +110,7 @@ getRunCmdPrd() {
     skeleton-starter-flow-cdi) echo "$MVN -ntp -B wildfly:run -Pproduction $PNPM";;
     mpr-demo) echo "$MVN -ntp -B -Dvaadin.spreadsheet.developer.license=${SS_LICENSE} jetty:run-war -Pproduction $PNPM";;
     spreadsheet-demo|layout-examples|skeleton-starter-flow|business-app-starter-flow|bookstore-example) echo "$MVN -ntp -Pproduction -B jetty:run-war $PNPM";;
-    addon-template|client-server-addon-template|addon-starter-flow) echo "$MVN -ntp -Pproduction -B jetty:run";;
+    *addon-template|addon-starter-flow) echo "$MVN -ntp -Pproduction -B jetty:run";;
     multi-module-example) echo "java -jar vaadin-app/target/*.jar";;
     *) echo "java -jar target/*.jar" ;;
   esac
