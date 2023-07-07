@@ -77,6 +77,7 @@ getInstallCmdPrd() {
   isHeadless && H="$H -Dcom.vaadin.testbench.Parameters.headless=true $H"
   [ -n "$SKIPTESTS" ] && H="$H -DskipTests"
   case $1 in
+    *hilla*gradle) echo "$GRADLE clean build -Philla.productionMode $PNPM";;
     *-gradle) echo "$GRADLE clean build -Pvaadin.productionMode $PNPM";;
     *hilla*|base-starter-flow-quarkus|vaadin-form-example|flow-spring-examples|vaadin-oauth-example|layout-examples) echo "$MVN -B package -Pproduction $PNPM";;
     bakery-app-starter-flow-spring|skeleton-starter-flow-spring) echo "$MVN -B install -Pproduction,it $H $PNPM";;
@@ -189,7 +190,12 @@ setDemoVersion() {
     *)
       __prop=`computeProp $1`
       __vers=`computeVersion "$__prop" $2`
-      expr "$1" : ".*gradle" >/dev/null && setGradleVersion $__prop $__vers || setVersion $__prop $__vers
+      if expr "$1" : ".*gradle" >/dev/null
+      then
+        setGradleVersion $__prop $__vers
+      else
+        setVersion $__prop $__vers
+      fi
       ;;
   esac
 }
