@@ -19,9 +19,11 @@ process.argv.forEach(a => {
     chromiumSandbox: false
   });
   const sleep = ms => new Promise(r => setTimeout(r, ms));
-
   const context = await browser.newContext();
   const page = await context.newPage();
+  page.on('console', msg => console.log("> CONSOLE:", (msg.text() + ' - ' + msg.location().url).replace(/\s+/g, ' ')));
+  page.on('pageerror', err => console.log("> PAGEERROR:", ('' + err).replace(/\s+/g, ' ')));
+
   await page.goto(`http://${host}:${port}/`);
   if (mode == 'dev') {
     await page.getByText('Don’t show again').click();

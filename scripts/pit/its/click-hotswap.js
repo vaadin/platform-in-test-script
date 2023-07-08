@@ -59,8 +59,8 @@ const url = `http://${host}:${port}/`;
 
   // Open new page
   const page = await context.newPage();
-  page.on('console', msg => console.log("> CONSOLE:", msg.text()));
-  page.on('pageerror', err => console.log("> JSERROR:", err));
+  page.on('console', msg => console.log("> CONSOLE:", (msg.text() + ' - ' + msg.location().url).replace(/\s+/g, ' ')));
+  page.on('pageerror', err => console.log("> PAGEERROR:", ('' + err).replace(/\s+/g, ' ')));
 
   await page.goto(url);
   await page.waitForURL(url);
