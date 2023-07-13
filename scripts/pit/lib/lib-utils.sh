@@ -605,3 +605,9 @@ upgradeGradle() {
   cmd "$GRADLE wrapper -q --gradle-version $1"
   $GRADLE wrapper -q --gradle-version $1
 }
+
+getReposFromWebsite() {
+  _demos=`curl -s https://vaadin.com/examples-and-demos  | grep div | grep github.com/vaadin | perl -pe 's|(^.*)/github.com/vaadin/([\w\-]+).*|$2|g' | sort -u`
+  _starters=`curl -s https://vaadin.com/hello-world-starters  | grep div | grep github.com/vaadin | perl -pe 's|(^.*)/github.com/vaadin/([\w\-]+).*|$2|g' | sort -u`
+  printf "$_demos\n$_starters" | sort -u
+}

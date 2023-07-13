@@ -44,6 +44,13 @@ generateStarter() {
   git commit -q -m 'First commit' -a
 }
 
+downloadInitializer() {
+  _java=17
+  _boot=3.1.1
+  curl -s 'https://start.spring.io/starter.zip?type=maven-project&language=java&bootVersion=3.1.1&baseDir=initializer&groupId=com.vaadin.initializer&artifactId=initializer&name=initializer&description=initializer&packageName=com.vaadin.inititalizer&packaging=jar&javaVersion=17&dependencies=vaadin,h2,devtools' \
+  -H 'Referer: https://start.spring.io/' --output initializer.zip
+}
+
 computeVersion() {
   case $1 in
     *hilla*) echo $2 | sed -e 's,^23,1,' | sed -e 's,^24,2,';;

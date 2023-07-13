@@ -59,6 +59,13 @@ checkArgs() {
         PRESETS=`echo "$PRESETS" | sed -e 's,^latest-,pre-,g'`
         DEFAULT_STARTERS=`echo "$PRESETS" | tr "\n" "," | sed -e 's/^,//' | sed -e 's/,$//'` ;;
       --commit) COMMIT=true ;;
+      --check)
+        for i in `getReposFromWebsite` ;
+        do
+          echo "$DEMOS" | egrep -q "^$i$" && echo $i OK || echo $i NO
+        done
+        exit
+        ;;
       *) echo "Unknown option: $1" && usage && exit 1;;
     esac
     shift

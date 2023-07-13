@@ -3,6 +3,7 @@
 
 ## Checkout a branch of a vaadin repository in github
 checkoutDemo() {
+  _demo=`echo "$1" | cut -d : -f1`
   _branch=`getGitBranch $1`
   _repo=`getGitRepo $1`
   _tk=${GITHUB_TOKEN:-${GHTK}}
@@ -10,14 +11,15 @@ checkoutDemo() {
   _gitUrl="https://${__tk}${_repo}.git"
   log "Checking out $1"
   cmd "git clone https://$_repo.git"
-  cmd "cd $1"
+  cmd "cd $_demo"
   [ -z "$VERBOSE" ] && _quiet="-q"
   git clone $_quiet "$_gitUrl" || return 1
-  [ -z "$_branch" ] || (cd $1 && cmd "git checkout $_branch" && git checkout $_quiet "$_branch")
+  [ -z "$_branch" ] || (cd $_demo && cmd "git checkout $_branch" && git checkout $_quiet "$_branch")
 }
 ## returns the github repo URL of a demo
 getGitRepo() {
   case $1 in
+    *:*) echo "github.com/vaadin/"`echo $1 | cut -d ":" -f1` ;;
     mpr-demo) echo "github.com/TatuLund/$1";;
     *) echo "github.com/vaadin/$1";;
   esac
@@ -25,6 +27,7 @@ getGitRepo() {
 ## returns the current branch of a demo
 getGitBranch() {
   case $1 in
+    *:*) echo echo $1 | cut -d ":" -f2 ;;
     mpr-demo) echo "mpr-7";;
   esac
 }
@@ -211,7 +214,7 @@ setDemoVersion() {
 runDemo() {
   MVN=mvn
   GRADLE=gradle
-  _demo="$1"
+  _demo=`echo "$1" | cut -d : -f1`
   _tmp="$2"
   _port="$3"
   _version="$4"
@@ -224,7 +227,7 @@ runDemo() {
   then
     [ -d "$_dir" ] && log "Removing project folder $_dir" && rm -rf $_dir
     # 1
-    checkoutDemo $_demo || return 1
+    checkoutDemo $1 || return 1
   fi
   cd "$_dir" || return 1
 
