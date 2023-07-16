@@ -170,7 +170,7 @@ runStarter() {
   fi
 
   # 4
-  if setVersion $_versionProp $_version >/dev/null
+  if setVersion $_versionProp $_version >/dev/null || _isNext "$_preset"
   then
     applyPatches $_preset next $_version prod || return 0
     # 5
