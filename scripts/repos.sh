@@ -49,6 +49,7 @@ bookstore-example
 bookstore-example:rtl-demo
 bakery-app-starter-flow-spring
 k8s-demo-app
+mpr-demo
 "
 REPOS="
 platform
