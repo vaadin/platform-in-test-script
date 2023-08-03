@@ -2,7 +2,7 @@
 
 . `dirname $0`/../repos.sh
 
-REPOS=`echo "$REPOS$DEMOS" | sort -u`
+REPOS=`echo "$REPOS$DEMOS" | cut -d ":" -f1 | sort -u`
 
 usage() {
   cat <<EOF
@@ -15,6 +15,8 @@ $REPOS
 EOF
 }
 
+V=vaadin
+
 arg=`echo "$1" | cut -d= -f2`
 while [ -n "$1" ]; do
     case $1 in
@@ -22,14 +24,16 @@ while [ -n "$1" ]; do
         usage && exit;;
       --list*)
         [ -z "$arg" ] && usage && exit 1
-        H=`gh pr list --repo vaadin/$arg | tr "\t" "ç" | tr " " "_"`
+        [ "$arg" = mpr-demo ] && V=TatuLund
+        H=`gh pr list --repo $V/$arg --json baseRefName,title,number | jq -r '.[] | "\(.number)ç\(.baseRefName)ç\(.title)"' | tr " " "_"`
         [ "$2" = "update" ] && shift && H=`echo "$H" | grep Update`
         for i in $H
         do
-          D=`echo "$i" | cut -d "ç" -f2`
+          D=`echo "$i" | cut -d "ç" -f3`
           N=`echo "$i" | cut -d "ç" -f1`
-          echo "  > https://github.com/vaadin/$arg/pull/$N   -  $D" | tr "ç" "\t"
-          echo $0 --merge=$arg $N "## $D"
+          B=`echo "$i" | cut -d "ç" -f2`
+          echo "  > https://github.com/$V/$arg/pull/$N - ($B) $D" | tr "ç" "\t"
+          echo $0 --merge=$arg $N "## ($B) $D"
         done
         ;;
       --all)
@@ -42,11 +46,12 @@ while [ -n "$1" ]; do
         N="$2"
         [ -z "$N" ] && echo usage && exit 1
         shift
-        echo "https://github.com/vaadin/$arg/pull/$N"
+        [ "$arg" = mpr-demo ] && V=TatuLund
+        echo "https://github.com/$V/$arg/pull/$N"
         mkdir -p tmp
         cd tmp || exit 1
         rm -rf $arg
-        git clone git@github.com:vaadin/$arg.git || exit 1
+        git clone git@github.com:$V/$arg.git || exit 1
         cd $arg || exit 1
         gh pr checkout $N || exit 1
         gh pr review --approve || exit 1
