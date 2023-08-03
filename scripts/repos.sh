@@ -55,4 +55,7 @@ REPOS="
 platform
 flow-components
 component-starter-flow
-starter-wizard"
+starter-wizard
+skeleton-starter-hilla-react
+skeleton-starter-hilla-lit
+"
