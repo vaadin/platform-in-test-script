@@ -86,7 +86,7 @@ runValidations() {
   fi
   # 8
   [ -z "$TEST" ] && bold "----> The version $version of '$name' app was successfully built and tested in $mode mode.\n"
-  [ -n "$TEST" ] || killAll && sleep 5
+  [ -n "$TEST" ] || (killAll && sleep 5)
 }
 
 

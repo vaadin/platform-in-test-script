@@ -21,6 +21,8 @@ skeleton-starter-flow-spring
 skeleton-starter-hilla-lit-gradle
 skeleton-starter-hilla-react-gradle
 skeleton-starter-flow-cdi
+skeleton-starter-hilla-react
+skeleton-starter-hilla-lit
 business-app-starter-flow
 base-starter-spring-gradle
 base-starter-flow-quarkus
@@ -33,10 +35,10 @@ hilla-basics-tutorial
 flow-quickstart-tutorial
 addon-template
 addon-starter-flow
+npm-addon-template
 client-server-addon-template
 spreadsheet-demo
 vaadin-flow-karaf-example
-npm-addon-template
 vaadin-form-example
 vaadin-rest-example
 vaadin-localization-example
@@ -49,14 +51,10 @@ bookstore-example
 bookstore-example:rtl-demo
 bakery-app-starter-flow-spring
 k8s-demo-app
-mpr-demo
-"
+mpr-demo"
 REPOS="
 platform
 flow-components
 component-starter-flow
 starter-wizard
-skeleton-starter-hilla-react
-skeleton-starter-hilla-lit
-docs
-"
+docs"

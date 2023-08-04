@@ -70,7 +70,8 @@ getInstallCmdDev() {
   case $1 in
     # base-starter-flow-quarkus|skeleton-starter-flow-cdi|mpr-demo|spreadsheet-demo) echo "$MVN -ntp -B clean $PNPM";;
     *-gradle) echo "$GRADLE clean" ;;
-    *) echo "$MVN -ntp -B clean install -DskipTests $PNPM";;
+    multi-module-example) echo "$MVN -ntp -B clean install -DskipTests $PNPM";;
+    *) echo "$MVN -ntp -B clean -DskipTests $PNPM";;
   esac
 }
 ## Get install command for prod-mode
