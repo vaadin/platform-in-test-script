@@ -141,7 +141,6 @@ runStarter() {
       *) downloadStarter $_preset $_folder || return 1 ;;
     esac
   fi
-  cd "$_dir" || return 1
 
   [ "$_preset" = archetype-hotswap ] && installJBRRuntime
 
