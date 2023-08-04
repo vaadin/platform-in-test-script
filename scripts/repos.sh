@@ -58,4 +58,5 @@ component-starter-flow
 starter-wizard
 skeleton-starter-hilla-react
 skeleton-starter-hilla-lit
+docs
 "

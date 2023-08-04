@@ -29,19 +29,21 @@ runValidations() {
 
 
   echo "" >&2
-  bold "----> Running builds and tests on app $name, mode=$mode, port=$port, version=$version, mvn=$MVN"
+  [ -z "$TEST" ] && bold "----> Running builds and tests on app $name, mode=$mode, port=$port, version=$version, mvn=$MVN"
+  [ -n "$TEST" ] && cmd "### app=$name mode=$mode version=$version" 
 
   isUnsupported $name $mode $version && warn "Skipping $name $mode $version because of unsupported" && return 0
 
   # 1
-  checkBusyPort "$port" || return 1
+  [ -n "$TEST" ] || checkBusyPort "$port" || return 1
   # 2
-  disableLaunchBrowser
-  [ -n "$PNPM" ] && enablePnpm
-  [ -n "$VITE" ] && enableVite
+  [ -n "$TEST" ] || disableLaunchBrowser
+  [ -z "$TEST" ] && [ -n "$PNPM" ] && enablePnpm
+  [ -z "$TEST" ] && [ -n "$VITE" ] && enableVite
 
   # when offline add the offline parameter to mvn or gradle
   [ -n "$OFFLINE" ] && cmd="$cmd --offline" && compile="$compile --offline"
+
 
   [ "$mode" = dev ] && rm -rf node_modules src/main/dev-bundle
 
@@ -57,8 +59,8 @@ runValidations() {
   [ -n "$INTERACTIVE" ] && waitForUserWithBell && waitForUserManualTesting "$port"
   # 6
 
-  [ "$mode" = prod ] && H=`cat $file | grep WARNING | grep 'deprecated$' | sed -e 's/^.*\/src\//src\//g'` && reportError "Deprecated API" "$H"
-  [ "$mode" != dev -o "$name" != default ] || checkBundleNotCreated "$file" || return 1
+  [ -z "$TEST" -a "$mode" = prod ] && H=`cat $file | grep WARNING | grep 'deprecated$' | sed -e 's/^.*\/src\//src\//g'` && reportError "Deprecated API" "$H"
+  [ -z "$TEST" -a "$mode" != dev -o "$name" != default ] || checkBundleNotCreated "$file" || return 1
 
   if [ "$mode" = dev ]; then
     waitUntilFrontendCompiled "http://localhost:$port/" "$file"
@@ -83,8 +85,8 @@ runValidations() {
     runPlaywrightTests "$test" "$port" "$mode" "$file" "$name" || return 1
   fi
   # 8
-  bold "----> The version $version of '$name' app was successfully built and tested in $mode mode.\n"
-  killAll && sleep 5 || return 0
+  [ -z "$TEST" ] && bold "----> The version $version of '$name' app was successfully built and tested in $mode mode.\n"
+  [ -n "$TEST" ] || killAll && sleep 5
 }
 
 

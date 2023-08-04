@@ -9,7 +9,7 @@ checkoutDemo() {
   _tk=${GITHUB_TOKEN:-${GHTK}}
   [ -n "$_tk" ] && __tk=${_tk}@
   _gitUrl="https://${__tk}${_repo}.git"
-  log "Checking out $1"
+  [ -z "$TEST" ] && log "Checking out $1"
   cmd "git clone https://$_repo.git"
   cmd "cd $_demo"
   [ -z "$VERBOSE" ] && _quiet="-q"
@@ -223,9 +223,9 @@ runDemo() {
   cd "$_tmp" || return 1
 
   _dir="$_tmp/$_demo"
-  if [ -z "$_offline" ]
+  if [ -z "$_offline" -o ! -d "$_dir" ]
   then
-    [ -d "$_dir" ] && log "Removing project folder $_dir" && rm -rf $_dir
+    [ -d "$_dir" ] && ([ -n "$TEST" ] || log "Removing project folder $_dir") && rm -rf $_dir
     # 1
     checkoutDemo $1 || return 1
   fi

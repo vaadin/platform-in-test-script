@@ -21,6 +21,7 @@ Use: $0 [version=] [starters=] [port=] [timeout=] [verbose] [offline] [interacti
  --hub             Use selenium hub instead of local chrome, it assumes that selenium docker is running as service in localhost
  --help            Show this message
  --commit          Commit changes to the base branch
+ --test            Checkout starters, and show steps and commands to execute, but don't run them
 EOF
   exit 1
 }
@@ -66,6 +67,8 @@ checkArgs() {
         done
         exit
         ;;
+      --test)
+        TEST=true ;;
       *) echo "Unknown option: $1" && usage && exit 1;;
     esac
     shift

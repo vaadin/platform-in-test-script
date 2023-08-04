@@ -111,7 +111,6 @@ computeAbsolutePath() {
   [ `expr "$__path" : '^/'` != 1 ] && __path="$PWD/$__path"
   echo "$__path"
 }
-
 ## Compute the maven command to use for the project and stores in MVN env variable
 computeMvn() {
   [ -f ./mvnw ] && MVN=./mvnw
@@ -138,8 +137,9 @@ runToFile() {
   __cmd="$1"
   __file="$2"
   __verbose="$3"
-  log "Running and sending output to > $__file"
+  [ -z "$TEST" ] && log "Running and sending output to > $__file"
   cmd "$__cmd"
+  [ -n "$TEST" ] && return
   if [ -z "$__verbose" ]
   then
     $__cmd >> $__file 2>&1
@@ -156,8 +156,9 @@ runInBackgroundToFile() {
   __cmd="$1"
   __file="$2"
   __verbose="$3"
-  log "Running in background and sending output to > $__file"
+  [ -z "$TEST" ] && log "Running in background and sending output to > $__file"
   [ -n "$MAVEN_OPTS" ] && cmd "MAVEN_OPTS='$MAVEN_OPTS' $__cmd" || cmd "$__cmd"
+  [ -n "$TEST" ] && return
   touch $__file
   if [ -n "$__verbose" ]
   then
@@ -174,7 +175,8 @@ waitUntilMessageInFile() {
   __message="$2"
   __timeout="$3"
   __cmd="$4"
-  log "Waiting for server to start, timeout=$__timeout secs, message='$__message'"
+  [ -n "$TEST" ] && cmd "## Wait for: '$__message'" || log "Waiting for server to start, timeout=$__timeout secs, message='$__message'"
+  [ -n "$TEST" ] && return 0
   while [ $__timeout -gt 0 ]
   do
     kill -0 $pid_run 2>/dev/null
@@ -242,6 +244,7 @@ waitUntilPort() {
 
 ## App context in Karaf takes a while after the server is listening
 waitUntilAppReady() {
+  [ -n "$TEST" ] && return
   waitUntilPort $2 $3 $4 || return 1
   [ "$1" = vaadin-flow-karaf-example ] && warn "sleeping 30 secs for the context" && sleep 10 || true
 }
@@ -260,6 +263,7 @@ checkHttpServlet() {
   __url="$1"
   __ofile="$2"
   __cfile="curl-"`uname`".out"
+  [ -n "$TEST" ] && return 0
   rm -f $__cfile
   log "Checking whether url $__url returns HTTP 200"
   runToFile "curl -s --fail -I -L -H Accept:text/html $__url" "$__cfile" "$VERBOSE"
@@ -270,6 +274,7 @@ checkHttpServlet() {
 waitUntilFrontendCompiled() {
   __url="$1"
   __ofile="$2"
+  [ -n "$TEST" ] && return 0
   log "Waiting for dev-mode to be ready at $__url"
   __time=0
   while true; do
@@ -418,17 +423,19 @@ changeMavenProperty() {
   do
     cp $__file $$-1
     if [ "$__val" = remove ]; then
-      perl -pi -e 's|\s*(<'$__prop'>)([^<]+)(</'$__prop'>)\s*||g' $__file
+      _cmd="perl -pi -e 's|\s*(<'$__prop'>)([^<]+)(</'$__prop'>)\s*||g' $__file"
+            perl -pi -e 's|\s*(<'$__prop'>)([^<]+)(</'$__prop'>)\s*||g' $__file
     else
       __cur=`getCurrProperty $__prop $__file`
       [ -z "$__cur" ] && continue
-      perl -pi -e 's|(<'$__prop'>)([^<]+)(</'$__prop'>)|${1}'"${__val}"'${3}|g' $__file
+      _cmd="perl -pi -e 's|(<'$__prop'>)([^<]+)(</'$__prop'>)|${1}'"${__val}"'${3}|g' $__file"
+            perl -pi -e 's|(<'$__prop'>)([^<]+)(</'$__prop'>)|${1}'"${__val}"'${3}|g' $__file
     fi
     __diff=`diff -w $$-1 $__file`
     rm -f $$-1
-    [ -n "$__diff" ] && __ret=0
-    [ -n "$__diff" -a "$__val" =  remove ] && warn "Remove $__prop in $__file"
-    [ -n "$__diff" -a "$__val" != remove ] && warn "Change $__prop from $__cur to $__val in $__file"
+    [ -n "$__diff" ] && cmd "$_cmd" && __ret=0
+    [ -z "$TEST" -a -n "$__diff" -a "$__val" =  remove ] && warn "Remove $__prop in $__file"
+    [ -z "$TEST" -a -n "$__diff" -a "$__val" != remove ] && warn "Change $__prop from $__cur to $__val in $__file"
   done
   return $__ret
 }
@@ -453,17 +460,20 @@ setPropertyInFile() {
   cp $__file $$-1
   __cur=`egrep ' *'$__key $__file | tr ':' '=' | cut -d "=" -f2`
   if [ "$__val" = remove ]; then
-    perl -pi -e 's|\s*('$__key')\s*([=:]).*||g' $__file
+    _cmd="perl -pi -e 's|\s*('$__key')\s*([=:]).*||g' $__file"
+          perl -pi -e 's|\s*('$__key')\s*([=:]).*||g' $__file
   elif [ -n "$__cur" ]; then
-    perl -pi -e 's|\s*('$__key')\s*([=:]).*|${1}${2}'"${__val}|g" $__file
+    _cmd="perl -pi -e 's|\s*('$__key')\s*([=:]).*|${1}${2}'"${__val}|g" $__file"
+          perl -pi -e 's|\s*('$__key')\s*([=:]).*|${1}${2}'"${__val}|g" $__file
   else
-    echo "$__key=$__val" >> $__file
+    _cmd="echo "$__key=$__val" >> $__file"
+          echo "$__key=$__val" >> $__file
   fi
   __diff=`diff -w $$-1 $__file`
   rm -f $$-1
-  [ -n "$__diff" -a "$__val" =  remove ] && warn "Remove $__key in $__file"
-  [ -n "$__diff" -a "$__val" != remove ] && warn "Change $__key from '$__cur' to '$__val' in $__file"
-  [ -n "$__diff" ]
+  [ -z "$TEST" -a -n "$__diff" -a "$__val" =  remove ] && warn "Remove $__key in $__file"
+  [ -z "$TEST" -a -n "$__diff" -a "$__val" != remove ] && warn "Change $__key from '$__cur' to '$__val' in $__file"
+  [ -n "$__diff" ] && cmd "$_cmd"
 }
 
 ## Do not open Browser after app is started
@@ -496,6 +506,7 @@ isHeadless() {
 ## print used versions of node, java and maven
 printVersions() {
   computeNpm
+  [ -n "$TEST" ] && return
   _vers=`MAVEN_OPTS="$HOT" $MVN -version | tr \\\\ / 2>/dev/null | egrep -i 'maven|java|agent.HotswapAgent'`
   [ $? != 0 ] && err "Error $? when running $MVN, $_vers" && return 1
   log "==== VERSIONS ====
@@ -509,14 +520,16 @@ Npm version: `$NPM --version`
 
 ## adds the pre-releases repositories to the pom.xml
 addPrereleases() {
-  [ ! -f pom.xml ] && log "Not a Maven proyect, not adding prereleases repository" && return 0
+  [ ! -f pom.xml ] && ([ -n "$TEST" ] || log "Not a Maven proyect, not adding prereleases repository") && return 0
   U="https://maven.vaadin.com/vaadin-prereleases/"
   grep -q "$U" pom.xml && return 0
-  log "Adding $U repository"
+  [ -z "$TEST" ] && log "Adding $U repository"
   for R in repositor pluginRepositor; do
     if ! grep -q $R'ies>' pom.xml; then
-      perl -pi -e 's|(\s*)(</properties>)|$1$2\n$1<'$R'ies><'$R'y><id>v</id><url>'$U'</url></'$R'y></'$R'ies>|' pom.xml
+      cmd "perl -pi -e 's|(\s*)(</properties>)|$1$2\\\n$1<'$R'ies><'$R'y><id>v</id><url>'$U'</url></'$R'y></'$R'ies>|' pom.xml"
+           perl -pi -e 's|(\s*)(</properties>)|$1$2\n$1<'$R'ies><'$R'y><id>v</id><url>'$U'</url></'$R'y></'$R'ies>|' pom.xml
     else
+      cmd "perl -pi -e 's|(\s*)(<'$R'ies>)|$1$2\\\n$1$1<'$R'y><id>v</id><url>'$U'</url></'$R'y>|' pom.xml"
       perl -pi -e 's|(\s*)(<'$R'ies>)|$1$2\n$1$1<'$R'y><id>v</id><url>'$U'</url></'$R'y>|' pom.xml
     fi
   done

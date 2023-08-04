@@ -17,9 +17,12 @@ DEFAULT_STARTERS=`echo "$PRESETS$DEMOS" | tr "\n" "," | sed -e 's/^,//' | sed -e
 
 run() {
   echo ""
-  log "================= Executing $1 '$2' $OFFLINE =================="
+  [ -n "$TEST" ] && W=Testing || W=Executing
+  log "================= $W $1 '$2' $OFFLINE =================="
   $1 "$2" "$3" "$PORT" "$VERSION" "$OFFLINE"
-  if [ $? = 0 ]; then
+  _err=$?
+  [ -n "$TEST" ] && echo "" && return 0
+  if [ $_err = 0 ]; then
     log "==== '$2' was build and tested successfuly ===="
     success="$success $2"
   else
@@ -46,10 +49,11 @@ computeStarters() {
 ### MAIN
 main() {
   _start=`date +%s`
-  log "===================== Running PiT Tests ============================================"
+
+  [ -z "$TEST" ] && log "===================== Running PiT Tests ============================================" \
 
   ## Exit soon if the port is busy
-  checkBusyPort "$PORT" || exit 1
+  [ -n "$TEST" ] || checkBusyPort "$PORT" || exit 1
 
   ## Install playwright in the background
   # checkPlaywrightInstallation `computeAbsolutePath`/its/foo &
@@ -84,6 +88,8 @@ main() {
   done
 
   cd $pwd
+
+  [ -n "$TEST" ] && return
 
   _error=0
   ## Report success and failed projects

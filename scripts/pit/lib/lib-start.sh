@@ -5,6 +5,7 @@
 downloadStarter() {
   _preset=$1
   _presets=""
+  _dir=$2
   for _p in `echo "$_preset" | tr "_" " "`
   do
     _presets="$_presets&preset=$_p"
@@ -12,7 +13,7 @@ downloadStarter() {
   _url="https://start.vaadin.com/dl?${_presets}&projectName=${_preset}"
   _zip="$_preset.zip"
 
-  log "Downloading $1"
+  [ -z "$TEST" ] && log "Downloading $1"
   cmd "curl -s -f '$_url' -o $_zip"
   cmd "unzip $_zip"
   [ -z "$VERBOSE" ] && _silent="-s"
@@ -21,9 +22,7 @@ downloadStarter() {
     && unzip -q $_zip \
     && rm -f $_zip || return 1
 
-  _new=`echo "$_preset" | tr "_" "-"`
-  cmd "cd $_new"
-  [ "$_new" != "$_preset" ] && mv "$_new" "$_preset" || return 0
+  cmd "cd $2"
 }
 
 generateStarter() {
@@ -129,15 +128,15 @@ runStarter() {
   _test=`getStartTestFile $_preset`
 
   cd "$_tmp"
-
-  _dir="$_tmp/$_preset"
-  if [ -z "$_offline" ]
+  _folder=`echo "$_preset" | tr "_" "-"`
+  _dir="$_tmp/$_folder"
+  if [ -z "$_offline" -o ! -d "$_dir" ]
   then
-    [ -d "$_dir" ] && log "Removing project folder $_dir" && rm -rf $_dir
+    [ -d "$_dir" ] && ([ -n "$TEST" ] || log "Removing project folder $_dir") && rm -rf $_dir
     # 1
     case "$_preset" in
       archetype*|vaadin-quarkus) generateStarter $_preset || return 1 ;;
-      *) downloadStarter $_preset || return 1 ;;
+      *) downloadStarter $_preset $_folder || return 1 ;;
     esac
   fi
   cd "$_dir" || return 1
@@ -165,7 +164,7 @@ runStarter() {
     fi
     # 3
     if [ -z "$NOPROD" ]; then
-      MAVEN_OPTS="" runValidations prod "$_current" "$_preset" "$_port" "$_compile" "$_prod" "$_msgprod" || return 1
+      MAVEN_OPTS="" runValidations prod "$_current" "$_preset" "$_port" "$_compile" "$_prod" "$_msgprod" "$_test" || return 1
     fi
   fi
 

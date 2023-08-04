@@ -3,7 +3,7 @@ __scripts=
 ## Run after updating Vaadin/Hilla versions in order to patch sources
 applyPatches() {
   app_=$1; type_=$2; vers_=$3; mod_=$4
-  log "Applying Patches for $app_ $type_ $vers_"
+  [ -n "$TEST" ] || log "Applying Patches for $app_ $type_ $vers_"
   case $app_ in
     archetype-hotswap) enableJBRAutoreload ;;
     vaadin-oauth-example)
