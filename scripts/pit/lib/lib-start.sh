@@ -22,12 +22,13 @@ downloadStarter() {
     && unzip -q $_zip \
     && rm -f $_zip || return 1
 
-  cmd "cd $2"
+  cmd "cd $_dir"
+  cd $_dir
 }
 
 generateStarter() {
   _name=$1
-  log "Generating $1"
+  [ -z "$TEST" ] && log "Generating $1"
   case $_name in
     *spring)        cmd="$MVN -ntp -q -B archetype:generate -DarchetypeGroupId=com.vaadin -DarchetypeArtifactId=vaadin-archetype-spring-application -DarchetypeVersion=LATEST -DgroupId=com.vaadin.starter -DartifactId=$_name" ;;
     archetype*)     cmd="$MVN -ntp -q -B archetype:generate -DarchetypeGroupId=com.vaadin -DarchetypeArtifactId=vaadin-archetype-application -DarchetypeVersion=LATEST -DgroupId=com.vaadin.starter -DartifactId=$_name" ;;
@@ -35,6 +36,7 @@ generateStarter() {
   esac
   cmd "$cmd"
   $cmd || return 1
+  cmd "cd $_name"
   cd $_name || return 1
   git init -q
   git config user.email | grep -q ... || git config user.email "vaadin-bot@vaadin.com"
@@ -178,7 +180,7 @@ runStarter() {
     fi
     # 6
     if [ -z "$NOPROD" ]; then
-      MAVEN_OPTS="" runValidations prod "$_version" "$_preset" "$_port" "$_compile" "$_prod" "$_msgprod" || return 1
+      MAVEN_OPTS="" runValidations prod "$_version" "$_preset" "$_port" "$_compile" "$_prod" "$_msgprod" "$_test" || return 1
     fi
   fi
 

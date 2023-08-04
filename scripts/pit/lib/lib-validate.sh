@@ -22,6 +22,7 @@ runValidations() {
   [ -n "$6" ] && cmd="$6" || cmd=""
   [ -n "$7" ] && check="$7" || check=""
   [ -n "$8" ] && test="$PIT_SCR_FOLDER/its/$8" || test=""
+
   file="$name-$mode-$version-"`uname`".out"
   rm -f $file
   [ "$mode" = prod ] && expr "$compile" : "$MVN" >/dev/null && compile="$compile -Dmaven.compiler.showDeprecation"
@@ -30,7 +31,7 @@ runValidations() {
 
   echo "" >&2
   [ -z "$TEST" ] && bold "----> Running builds and tests on app $name, mode=$mode, port=$port, version=$version, mvn=$MVN"
-  [ -n "$TEST" ] && cmd "### app=$name mode=$mode version=$version" 
+  [ -n "$TEST" ] && cmd "### app=$name mode=$mode version=$version"
 
   isUnsupported $name $mode $version && warn "Skipping $name $mode $version because of unsupported" && return 0
 

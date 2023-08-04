@@ -35,7 +35,7 @@ async function exec(order, ops) {
   });
 }
 
-let headless = false, host = 'localhost', port = '8080', hub = false, name;
+let headless = false, host = 'localhost', port = '8080', hub = false, name, mode = 'prod';
 process.argv.forEach(a => {
   if (/^--headless/.test(a)) {
     headless = true;
@@ -43,6 +43,8 @@ process.argv.forEach(a => {
     ip = a.split('=')[1];
   } else if (/^--port=/.test(a)) {
     port = a.split('=')[1];
+  } else if (/^--mode=/.test(a)) {
+    mode = a.split('=')[1];
   } else if (/^--name=/.test(a)) {
     name = a.split('=')[1];
   }
@@ -68,19 +70,24 @@ const url = `http://${host}:${port}/`;
   await page.locator('text=Click me').click({timeout:90000});
   await page.locator('text=Clicked');
 
-  const java = (await exec('find src -name MainView.java')).stdout.trim();
+  if (mode == 'prod') {
+    console.log("!!! FIXME: skeeping hotswap checks for production mode !!!");
+  } else {
+    const java = (await exec('find src -name MainView.java')).stdout.trim();
 
-  await exec(`perl -pi -e s/Click/Foo/g ${java}`);
-  await compile(page);
+    await exec(`perl -pi -e s/Click/Foo/g ${java}`);
+    await compile(page);
 
-  await page.locator('text=Foo me').click({timeout:90000});
-  await page.locator('text=Fooed');
+    await page.locator('text=Foo me').click({timeout:90000});
+    await page.locator('text=Fooed');
 
-  await exec(`git checkout ${java}`)
-  await compile(page);
+    await exec(`git checkout ${java}`)
+    await compile(page);
 
-  await page.locator('text=Click me').click({timeout:90000});
-  await page.locator('text=Clicked');
+    await page.locator('text=Click me').click({timeout:90000});
+    await page.locator('text=Clicked');
+  }
+
 
   // ---------------------
   await context.close();

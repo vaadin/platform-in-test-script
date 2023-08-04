@@ -10,13 +10,21 @@ isWindows() {
 
 ## Remove pro-key for testing core-only apps
 removeProKey() {
-  [ -f ~/.vaadin/proKey ] && mv ~/.vaadin/proKey ~/.vaadin/proKey-$$ && warn "Removed proKey license"
+  if [ -f ~/.vaadin/proKey ]; then
+    _cmd="mv ~/.vaadin/proKey ~/.vaadin/proKey-$$"
+    cmd "$_cmd"
+    [ -n "$TEST" ] && return 0
+    warn "Removed proKey license"
+    $_cmd
+  fi
 }
 ## Restore pro-key removed in previous function
 restoreProKey() {
   [ ! -f ~/.vaadin/proKey-$$ ] && return
   H=`cat ~/.vaadin/proKey 2>/dev/null`
-  mv ~/.vaadin/proKey-$$ ~/.vaadin/proKey
+  _cmd="mv ~/.vaadin/proKey-$$ ~/.vaadin/proKey"
+  cmd "$_cmd"
+  [ -n "$TEST" ] && return 0
   [ -n "$H" ] && reportError "A proKey was generated while running validation" "$H" && return 1
   warn "Restored proKey license"
 }
@@ -579,7 +587,7 @@ installJBRRuntime() {
   fi
 
   [ -d /tmp/jbr/Contents/Home/ ] && H=/tmp/jbr/Contents/Home || H=/tmp/jbr
-  log "Setting JAVA_HOME=$H PATH=$H/bin:\$PATH"
+  [ -z "$TEST" ] && log "Setting JAVA_HOME=$H PATH=$H/bin:\$PATH"
   cmd "export PATH=$H/bin:\$PATH JAVA_HOME=$H"
   export PATH="$H/bin:$PATH" JAVA_HOME="$H" HOT="-XX:+AllowEnhancedClassRedefinition -XX:HotswapAgent=fatjar"
 
@@ -595,8 +603,8 @@ installJBRRuntime() {
 enableJBRAutoreload() {
   _p=src/main/resources/hotswap-agent.properties
   mkdir -p `dirname $_p` && echo "autoHotswap=true" > $_p
-  perl -pi -e 's|(<scan>)(\d+)(</scan>)|${1}-1${3}|g' pom.xml
-  warn "Disabled Jetty autoreload: pom.xml -> "`grep '<scan>' pom.xml`", $_p -> "`cat $_p`
+  [ -z "$TEST" ] && warn "Disabled Jetty autoreload"
+  changeMavenProperty scan -1
 }
 
 ## prints ellapsed time
