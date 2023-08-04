@@ -15,7 +15,7 @@ removeProKey() {
     cmd "$_cmd"
     [ -n "$TEST" ] && return 0
     warn "Removed proKey license"
-    $_cmd
+    eval $_cmd
   fi
 }
 ## Restore pro-key removed in previous function
@@ -24,6 +24,7 @@ restoreProKey() {
   H=`cat ~/.vaadin/proKey 2>/dev/null`
   _cmd="mv ~/.vaadin/proKey-$$ ~/.vaadin/proKey"
   cmd "$_cmd"
+  eval $_cmd
   [ -n "$TEST" ] && return 0
   [ -n "$H" ] && reportError "A proKey was generated while running validation" "$H" && return 1
   warn "Restored proKey license"
@@ -436,7 +437,7 @@ changeMavenProperty() {
     else
       __cur=`getCurrProperty $__prop $__file`
       [ -z "$__cur" ] && continue
-      _cmd="perl -pi -e 's|(<'$__prop'>)([^<]+)(</'$__prop'>)|${1}'"${__val}"'${3}|g' $__file"
+      _cmd="perl -pi -e 's|(<'$__prop'>)([^<]+)(</'$__prop'>)|\${1}${__val}\${3}|g' $__file"
             perl -pi -e 's|(<'$__prop'>)([^<]+)(</'$__prop'>)|${1}'"${__val}"'${3}|g' $__file
     fi
     __diff=`diff -w $$-1 $__file`
@@ -471,7 +472,7 @@ setPropertyInFile() {
     _cmd="perl -pi -e 's|\s*('$__key')\s*([=:]).*||g' $__file"
           perl -pi -e 's|\s*('$__key')\s*([=:]).*||g' $__file
   elif [ -n "$__cur" ]; then
-    _cmd="perl -pi -e 's|\s*('$__key')\s*([=:]).*|${1}${2}'"${__val}|g" $__file"
+    _cmd="perl -pi -e 's|\s*('$__key')\s*([=:]).*|\${1}\${2}'"${__val}|g" $__file"
           perl -pi -e 's|\s*('$__key')\s*([=:]).*|${1}${2}'"${__val}|g" $__file
   else
     _cmd="echo "$__key=$__val" >> $__file"
@@ -545,19 +546,19 @@ addPrereleases() {
 
 ## enables snapshots for the pre-releases repositories in pom.xml
 enableSnapshots() {
-  [ ! -f pom.xml ] && return 0
-  find . -name pom.xml | xargs perl -0777 -pi -e 's/(vaadin-prereleases<\/url>\s*<snapshots>\s*<enabled>)false/${1}true/msg'
+  changeMavenProperty snapshots true
 }
 
 ## runs a command, and shows a message explaining it
 ## $1: message to show
 ## $*: command line order and arguments
 runCmd() {
-  log "$1"
+  [ -z "$2" ] && echo "bad arguments to runCmd" && return 1
+  [ -n "$1" ] && log "$1"
   shift
   _cmd="${*}"
   cmd "$_cmd"
-  $_cmd
+  eval $_cmd
 }
 
 ## Downloads a file from the internet
