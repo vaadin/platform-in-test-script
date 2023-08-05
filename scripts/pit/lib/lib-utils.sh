@@ -432,12 +432,12 @@ changeMavenProperty() {
   do
     cp $__file $$-1
     if [ "$__val" = remove ]; then
-      _cmd="perl -pi -e 's|\s*(<'$__prop'>)([^<]+)(</'$__prop'>)\s*||g' $__file"
+      _cmd="perl -pi -e 's|\s*(<$__prop>)([^<]+)(</$__prop>)\s*||g' $__file"
             perl -pi -e 's|\s*(<'$__prop'>)([^<]+)(</'$__prop'>)\s*||g' $__file
     else
       __cur=`getCurrProperty $__prop $__file`
       [ -z "$__cur" ] && continue
-      _cmd="perl -pi -e 's|(<'$__prop'>)([^<]+)(</'$__prop'>)|\${1}${__val}\${3}|g' $__file"
+      _cmd="perl -pi -e 's|(<$__prop>)([^<]+)(</$__prop>)|\${1}${__val}\${3}|g' $__file"
             perl -pi -e 's|(<'$__prop'>)([^<]+)(</'$__prop'>)|${1}'"${__val}"'${3}|g' $__file
     fi
     __diff=`diff -w $$-1 $__file`
@@ -469,13 +469,13 @@ setPropertyInFile() {
   cp $__file $$-1
   __cur=`egrep ' *'$__key $__file | tr ':' '=' | cut -d "=" -f2`
   if [ "$__val" = remove ]; then
-    _cmd="perl -pi -e 's|\s*('$__key')\s*([=:]).*||g' $__file"
+    _cmd="perl -pi -e 's|\s*($__key)\s*([=:]).*||g' $__file"
           perl -pi -e 's|\s*('$__key')\s*([=:]).*||g' $__file
   elif [ -n "$__cur" ]; then
-    _cmd="perl -pi -e 's|\s*('$__key')\s*([=:]).*|\${1}\${2}'"${__val}|g" $__file"
+    _cmd="perl -pi -e 's|\s*($__key)\s*([=:]).*|\${1}\${2}${__val}|g' $__file"
           perl -pi -e 's|\s*('$__key')\s*([=:]).*|${1}${2}'"${__val}|g" $__file
   else
-    _cmd="echo "$__key=$__val" >> $__file"
+    _cmd="echo '$__key=$__val' >> $__file"
           echo "$__key=$__val" >> $__file
   fi
   __diff=`diff -w $$-1 $__file`

@@ -33,7 +33,7 @@ runValidations() {
   [ -z "$TEST" ] && bold "----> Running builds and tests on app $name, mode=$mode, port=$port, version=$version, mvn=$MVN"
   [ -n "$TEST" ] && cmd "### app=$name mode=$mode version=$version"
 
-  isUnsupported $name $mode $version && warn "Skipping $name $mode $version because of unsupported" && return 0
+  isUnsupported $name $mode $version && ([ -n "$TEST" ] || warn "Skipping $name $mode $version because of unsupported") && return 0
 
   # 1
   [ -n "$TEST" ] || checkBusyPort "$port" || return 1
@@ -61,7 +61,7 @@ runValidations() {
   # 6
 
   [ -z "$TEST" -a "$mode" = prod ] && H=`cat $file | grep WARNING | grep 'deprecated$' | sed -e 's/^.*\/src\//src\//g'` && reportError "Deprecated API" "$H"
-  [ -z "$TEST" -a "$mode" != dev -o "$name" != default ] || checkBundleNotCreated "$file" || return 1
+  [ -n "$TEST" ] || [ "$mode" != dev -o "$name" != default ] || checkBundleNotCreated "$file" || return 1
 
   if [ "$mode" = dev ]; then
     waitUntilFrontendCompiled "http://localhost:$port/" "$file"

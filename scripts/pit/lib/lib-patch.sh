@@ -15,9 +15,11 @@ applyPatches() {
         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
       ;;
     mpr-demo)
-      warn removing tsconfig.json
+      [ -z "$TEST" ] && warn removing tsconfig.json
+      cmd "rm -f tsconfig.json"
       rm -f tsconfig.json
-      warn removing ~/vaadin/node*
+      [ -z "$TEST" ] && warn removing ~/vaadin/node*
+      cmd "rm -rf ~/vaadin/node*"
       rm -rf ~/vaadin/node*
       ;;
   esac
