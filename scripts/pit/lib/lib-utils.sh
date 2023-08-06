@@ -313,13 +313,8 @@ setVersion() {
   __prop=$1
   __nversion=$2
   [ "false" != "$3" ] && git checkout -q .
-  for __pom in `find . -name pom.xml`; do
-    __current=`getCurrProperty $__prop $__pom`
-    case $__nversion in
-      current|$__current) echo $__current; return 1 ;;
-    esac
-    changeMavenProperty $__prop $__nversion
-  done
+  [ "$__nversion" = current ] && getCurrProperty $__prop pom.xml && return 1
+  changeMavenProperty $__prop $__nversion && echo $__nversion
 }
 
 ## Set the value of a property in the gradle.properties file, returning error if unchanged
@@ -327,13 +322,9 @@ setGradleVersion() {
   __gradleProperty=$1
   __nversion=$2
   [ "false" != "$3" ] && git checkout -q .
+  [ "$__nversion" = current ] && cat gradle.properties | grep "$__gradleProperty" | cut -d "=" -f2 && return 1
   __current=`cat gradle.properties | grep "$__gradleProperty" | cut -d "=" -f2`
-  case $__nversion in
-    current|$__current)
-      echo $__current;
-      return 1;;
-    *) setPropertyInFile gradle.properties $__gradleProperty $__nversion;;
-  esac
+  setPropertyInFile gradle.properties $__gradleProperty $__nversion
 }
 
 ## checks whether an express dev-bundle has been created for the project
