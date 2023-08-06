@@ -77,8 +77,7 @@ getInstallCmdDev() {
 ## Get install command for prod-mode
 getInstallCmdPrd() {
   H="-Dcom.vaadin.testbench.Parameters.testsInParallel=2 -Dmaven.test.redirectTestOutputToFile=true"
-  isHeadless && H="-Dheadless" || H="-Dtest.headless=false" #for addon-template
-  isHeadless && H="$H -Dcom.vaadin.testbench.Parameters.headless=true $H"
+  isHeadless && H="$H -Dcom.vaadin.testbench.Parameters.headless=true -Dheadless" || H="$H -Dtest.headless=false" #for addon-template
   [ -n "$SKIPTESTS" ] && H="$H -DskipTests"
   case $1 in
     *hilla*gradle) echo "$GRADLE clean build -Philla.productionMode $PNPM";;
@@ -99,6 +98,7 @@ getRunCmdDev() {
     base-starter-gradle) echo "$GRADLE jettyStart";; # should be appRun but reads from stdin and fails
     *-gradle) echo "$GRADLE bootRun";;
     mpr-demo) echo "$MVN -ntp -B -Dvaadin.spreadsheet.developer.license=${SS_LICENSE} jetty:run $PNPM";;
+    testbench-demo) echo "$MVN -ntp -B jetty:run";;
     multi-module-example) echo "$MVN -ntp -B spring-boot:run -pl vaadin-app";;
     *) echo "$MVN -ntp -B $PNPM";;
   esac
@@ -113,7 +113,7 @@ getRunCmdPrd() {
     base-starter-flow-quarkus) echo "java -jar target/quarkus-app/quarkus-run.jar";;
     skeleton-starter-flow-cdi) echo "$MVN -ntp -B wildfly:run -Pproduction $PNPM";;
     mpr-demo) echo "$MVN -ntp -B -Dvaadin.spreadsheet.developer.license=${SS_LICENSE} jetty:run-war -Pproduction $PNPM";;
-    spreadsheet-demo|layout-examples|skeleton-starter-flow|business-app-starter-flow|bookstore-example) echo "$MVN -ntp -Pproduction -B jetty:run-war $PNPM";;
+    spreadsheet-demo|layout-examples|skeleton-starter-flow|business-app-starter-flow|bookstore-example|testbench-demo) echo "$MVN -ntp -Pproduction -B jetty:run-war $PNPM";;
     *addon-template|addon-starter-flow) echo "$MVN -ntp -Pproduction -B jetty:run";;
     multi-module-example) echo "java -jar vaadin-app/target/*.jar";;
     *) echo "java -jar target/*.jar" ;;
@@ -177,7 +177,7 @@ getTest() {
     mpr-demo) echo "mpr-demo.js";;
     spreadsheet-demo) echo "spreadsheet-demo.js";;
     k8s-demo-app) echo "k8s-demo.js";;
-    vaadin-form-example|vaadin-rest-example|vaadin-localization-example|vaadin-database-example|layout-examples|flow-quickstart-tutorial|flow-spring-examples|flow-crm-tutorial|layout-examples|flow-quickstart-tutorial|vaadin-oauth-example|designer-tutorial|*addon-template|addon-starter-flow) echo "noop.js";;
+    vaadin-form-example|vaadin-rest-example|vaadin-localization-example|vaadin-database-example|layout-examples|flow-quickstart-tutorial|flow-spring-examples|flow-crm-tutorial|layout-examples|flow-quickstart-tutorial|vaadin-oauth-example|designer-tutorial|*addon-template|addon-starter-flow|testbench-demo) echo "noop.js";;
     vaadin-oauth-example) echo "oauth.js";;
     bookstore-example) echo "bookstore.js";;
     *) echo "hello.js";;

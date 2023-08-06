@@ -535,10 +535,10 @@ addPrereleases() {
   [ -z "$TEST" ] && log "Adding $U repository"
   for R in repositor pluginRepositor; do
     if ! grep -q $R'ies>' pom.xml; then
-      cmd "perl -pi -e 's|(\s*)(</properties>)|$1$2\\\n$1<'$R'ies><'$R'y><id>v</id><url>'$U'</url></'$R'y></'$R'ies>|' pom.xml"
+      cmd "perl -pi -e 's|(\s*)(</properties>)|\$1\$2\\\n\$1<${R}ies><${R}y><id>v</id><url>${U}</url></${R}y></${R}ies>|' pom.xml"
            perl -pi -e 's|(\s*)(</properties>)|$1$2\n$1<'$R'ies><'$R'y><id>v</id><url>'$U'</url></'$R'y></'$R'ies>|' pom.xml
     else
-      cmd "perl -pi -e 's|(\s*)(<'$R'ies>)|$1$2\\\n$1$1<'$R'y><id>v</id><url>'$U'</url></'$R'y>|' pom.xml"
+      cmd "perl -pi -e 's|(\s*)(<${R}ies>)|\$1\$2\\\n\$1\$1<${R}y><id>v</id><url>${U}</url></${R}y>|' pom.xml"
       perl -pi -e 's|(\s*)(<'$R'ies>)|$1$2\n$1$1<'$R'y><id>v</id><url>'$U'</url></'$R'y>|' pom.xml
     fi
   done
