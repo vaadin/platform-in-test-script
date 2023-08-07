@@ -411,7 +411,11 @@ changeMavenBlock() {
 ## $1: property name
 ## $2: pom.xml file to read
 getCurrProperty() {
-  grep "<$1>" $2 | perl -pe 's|\s*<'$1'>(.+?)</'$1'>\s*|$1|'
+  for __file in `find * -name $2 2>/dev/null | egrep -v 'target/|bin/'`
+  do
+    H=`grep "<$1>" $__file | perl -pe 's|\s*<'$1'>(.+?)</'$1'>\s*|$1|'`
+    [ -n "$H" ] && echo "$H" && return 0
+  done
 }
 
 ## change a maven property in the pom.xml, faster than
@@ -420,7 +424,7 @@ getCurrProperty() {
 ## $2: value
 changeMavenProperty() {
   __prop=$1; __val=$2; __ret=1
-  for __file in `find * -name pom.xml 2>/dev/null`
+  for __file in `find * -name pom.xml 2>/dev/null | egrep -v 'target/|bin/'`
   do
     cp $__file $$-1
     if [ "$__val" = remove ]; then
