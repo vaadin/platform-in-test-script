@@ -26,7 +26,7 @@ runPlaywrightTests() {
   _mode=$3
   _pfile="playwright-$_mode-"`uname`".out"
   [ -f "$_test_file" ] && checkPlaywrightInstallation $_test_file || return 0
-  _args="--port=$_port --name=$5 --mode=$_mode"
+  _args="--port=$_port --name=$5 --mode=$_mode^pkg:maven/com\.vaadin/sso-kit-starter"
   isHeadless && _args="$_args --headless"
   PATH=$PATH runToFile "$NODE $_test_file $_args" "$_pfile" "$VERBOSE"
   err=$?
