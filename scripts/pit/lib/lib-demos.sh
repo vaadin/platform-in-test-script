@@ -186,9 +186,13 @@ getTest() {
 setDemoVersion() {
   case "$1" in
     base-starter-flow-quarkus|mpr-demo)
-       setVersion vaadin.version "$2" || return 1
-       setFlowVersion "$2" false
-       setMprVersion "$2" false
+       if setVersion vaadin.version "$2"; then
+        setFlowVersion "$2" false
+        setMprVersion "$2" false
+        return 0
+       else
+        return 1
+       fi
        ;;
     *)
       __prop=`computeProp $1`
