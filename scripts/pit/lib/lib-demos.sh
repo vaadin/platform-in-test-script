@@ -97,8 +97,7 @@ getRunCmdDev() {
     skeleton-starter-flow-cdi) echo "$MVN -ntp -B wildfly:run $PNPM";;
     base-starter-gradle) echo "$GRADLE jettyStart";; # should be appRun but reads from stdin and fails
     *-gradle) echo "$GRADLE bootRun";;
-    mpr-demo) echo "$MVN -ntp -B -Dvaadin.spreadsheet.developer.license=${SS_LICENSE} jetty:run $PNPM";;
-    testbench-demo) echo "$MVN -ntp -B jetty:run";;
+    mpr-demo|testbench-demo) echo "$MVN -ntp -B jetty:run $PNPM";;
     multi-module-example) echo "$MVN -ntp -B spring-boot:run -pl vaadin-app";;
     *) echo "$MVN -ntp -B $PNPM";;
   esac
@@ -112,8 +111,7 @@ getRunCmdPrd() {
     *hilla*|k8s-demo-app|skeleton-starter-flow-spring|bakery-app-starter-flow-spring|vaadin-form-example|flow-spring-examples|vaadin-oauth-example) echo "java -jar target/*.jar";;
     base-starter-flow-quarkus) echo "java -jar target/quarkus-app/quarkus-run.jar";;
     skeleton-starter-flow-cdi) echo "$MVN -ntp -B wildfly:run -Pproduction $PNPM";;
-    mpr-demo) echo "$MVN -ntp -B -Dvaadin.spreadsheet.developer.license=${SS_LICENSE} jetty:run-war -Pproduction $PNPM";;
-    spreadsheet-demo|layout-examples|skeleton-starter-flow|business-app-starter-flow|bookstore-example|testbench-demo) echo "$MVN -ntp -Pproduction -B jetty:run-war $PNPM";;
+    mpr-demo|spreadsheet-demo|layout-examples|skeleton-starter-flow|business-app-starter-flow|bookstore-example|testbench-demo) echo "$MVN -ntp -Pproduction -B jetty:run-war $PNPM";;
     *addon-template|addon-starter-flow) echo "$MVN -ntp -Pproduction -B jetty:run";;
     multi-module-example) echo "java -jar vaadin-app/target/*.jar";;
     *) echo "java -jar target/*.jar" ;;

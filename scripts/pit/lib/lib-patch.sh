@@ -15,6 +15,8 @@ applyPatches() {
         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
       ;;
     mpr-demo)
+      SS=~/vaadin.spreadsheet.developer.license
+      [ ! -f $SS ] && err "Install a Valid License $SS" && return 1
       [ -z "$TEST" ] && warn removing tsconfig.json
       cmd "rm -f tsconfig.json"
       rm -f tsconfig.json
