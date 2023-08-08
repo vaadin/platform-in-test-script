@@ -24,6 +24,12 @@ applyPatches() {
       cmd "rm -rf ~/vaadin/node*"
       rm -rf ~/vaadin/node*
       ;;
+    ce-demo)
+      [ -z "$CE_LICENSE" ] && echo "No CE_LICENSE provided" && return 1
+      warn "adding a ce-license.json"
+      [ -n "$TEST" ] && cmd "echo '$CE_LICENSE' > ce-license.json"
+      echo "$CE_LICENSE" > ce-license.json
+      ;;
   esac
   case $vers_ in
     *alpha*|*beta*|*rc*|*SNAP*) addPrereleases; enableSnapshots ;;

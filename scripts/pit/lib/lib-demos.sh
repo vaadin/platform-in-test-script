@@ -114,6 +114,7 @@ getRunCmdPrd() {
     mpr-demo|spreadsheet-demo|layout-examples|skeleton-starter-flow|business-app-starter-flow|bookstore-example|testbench-demo) echo "$MVN -ntp -Pproduction -B jetty:run-war $PNPM";;
     *addon-template|addon-starter-flow) echo "$MVN -ntp -Pproduction -B jetty:run";;
     multi-module-example) echo "java -jar vaadin-app/target/*.jar";;
+    ce-demo) echo "java -Dvaadin.ce.dataDir=. -jar target/*.jar";;
     *) echo "java -jar target/*.jar" ;;
   esac
 }

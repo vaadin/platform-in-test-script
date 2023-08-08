@@ -52,10 +52,14 @@ bookstore-example:rtl-demo
 bakery-app-starter-flow-spring
 k8s-demo-app
 mpr-demo
-testbench-demo:gh-actions"
+testbench-demo
+ce-demo
+"
 REPOS="
 platform
 flow-components
 component-starter-flow
 starter-wizard
-docs"
+docs
+dsp-demo
+"
