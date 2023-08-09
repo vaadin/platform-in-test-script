@@ -25,10 +25,12 @@ applyPatches() {
       rm -rf ~/vaadin/node*
       ;;
     ce-demo)
-      [ -z "$CE_LICENSE" ] && echo "No CE_LICENSE provided" && return 1
-      warn "adding a ce-license.json"
-      [ -n "$TEST" ] && cmd "echo '$CE_LICENSE' > ce-license.json"
-      echo "$CE_LICENSE" > ce-license.json
+      LIC=ce-license.json
+      [ -n "$TEST" ] && ([ -z "$CE_LICENSE" ] && cmd "## Put a valid CE License in ./$LIC" || cmd "## Copy your CE License to ./$LIC") && return 0
+      [ -z "$CE_LICENSE" ] && err "No \$CE_LICENSE provided" && [ -z "$TEST" ] && return 1
+      warn "Creating license file ./$LIC with the \$CE_LICENSE content"
+      cmd "echo \"\$CE_LICENSE\" > $LIC"
+      echo "$CE_LICENSE" > $LIC
       ;;
   esac
   case $vers_ in
