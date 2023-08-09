@@ -195,7 +195,7 @@ waitUntilMessageInFile() {
       return 1
     fi
     __lasted=`expr $3 - $__timeout`
-    __perl="perl -pe 's/^.*($__message.*)/\$1/g'"
+    __perl="perl -pe 's~^.*($__message.*)~\$1~g'"
     egrep -q "$__message" $__file  \
       && H=`egrep "$__message" $__file | eval "$__perl" | head -1` \
       && log "Found '$H' in $__file after $__lasted secs" \
