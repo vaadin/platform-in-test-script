@@ -78,6 +78,9 @@ main() {
   tmp="$pwd/tmp"
   mkdir -p "$tmp"
 
+  ## Remove local copy of cached artifacts
+  cleanM2 "$VERSION"
+
   ## Run presets (star.vaadin.com) or archetypes
   for i in $presets; do
     run runStarter "$i" "$tmp"

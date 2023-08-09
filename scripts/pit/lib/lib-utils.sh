@@ -629,3 +629,9 @@ getReposFromWebsite() {
   _starters=`curl -s https://vaadin.com/hello-world-starters  | grep div | grep github.com/vaadin | perl -pe 's|(^.*)/github.com/vaadin/([\w\-]+).*|$2|g' | sort -u`
   printf "$_demos\n$_starters" | sort -u
 }
+
+cleanM2() {
+  [ -z "$1" -o ! -d ""`ls -1d ~/.m2/repository/com/vaadin/*/24.2.0.alpha6 2>/dev/null | head -1` ] && return
+  warn "removing ~/.m2/repository/com/vaadin/*/$1"
+  rm -rf ~/.m2/repository/com/vaadin/*/$1
+}
