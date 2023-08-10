@@ -58,6 +58,7 @@ const url = `http://${host}:${port}/`;
     chromiumSandbox: false
   });
   const context = await browser.newContext();
+  const log = s => process.stderr.write(`   ${s}`);
 
   // Open new page
   const page = await context.newPage();
@@ -71,21 +72,25 @@ const url = `http://${host}:${port}/`;
   await page.locator('text=Clicked');
 
   if (mode == 'prod') {
-    console.log("!!! FIXME: skeeping hotswap checks for production mode !!!");
+    log("Skipping hotswap checks for production mode\n");
   } else {
     const java = (await exec('find src -name MainView.java')).stdout.trim();
+    log(`Changing  ${java} and Compiling ...`);
 
     await exec(`perl -pi -e s/Click/Foo/g ${java}`);
     await compile(page);
 
     await page.locator('text=Foo me').click({timeout:90000});
-    await page.locator('text=Fooed');
+    const foo = await page.locator('text=Fooed').textContent();
+    log(`Ok (${foo})\n`);
+    log(`Restoring ${java} and Compiling ...`);
 
     await exec(`git checkout ${java}`)
     await compile(page);
 
     await page.locator('text=Click me').click({timeout:90000});
-    await page.locator('text=Clicked');
+    const click = await page.locator('text=Clicked').textContent();
+    log(`Ok (${click})\n`);
   }
 
 

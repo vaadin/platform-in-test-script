@@ -31,7 +31,7 @@ runValidations() {
 
   echo "" >&2
   [ -z "$TEST" ] && bold "----> Running builds and tests on app $name, mode=$mode, port=$port, version=$version, mvn=$MVN"
-  [ -n "$TEST" ] && cmd "### app=$name mode=$mode version=$version"
+  [ -n "$TEST" ] && cmd "### Run PiT for: app=$name mode=$mode version=$version"
 
   isUnsupported $name $mode $version && ([ -n "$TEST" ] || warn "Skipping $name $mode $version because of unsupported") && return 0
 

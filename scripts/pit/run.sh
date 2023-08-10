@@ -30,6 +30,7 @@ run() {
     err "==== Error testing '$2' ===="
   fi
   killAll
+  cleanAll
 }
 
 computeStarters() {

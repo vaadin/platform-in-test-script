@@ -74,7 +74,7 @@ getStartTestFile() {
    flow-crm-tutorial*) echo "";;
    react-tutorial) echo "react.js";;
    default*|vaadin-quarkus) echo "hello.js";;
-   archetype*) [ -n "$HOT " ] && echo "click-hotswap.js" || echo "click.js";;
+   archetype*) echo "click-hotswap.js";;
    *) echo "start.js";;
   esac
 }
@@ -182,6 +182,4 @@ runStarter() {
       MAVEN_OPTS="" runValidations prod "$_version" "$_preset" "$_port" "$_compile" "$_prod" "$_msgprod" "$_test" || return 1
     fi
   fi
-
-  _needsLicense "$_preset" || restoreProKey
 }

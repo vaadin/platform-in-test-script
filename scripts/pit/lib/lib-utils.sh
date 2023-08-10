@@ -12,9 +12,9 @@ isWindows() {
 removeProKey() {
   if [ -f ~/.vaadin/proKey ]; then
     _cmd="mv ~/.vaadin/proKey ~/.vaadin/proKey-$$"
+    [ -z "$TEST" ] && warn "Removing proKey license"
     cmd "$_cmd"
     [ -n "$TEST" ] && return 0
-    warn "Removed proKey license"
     eval $_cmd
   fi
 }
@@ -23,11 +23,11 @@ restoreProKey() {
   [ ! -f ~/.vaadin/proKey-$$ ] && return
   H=`cat ~/.vaadin/proKey 2>/dev/null`
   _cmd="mv ~/.vaadin/proKey-$$ ~/.vaadin/proKey"
+  [ -z "$TEST" ] && warn "Restoring proKey license"
   cmd "$_cmd"
   eval $_cmd
   [ -n "$TEST" ] && return 0
   [ -n "$H" ] && reportError "A proKey was generated while running validation" "$H" && return 1
-  warn "Restored proKey license"
 }
 
 ## Kills a process with its children and wait until complete
@@ -44,12 +44,16 @@ killAll() {
   doKill ${pid_run} ${pid_tail} ${pid_bell}
   unset pid_run pid_tail pid_bell
 }
+cleanAll() {
+  restoreProKey
+  unsetJBR
+}
 
 ## Exit the script after some process cleanup
 doExit() {
   echo ""
-  restoreProKey
   killAll
+  cleanAll
   exit
 }
 
@@ -146,13 +150,19 @@ runToFile() {
   __cmd="$1"
   __file="$2"
   __verbose="$3"
+  __stdout="$4"
   [ -z "$TEST" ] && log "Running and sending output to > $__file"
   cmd "$__cmd"
   [ -n "$TEST" ] && return
   if [ -z "$__verbose" ]
   then
-    $__cmd >> $__file 2>&1
-    err=$?
+    if [ -z "$__stdout" ]; then
+      $__cmd >> $__file 2>&1
+      err=$?
+    else
+      $__cmd >> $__file
+      err=$?
+    fi
   else
     $__cmd 2>&1 | tee -a $__file
     err=$?
@@ -571,6 +581,7 @@ installJBRRuntime() {
   __hsau="https://github.com/HotswapProjects/HotswapAgent/releases/download/1.4.2-SNAPSHOT/hotswap-agent-1.4.2-SNAPSHOT.jar"
   __jurl="https://cache-redirector.jetbrains.com/intellij-jbr"
   __vers="b653.32"
+  warn "Installing JBR for hotswap testing"
 
   isLinux   && __jurl="$__jurl/jbr-17.0.6-linux-x64-${__vers}.tar.gz"
   isMac     && __jurl="$__jurl/jbr-17.0.6-osx-x64-${__vers}.tar.gz"
@@ -586,13 +597,23 @@ installJBRRuntime() {
   [ -d /tmp/jbr/Contents/Home/ ] && H=/tmp/jbr/Contents/Home || H=/tmp/jbr
   [ -z "$TEST" ] && log "Setting JAVA_HOME=$H PATH=$H/bin:\$PATH"
   cmd "export PATH=$H/bin:\$PATH JAVA_HOME=$H"
+  __PATH=$PATH
+  __HOME=$JAVA_HOME
   export PATH="$H/bin:$PATH" JAVA_HOME="$H" HOT="-XX:+AllowEnhancedClassRedefinition -XX:HotswapAgent=fatjar"
+
 
   if [ ! -f $H/lib/hotswap/hotswap-agent.jar ] ; then
     mkdir -p $H/lib/hotswap
     download "$__hsau" "$H/lib/hotswap/hotswap-agent.jar" || return 1
     log "Installed "`ls -1 $H/lib/hotswap/hotswap-agent.jar`
   fi
+}
+
+unsetJBR() {
+  [ -z "$HOT" ] && return 0 || unset HOT
+  warn "Un-setting PATH and JAVA_HOME ($JAVA_HOME)" 
+  [ -n "$__PATH" ] && export PATH=$__PATH && unset __PATH
+  [ -n "$__HOME" ] && export JAVA_HOME=$__HOME && unset __HOME || unset JAVA_HOME
 }
 
 ## enables autoreload for preparing jet brains java runtime

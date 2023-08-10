@@ -28,7 +28,7 @@ runPlaywrightTests() {
   [ -f "$_test_file" ] && checkPlaywrightInstallation $_test_file || return 0
   _args="--port=$_port --name=$5 --mode=$_mode"
   isHeadless && _args="$_args --headless"
-  PATH=$PATH runToFile "$NODE $_test_file $_args" "$_pfile" "$VERBOSE"
+  PATH=$PATH runToFile "$NODE $_test_file $_args" "$_pfile" "$VERBOSE" true
   err=$?
   [ -n "$TEST" ] && return 0
   H=`grep '> CONSOLE:' "$_pfile" | perl -pe 's/(> CONSOLE: Received xhr.*?feat":).*/$1 .../g'`
