@@ -11,9 +11,9 @@ checkoutDemo() {
   _gitUrl="https://${__tk}${_repo}.git"
   [ -z "$TEST" ] && log "Checking out $1"
   cmd "git clone https://$_repo.git"
-  cmd "cd $_demo"
   [ -z "$VERBOSE" ] && _quiet="-q"
   git clone $_quiet "$_gitUrl" || return 1
+  cmd "cd $_demo"
   [ -z "$_branch" ] || (cd $_demo && cmd "git checkout $_branch" && git checkout $_quiet "$_branch")
 }
 ## returns the github repo URL of a demo
@@ -86,6 +86,7 @@ getInstallCmdPrd() {
     bakery-app-starter-flow-spring|skeleton-starter-flow-spring) echo "$MVN -B install -Pproduction,it $H $PNPM";;
     skeleton-starter-flow-cdi|k8s-demo-app) echo "$MVN -ntp -B verify -Pproduction $H $PNPM";;
     mpr-demo|spreadsheet-demo) echo "$MVN -ntp -B clean";;
+    start) echo "$MVN -ntp -B install -Dmaven.test.skip -Pcircleci" ;;
     *) echo "$MVN -ntp -B clean install -Pproduction,it $H $PNPM";;
   esac
 }
@@ -115,6 +116,12 @@ getRunCmdPrd() {
     *addon-template|addon-starter-flow) echo "$MVN -ntp -Pproduction -B jetty:run";;
     multi-module-example) echo "java -jar vaadin-app/target/*.jar";;
     ce-demo) echo "java -Dvaadin.ce.dataDir=. -jar target/*.jar";;
+    start)
+      H=""
+      for i in api code file parser tree util ; do
+        H="$H --add-exports=jdk.compiler/com.sun.tools.javac.$i=ALL-UNNAMED"
+      done
+      echo "java $H -jar target/*.jar";;
     *) echo "java -jar target/*.jar" ;;
   esac
 }
@@ -132,7 +139,7 @@ getReadyMessageDev() {
     k8s-demo-app) echo "frontend bundle built|Started Vite";;
     *-gradle|flow-spring-examples) echo "Tomcat started|started and listening";;
     hilla-*-tutorial) echo "Started Vite";;
-    *) echo "Frontend compiled successfully|Started Application|Started Server";;
+    *) echo "Frontend compiled successfully|Started .*Application|Started Server";;
   esac
 }
 ## Get ready message when running the project in prod-mode
@@ -177,6 +184,7 @@ getTest() {
     spreadsheet-demo) echo "spreadsheet-demo.js";;
     k8s-demo-app) echo "k8s-demo.js";;
     vaadin-form-example|vaadin-rest-example|vaadin-localization-example|vaadin-database-example|layout-examples|flow-quickstart-tutorial|flow-spring-examples|flow-crm-tutorial|layout-examples|flow-quickstart-tutorial|vaadin-oauth-example|designer-tutorial|*addon-template|addon-starter-flow|testbench-demo) echo "noop.js";;
+    start) echo "start-wizard.js";;
     vaadin-oauth-example) echo "oauth.js";;
     bookstore-example) echo "bookstore.js";;
     *) echo "hello.js";;

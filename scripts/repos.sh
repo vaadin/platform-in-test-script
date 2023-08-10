@@ -54,6 +54,7 @@ k8s-demo-app
 mpr-demo
 testbench-demo
 ce-demo
+start
 "
 REPOS="
 platform
