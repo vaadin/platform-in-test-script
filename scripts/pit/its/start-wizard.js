@@ -26,10 +26,25 @@ process.argv.forEach(a => {
   page.on('pageerror', err => console.log("> PAGEERROR:", ('' + err).replace(/\s+/g, ' ')));
 
   await page.goto(`http://${host}:${port}/`);
-  
+
   await page.getByRole('button', { name: 'Close Tour' }).click();
   await page.frameLocator('iframe[title="Preview"]').getByLabel('Your name').click();
   await page.frameLocator('iframe[title="Preview"]').getByLabel('Your name').fill('Manolo');
+  await page.getByText('About', { exact: true }).click();
+
+  const views = ['Empty', 'Dashboard Pro', 'Card List', 'List Pro', 'Master-Detail', 'Collaborative Master-Detail', 'Person Form Editable', 'Address Form', 'Credit Card Form', 'Map Pro', 'Spreadsheet Pro', 'Rich Text Editor Pro', 'Image List', 'Checkout Form', 'Grid with Filters', 'Hello World for Designer', 'Master-Detail for Designer', 'Hello World using Hilla', 'Master-Detail using Hilla'];
+  for (const label of views) {
+    await page.getByRole('button', { name: 'Add view' }).locator('span').nth(1).click();
+    await page.getByRole('option', { name: label }).first().getByText(label).click();
+  }
+
+  const routes = ['Hello World', 'About', 'Empty', 'Dashboard', 'Card List', 'List', 'Master-Detail', 'Collaborative Master-Detail', 'Person Form', 'Address Form', 'Credit Card Form', 'Map', 'Spreadsheet', 'Rich Text Editor', 'Image List', 'Checkout Form', 'Grid with Filters', 'Hello World2', 'Master-Detail2', 'Hello World3', 'Master-Detail3'];
+  for (const label of routes) {
+    log(`Visited view ${label}\n`);
+    await page.frameLocator('iframe[title="Preview"]').getByRole('button', { name: 'Menu toggle' }).locator('#slot div').click();
+    await page.frameLocator('iframe[title="Preview"]').getByRole('link', { name: label, exact: true }).click()
+  }
+
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Download' }).locator('div').click();
   const download = await downloadPromise;
