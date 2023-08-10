@@ -652,7 +652,7 @@ getReposFromWebsite() {
 }
 
 cleanM2() {
-  [ -z "$1" -o ! -d ""`ls -1d ~/.m2/repository/com/vaadin/*/24.2.0.alpha6 2>/dev/null | head -1` ] && return
+  [ -n "$OFFLINE" -o -z "$1" -o ! -d ""`ls -1d ~/.m2/repository/com/vaadin/*/24.2.0.alpha6 2>/dev/null | head -1` ] && return
   warn "removing ~/.m2/repository/com/vaadin/*/$1"
   rm -rf ~/.m2/repository/com/vaadin/*/$1
 }
