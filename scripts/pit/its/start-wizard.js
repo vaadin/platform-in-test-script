@@ -20,7 +20,8 @@ process.argv.forEach(a => {
   const log = s => process.stderr.write(`   ${s}`);
 
   const context = await browser.newContext();
-
+  context.setDefaultTimeout(90000);
+  context.setDefaultNavigationTimeout(90000)
 
   const page = await context.newPage();
   page.setViewportSize({width: 811, height: 1224});

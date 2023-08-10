@@ -58,6 +58,7 @@ const url = `http://${host}:${port}/`;
     chromiumSandbox: false
   });
   const context = await browser.newContext();
+
   const log = s => process.stderr.write(`   ${s}`);
 
   // Open new page
