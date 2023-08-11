@@ -134,7 +134,10 @@ runStarter() {
   _dir="$_tmp/$_folder"
   if [ -z "$_offline" -o ! -d "$_dir" ]
   then
-    [ -d "$_dir" ] && ([ -n "$TEST" ] || (log "Removing project folder $_dir") && rm -rf $_dir) || return 1
+     if [ -d "$_dir" ]; then
+       [ -n "$TEST" ] && log "Removing project folder $_dir"
+       rm -rf $_dir || return 1
+     fi
     # 1
     case "$_preset" in
       archetype*|vaadin-quarkus) generateStarter $_preset || return 1 ;;
