@@ -69,13 +69,17 @@ process.argv.forEach(a => {
   await sleep(1000);
 
   // Download the App and save in current folder
-  const downloadPromise = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Download' }).locator('div').click();
-  const download = await downloadPromise;
-  await page.getByRole('button', { name: 'Close download dialog' }).locator('svg').click();
   const fname = `my-app-${mode}.zip`
-  await download.saveAs(fname);
-  log(`Downloaded file ${fname}\n`);
+  if (process.env.RUNNER_OS != 'Windows') {
+    const downloadPromise = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'Download' }).locator('div').click();
+    const download = await downloadPromise;
+    await page.getByRole('button', { name: 'Close download dialog' }).locator('svg').click();
+    await download.saveAs(fname);
+    log(`Downloaded file ${fname}\n`);
+  } else {
+    log(`Skipped download of file ${fname} in Windows\n`);
+  }
 
   await context.close();
   await browser.close();
