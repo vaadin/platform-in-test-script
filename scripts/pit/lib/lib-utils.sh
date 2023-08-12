@@ -380,6 +380,10 @@ setMprVersion() {
   setVersionFromPlatform $1 mpr-v8 mpr.version
 }
 
+getPomFiles() {
+  find * -name pom.xml 2>/dev/null | egrep -v 'target/|bin/'
+}
+
 ## an utility method for changing blocks in maven, they need to have the structure
 ## <tag><groupId></groupId><artifactId></artifactId><version></version>(optional_line)</tag>
 ## we can change groupId, artifactId, version, and optional_line
@@ -398,7 +402,7 @@ changeMavenBlock() {
   __grp2=${5:-$__grp}
   __id2=${6:-$__id}
   __extra=${7:-\$11}
-  for __file in `find * -name pom.xml 2>/dev/null`
+  for __file in `getPomFiles`
   do
     cp $__file $$-1
     if [ "$4" = remove ]; then
@@ -428,29 +432,43 @@ getCurrProperty() {
   done
 }
 
+## change the content of a block in any file
+## $1: left regular expression
+## $2: right regular expression
+## $3: new content of the block
+## $4: file
+changeBlock() {
+  __left="$1"; __right="${2:-$1}"; __val="$3"; __file="$4";
+  cp $__file $$-1
+  if [ "$__val" = remove ]; then
+    _cmd="perl -0777 -pi -e 's|\s*($__left)([^\s]+)($__right>)\s*||g' $__file"
+          perl -0777 -pi -e 's|\s*('$__left')([^\s]+)('$__right')\s*||g' $__file
+  else
+    _cmd="perl -0777 -pi -e 's|($__left)([^\s]+)($__right)|\${1}${__val}\${3}|g' $__file"
+          perl -0777 -pi -e 's|('$__left')([^\s]+)('$__right')|${1}'"${__val}"'${3}|g' $__file
+  fi
+  __diff=`diff -w $$-1 $__file`
+  rm -f $$-1
+  [ -n "$__diff" ] && cmd "$_cmd" && __err=0 || __err=1
+  [ -z "$TEST" -a -n "$__diff" -a "$__val" =  remove ] && warn "Remove $__left in $__file"
+  [ -z "$TEST" -a -n "$__diff" -a "$__val" != remove ] && warn "Changed '$__left' to '$__val' in $__file"
+  return $__err
+}
+
 ## change a maven property in the pom.xml, faster than
 ##  mvn -q versions:set-property -Dproperty=property -DnewVersion=value
 ## $1: property name
 ## $2: value
 changeMavenProperty() {
-  __prop=$1; __val=$2; __ret=1
-  for __file in `find * -name pom.xml 2>/dev/null | egrep -v 'target/|bin/'`
+  __prop=$1; __val=$2; __ret=1;
+  for __file in `getPomFiles`
   do
-    cp $__file $$-1
-    if [ "$__val" = remove ]; then
-      _cmd="perl -pi -e 's|\s*(<$__prop>)([^<]+)(</$__prop>)\s*||g' $__file"
-            perl -pi -e 's|\s*(<'$__prop'>)([^<]+)(</'$__prop'>)\s*||g' $__file
-    else
+    if [ "$__val" != remove ]; then
       __cur=`getCurrProperty $__prop $__file`
       [ -z "$__cur" ] && continue
-      _cmd="perl -pi -e 's|(<$__prop>)([^<]+)(</$__prop>)|\${1}${__val}\${3}|g' $__file"
-            perl -pi -e 's|(<'$__prop'>)([^<]+)(</'$__prop'>)|${1}'"${__val}"'${3}|g' $__file
     fi
-    __diff=`diff -w $$-1 $__file`
-    rm -f $$-1
-    [ -n "$__diff" ] && cmd "$_cmd" && __ret=0
-    [ -z "$TEST" -a -n "$__diff" -a "$__val" =  remove ] && warn "Remove $__prop in $__file"
-    [ -z "$TEST" -a -n "$__diff" -a "$__val" != remove ] && warn "Change $__prop from $__cur to $__val in $__file"
+    changeBlock "<$__prop>" "</$__prop>" "$__val" $__file
+    [ $? = 0 -a $__ret = 1 ] && __ret=0
   done
   return $__ret
 }
@@ -552,7 +570,10 @@ addPrereleases() {
 
 ## enables snapshots for the pre-releases repositories in pom.xml
 enableSnapshots() {
-  changeMavenProperty snapshots true
+  for __file in `getPomFiles`
+  do
+    changeBlock '<snapshots>\s+<enabled>' '</enabled>\s+</snapshots>' 'true' $__file
+  done
 }
 
 ## runs a command, and shows a message explaining it
