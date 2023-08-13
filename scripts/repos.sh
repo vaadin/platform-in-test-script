@@ -51,10 +51,11 @@ bookstore-example
 bookstore-example:rtl-demo
 bakery-app-starter-flow-spring
 k8s-demo-app
-mpr-demo
+TatuLund/mpr-demo:mpr-7
 testbench-demo
 ce-demo
 start
+spring-guides/gs-crud-with-vaadin/complete
 "
 REPOS="
 platform
