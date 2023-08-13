@@ -73,4 +73,14 @@ checkArgs() {
     esac
     shift
   done
+
+  ## discover valid starters, when only providing the project name without repo, folder, or branch parts
+  S=""
+  for i in `echo "$STARTERS" | tr ',' ' '`
+  do
+    H=`printf "$PRESETS\n$DEMOS" | egrep "^$i$|/$i$|/$i[/:]|^$i[/:]" | tr "\n" ","`
+    [ -z "$H" ] && err "Unknown starter: $i" && exit 1
+    [ -n "$S" ] && S="$S,$H" || S="$H"
+  done
+  STARTERS="$S"
 }

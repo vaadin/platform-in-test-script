@@ -16,7 +16,6 @@ DEFAULT_TIMEOUT=300
 DEFAULT_STARTERS=`echo "$PRESETS$DEMOS" | tr "\n" "," | sed -e 's/^,//' | sed -e 's/,$//'`
 
 run() {
-  echo ""
   [ -n "$TEST" ] && W=Testing || W=Executing
   log "================= $W $1 '$2' $OFFLINE =================="
   $1 "$2" "$3" "$PORT" "$VERSION" "$OFFLINE"
@@ -49,6 +48,11 @@ computeStarters() {
 
 ### MAIN
 main() {
+  # cd tmp
+  # initializers
+  # exit
+  # echo ""
+
   _start=`date +%s`
 
   [ -z "$TEST" ] && log "===================== Running PiT Tests ============================================" \

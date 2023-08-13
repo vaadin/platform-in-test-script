@@ -3,8 +3,9 @@
 
 ## Checkout a branch of a vaadin repository in github
 checkoutDemo() {
-  _demo=`echo "$1" | cut -d : -f1`
+  _demo=`getGitDemo $1`
   _branch=`getGitBranch $1`
+  _folder=`getGitFolder $1`
   _repo=`getGitRepo $1`
   _tk=${GITHUB_TOKEN:-${GHTK}}
   [ -n "$_tk" ] && __tk=${_tk}@
@@ -13,22 +14,37 @@ checkoutDemo() {
   cmd "git clone https://$_repo.git"
   [ -z "$VERBOSE" ] && _quiet="-q"
   git clone $_quiet "$_gitUrl" || return 1
-  cmd "cd $_demo"
-  [ -z "$_branch" ] || (cd $_demo && cmd "git checkout $_branch" && git checkout $_quiet "$_branch")
+  cmd "cd $_demo$_folder"
+  cd "$_demo$_folder"
+  [ -z "$_branch" ] || (cmd "git checkout $_branch" && git checkout $_quiet "$_branch")
 }
 ## returns the github repo URL of a demo
 getGitRepo() {
-  case $1 in
-    *:*) echo "github.com/vaadin/"`echo $1 | cut -d ":" -f1` ;;
-    mpr-demo) echo "github.com/TatuLund/$1";;
-    *) echo "github.com/vaadin/$1";;
+  _repo=`echo $1 | cut -d : -f1`
+  case $_repo in
+    */*) echo "github.com/"`echo $_repo | cut -d / -f1,2`;;
+    *) echo "github.com/vaadin/"`echo $_repo` ;;
   esac
 }
 ## returns the current branch of a demo
 getGitBranch() {
   case $1 in
     *:*) echo echo $1 | cut -d ":" -f2 ;;
-    mpr-demo) echo "mpr-7";;
+  esac
+}
+## returns the folder with the demo in the repo
+getGitFolder() {
+  _repo=`echo $1 | cut -d : -f1`
+  case $_repo in
+    */*/*) echo "/"`echo $_repo | cut -d / -f3` ;;
+  esac
+}
+## returns the name for the demo
+getGitDemo() {
+  _repo=`echo $1 | cut -d : -f1`
+  case $_repo in
+    */*) echo $_repo | cut -d / -f2 ;;
+    *)   echo "$_repo" ;;
   esac
 }
 
@@ -100,6 +116,7 @@ getRunCmdDev() {
     *-gradle) echo "$GRADLE bootRun";;
     mpr-demo|testbench-demo) echo "$MVN -ntp -B jetty:run $PNPM";;
     multi-module-example) echo "$MVN -ntp -B spring-boot:run -pl vaadin-app";;
+    gs-crud-with-vaadin) echo "$MVN -ntp -B spring-boot:run";;
     *) echo "$MVN -ntp -B $PNPM";;
   esac
 }
@@ -159,7 +176,7 @@ getReadyMessagePrd() {
 hasProduction() {
   [ -n "$NOPROD" ] && return 1
   case $1 in
-    base-starter-flow-osgi|vaadin-flow-karaf-example) return 1;;
+    base-starter-flow-osgi|vaadin-flow-karaf-example|gs-crud-with-vaadin) return 1;;
     *) return 0;
   esac
 }
@@ -183,7 +200,7 @@ getTest() {
     mpr-demo) echo "mpr-demo.js";;
     spreadsheet-demo) echo "spreadsheet-demo.js";;
     k8s-demo-app) echo "k8s-demo.js";;
-    vaadin-form-example|vaadin-rest-example|vaadin-localization-example|vaadin-database-example|layout-examples|flow-quickstart-tutorial|flow-spring-examples|flow-crm-tutorial|layout-examples|flow-quickstart-tutorial|vaadin-oauth-example|designer-tutorial|*addon-template|addon-starter-flow|testbench-demo) echo "noop.js";;
+    gs-crud-with-vaadin|vaadin-form-example|vaadin-rest-example|vaadin-localization-example|vaadin-database-example|layout-examples|flow-quickstart-tutorial|flow-spring-examples|flow-crm-tutorial|layout-examples|flow-quickstart-tutorial|vaadin-oauth-example|designer-tutorial|*addon-template|addon-starter-flow|testbench-demo) echo "noop.js";;
     start) echo "start-wizard.js";;
     vaadin-oauth-example) echo "oauth.js";;
     bookstore-example) echo "bookstore.js";;
@@ -226,7 +243,7 @@ setDemoVersion() {
 runDemo() {
   MVN=mvn
   GRADLE=gradle
-  _demo=`echo "$1" | cut -d : -f1`
+  _demo=`getGitDemo $1`
   _tmp="$2"
   _port="$3"
   _version="$4"
@@ -241,7 +258,6 @@ runDemo() {
     # 1
     checkoutDemo $1 || return 1
   fi
-  cd "$_dir" || return 1
 
   computeMvn
   computeGradle
