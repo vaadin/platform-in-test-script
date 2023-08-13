@@ -14,7 +14,9 @@ default_partial-nextprerelease
 archetype-hotswap
 archetype-jetty
 archetype-spring
-vaadin-quarkus"
+vaadin-quarkus
+initializer-hilla-maven
+initializer-hilla-gradle"
 DEMOS="
 skeleton-starter-flow
 skeleton-starter-flow-spring

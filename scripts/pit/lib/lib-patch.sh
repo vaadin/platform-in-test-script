@@ -32,6 +32,10 @@ applyPatches() {
       cmd "echo \"\$CE_LICENSE\" > $LIC"
       echo "$CE_LICENSE" > $LIC
       ;;
+    initializer-hilla-maven)
+      cmd "$MVN hilla:init-app" && $MVN -q hilla:init-app ;;
+    initializer-hilla-gradle)
+      cmd "$GRADLE -q hillaInitApp" && $GRADLE -q hillaInitApp  >/dev/null ;;
   esac
   case $vers_ in
     *alpha*|*beta*|*rc*|*SNAP*) addPrereleases; enableSnapshots ;;

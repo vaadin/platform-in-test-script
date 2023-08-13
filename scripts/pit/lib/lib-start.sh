@@ -46,10 +46,24 @@ generateStarter() {
 }
 
 downloadInitializer() {
+  _name=$1
   _java=17
-  _boot=3.1.1
-  curl -s 'https://start.spring.io/starter.zip?type=maven-project&language=java&bootVersion=3.1.1&baseDir=initializer&groupId=com.vaadin.initializer&artifactId=initializer&name=initializer&description=initializer&packageName=com.vaadin.inititalizer&packaging=jar&javaVersion=17&dependencies=vaadin,h2,devtools' \
-  -H 'Referer: https://start.spring.io/' --output initializer.zip
+  _boot=3.1.2
+  _group=com.vaadin.initializer
+  _type=$2
+  _deps=$3
+  _url="https://start.spring.io/starter.zip?type=$_type&language=java&bootVersion=$_boot&baseDir=$_name&groupId=$_group&artifactId=$_name&name=$_name&description=$_name&packageName=$_group&packaging=jar&javaVersion=$_java&dependencies=$_deps"
+  cmd="curl -s $_url --output $_name.zip"
+  cmd "$cmd"
+  $cmd || return 1
+  unzip -q $_name.zip
+  cmd "cd $_name"
+  cd $_name || return 1
+  git init -q
+  git config user.email | grep -q ... || git config user.email "vaadin-bot@vaadin.com"
+  git config user.name  | grep -q ... || git config user.name "Vaadin Bot"
+  git add -f .??* *
+  git commit -q -m 'First commit' -a
 }
 
 computeVersion() {
@@ -73,15 +87,23 @@ getStartTestFile() {
    *-auth) echo "start-auth.js";;
    flow-crm-tutorial*) echo "";;
    react-tutorial) echo "react.js";;
-   default*|vaadin-quarkus) echo "hello.js";;
+   initializer*|default*|vaadin-quarkus) echo "hello.js";;
    archetype*) echo "click-hotswap.js";;
    *) echo "start.js";;
+  esac
+}
+
+_getClean() {
+  case $1 in
+    initializer-hilla-gradle) echo "$GRADLE clean" ;;
+    *) echo "$MVN -ntp -B clean";;
   esac
 }
 
 _getCompProd() {
   case $1 in
     archetype-hotswap|archetype-jetty) echo "$MVN -ntp -B clean";;
+    initializer-hilla-gradle) echo "$GRADLE build -Dhilla.productionMode && rm -f ./build/libs/*-plain.jar";;
     *) echo "$MVN -ntp -B -Pproduction package $PNPM";;
   esac
 }
@@ -89,6 +111,8 @@ _getCompProd() {
 _getRunDev() {
   case $1 in
     vaadin-quarkus) echo "$MVN -ntp -B quarkus:dev";;
+    initializer-hilla-maven) echo "$MVN -ntp -B spring-boot:run";;
+    initializer-hilla-gradle) echo "$GRADLE bootRun";;
     *) echo "$MVN -ntp -B $PNPM";;
   esac
 }
@@ -96,9 +120,11 @@ _getRunProd() {
   case $1 in
     archetype-hotswap|archetype-jetty) echo "$MVN -ntp -B -Pproduction -Dvaadin.productionMode jetty:run-war";;
     vaadin-quarkus) echo "java -jar target/quarkus-app/quarkus-run.jar";;
+    *gradle) echo "java -jar ./build/libs/*.jar";;
     *) echo "java -jar -Dvaadin.productionMode target/*.jar";;
   esac
 }
+
 
 _needsLicense() {
   case $1 in
@@ -136,11 +162,15 @@ runStarter() {
   then
      if [ -d "$_dir" ]; then
        [ -n "$TEST" ] && log "Removing project folder $_dir"
-       rm -rf $_dir || return 1
+       (cmd "rm -rf $_dir" && rm -rf $_dir) || return 1
      fi
     # 1
     case "$_preset" in
       archetype*|vaadin-quarkus) generateStarter $_preset || return 1 ;;
+      initializer-hilla-maven)   downloadInitializer $_preset maven-project  hilla,devtools || return 1 ;;
+      initializer-hilla-gradle)  downloadInitializer $_preset gradle-project hilla,devtools || return 1 ;;
+      # downloadInitializer initializer-vaadin-maven maven-project vaadin,devtools
+      # downloadInitializer initializer-vaadin-gradle gradle-project vaadin,devtools
       *) downloadStarter $_preset $_folder || return 1 ;;
     esac
   fi
@@ -148,13 +178,15 @@ runStarter() {
   [ "$_preset" = archetype-hotswap ] && installJBRRuntime
 
   computeMvn
+  computeGradle
   printVersions || return 1
 
-  _msg="Started Application|Frontend compiled|Started ServerConnector|Started Vite|Listening on:"
-  _msgprod="Started Application|Started ServerConnector|Listening on:"
+  _msg="Started .*Application|Frontend compiled|Started ServerConnector|Started Vite|Listening on:"
+  _msgprod="Started .*Application|Started ServerConnector|Listening on:"
   _prod=`_getRunProd $_preset`
   _dev=`_getRunDev $_preset`
   _compile=`_getCompProd $_preset`
+  _clean=`_getClean $_preset`
 
   _needsLicense "$_preset" || removeProKey
 
@@ -164,7 +196,7 @@ runStarter() {
     applyPatches $_preset current $_current dev || return 0
     # 2
     if [ -z "$NODEV" ]; then
-      MAVEN_OPTS="$HOT" runValidations dev "$_current" "$_preset" "$_port" "$MVN -ntp -B clean" "$_dev" "$_msg" "$_test" || return 1
+      MAVEN_OPTS="$HOT" runValidations dev "$_current" "$_preset" "$_port" "$_clean" "$_dev" "$_msg" "$_test" || return 1
     fi
     # 3
     if [ -z "$NOPROD" ]; then
@@ -178,7 +210,7 @@ runStarter() {
     applyPatches $_preset next $_version prod || return 0
     # 5
     if [ -z "$NODEV" ]; then
-      MAVEN_OPTS="$HOT" runValidations dev "$_version" "$_preset" "$_port" "$MVN -ntp -B clean" "$_dev" "$_msg" "$_test" || return 1
+      MAVEN_OPTS="$HOT" runValidations dev "$_version" "$_preset" "$_port" "$_clean" "$_dev" "$_msg" "$_test" || return 1
     fi
     # 6
     if [ -z "$NOPROD" ]; then

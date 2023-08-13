@@ -157,14 +157,14 @@ runToFile() {
   if [ -z "$__verbose" ]
   then
     if [ -z "$__stdout" ]; then
-      $__cmd >> $__file 2>&1
+      eval "$__cmd" >> $__file 2>&1
       err=$?
     else
-      $__cmd >> $__file
+      eval "$__cmd" >> $__file
       err=$?
     fi
   else
-    $__cmd 2>&1 | tee -a $__file
+    eval "$__cmd" 2>&1 | tee -a $__file
     err=$?
   fi
   [ $err != 0 ] && reportOutErrors "$__file" "Error ($err) running $__cmd" && return 1 || return 0
