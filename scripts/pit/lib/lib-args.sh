@@ -30,12 +30,21 @@ checkArgs() {
   VERSION=current; PORT=$DEFAULT_PORT; TIMEOUT=$DEFAULT_TIMEOUT
   while [ -n "$1" ]
   do
-    arg=`echo "$1" | cut -d= -f2`
+    arg=`echo "$1" | grep = | cut -d= -f2`
     case "$1" in
       --port=*) PORT="$arg";;
       --generated) STARTERS=`echo "$PRESETS" | tr "\n" "," | sed -e 's/^,//' | sed -e 's/,$//'`;;
       --demos) STARTERS=`echo "$DEMOS" | tr "\n" "," | sed -e 's/^,//' | sed -e 's/,$//'`;;
-      --start*=*) STARTERS="$arg";;
+      --start*=*)
+        ## discover valid starters, when only providing the project name without repo, folder, or branch parts
+        S=""
+        for i in `echo "$arg" | tr ',' ' '`
+        do
+          H=`printf "$PRESETS\n$DEMOS" | egrep "^$i$|/$i$|/$i[/:]|^$i[/:]" | tr "\n" ","`
+          [ -z "$H" ] && err "Unknown starter: $i" && exit 1
+          [ -n "$S" ] && S="$S,$H" || S="$H"
+        done
+        STARTERS="$S";;
       --version=*) VERSION="$arg";;
       --timeout=*) TIMEOUT="$arg";;
       --verbose|--debug) VERBOSE=true;;
@@ -73,14 +82,4 @@ checkArgs() {
     esac
     shift
   done
-
-  ## discover valid starters, when only providing the project name without repo, folder, or branch parts
-  S=""
-  for i in `echo "$STARTERS" | tr ',' ' '`
-  do
-    H=`printf "$PRESETS\n$DEMOS" | egrep "^$i$|/$i$|/$i[/:]|^$i[/:]" | tr "\n" ","`
-    [ -z "$H" ] && err "Unknown starter: $i" && exit 1
-    [ -n "$S" ] && S="$S,$H" || S="$H"
-  done
-  STARTERS="$S"
 }
