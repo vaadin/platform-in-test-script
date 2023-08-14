@@ -4,6 +4,11 @@ __scripts=
 applyPatches() {
   app_=$1; type_=$2; vers_=$3; mod_=$4
   [ -n "$TEST" ] || log "Applying Patches for $app_ $type_ $vers_"
+
+  case $vers_ in
+    *alpha*|*beta*|*rc*|*SNAP*) addPrereleases; enableSnapshots ;;
+  esac
+
   case $app_ in
     archetype-hotswap) enableJBRAutoreload ;;
     vaadin-oauth-example)
@@ -37,10 +42,7 @@ applyPatches() {
     initializer-hilla-gradle)
       cmd "$GRADLE -q hillaInitApp" && $GRADLE -q hillaInitApp  >/dev/null ;;
   esac
-  case $vers_ in
-    *alpha*|*beta*|*rc*|*SNAP*) addPrereleases; enableSnapshots ;;
-  esac
-  [ "$type_" = current ] && return 0
+
   case $vers_ in
     24.0*|2.0*)
       . $PIT_SCR_FOLDER/lib/lib-patch-v24.sh
