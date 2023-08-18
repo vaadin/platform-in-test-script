@@ -103,6 +103,7 @@ getInstallCmdPrd() {
     skeleton-starter-flow-cdi|k8s-demo-app) echo "$MVN -ntp -B verify -Pproduction $H $PNPM";;
     mpr-demo|spreadsheet-demo) echo "$MVN -ntp -B clean";;
     start) echo "$MVN -ntp -B install -Dmaven.test.skip -Pcircleci" ;;
+    spring-petclinic-vaadin-flow) echo "$MVN -ntp -B install -Pproduction,it -DskipTests";;
     *) echo "$MVN -ntp -B clean install -Pproduction,it $H $PNPM";;
   esac
 }
@@ -116,7 +117,7 @@ getRunCmdDev() {
     *-gradle) echo "$GRADLE bootRun";;
     mpr-demo|testbench-demo) echo "$MVN -ntp -B jetty:run $PNPM";;
     multi-module-example) echo "$MVN -ntp -B spring-boot:run -pl vaadin-app";;
-    gs-crud-with-vaadin) echo "$MVN -ntp -B spring-boot:run";;
+    spring-petclinic-vaadin-flow|gs-crud-with-vaadin) echo "$MVN -ntp -B spring-boot:run";;
     *) echo "$MVN -ntp -B $PNPM";;
   esac
 }
@@ -176,7 +177,7 @@ getReadyMessagePrd() {
 hasProduction() {
   [ -n "$NOPROD" ] && return 1
   case $1 in
-    base-starter-flow-osgi|vaadin-flow-karaf-example|gs-crud-with-vaadin) return 1;;
+    base-starter-flow-osgi|vaadin-flow-karaf-example) return 1;;
     *) return 0;
   esac
 }
@@ -195,12 +196,11 @@ getPort() {
 getTest() {
   case $1 in
     skeleton*) echo "hello.js";;
-    business-app-starter-flow|*hilla*) echo "noop.js";;
     bakery-app-starter-flow-spring);;
     mpr-demo) echo "mpr-demo.js";;
     spreadsheet-demo) echo "spreadsheet-demo.js";;
     k8s-demo-app) echo "k8s-demo.js";;
-    gs-crud-with-vaadin|vaadin-form-example|vaadin-rest-example|vaadin-localization-example|vaadin-database-example|layout-examples|flow-quickstart-tutorial|flow-spring-examples|flow-crm-tutorial|layout-examples|flow-quickstart-tutorial|vaadin-oauth-example|designer-tutorial|*addon-template|addon-starter-flow|testbench-demo) echo "noop.js";;
+    business-app-starter-flow|*hilla*|spring-petclinic-vaadin-flow|gs-crud-with-vaadin|vaadin-form-example|vaadin-rest-example|vaadin-localization-example|vaadin-database-example|layout-examples|flow-quickstart-tutorial|flow-spring-examples|flow-crm-tutorial|layout-examples|flow-quickstart-tutorial|vaadin-oauth-example|designer-tutorial|*addon-template|addon-starter-flow|testbench-demo) echo "noop.js";;
     start) echo "start-wizard.js";;
     vaadin-oauth-example) echo "oauth.js";;
     bookstore-example) echo "bookstore.js";;

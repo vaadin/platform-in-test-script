@@ -66,4 +66,5 @@ component-starter-flow
 starter-wizard
 docs
 dsp-demo
+manolo/spring-petclinic-vaadin-flow:update-v23.3
 "
