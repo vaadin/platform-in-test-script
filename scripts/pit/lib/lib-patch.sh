@@ -43,12 +43,20 @@ applyPatches() {
       cmd "$GRADLE -q hillaInitApp" && $GRADLE -q hillaInitApp  >/dev/null ;;
   esac
 
+  if [ "$type_" = 'current' ]; then
+    case $vers_ in
+      24.1*|24.2*|2.1*|2.2*) : ;;
+      *) reportError "Using old version $vers_" "Please upgrade $app_ to latest stable" ;;
+    esac
+  fi
+
   case $vers_ in
     24.0*|2.0*)
       . $PIT_SCR_FOLDER/lib/lib-patch-v24.sh
-      [ "$type_" = 'next' ] && applyv24Patches "$app_" "$type_" "$vers_"
+      [ "$type_" != 'next' ] && return 0 || applyv24Patches "$app_" "$type_" "$vers_"
       ;;
   esac
+
 }
 
 ## Run at the beginning of Validate in order to skip upsupported app/version combination
