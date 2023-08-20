@@ -15,9 +15,8 @@ addChromeRepo() {
   echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list
 }
 
-addNodeRepo() {
-  echo "Adding Node Repo ${VERS_NODE} ... "
-  echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list
+installNode() {
+  echo "Installing Node ${VERS_NODE} ... "
   curl -sL https://deb.nodesource.com/setup_${VERS_NODE}.x | sudo bash - >/dev/null
 }
 
@@ -120,7 +119,7 @@ for i in $args; do
   case $i in
     --node*) 
       VERS_NODE=${extra:-16}
-      addNodeRepo
+      installNode
       PKGS="$PKGS nodejs" ;;
     --java*) 
       VERS_JAVA=${extra:-17}
