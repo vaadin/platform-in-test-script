@@ -33,9 +33,9 @@ runPlaywrightTests() {
   [ -n "$TEST" ] && return 0
   H=`grep '> CONSOLE:' "$_pfile" | perl -pe 's/(> CONSOLE: Received xhr.*?feat":).*/$1 .../g'`
   H=`echo "$H" | egrep -v 'Atmosphere|Vaadin push loaded|Websocket successfully opened|Websocket closed'`
-  [ -n "$H" ] && [ "$_mode" = "prod" ] && reportError "Console Warnings in $mode mode" "$H" && echo "$H"
+  [ -n "$H" ] && [ "$_mode" = "prod" ] && reportError "Console Warnings in $mode mode $5" "$H" && echo "$H"
   H=`grep '> JSERROR:' "$_pfile"`
-  [ -n "$H" ] && reportError "Console Errors in $_mode mode" "$H" && echo "$H" && return 1
+  [ -n "$H" ] && reportError "Console Errors in $_mode mode $5" "$H" && echo "$H" && return 1
   H=`tail -15 $_pfile`
   [ $err != 0 ] && reportOutErrors "$4" "Error ($err) running Visual-Test ("`basename $_pfile`")" || echo ">>>> PiT: playwright $_test_file done" >> $__file
   return $err

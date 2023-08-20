@@ -83,7 +83,7 @@ runValidations() {
 
   # 7
   if [ -z "$SKIPTESTS" ]; then
-    runPlaywrightTests "$test" "$port" "$mode" "$file" "$name" || return 1
+    runPlaywrightTests "$test" "$port" "$mode" "$file" "$name" "$version" || return 1
   fi
   # 8
   [ -z "$TEST" ] && bold "----> The version $version of '$name' app was successfully built and tested in $mode mode.\n"
