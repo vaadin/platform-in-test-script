@@ -58,6 +58,7 @@ testbench-demo
 ce-demo
 start
 spring-guides/gs-crud-with-vaadin/complete
+manolo/spring-petclinic-vaadin-flow:update-v24.1
 "
 REPOS="
 platform
@@ -66,5 +67,4 @@ component-starter-flow
 starter-wizard
 docs
 dsp-demo
-manolo/spring-petclinic-vaadin-flow:update-v23.3
 "
