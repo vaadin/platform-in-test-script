@@ -59,6 +59,7 @@ ce-demo
 start
 spring-guides/gs-crud-with-vaadin/complete
 manolo/spring-petclinic-vaadin-flow:update-v24.1
+form-filler-demo
 "
 REPOS="
 platform

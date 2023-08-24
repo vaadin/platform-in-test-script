@@ -204,6 +204,7 @@ getTest() {
     start) echo "start-wizard.js";;
     vaadin-oauth-example) echo "oauth.js";;
     bookstore-example) echo "bookstore.js";;
+    form-filler-demo) echo "ai.js";;
     *) echo "hello.js";;
   esac
 }

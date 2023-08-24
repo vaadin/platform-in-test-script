@@ -8,6 +8,7 @@ isInstalledPlaywright() {
 installPlaywright() {
   _pfile="playwright-"`uname`".out"
   _dir=`dirname $1`
+  # @playwright/test
   (cd $_dir && runToFile "${NPM} install --no-audit playwright" "$_pfile" "$VERBOSE") || return 1
   isLinux && (cd $_dir && runToFile "${NODE} ./node_modules/.bin/playwright install-deps" "$_pfile" "$VERBOSE") || true
 }

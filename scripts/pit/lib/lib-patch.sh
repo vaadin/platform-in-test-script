@@ -37,6 +37,10 @@ applyPatches() {
       cmd "echo \"\$CE_LICENSE\" > $LIC"
       echo "$CE_LICENSE" > $LIC
       ;;
+    form-filler-demo)
+      [ -n "$TEST" ] && ([ -z "$OPENAI_TOKEN" ] && cmd "export OPENAI_TOKEN=your_AI_token") && return 0
+      [ -z "$OPENAI_TOKEN" ] && err "Set correctly the OPENAI_TOKEN env var" && return 1
+      ;;
     initializer-hilla-maven)
       cmd "$MVN hilla:init-app" && $MVN -q hilla:init-app ;;
     initializer-hilla-gradle)
