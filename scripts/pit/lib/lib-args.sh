@@ -40,7 +40,8 @@ checkArgs() {
         S=""
         for i in `echo "$arg" | tr ',' ' '`
         do
-          H=`printf "$PRESETS\n$DEMOS" | egrep "^$i$|/$i$|/$i[/:]|^$i[/:]" | tr "\n" ","`
+          # H=`printf "$PRESETS\n$DEMOS" | egrep "^$i$|/$i$|/$i[/:]|^$i[/:]" | tr "\n" ","`
+          H=`printf "$PRESETS\n$DEMOS" | egrep "^$i$|/$i$|/$i[/:]|^$i[/:]" | head -1`
           [ -z "$H" ] && err "Unknown starter: $i" && exit 1
           [ -n "$S" ] && S="$S,$H" || S="$H"
         done
