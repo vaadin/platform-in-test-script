@@ -58,7 +58,7 @@ testbench-demo
 ce-demo
 start
 spring-guides/gs-crud-with-vaadin/complete
-manolo/spring-petclinic-vaadin-flow:update-v24.1
+spring-petclinic/spring-petclinic-vaadin-flow
 form-filler-demo
 "
 REPOS="
