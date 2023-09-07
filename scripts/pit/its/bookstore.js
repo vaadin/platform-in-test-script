@@ -51,11 +51,13 @@ process.argv.forEach(a => {
   await page.getByLabel('Romance').check();
   await page.getByRole('button', { name: 'Save' }).locator('div').click();
   await page.locator('text=foo created').textContent();
-
   await sleep(1000);
-  var c = 8;
+
   await page.getByRole('link', { name: 'Admin' }).click();
   await page.getByRole('button', { name: 'Add New Category' }).locator('span').nth(1).click();
+  await sleep(1000);
+  const c = (await page.locator('vaadin-text-field').all()).length - 1;
+  console.log(`> Found ${c} input elements`);
   await page.locator('input').nth(c).click()
   await page.locator('input').nth(c).fill('BBBB');
   await page.locator('input').nth(c).press('Enter');
