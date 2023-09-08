@@ -35,19 +35,15 @@ process.argv.forEach(a => {
   await page.getByLabel('Password', { exact: true }).fill('admin');
   await page.getByRole('button', { name: 'Log in' }).locator('span').nth(1).click();
 
-  await page.getByRole('button', { name: 'New product' }).locator('span').nth(1).click();
-  await page.waitForURL(`http://${host}:${port}/Inventory/new`);
-  await page.getByRole('button', { name: 'Cancel' }).locator('span').nth(1).click();
-
   await page.goto(`http://${host}:${port}/Inventory/new`);
+  await page.waitForURL(`http://${host}:${port}/Inventory/new`);
   await page.getByLabel('Product name', { exact: true }).click();
   await page.getByLabel('Product name', { exact: true }).fill('foo');
   await page.getByLabel('Price', { exact: true }).click();
   await page.getByLabel('Price', { exact: true }).fill('40.00');
   await page.getByLabel('In stock').click();
   await page.getByLabel('In stock').fill('50');
-  // await page.locator('#value-vaadin-select-16 div').click();
-  // await page.getByRole('option', { name: 'Discontinued' }).locator('div').click();
+
   await page.getByLabel('Romance').check();
   await page.getByRole('button', { name: 'Save' }).locator('div').click();
   await page.locator('text=foo created').textContent();
