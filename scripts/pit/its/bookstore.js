@@ -1,6 +1,4 @@
 const { chromium } = require('playwright');
-
-
 let headless = false, host = 'localhost', port = '8080', mode = 'prod';
 process.argv.forEach(a => {
   if (/^--headless/.test(a)) {
@@ -35,8 +33,12 @@ process.argv.forEach(a => {
   await page.getByLabel('Password', { exact: true }).fill('admin');
   await page.getByRole('button', { name: 'Log in' }).locator('span').nth(1).click();
 
-  await page.goto(`http://${host}:${port}/Inventory/new`);
+
+  await page.getByRole('button', { name: 'New product' }).waitFor({state: "visible"});
+  await page.getByRole('button', { name: 'New product' }).locator('span').nth(1).click();
   await page.waitForURL(`http://${host}:${port}/Inventory/new`);
+
+  await page.getByLabel('Product name', { exact: true }).waitFor({state: "visible"});
   await page.getByLabel('Product name', { exact: true }).click();
   await page.getByLabel('Product name', { exact: true }).fill('foo');
   await page.getByLabel('Price', { exact: true }).click();
@@ -47,18 +49,18 @@ process.argv.forEach(a => {
   await page.getByLabel('Romance').check();
   await page.getByRole('button', { name: 'Save' }).locator('div').click();
   await page.locator('text=foo created').textContent();
-  await sleep(1000);
+  await page.getByRole('link', { name: 'Admin' }).waitFor({state: "visible"});
 
   await page.getByRole('link', { name: 'Admin' }).click();
   await page.getByRole('button', { name: 'Add New Category' }).locator('span').nth(1).click();
+  await page.locator('vaadin-text-field').first().waitFor({state: "visible"});
+  
   await sleep(1000);
   const c = (await page.locator('vaadin-text-field').all()).length - 1;
   console.log(`> Found ${c} input elements`);
   await page.locator('input').nth(c).click()
   await page.locator('input').nth(c).fill('BBBB');
   await page.locator('input').nth(c).press('Enter');
-  await page.locator('text=Category Saved.').textContent();
-  // await sleep(10000);
 
   await context.close();
   await browser.close();
