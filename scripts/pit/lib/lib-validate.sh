@@ -49,7 +49,12 @@ runValidations() {
   [ "$mode" = dev ] && rm -rf node_modules src/main/dev-bundle
 
   # 3
-  runToFile "$compile" "$file" "$VERBOSE" || return 1
+  runToFile "$compile" "$file" "$VERBOSE"
+  if [ "$?" != 0 ]; then
+    H=`grep FAILURE grep FAILURE target/*-reports/*txt 2>/dev/null`
+    [ -n "$H" ] && reportError "Failed Tests" "$H"
+    return 1
+  fi
 
   # 4
   runInBackgroundToFile "$cmd" "$file" "$VERBOSE"
