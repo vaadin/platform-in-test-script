@@ -540,11 +540,11 @@ isHeadless() {
 printVersions() {
   computeNpm
   [ -n "$TEST" ] && return
-  _vers=`MAVEN_OPTS="$HOT" $MVN -version | tr \\\\ / 2>/dev/null | egrep -i 'maven|java|agent.HotswapAgent'`
+  _vers=`MAVEN_OPTS="$MAVEN_OPTS $HOT" $MVN -version | tr \\\\ / 2>/dev/null | egrep -i 'maven|java|agent.HotswapAgent'`
   [ $? != 0 ] && err "Error $? when running $MVN, $_vers" && return 1
   log "==== VERSIONS ====
 
-MAVEN_OPTS='$HOT' $MVN -version
+MAVEN_OPTS='$MAVEN_OPTS $HOT' $MVN -version
 $_vers
 Node version: `$NODE --version`
 Npm version: `$NPM --version`

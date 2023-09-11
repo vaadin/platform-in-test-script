@@ -279,11 +279,11 @@ runDemo() {
     applyPatches $_demo current $_current dev || return 1
     if hasDev $_demo; then
       # 2
-      runValidations dev "$_current" "$_demo" "$_port" "$_installCmdDev" "$_runCmdDev" "$_readyDev" "$_test" || return 1
+      MAVEN_OPTS="$MAVEN_OPTS" runValidations dev "$_current" "$_demo" "$_port" "$_installCmdDev" "$_runCmdDev" "$_readyDev" "$_test" || return 1
     fi
     if hasProduction $_demo; then
       # 3
-      runValidations prod "$_current" "$_demo" "$_port" "$_installCmdPrd" "$_runCmdPrd" "$_readyPrd" "$_test" || return 1
+      MAVEN_OPTS="$MAVEN_OPTS" runValidations prod "$_current" "$_demo" "$_port" "$_installCmdPrd" "$_runCmdPrd" "$_readyPrd" "$_test" || return 1
     fi
   fi
   # 4
@@ -292,11 +292,11 @@ runDemo() {
     applyPatches $_demo next $_version prod || return 1
     if hasDev $_demo; then
       # 5
-      runValidations dev "$_version" "$_demo" "$_port" "$_installCmdDev" "$_runCmdDev" "$_readyDev" "$_test" || return 1
+      MAVEN_OPTS="$MAVEN_OPTS" runValidations dev "$_version" "$_demo" "$_port" "$_installCmdDev" "$_runCmdDev" "$_readyDev" "$_test" || return 1
     fi
     if hasProduction $_demo; then
       # 6
-      runValidations prod "$_version" "$_demo" "$_port" "$_installCmdPrd" "$_runCmdPrd" "$_readyPrd" "$_test" || return 1
+      MAVEN_OPTS="$MAVEN_OPTS" runValidations prod "$_version" "$_demo" "$_port" "$_installCmdPrd" "$_runCmdPrd" "$_readyPrd" "$_test" || return 1
       [ -z "$COMMIT" ] || commitChanges $_demo $_version
     fi
   fi

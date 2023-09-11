@@ -196,11 +196,11 @@ runStarter() {
     applyPatches $_preset current $_current dev || return 0
     # 2
     if [ -z "$NODEV" ]; then
-      MAVEN_OPTS="$HOT" runValidations dev "$_current" "$_preset" "$_port" "$_clean" "$_dev" "$_msg" "$_test" || return 1
+      MAVEN_OPTS="$MAVEN_OPTS $HOT" runValidations dev "$_current" "$_preset" "$_port" "$_clean" "$_dev" "$_msg" "$_test" || return 1
     fi
     # 3
     if [ -z "$NOPROD" ]; then
-      MAVEN_OPTS="" runValidations prod "$_current" "$_preset" "$_port" "$_compile" "$_prod" "$_msgprod" "$_test" || return 1
+      MAVEN_OPTS="$MAVEN_OPTS" runValidations prod "$_current" "$_preset" "$_port" "$_compile" "$_prod" "$_msgprod" "$_test" || return 1
     fi
   fi
 
@@ -210,11 +210,11 @@ runStarter() {
     applyPatches $_preset next $_version prod || return 0
     # 5
     if [ -z "$NODEV" ]; then
-      MAVEN_OPTS="$HOT" runValidations dev "$_version" "$_preset" "$_port" "$_clean" "$_dev" "$_msg" "$_test" || return 1
+      MAVEN_OPTS="$MAVEN_OPTS $HOT" runValidations dev "$_version" "$_preset" "$_port" "$_clean" "$_dev" "$_msg" "$_test" || return 1
     fi
     # 6
     if [ -z "$NOPROD" ]; then
-      MAVEN_OPTS="" runValidations prod "$_version" "$_preset" "$_port" "$_compile" "$_prod" "$_msgprod" "$_test" || return 1
+      MAVEN_OPTS="$MAVEN_OPTS" runValidations prod "$_version" "$_preset" "$_port" "$_compile" "$_prod" "$_msgprod" "$_test" || return 1
     fi
   fi
 }
