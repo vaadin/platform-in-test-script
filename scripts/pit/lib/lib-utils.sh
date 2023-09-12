@@ -152,7 +152,8 @@ runToFile() {
   __verbose="$3"
   __stdout="$4"
   [ -z "$TEST" ] && log "Running and sending output to > $__file"
-  cmd "$__cmd"
+  expr "$1" : ".*mvn " >/dev/null && E=" $MAVEN_ARGS" || E=""
+  cmd "$__cmd $E"
   [ -n "$TEST" ] && return
   if [ -z "$__verbose" ]
   then
@@ -176,7 +177,8 @@ runInBackgroundToFile() {
   __file="$2"
   __verbose="$3"
   [ -z "$TEST" ] && log "Running in background and sending output to > $__file"
-  [ -n "$MAVEN_OPTS" ] && cmd "MAVEN_OPTS='$MAVEN_OPTS' $__cmd" || cmd "$__cmd"
+  expr "$1" : ".*mvn " >/dev/null && E=" $MAVEN_ARGS" || E=""
+  cmd "$__cmd $E"
   [ -n "$TEST" ] && return
   touch $__file
   if [ -n "$__verbose" ]
@@ -540,11 +542,11 @@ isHeadless() {
 printVersions() {
   computeNpm
   [ -n "$TEST" ] && return
-  _vers=`MAVEN_OPTS="$MAVEN_OPTS $HOT" $MVN -version | tr \\\\ / 2>/dev/null | egrep -i 'maven|java|agent.HotswapAgent'`
+  _vers=`MAVEN_OPTS="$HOT" MAVEN_ARGS="$MAVEN_ARGS" $MVN -version | tr \\\\ / 2>/dev/null | egrep -i 'maven|java|agent.HotswapAgent'`
   [ $? != 0 ] && err "Error $? when running $MVN, $_vers" && return 1
   log "==== VERSIONS ====
 
-MAVEN_OPTS='$MAVEN_OPTS $HOT' $MVN -version
+MAVEN_OPTS='$MAVEN_OPTS' MAVEN_ARGS='$MAVEN_ARGS' $MVN -version
 $_vers
 Node version: `$NODE --version`
 Npm version: `$NPM --version`
