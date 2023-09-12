@@ -207,6 +207,7 @@ runStarter() {
   # 4
   if setVersion $_versionProp $_version >/dev/null || _isNext "$_preset"
   then
+    [ -d ~/.vaadin/node ] && cmd "rm -rf ~/.vaadin/node" && rm -rf ~/.vaadin/node
     applyPatches $_preset next $_version prod || return 0
     # 5
     if [ -z "$NODEV" ]; then
