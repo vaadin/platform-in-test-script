@@ -28,6 +28,10 @@ run() {
     failed="$failed $2"
     err "==== Error testing '$2' ===="
   fi
+    find ~/.vaadin
+  file ~/.vaadin/node/*
+  ~/.vaadin/node/node --version
+
   killAll
   cleanAll
 }
@@ -113,6 +117,7 @@ main() {
   done
 
   printTime $_start
+
   return $_error
 }
 
