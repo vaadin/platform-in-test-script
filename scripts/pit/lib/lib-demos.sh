@@ -93,7 +93,9 @@ getInstallCmdDev() {
 ## Get install command for prod-mode
 getInstallCmdPrd() {
   H="-Dcom.vaadin.testbench.Parameters.testsInParallel=2"
+  set -x
   [ -z "$MAVEN_ARGS" ] &&  H="$H -Dmaven.test.redirectTestOutputToFile=true"
+  set +x
   isHeadless && H="$H -Dcom.vaadin.testbench.Parameters.headless=true -Dheadless" || H="$H -Dtest.headless=false" #for addon-template
   [ -n "$SKIPTESTS" ] && H="$H -DskipTests"
   case $1 in
