@@ -118,8 +118,10 @@ main() {
 
 ## Use $0 --path to see available SW installed in the container
 if expr "$*" : '.*--path' >/dev/null; then
-  P=`ls -1d /opt/hostedtoolcache/*/*/x64/bin 2>/dev/null | sort -r | tr "\n" ":"`"\$PATH"
-  echo "export PATH=$P"
+  for i in `ls -1d /opt/hostedtoolcache/*/*/x64 2>/dev/null`; do
+    [ -d "$i/bin" ] && P="$i/bin:$P" || P="$i:$P"
+  done
+  echo "export PATH=$P\$PATH"
   exit 0
 fi
 
