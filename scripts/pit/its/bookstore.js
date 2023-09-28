@@ -31,11 +31,11 @@ process.argv.forEach(a => {
   await page.getByLabel('Username').fill('admin');
   await page.getByLabel('Username').press('Tab');
   await page.getByLabel('Password', { exact: true }).fill('admin');
-  await page.getByRole('button', { name: 'Log in' }).locator('span').nth(1).click();
+  await page.getByRole('button', { name: 'Log in' }).click();
 
 
   await page.getByRole('button', { name: 'New product' }).waitFor({state: "visible"});
-  await page.getByRole('button', { name: 'New product' }).locator('span').nth(1).click();
+  await page.getByRole('button', { name: 'New product' }).click();
   await page.waitForURL(`http://${host}:${port}/Inventory/new`);
 
   await page.getByLabel('Product name', { exact: true }).waitFor({state: "visible"});
