@@ -28,7 +28,6 @@ run() {
     failed="$failed $2"
     err "==== Error testing '$2' ===="
   fi
-    find ~/.vaadin
   file ~/.vaadin/node/*
   ~/.vaadin/node/node --version
 
