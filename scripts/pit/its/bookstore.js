@@ -35,32 +35,32 @@ process.argv.forEach(a => {
 
 
   await page.getByRole('button', { name: 'New product' }).waitFor({state: "visible"});
-  await page.getByRole('button', { name: 'New product' }).click();
-  await page.waitForURL(`http://${host}:${port}/Inventory/new`);
+  // await page.getByRole('button', { name: 'New product' }).click();
+  // await page.waitForURL(`http://${host}:${port}/Inventory/new`);
 
-  await page.getByLabel('Product name', { exact: true }).waitFor({state: "visible"});
-  await page.getByLabel('Product name', { exact: true }).click();
-  await page.getByLabel('Product name', { exact: true }).fill('foo');
-  await page.getByLabel('Price', { exact: true }).click();
-  await page.getByLabel('Price', { exact: true }).fill('40.00');
-  await page.getByLabel('In stock').click();
-  await page.getByLabel('In stock').fill('50');
+  // await page.getByLabel('Product name', { exact: true }).waitFor({state: "visible"});
+  // await page.getByLabel('Product name', { exact: true }).click();
+  // await page.getByLabel('Product name', { exact: true }).fill('foo');
+  // await page.getByLabel('Price', { exact: true }).click();
+  // await page.getByLabel('Price', { exact: true }).fill('40.00');
+  // await page.getByLabel('In stock').click();
+  // await page.getByLabel('In stock').fill('50');
 
-  await page.getByLabel('Romance').check();
-  await page.getByRole('button', { name: 'Save' }).locator('div').click();
-  await page.locator('text=foo created').textContent();
-  await page.getByRole('link', { name: 'Admin' }).waitFor({state: "visible"});
+  // await page.getByLabel('Romance').check();
+  // await page.getByRole('button', { name: 'Save' }).locator('div').click();
+  // await page.locator('text=foo created').textContent();
+  // await page.getByRole('link', { name: 'Admin' }).waitFor({state: "visible"});
 
-  await page.getByRole('link', { name: 'Admin' }).click();
-  await page.getByRole('button', { name: 'Add New Category' }).locator('span').nth(1).click();
-  await page.locator('vaadin-text-field').first().waitFor({state: "visible"});
+  // await page.getByRole('link', { name: 'Admin' }).click();
+  // await page.getByRole('button', { name: 'Add New Category' }).locator('span').nth(1).click();
+  // await page.locator('vaadin-text-field').first().waitFor({state: "visible"});
   
-  await sleep(1000);
-  const c = (await page.locator('vaadin-text-field').all()).length - 1;
-  console.log(`> Found ${c} input elements`);
-  await page.locator('input').nth(c).click()
-  await page.locator('input').nth(c).fill('BBBB');
-  await page.locator('input').nth(c).press('Enter');
+  // await sleep(1000);
+  // const c = (await page.locator('vaadin-text-field').all()).length - 1;
+  // console.log(`> Found ${c} input elements`);
+  // await page.locator('input').nth(c).click()
+  // await page.locator('input').nth(c).fill('BBBB');
+  // await page.locator('input').nth(c).press('Enter');
 
   await context.close();
   await browser.close();
