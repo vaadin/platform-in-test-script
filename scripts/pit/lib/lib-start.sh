@@ -66,21 +66,6 @@ downloadInitializer() {
   git commit -q -m 'First commit' -a
 }
 
-computeVersion() {
-  case $1 in
-    *hilla*) echo $2 | sed -e 's,^23,1,' | sed -e 's,^24,2,';;
-    *) echo "$2";;
-  esac
-}
-computeProp() {
-  case $1 in
-    *hilla*gradle) echo "hillaVersion";;
-    *gradle) echo "vaadinVersion";;
-    *typescript*|*hilla*|*react*|*-lit*) echo "hilla.version";;
-    *) echo "vaadin.version";;
-  esac
-}
-
 ## get the selenium IDE test file used for each starter
 getStartTestFile() {
   case $1 in

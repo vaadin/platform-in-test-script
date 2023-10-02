@@ -635,7 +635,7 @@ installJBRRuntime() {
 
 unsetJBR() {
   [ -z "$HOT" ] && return 0 || unset HOT
-  warn "Un-setting PATH and JAVA_HOME ($JAVA_HOME)" 
+  warn "Un-setting PATH and JAVA_HOME ($JAVA_HOME)"
   [ -n "$__PATH" ] && export PATH=$__PATH && unset __PATH
   [ -n "$__HOME" ] && export JAVA_HOME=$__HOME && unset __HOME || unset JAVA_HOME
 }
@@ -679,4 +679,23 @@ cleanM2() {
   [ -n "$OFFLINE" -o -z "$1" -o ! -d ""`ls -1d ~/.m2/repository/com/vaadin/*/24.2.0.alpha6 2>/dev/null | head -1` ] && return
   warn "removing ~/.m2/repository/com/vaadin/*/$1"
   rm -rf ~/.m2/repository/com/vaadin/*/$1
+}
+
+computeVersion() {
+  case $1 in
+    *hilla*)
+      _tk=${GITHUB_TOKEN:-${GHTK}}
+      [ -n "$_tk" ] && __tk=${_tk}@
+      curl -s https://${__tk}api.github.com/repos/vaadin/hilla/releases | jq -r '.[].tag_name' | sort -r | head -1
+      ;;
+    *) echo "$2";;
+  esac
+}
+computeProp() {
+  case $1 in
+    *hilla*gradle) echo "hillaVersion";;
+    *gradle) echo "vaadinVersion";;
+    *typescript*|*hilla*|*react*|*-lit*) echo "hilla.version";;
+    *) echo "vaadin.version";;
+  esac
 }
