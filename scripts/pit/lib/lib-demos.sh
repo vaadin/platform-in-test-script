@@ -105,6 +105,7 @@ getInstallCmdPrd() {
     mpr-demo|spreadsheet-demo) echo "$MVN -ntp -B clean";;
     start) echo "$MVN -ntp -B install -Dmaven.test.skip -Pcircleci" ;;
     spring-petclinic-vaadin-flow) echo "$MVN -ntp -B install -Pproduction,it -DskipTests";;
+    form-filler-demo) echo "$MVN -ntp -B clean install -Pproduction,it $H $PNPM -DOPENAI_TOKEN=$OPENAI_TOKEN";;
     *) echo "$MVN -ntp -B clean install -Pproduction,it $H $PNPM";;
   esac
 }
