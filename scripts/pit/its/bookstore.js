@@ -34,7 +34,7 @@ process.argv.forEach(a => {
   await page.getByRole('button', { name: 'Log in' }).click();
 
 
-  await page.getByRole('button', { name: 'New product' }).waitFor({state: "visible"});
+  // await page.getByRole('button', { name: 'New product' }).waitFor({state: "visible"});
   // await page.getByRole('button', { name: 'New product' }).click();
   // await page.waitForURL(`http://${host}:${port}/Inventory/new`);
 
