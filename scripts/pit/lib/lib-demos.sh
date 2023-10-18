@@ -174,6 +174,7 @@ getReadyMessagePrd() {
     mpr-demo|spreadsheet-demo) echo "Started ServerConnector";;
     *-gradle) echo "Tomcat started|started and listening";;
     hilla-*-tutorial) echo "Started Application";;
+    client-server-addon-template) echo 'Started ServerConnector.*:8080}';;
     *) getReadyMessageDev $1;;
   esac
 }
