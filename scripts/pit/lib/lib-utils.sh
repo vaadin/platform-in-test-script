@@ -571,6 +571,23 @@ addPrereleases() {
   done
 }
 
+# adds spring release repo to pom.xml
+addSpringReleaseRepo() {
+  [ ! -f pom.xml ] && ([ -n "$TEST" ] || log "Not a Maven proyect, not adding spring release repository") && return 0
+    U="https://repo.spring.io/milestone/"
+    grep -q "$U" pom.xml && return 0
+    [ -z "$TEST" ] && log "Adding $U repository"
+    for R in repositor pluginRepositor; do
+      if ! grep -q $R'ies>' pom.xml; then
+        cmd "perl -pi -e 's|(\s*)(</properties>)|\$1\$2\\\n\$1<${R}ies><${R}y><id>spring</id><url>${U}</url></${R}y></${R}ies>|' pom.xml"
+             perl -pi -e 's|(\s*)(</properties>)|$1$2\n$1<'$R'ies><'$R'y><id>spring</id><url>'$U'</url></'$R'y></'$R'ies>|' pom.xml
+      else
+        cmd "perl -pi -e 's|(\s*)(<${R}ies>)|\$1\$2\\\n\$1\$1<${R}y><id>spring</id><url>${U}</url></${R}y>|' pom.xml"
+        perl -pi -e 's|(\s*)(<'$R'ies>)|$1$2\n$1$1<'$R'y><id>spring</id><url>'$U'</url></'$R'y>|' pom.xml
+      fi
+    done
+}
+
 ## enables snapshots for the pre-releases repositories in pom.xml
 enableSnapshots() {
   for __file in `getPomFiles`

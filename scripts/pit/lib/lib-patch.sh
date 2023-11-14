@@ -6,7 +6,7 @@ applyPatches() {
   [ -n "$TEST" ] || log "Applying Patches for $app_ $type_ $vers_"
 
   case $vers_ in
-    *alpha*|*beta*|*rc*|*SNAP*) addPrereleases; enableSnapshots ;;
+    *alpha*|*beta*|*rc*|*SNAP*) addPrereleases; enableSnapshots; addSpringReleaseRepo ;;
   esac
 
   case $app_ in
