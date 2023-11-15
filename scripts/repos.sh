@@ -1,6 +1,5 @@
 PRESETS="
 latest-java
-latest-java_partial-nextprerelease
 latest-java-top
 latest-javahtml
 latest-lit
@@ -10,7 +9,6 @@ latest-lit_partial-auth
 flow-crm-tutorial_partial-latest
 react-tutorial
 default
-default_partial-nextprerelease
 archetype-hotswap
 archetype-jetty
 archetype-spring
