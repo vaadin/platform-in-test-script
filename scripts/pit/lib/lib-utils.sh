@@ -699,6 +699,7 @@ cleanM2() {
 }
 
 computeVersion() {
+  [ "$2" = current ] && echo "$2" && return
   case $1 in
     *hilla*)
       _tk=${GITHUB_TOKEN:-${GHTK}}

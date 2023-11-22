@@ -49,7 +49,7 @@ applyPatches() {
 
   if [ "$type_" = 'current' ]; then
     case $vers_ in
-      24.1*|24.2*|2.1*|2.2*|2.3*) : ;;
+      24.2*|2.3*) : ;;
       *) reportError "Using old version $vers_" "Please upgrade $app_ to latest stable" ;;
     esac
   fi
@@ -60,7 +60,7 @@ applyPatches() {
       [ "$type_" != 'next' ] && return 0 || applyv24Patches "$app_" "$type_" "$vers_"
       ;;
     2.3*)
-      [ "$type_" != 'current' ] && cmd "rm -rf package.json node_modules" && rm -rf package.json node_modules
+      [ "$type_" != 'current' ] && cmd "rm -rf package.json node_modules" && rm -rf package.json node_modules || return 0
       ;;
   esac
 }
