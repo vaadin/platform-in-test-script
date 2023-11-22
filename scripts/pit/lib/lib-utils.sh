@@ -91,7 +91,7 @@ reportError() {
   [ -z "$__head" -o -z "$*" ] && return
   warn "reporting error: $__head"
   [ -z "$GITHUB_STEP_SUMMARY" ] && return
-  cat << EOF >> $GITHUB_STEP_SUMMARY
+  cat | awk '{print substr ($0, 0, 400)}' | tail -n 1024000 << EOF >> $GITHUB_STEP_SUMMARY
 <details>
 <summary><h4>$__head</h4></summary>
 <pre>
