@@ -28,9 +28,6 @@ run() {
     failed="$failed $2"
     err "==== Error testing '$2' ===="
   fi
-  file ~/.vaadin/node/*
-  ~/.vaadin/node/node --version
-
   killAll
   cleanAll
 }

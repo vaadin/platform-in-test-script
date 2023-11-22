@@ -9,7 +9,6 @@ latest-lit_partial-auth
 flow-crm-tutorial_partial-latest
 react-tutorial
 default
-default_partial-nextprerelease
 latest-lit_partial-nextprerelease
 archetype-hotswap
 archetype-jetty
