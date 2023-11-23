@@ -555,10 +555,10 @@ Npm version: `$NPM --version`
 "
 }
 
-## adds the pre-releases repositories to the pom.xml
-addPrereleases() {
+## adds extr repo to the pom.xml
+addRepoToPom() {
   [ ! -f pom.xml ] && ([ -n "$TEST" ] || log "Not a Maven proyect, not adding prereleases repository") && return 0
-  U="https://maven.vaadin.com/vaadin-prereleases"
+  U="$1"
   grep -q "$U" pom.xml && return 0
   [ -z "$TEST" ] && log "Adding $U repository"
   for R in repositor pluginRepositor; do
@@ -572,21 +572,14 @@ addPrereleases() {
   done
 }
 
-# adds spring release repo to pom.xml
+## adds the pre-releases repositories to the pom.xml
+addPrereleases() {
+  addRepoToPom "https://maven.vaadin.com/vaadin-prereleases"
+}
+
+# adds spring pre-releases repo to pom.xml
 addSpringReleaseRepo() {
-  [ ! -f pom.xml ] && ([ -n "$TEST" ] || log "Not a Maven proyect, not adding spring release repository") && return 0
-    U="https://repo.spring.io/milestone/"
-    grep -q "$U" pom.xml && return 0
-    [ -z "$TEST" ] && log "Adding $U repository"
-    for R in repositor pluginRepositor; do
-      if ! grep -q $R'ies>' pom.xml; then
-        cmd "perl -pi -e 's|(\s*)(</properties>)|\$1\$2\\\n\$1<${R}ies><${R}y><id>spring</id><url>${U}</url></${R}y></${R}ies>|' pom.xml"
-             perl -pi -e 's|(\s*)(</properties>)|$1$2\n$1<'$R'ies><'$R'y><id>spring</id><url>'$U'</url></'$R'y></'$R'ies>|' pom.xml
-      else
-        cmd "perl -pi -e 's|(\s*)(<${R}ies>)|\$1\$2\\\n\$1\$1<${R}y><id>spring</id><url>${U}</url></${R}y>|' pom.xml"
-        perl -pi -e 's|(\s*)(<'$R'ies>)|$1$2\n$1$1<'$R'y><id>spring</id><url>'$U'</url></'$R'y>|' pom.xml
-      fi
-    done
+  addRepoToPom "https://repo.spring.io/milestone/"
 }
 
 ## enables snapshots for the pre-releases repositories in pom.xml
@@ -699,14 +692,16 @@ cleanM2() {
   rm -rf ~/.m2/repository/com/vaadin/*/$1
 }
 
+getLatestHillaVersion() {
+  _tk=${GITHUB_TOKEN:-${GHTK}}
+  [ -n "$_tk" ] && __tk=${_tk}@
+  curl -s https://api.github.com/repos/vaadin/hilla/releases | jq -r '.[].tag_name' | sort -r | head -1
+}
+
 computeVersion() {
   [ "$2" = current ] && echo "$2" && return
   case $1 in
-    *hilla*)
-      _tk=${GITHUB_TOKEN:-${GHTK}}
-      [ -n "$_tk" ] && __tk=${_tk}@
-      curl -s https://${__tk}api.github.com/repos/vaadin/hilla/releases | jq -r '.[].tag_name' | sort -r | head -1
-      ;;
+    *hilla*) getLatestHillaVersion;;
     *) echo "$2";;
   esac
 }
