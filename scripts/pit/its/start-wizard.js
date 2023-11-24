@@ -54,7 +54,7 @@ process.argv.forEach(a => {
     'Address Form',
     'Credit Card Form',
     'Map',
-    'Spreadsheet',
+    // 'Spreadsheet',
     'Chat',
     'Page Editor',
     'Image Gallery',
