@@ -693,15 +693,17 @@ cleanM2() {
 }
 
 getLatestHillaVersion() {
-  _tk=${GITHUB_TOKEN:-${GHTK}}
-  [ -n "$_tk" ] && __tk=${_tk}@
-  curl -s https://api.github.com/repos/vaadin/hilla/releases | jq -r '.[].tag_name' | sort -r | head -1
+  case "$1" in
+    24.3) G="2.4.*";;
+    *)    G="2.3.[0-9]";;
+  esac
+  curl -s https://api.github.com/repos/vaadin/hilla/releases | jq -r '.[].tag_name' | sort -r | egrep "^$G$" | head -1
 }
 
 computeVersion() {
   [ "$2" = current ] && echo "$2" && return
   case $1 in
-    *hilla*) getLatestHillaVersion;;
+    *hilla*) getLatestHillaVersion "$2";;
     *) echo "$2";;
   esac
 }

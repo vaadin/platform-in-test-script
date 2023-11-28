@@ -10,6 +10,7 @@ flow-crm-tutorial_partial-latest
 react-tutorial
 default
 latest-lit_partial-nextprerelease
+latest-lit_partial-prerelease
 archetype-hotswap
 archetype-jetty
 archetype-spring
