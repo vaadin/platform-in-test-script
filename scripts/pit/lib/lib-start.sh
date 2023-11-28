@@ -134,6 +134,7 @@ runStarter() {
   _preset="$1"
   _tmp="$2"
   _port="$3"
+
   _versionProp=`computeProp $_preset`
   _version=`computeVersion $_versionProp $4`
   _offline="$5"

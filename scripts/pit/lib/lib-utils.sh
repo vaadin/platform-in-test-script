@@ -694,10 +694,10 @@ cleanM2() {
 
 getLatestHillaVersion() {
   case "$1" in
-    24.3) G="2.4.*";;
+    24.3.*) G="2.4.*";;
     *)    G="2.3.[0-9]";;
   esac
-  curl -s https://api.github.com/repos/vaadin/hilla/releases | jq -r '.[].tag_name' | sort -r | egrep "^$G$" | head -1
+  curl -s https://api.github.com/repos/vaadin/hilla/releases | jq -r '.[].tag_name' | egrep "^$G$" | head -1
 }
 
 computeVersion() {
