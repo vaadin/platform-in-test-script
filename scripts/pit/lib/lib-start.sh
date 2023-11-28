@@ -134,7 +134,6 @@ runStarter() {
   _preset="$1"
   _tmp="$2"
   _port="$3"
-
   _versionProp=`computeProp $_preset`
   _version=`computeVersion $_versionProp $4`
   _offline="$5"
@@ -191,7 +190,7 @@ runStarter() {
   fi
 
   # 4
-  if setVersion $_versionProp $_version >/dev/null || _isNext "$_preset"
+  if _isNext "$_preset" || setVersion $_versionProp $_version >/dev/null
   then
     [ -d ~/.vaadin/node ] && cmd "rm -rf ~/.vaadin/node" && rm -rf ~/.vaadin/node
     applyPatches $_preset next $_version prod || return 0

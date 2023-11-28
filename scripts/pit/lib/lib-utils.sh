@@ -471,6 +471,7 @@ changeMavenProperty() {
       __cur=`getCurrProperty $__prop $__file`
       [ -z "$__cur" ] && continue
     fi
+    [ -n "$TEST" ] && cmd "## Change Maven property $__prop from $__cur -> $__val"
     changeBlock "<$__prop>" "</$__prop>" "$__val" $__file
     [ $? = 0 -a $__ret = 1 ] && __ret=0
   done
@@ -694,8 +695,9 @@ cleanM2() {
 
 getLatestHillaVersion() {
   case "$1" in
-    24.3.*) G="2.4.*";;
-    *)    G="2.3.[0-9]";;
+    2.*)    echo "$1" && return ;;
+    24.[012].*) G="2.4.[09]*";;
+    24.3.*) G="2.5.*";;
   esac
   curl -s https://api.github.com/repos/vaadin/hilla/releases | jq -r '.[].tag_name' | egrep "^$G$" | head -1
 }
