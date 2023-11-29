@@ -47,6 +47,12 @@ applyPatches() {
       cmd "$MVN hilla:init-app" && $MVN -q hilla:init-app ;;
     initializer-hilla-gradle)
       cmd "$GRADLE -q hillaInitApp" && $GRADLE -q hillaInitApp  >/dev/null ;;
+    *hilla*|*-lit*|start)
+      if [ "$type_" = 'next' ] && echo "24.3.0.alpha5" | grep -Eq "2\.5\..*|24\.3\..*" ; then
+        _v=`grep -r 'createRenderRoot(): Element' frontend | cut -d ':' -f1 | tr '\n' ' '`
+        _cmd="perl -pi -e 's/createRenderRoot\(\): Element \| ShadowRoot/createRenderRoot\(\): HTMLElement | DocumentFragment/g' $_v"
+        [ -n "$_v" ] && cmd "$_cmd" && eval "$_cmd"
+      fi ;;
   esac
 
   if [ "$type_" = 'current' ]; then

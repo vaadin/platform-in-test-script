@@ -87,6 +87,7 @@ getInstallCmdDev() {
     # base-starter-flow-quarkus|skeleton-starter-flow-cdi|mpr-demo|spreadsheet-demo) echo "$MVN -ntp -B clean $PNPM";;
     *-gradle) echo "$GRADLE clean" ;;
     multi-module-example) echo "$MVN -ntp -B clean install -DskipTests $PNPM";;
+    start) echo "rm -rf package-lock.json node_modules target frontend/generated; $MVN -ntp -B clean";;
     *) echo "$MVN -ntp -B clean -DskipTests $PNPM";;
   esac
 }
@@ -161,6 +162,7 @@ getReadyMessageDev() {
     k8s-demo-app) echo "frontend bundle built|Started Vite";;
     *-gradle|flow-spring-examples) echo "Tomcat started|started and listening";;
     hilla-*-tutorial) echo "Started Vite";;
+    start) echo "Frontend compiled successfully";;
     *) echo "Frontend compiled successfully|Started .*Application|Started Server";;
   esac
 }
@@ -175,6 +177,7 @@ getReadyMessagePrd() {
     *-gradle) echo "Tomcat started|started and listening";;
     hilla-*-tutorial) echo "Started Application";;
     client-server-addon-template) echo 'Started ServerConnector.*:8080}';;
+    start) echo "Started .*Application|Started Server";;
     *) getReadyMessageDev $1;;
   esac
 }
@@ -220,7 +223,7 @@ setDemoVersion() {
     base-starter-flow-quarkus|mpr-demo|start)
        if setVersion vaadin.version "$2"; then
         setFlowVersion "$2"
-        # [ "$1" = start ] && setVersion hilla.version `getLatestHillaVersion` false
+        [ "$1" = start ] && setVersion hilla.version `getLatestHillaVersion "$2"` false
         [ "$1" = mpr-demo ] && setMprVersion "$2"
         return 0
        else
