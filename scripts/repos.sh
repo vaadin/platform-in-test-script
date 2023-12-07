@@ -11,6 +11,7 @@ react-tutorial
 default
 latest-lit_partial-nextprerelease
 latest-lit_partial-prerelease
+latest-java_partial-auth_prerelease
 archetype-hotswap
 archetype-jetty
 archetype-spring
@@ -28,7 +29,6 @@ skeleton-starter-hilla-lit
 business-app-starter-flow
 base-starter-spring-gradle
 base-starter-flow-quarkus
-base-starter-flow-osgi
 base-starter-gradle
 flow-crm-tutorial
 hilla-crm-tutorial
@@ -40,7 +40,6 @@ addon-starter-flow
 npm-addon-template
 client-server-addon-template
 spreadsheet-demo
-vaadin-flow-karaf-example
 vaadin-form-example
 vaadin-rest-example
 vaadin-localization-example
@@ -61,7 +60,11 @@ spring-guides/gs-crud-with-vaadin/complete
 spring-petclinic/spring-petclinic-vaadin-flow
 form-filler-demo
 "
+# The following are disabled until karaf and osgi are supported in 24.x
+# and when we know how to PiT the others
 REPOS="
+base-starter-flow-osgi
+vaadin-flow-karaf-example
 platform
 flow-components
 component-starter-flow
