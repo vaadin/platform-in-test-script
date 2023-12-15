@@ -48,7 +48,8 @@ applyPatches() {
       cmd "$GRADLE -q hillaInitApp" && $GRADLE -q hillaInitApp  >/dev/null ;;
     *hilla*|*-lit*|start)
       ## TODO: adjust 2.4 when hilla-quickstart-tutorial hilla-basics-tutorial are fixed
-      if [ "$type_" = 'next' ] && echo "$vers_" | grep -Eq "2\.5[\.-].*|24\.3[\.-].*|24\.4[\.-].*" ; then
+      # [ "$type_" = 'next' ] <-- removed because it fails in current start projects
+      if echo "$vers_" | grep -Eq "2\.5[\.-].*|24\.3[\.-].*|24\.4[\.-].*" ; then
         _v=`grep -r 'createRenderRoot(): Element' frontend | cut -d ':' -f1 | tr '\n' ' '`
         _cmd="perl -pi -e 's/createRenderRoot\(\): Element \| ShadowRoot/createRenderRoot\(\): HTMLElement | DocumentFragment/g' $_v"
         [ -n "$_v" ] && cmd "$_cmd" && eval "$_cmd"
