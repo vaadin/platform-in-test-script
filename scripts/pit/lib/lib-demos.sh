@@ -219,10 +219,10 @@ getTest() {
 ## Change version in build files
 setDemoVersion() {
   case "$1" in
-    base-starter-flow-quarkus|mpr-demo|start)
+    base-starter-flow-quarkus|mpr-demo|start|flow-hilla-hybrid-example)
        if setVersion vaadin.version "$2"; then
         setFlowVersion "$2"
-        [ "$1" = start ] && setVersion hilla.version `getLatestHillaVersion "$2"` false
+        [ "$1" = start -o "$1" = flow-hilla-hybrid-example ] && setVersion hilla.version `getLatestHillaVersion "$2"` false
         [ "$1" = mpr-demo ] && setMprVersion "$2"
         return 0
        else

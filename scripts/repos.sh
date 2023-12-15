@@ -59,6 +59,7 @@ start
 spring-guides/gs-crud-with-vaadin/complete
 spring-petclinic/spring-petclinic-vaadin-flow
 form-filler-demo
+flow-hilla-hybrid-example
 "
 # The following are disabled until karaf and osgi are supported in 24.x
 # and when we know how to PiT the others
