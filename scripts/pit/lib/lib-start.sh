@@ -122,6 +122,15 @@ _isNext() {
   expr "$1" : .*partial-nextprerelease$ >/dev/null
 }
 
+setStartVersion() {
+    if [ -f "build.gradle" ]
+    then
+      setGradleVersion $1 $2
+    else
+      setVersion $1 $2
+    fi
+}
+
 ## Run an App downloaded from start.vaadin.com by following the next steps
 # 1. generate the project and download from start.vaadin.com (if not in offline)
 # 2. run validations in the current version to check that it's not broken
@@ -177,7 +186,7 @@ runStarter() {
 
   if test -z "$NOCURRENT" && ! _isNext "$_preset"
   then
-    _current=`setVersion $_versionProp current`
+    _current=`setStartVersion $_versionProp current`
     applyPatches $_preset current $_current dev || return 0
     # 2
     if [ -z "$NODEV" ]; then
@@ -190,7 +199,7 @@ runStarter() {
   fi
 
   # 4
-  if _isNext "$_preset" || setVersion $_versionProp $_version >/dev/null
+  if _isNext "$_preset" || setStartVersion $_versionProp $_version >/dev/null
   then
     [ -d ~/.vaadin/node ] && cmd "rm -rf ~/.vaadin/node" && rm -rf ~/.vaadin/node
     applyPatches $_preset next $_version prod || return 0

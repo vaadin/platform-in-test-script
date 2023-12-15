@@ -332,14 +332,27 @@ setVersion() {
   changeMavenProperty $__prop $__nversion && echo $__nversion
 }
 
+getGradleVersion() {
+  if [ -f "gradle.properties" ]; then
+    cat gradle.properties | grep "$1" | cut -d "=" -f2
+  elif [ -f "build.gradle" ]; then
+    cat build.gradle  | egrep 'set.*'$1 | perl -p -e 's/^.*"(\d[^"]+).*$/$1/'
+  fi
+}
+
 ## Set the value of a property in the gradle.properties file, returning error if unchanged
 setGradleVersion() {
   __gradleProperty=$1
   __nversion=$2
   [ "false" != "$3" ] && git checkout -q .
-  [ "$__nversion" = current ] && cat gradle.properties | grep "$__gradleProperty" | cut -d "=" -f2 && return 1
-  __current=`cat gradle.properties | grep "$__gradleProperty" | cut -d "=" -f2`
-  setPropertyInFile gradle.properties $__gradleProperty $__nversion
+  H=`getGradleVersion "$__gradleProperty"`
+  [ "$__nversion" = current ] && echo "$H" && return 1
+  __current=$H
+  if [ -f "gradle.properties" ]; then
+    setPropertyInFile gradle.properties $__gradleProperty $__nversion
+  elif [ -f "build.gradle" ]; then
+    perl -pi -e 's/^(.*set.*'$__gradleProperty'.*?)(\d[^"]+)(.*)$/${1}'$__nversion'${3}/g' build.gradle
+  fi
 }
 
 ## checks whether an express dev-bundle has been created for the project
