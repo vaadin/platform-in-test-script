@@ -48,7 +48,7 @@ applyPatches() {
     initializer-hilla-gradle)
       cmd "$GRADLE -q hillaInitApp" && $GRADLE -q hillaInitApp  >/dev/null ;;
     *hilla*|*-lit*|start)
-      if [ "$type_" = 'next' ] && echo "24.3.0.alpha5" | grep -Eq "2\.5\..*|24\.3\..*" ; then
+      if [ "$type_" = 'next' ] && echo "$vers_" | grep -Eq "2\.5\..*|24\.3\..*" ; then
         _v=`grep -r 'createRenderRoot(): Element' frontend | cut -d ':' -f1 | tr '\n' ' '`
         _cmd="perl -pi -e 's/createRenderRoot\(\): Element \| ShadowRoot/createRenderRoot\(\): HTMLElement | DocumentFragment/g' $_v"
         [ -n "$_v" ] && cmd "$_cmd" && eval "$_cmd"
@@ -57,7 +57,7 @@ applyPatches() {
 
   if [ "$type_" = 'current' ]; then
     case $vers_ in
-      24.2.*|2.4.*|2.5.*) : ;;
+      24.3.*|2.4.*|2.5.*|3.0.*) : ;;
       *) reportError "Using old version $vers_" "Please upgrade $app_ to latest stable" ;;
     esac
   fi

@@ -69,7 +69,7 @@ downloadInitializer() {
 ## get the selenium IDE test file used for each starter
 getStartTestFile() {
   case $1 in
-   *-auth) echo "start-auth.js";;
+   *-auth*) echo "start-auth.js";;
    flow-crm-tutorial*) echo "";;
    react-tutorial) echo "react.js";;
    initializer*|default*|vaadin-quarkus|*_prerelease) echo "hello.js";;

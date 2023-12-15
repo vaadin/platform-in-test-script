@@ -11,7 +11,7 @@ react-tutorial
 default
 latest-lit_partial-nextprerelease
 latest-lit_partial-prerelease
-latest-java_partial-auth_prerelease
+latest-java_partial-auth_partial-prerelease
 archetype-hotswap
 archetype-jetty
 archetype-spring
