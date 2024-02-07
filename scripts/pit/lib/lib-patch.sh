@@ -73,6 +73,13 @@ applyPatches() {
   #     [ "$type_" != 'current' ] && cmd "rm -rf package.json node_modules" && rm -rf package.json node_modules || return 0
   #     ;;
   # esac
+
+  case $vers_ in
+    24.4*)
+      . $PIT_SCR_FOLDER/lib/lib-patch-v24.4.sh
+      [ "$type_" != 'next' ] && return 0 || applyv244Patches "$app_" "$type_" "$vers_"
+      ;;
+  esac
 }
 
 ## Run at the beginning of Validate in order to skip upsupported app/version combination
