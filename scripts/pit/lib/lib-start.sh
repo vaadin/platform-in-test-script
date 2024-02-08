@@ -72,7 +72,8 @@ getStartTestFile() {
    *-auth*) echo "start-auth.js";;
    flow-crm-tutorial*) echo "";;
    react-tutorial) echo "react.js";;
-   initializer*|default*|vaadin-quarkus|*_prerelease) echo "hello.js";;
+   default*|vaadin-quarkus|*_prerelease) echo "hello.js";;
+   initializer*) echo "noop.js";; # disabled until we use vaadin initializr for flow and hilla
    archetype*) echo "click-hotswap.js";;
    *) echo "start.js";;
   esac

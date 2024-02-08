@@ -42,10 +42,11 @@ applyPatches() {
       [ -n "$TEST" ] && ([ -z "$OPENAI_TOKEN" ] && cmd "export OPENAI_TOKEN=your_AI_token") && return 0
       [ -z "$OPENAI_TOKEN" ] && err "Set correctly the OPENAI_TOKEN env var" && return 1
       ;;
-    initializer-hilla-maven)
-      cmd "$MVN hilla:init-app" && $MVN -q hilla:init-app ;;
-    initializer-hilla-gradle)
-      cmd "$GRADLE -q hillaInitApp" && $GRADLE -q hillaInitApp  >/dev/null ;;
+    ### disabled until proper fix for init-app goal https://github.com/vaadin/hilla/issues/2053
+    # initializer-hilla-maven)
+    #   cmd "$MVN vaadin:init-app" && $MVN -q vaadin:init-app ;;
+    # initializer-hilla-gradle)
+    #   cmd "$GRADLE -q hillaInitApp" && $GRADLE -q hillaInitApp  >/dev/null ;;
     *hilla*|*-lit*|start)
       ## TODO: adjust 2.4 when hilla-quickstart-tutorial hilla-basics-tutorial are fixed
       # [ "$type_" = 'next' ] <-- removed because it fails in current start projects
