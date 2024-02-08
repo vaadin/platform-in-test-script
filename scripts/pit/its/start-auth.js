@@ -45,7 +45,7 @@ process.argv.forEach(a => {
   await page.locator('text=/stored/');
   await page.waitForTimeout(5000);
 
-  await page.locator('text=/Emma Powerful/').click();
+  await page.locator('text=/Emma/').click();
   await page.locator('text=/Sign out/').click();
   await page.locator('h2:has-text("Log in")');
 
