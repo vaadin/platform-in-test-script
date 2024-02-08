@@ -407,7 +407,7 @@ getPomFiles() {
 ## $1: tag (dependency if empty)
 ## $2: groupId
 ## $3: artifactId
-## $4: version (keep the same if empty, or delete if 'remove' value is provided)
+## $4: version (keep the same if empty, delete if 'remove' value is provided, or do not modify if version tag is not present)
 ## $5: new groupId (keep the same if empty)
 ## $6: new artifactId (keep the same if empty)
 ## $7: extra block after version tag until the end of the tag block (keep the same if empty)
@@ -423,16 +423,30 @@ changeMavenBlock() {
   do
     cp $__file $$-1
     if [ "$4" = remove ]; then
+      [ -n "$TEST" ] && cmd "## Remove $__file $__tag $__grp:$__id"
+      _cmd="perl -0777 -pi -e 's|(\s+)(<$__tag>\s*<groupId>)($__grp)(</groupId>\s*<artifactId>)($__id)(</artifactId>)(\s*.*?)?(\s*</$__tag>)||msg' $__file"
       perl -0777 -pi -e 's|(\s+)(<'$__tag'>\s*<groupId>)('$__grp')(</groupId>\s*<artifactId>)('$__id')(</artifactId>)(\s*.*?)?(\s*</'$__tag'>)||msg' $__file
     elif [ -n "$4" ]; then
-      perl -0777 -pi -e 's|(\s+)(<'$__tag'>\s*<groupId>)('$__grp')(</groupId>\s*<artifactId>)('$__id')(</artifactId>\s*)(?:(<version>)([^<]+)(</version>))(\s*)(.*?)?(\s*</'$__tag'>)|${1}${2}'"${__grp2}"'${4}'"${__id2}"'${6}${7}'"${__nvers}"'${9}${10}'"${__extra}"'${12}|msg' $__file
+      __content=`cat $__file`
+      __found=`perl -0777 -pe 's|.*<'$__tag'>\s*<groupId>'$__grp'</groupId>\s*<artifactId>'$__id'</artifactId>\s*<version>([^<]+)</version>\s*.*?\s*</'$__tag'>.*|${1}|msg' $__file`
+      if [ "$__content" = "$__found" ]; then
+        __extra=${7:-\$8}
+        _cmd="perl -0777 -pi -e 's|(\s+)(<$__tag>\s*<groupId>)($__grp)(</groupId>\s*<artifactId>)($__id)(</artifactId>\s*)(\s*)(.*?)?(\s*</$__tag>)|\${1}\${2}'${__grp2}'\${4}'${__id2}'\${6}\${7}'${__extra}'\${9}|msg' $__file"
+        perl -0777 -pi -e 's|(\s+)(<'$__tag'>\s*<groupId>)('$__grp')(</groupId>\s*<artifactId>)('$__id')(</artifactId>\s*)(\s*)(.*?)?(\s*</'$__tag'>)|${1}${2}'${__grp2}'${4}'${__id2}'${6}${7}'${__extra}'${9}|msg' $__file
+      else
+        _cmd="perl -0777 -pi -e 's|(\s+)(<$__tag>\s*<groupId>)($__grp)(</groupId>\s*<artifactId>)($__id)(</artifactId>\s*)(?:(<version>)([^<]+)(</version>))?(\s*)(.*?)?(\s*</$__tag>)|\${1}\${2}'${__grp2}'\${4}'${__id2}'\${6}\${7}'${__nvers}'\${9}\${10}'${__extra}'\${12}|msg' $__file"
+        perl -0777 -pi -e 's|(\s+)(<'$__tag'>\s*<groupId>)('$__grp')(</groupId>\s*<artifactId>)('$__id')(</artifactId>\s*)(?:(<version>)([^<]+)(</version>))?(\s*)(.*?)?(\s*</'$__tag'>)|${1}${2}'${__grp2}'${4}'${__id2}'${6}${7}'${__nvers}'${9}${10}'${__extra}'${12}|msg' $__file
+      fi
     else
-      perl -0777 -pi -e 's|(\s+)(<'$__tag'>\s*<groupId>)('$__grp')(</groupId>\s*<artifactId>)('$__id')(</artifactId>\s*)(?:(<version>)([^<]+)(</version>))?(\s*)(.*?)?(\s*</'$__tag'>)|${1}${2}'"${__grp2}"'${4}'"${__id2}"'${6}${7}'"${__nvers}"'${9}${10}'"${__extra}"'${12}|msg' $__file
+      _cmd="perl -0777 -pi -e 's|(\s+)(<$__tag>\s*<groupId>)($__grp)(</groupId>\s*<artifactId>)($__id)(</artifactId>\s*)(?:(<version>)([^<]+)(</version>))?(\s*)(.*?)?(\s*</$__tag>)|\${1}\${2}'${__grp2}'\${4}'${__id2}'\${6}\${7}'${__nvers}'\${9}\${10}'${__extra}'\${12}|msg' $__file"
+      perl -0777 -pi -e 's|(\s+)(<'$__tag'>\s*<groupId>)('$__grp')(</groupId>\s*<artifactId>)('$__id')(</artifactId>\s*)(?:(<version>)([^<]+)(</version>))?(\s*)(.*?)?(\s*</'$__tag'>)|${1}${2}'${__grp2}'${4}'${__id2}'${6}${7}'${__nvers}'${9}${10}'${__extra}'${12}|msg' $__file
     fi
     cp $__file $$-2
     __diff=`diff -w $$-1 $$-2`
-    [ -n "$__diff" -a "$4" =  remove ] && warn "Removed $__file $__tag $__grp:$__id"
-    [ -n "$__diff" -a "$4" != remove ] && warn "Changed $__file $__tag $__grp:$__id -> $__grp2:$__id2:$4 $9"
+    [ -z "$TEST" -a -n "$__diff" -a "$4" =  remove ] && warn "Removed $__file $__tag $__grp:$__id"
+    [ -z "$TEST" -a -n "$__diff" -a "$4" != remove ] && warn "Changed $__file $__tag $__grp:$__id -> $__grp2:$__id2:$4 $9"
+    [ -n "$TEST" -a -n "$__diff" ] && cmd "## Changed Maven Block $__tag $__grp:$__id -> $__grp2:$__id2:$4 $9"
+    [ -n "$__diff" ] && cmd "$_cmd"
     rm -f $$-1 $$-2
   done
 }
@@ -475,7 +489,7 @@ changeBlock() {
 ## change a maven property in the pom.xml, faster than
 ##  mvn -q versions:set-property -Dproperty=property -DnewVersion=value
 ## $1: property name
-## $2: value
+## $2: value (if value is 'remove' the property is removed)
 changeMavenProperty() {
   __prop=$1; __val=$2; __ret=1;
   for __file in `getPomFiles`
@@ -486,6 +500,23 @@ changeMavenProperty() {
     fi
     [ -n "$TEST" ] && cmd "## Change Maven property $__prop from $__cur -> $__val"
     changeBlock "<$__prop>" "</$__prop>" "$__val" $__file
+    [ $? = 0 -a $__ret = 1 ] && __ret=0
+  done
+  return $__ret
+}
+
+## rename a maven property in the pom.xml
+## $1: property1 name
+## $2: property2 name
+renameMavenProperty() {
+  __prop1=$1; __prop2=$2; __ret=1;
+  for __file in `getPomFiles`
+  do
+    __cur=`getCurrProperty $__prop $__file`
+    [ -z "$__cur" ] && continue
+    [ -n "$TEST" ] && cmd "## Rename Maven property $__prop1 -> $__prop2"
+    cmd "perl -0777 -pi -e 's|(<$__prop1>[^\s]+)(/$__prop1>)|<$__prop2>$__cur</$__prop2>|g' $__file"
+         perl -0777 -pi -e 's|(<'$__prop1'>[^\s]+)(/'$__prop1'>)|<'$__prop2'>'$__cur'</'$__prop2'>|g' $__file
     [ $? = 0 -a $__ret = 1 ] && __ret=0
   done
   return $__ret
