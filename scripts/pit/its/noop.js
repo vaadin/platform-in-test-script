@@ -26,7 +26,7 @@ process.argv.forEach(a => {
 
   await page.goto(`http://${host}:${port}/`);
 
-  await page.waitForSelector('#outlet > *');
+  await page.waitForSelector('#outlet .root');
   const txt = await page.locator('#outlet').first().innerHTML();
   console.log('\n====== PAGE CONTENT ======\n', txt, '\n====== END ======\n');
 
