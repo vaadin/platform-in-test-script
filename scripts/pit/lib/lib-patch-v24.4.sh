@@ -9,7 +9,12 @@ applyv244Patches() {
         patchLitV244
         patchHillaSourcesV244 $D $F
         rm -f types.d.ts package-lock.json
-      ;;
+        ;;
+      *-react|*-react-*|*-react_*|react-*)
+        patchReactV244
+        patchHillaSourcesV244 $D $F
+        rm -f types.d.ts package-lock.json
+        ;;
   esac
 
   diff_=`git diff $D $F | egrep '^[+-]'`
@@ -27,13 +32,23 @@ patchHillaSourcesV244() {
   find $F -name "*.tsx" -exec perl -pi -e 's|\@hilla/|\@vaadin/|g' '{}' ';'
 }
 
+patchReactV244() {
+  renameMavenProperty hilla.version vaadin.version
+  removeMavenBlock dependency dev.hilla hilla-react
+  patchPomV244
+}
+
 
 patchLitV244() {
   renameMavenProperty hilla.version vaadin.version
   changeMavenBlock dependency dev.hilla hilla "\\\${vaadin.version}" com.vaadin vaadin
+  patchPomV244
+  perl -pi -e "s|(\s+)(<artifactId>vaadin-maven-plugin</artifactId>)|\$1\$2\n\$1<configuration><reactRouterEnabled>false</reactRouterEnabled></configuration>|g" pom.xml
+}
+
+patchPomV244() {
   changeMavenBlock dependency dev.hilla hilla-bom "\\\${vaadin.version}" com.vaadin vaadin-bom
   changeMavenBlock dependency dev.hilla hilla-spring-boot-starter "\\\${vaadin.version}" com.vaadin vaadin-spring-boot-starter
   changeMavenBlock plugin dev.hilla hilla-maven-plugin "\\\${vaadin.version}" com.vaadin vaadin-maven-plugin
-  perl -pi -e "s|(\s+)(<artifactId>vaadin-maven-plugin</artifactId>)|\$1\$2\n\$1<configuration><reactRouterEnabled>false</reactRouterEnabled></configuration>|g" pom.xml
 }
 
