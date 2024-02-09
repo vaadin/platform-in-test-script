@@ -6,17 +6,20 @@ applyv244Patches() {
 
   case $app_ in
       *-gradle)
+        echo "Patching Gradle project"
         patchGradV244
         patchHillaSourcesV244 $D $F
         rm -f types.d.ts package-lock.json
         ;;
-      *-lit|*-lit-*|*-lit_*|*-hilla-*|*-hilla|hilla-*)
-        patchLitV244
+      *-react|*-react-*|*-react_*|react-*)
+      echo "Patching React project"
+        patchReactV244
         patchHillaSourcesV244 $D $F
         rm -f types.d.ts package-lock.json
         ;;
-      *-react|*-react-*|*-react_*|react-*)
-        patchReactV244
+      *-lit|*-lit-*|*-lit_*|*-hilla-*|*-hilla|hilla-*)
+      echo "Patching Lit project"
+        patchLitV244
         patchHillaSourcesV244 $D $F
         rm -f types.d.ts package-lock.json
         ;;
