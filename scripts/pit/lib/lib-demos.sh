@@ -98,8 +98,7 @@ getInstallCmdPrd() {
   isHeadless && H="$H -Dcom.vaadin.testbench.Parameters.headless=true -Dheadless" || H="$H -Dtest.headless=false" #for addon-template
   [ -n "$SKIPTESTS" ] && H="$H -DskipTests"
   case $1 in
-    *hilla*gradle) echo "$GRADLE clean build -Philla.productionMode $PNPM";;
-    *-gradle) echo "$GRADLE clean build -Pvaadin.productionMode $PNPM";;
+    *-gradle) echo "$GRADLE clean build -Pvaadin.productionMode -Philla.productionMode $PNPM";;
     *hilla*|base-starter-flow-quarkus|vaadin-form-example|flow-spring-examples|vaadin-oauth-example|layout-examples) echo "$MVN -B package -Pproduction $PNPM";;
     bakery-app-starter-flow-spring|skeleton-starter-flow-spring) echo "$MVN -B install -Pproduction,it $H $PNPM";;
     skeleton-starter-flow-cdi|k8s-demo-app) echo "$MVN -ntp -B verify -Pproduction $H $PNPM";;
