@@ -5,6 +5,11 @@ applyv244Patches() {
   [ -d src/main ] && D=src/main || D=*/src/main
 
   case $app_ in
+      *-gradle)
+        patchGradV244
+        patchHillaSourcesV244 $D $F
+        rm -f types.d.ts package-lock.json
+        ;;
       *-lit|*-lit-*|*-lit_*|*-hilla-*|*-hilla|hilla-*)
         patchLitV244
         patchHillaSourcesV244 $D $F
@@ -34,20 +39,24 @@ patchHillaSourcesV244() {
   fi
 }
 
+patchGradV244() {
+  perl -pi -e "s|dev\.hilla:hilla-bom|com.vaadin:vaadin-bom|" build.gradle
+  perl -pi -e "s|dev\.hilla:hilla-spring-boot-starter|com.vaadin:vaadin-spring-boot-starter|" build.gradle
+  perl -pi -e "s|hillaVersion|vaadinVersion|" build.gradle settings.gradle gradle.properties
+  perl -pi -e "s|dev\.hilla|com.vaadin|" build.gradle settings.gradle
+}
+
 patchReactV244() {
   renameMavenProperty hilla.version vaadin.version
   removeMavenBlock dependency dev.hilla hilla-react
   patchPomV244
 }
-
-
 patchLitV244() {
   renameMavenProperty hilla.version vaadin.version
   changeMavenBlock dependency dev.hilla hilla "\\\${vaadin.version}" com.vaadin vaadin
   patchPomV244
   perl -pi -e "s|(\s+)(<artifactId>vaadin-maven-plugin</artifactId>)|\$1\$2\n\$1<configuration><reactRouterEnabled>false</reactRouterEnabled></configuration>|g" pom.xml
 }
-
 patchPomV244() {
   changeMavenBlock dependency dev.hilla hilla-bom "\\\${vaadin.version}" com.vaadin vaadin-bom
   changeMavenBlock dependency dev.hilla hilla-spring-boot-starter "\\\${vaadin.version}" com.vaadin vaadin-spring-boot-starter
