@@ -7,6 +7,7 @@ applyv244Patches() {
   case $app_ in
       *-gradle)
         echo "Patching Gradle project"
+        [ "$app_" = "initializer-hilla-gradle" ] && patchInitializer && patchReactV244
         patchGradV244
         patchHillaSourcesV244 $D $F
         rm -f types.d.ts package-lock.json
@@ -42,10 +43,17 @@ patchHillaSourcesV244() {
   fi
 }
 
+patchInitializer() {
+  perl -pi -e 's|id\s+.dev\.hilla.\s+version\s+..+|id "com.vaadin" version "'$vers_'"|' build.gradle
+  perl -0777 -pi -e 's|(repositories.*mavenCentral..\s+)|$1maven { setUrl("https://maven.vaadin.com/vaadin-prereleases") }\n|ms' build.gradle
+  perl -0777 -pi -e 's|(.*)|pluginManagement {repositories {\n mavenLocal()\nmaven { setUrl("https://maven.vaadin.com/vaadin-prereleases") }\ngradlePluginPortal()\n}}\n${1}|ms' settings.gradle
+  perl -0777 -pi -e 's|(.*)|buildscript {repositories {\n mavenCentral()\nmaven { setUrl("https://maven.vaadin.com/vaadin-prereleases") }\n}}\n${1}|ms' build.gradle
+}
+
 patchGradV244() {
   perl -pi -e "s|dev\.hilla:hilla-bom|com.vaadin:vaadin-bom|" build.gradle
-  perl -pi -e "s|dev\.hilla:hilla-spring-boot-starter|com.vaadin:vaadin-spring-boot-starter|" build.gradle
-  perl -pi -e "s|hillaVersion|vaadinVersion|" build.gradle settings.gradle gradle.properties
+  perl -pi -e "s|dev\.hilla:hilla-(react-)?spring-boot-starter|com.vaadin:vaadin-spring-boot-starter|" build.gradle
+  [ -f gradle.properties ] && perl -pi -e "s|hillaVersion|vaadinVersion|" build.gradle settings.gradle gradle.properties
   perl -pi -e "s|dev\.hilla|com.vaadin|" build.gradle settings.gradle
 }
 
