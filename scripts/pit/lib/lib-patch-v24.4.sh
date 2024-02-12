@@ -12,7 +12,7 @@ applyv244Patches() {
         patchHillaSourcesV244 $D $F
         rm -f types.d.ts package-lock.json
         ;;
-      *-react|*-react-*|*-react_*|react-*|hilla-crm-tutorial)
+      *-react|*-react-*|*-react_*|react-*|hilla-crm-tutorial|flow-hilla-hybrid-example)
       echo "Patching React project"
         patchReactV244
         patchHillaSourcesV244 $D $F
