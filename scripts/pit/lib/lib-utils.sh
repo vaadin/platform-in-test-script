@@ -205,8 +205,12 @@ waitUntilMessageInFile() {
     kill -0 $pid_run 2>/dev/null
     if [ $? != 0 ]
     then
-      reportOutErrors "$__file" "Error $__cmd failed to start"
-      return 1
+      if grep -q "'tsconfig.json' has been updated" $__ofile; then
+        H=`git diff tsconfig.json`
+        echo ">>>> PiT: tsconfig.json modified, retrying ...." >> $__ofile && reportOutErrors "File 'tsconfig.json' was modified and servlet threw an Exception" "$H" && return 2
+      else
+        reportOutErrors "$__file" "Error $__cmd failed to start" && return 1
+      fi
     fi
     __lasted=`expr $3 - $__timeout`
     __perl="perl -pe 's~^.*($__message.*)~\$1~g'"
@@ -305,11 +309,14 @@ waitUntilFrontendCompiled() {
     H=`curl --retry 4 --retry-all-errors -f -s -v $__url -L -H Accept:text/html -o /dev/null 2>&1`
     __err=$?
     if [ $__err != 0 ]; then
-       if grep -q "'tsconfig.json' has been updated" $__ofile; then
-         H=`git diff tsconfig.json`
-         echo ">>>> PiT: tsconfig.json modified, retrying ...." >> $__ofile && reportOutErrors "File 'tsconfig.json' was modified and servlet threw an Exception" "$H" && return 2
+       if grep -q "has been updated to the" $__ofile; then
+         [ -f tsconfig.json ] && _diff=`git diff tsconfig.json`
+         [ -f types.d.ts ] && _diff="$_diff"`git diff types.d.ts`
+         echo ">>>> PiT: config file modified, retrying ...." >> $__ofile && reportOutErrors "$__ofile" "File config was modified and servlet threw an Exception" "$_diff"
+         return 2
        else
-         echo ">>>> PiT: Found Error when compiling frontend" >> $__ofile && reportOutErrors "$__ofile" "Error ($__err) checking dev-mode" && return 1
+         echo ">>>> PiT: Found Error when compiling frontend" >> $__ofile && reportOutErrors "$__ofile" "Error ($__err) checking dev-mode"
+         return 1
        fi
     fi
     if echo "$H" | grep -q "X-DevModePending"; then

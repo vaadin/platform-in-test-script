@@ -10,25 +10,18 @@ applyv244Patches() {
         [ "$app_" = "initializer-hilla-gradle" ] && patchInitializer && patchReactV244
         patchGradV244
         patchHillaSourcesV244 $D $F
-        rm -f types.d.ts package-lock.json
         ;;
       *-react|*-react-*|*-react_*|react-*|hilla-crm-tutorial|flow-hilla-hybrid-example)
       echo "Patching React project"
         patchReactV244
         patchHillaSourcesV244 $D $F
-        rm -f types.d.ts package-lock.json
         ;;
       *-lit|*-lit-*|*-lit_*|*-hilla-*|*-hilla|hilla-*)
       echo "Patching Lit project"
         patchLitV244
         patchHillaSourcesV244 $D $F
-        rm -f types.d.ts package-lock.json
         ;;
   esac
-
-  if [ -f types.d.ts ]; then
-    grep -q 'css?inline' types.d.ts || (echo "Removing types.d.ts" && rm -f types.d.ts)
-  fi
 
   diff_=`git diff $D $F | egrep '^[+-]'`
   [ -n "$diff_" ] && echo "" && warn "Patched sources\n" && dim "====== BEGIN ======\n\n$diff_\n======  END  ======" || true
