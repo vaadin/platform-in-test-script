@@ -41,6 +41,8 @@ applyPatches() {
     form-filler-demo)
       [ -n "$TEST" ] && ([ -z "$OPENAI_TOKEN" ] && cmd "export OPENAI_TOKEN=your_AI_token") && return 0
       [ -z "$OPENAI_TOKEN" ] && err "Set correctly the OPENAI_TOKEN env var" && return 1
+      ## TODO: remove this when form-filler-addon superior to 1.0.1 is released
+      changeMavenBlock dependency com.vaadin.flow.ai form-filler-addon "" "" "" "<version>1.0-SNAPSHOT</version>"
       ;;
     ### disabled until proper fix for init-app goal https://github.com/vaadin/hilla/issues/2053
     # initializer-hilla-maven)
