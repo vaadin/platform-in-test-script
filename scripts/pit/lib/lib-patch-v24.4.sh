@@ -26,6 +26,10 @@ applyv244Patches() {
         ;;
   esac
 
+  if [ -f types.d.ts ]; then
+    grep -q 'css?inline' types.d.ts || (echo "Removing types.d.ts" && rm -f types.d.ts)
+  fi
+
   diff_=`git diff $D $F | egrep '^[+-]'`
   [ -n "$diff_" ] && echo "" && warn "Patched sources\n" && dim "====== BEGIN ======\n\n$diff_\n======  END  ======" || true
 }
