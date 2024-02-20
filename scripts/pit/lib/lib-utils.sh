@@ -309,7 +309,7 @@ waitUntilFrontendCompiled() {
     H=`curl --retry 4 --retry-all-errors -f -s -v $__url -L -H Accept:text/html -o /dev/null 2>&1`
     __err=$?
     if [ $__err != 0 ]; then
-       if grep -q "has been updated to the" $__ofile; then
+       if egrep -q 'The TypeScript type declaration file .* has been updated' $__ofile; then
          [ -f tsconfig.json ] && _diff=`git diff tsconfig.json`
          [ -f types.d.ts ] && _diff="$_diff"`git diff types.d.ts`
          echo ">>>> PiT: config file modified, retrying ...." >> $__ofile && reportOutErrors "$__ofile" "File config was modified and servlet threw an Exception" "$_diff"
