@@ -365,7 +365,7 @@ setGradleVersion() {
 ## checks whether an express dev-bundle has been created for the project
 checkBundleNotCreated() {
   log "Checking Express Bundle"
-  if grep -q "An express mode bundle build is needed" "$1"; then
+  if grep -q "mode bundle build is needed" "$1"; then
     reportOutErrors "$1" "Default vaadin-dev-bundle is not used"
     return 1
   fi
