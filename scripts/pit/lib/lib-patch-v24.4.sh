@@ -42,8 +42,16 @@ patchHillaSourcesV244() {
     find $F -name "*.tsx" -exec perl -pi -e 's|\@hilla/react-form|\@vaadin/hilla-react-form|g' '{}' ';'
     find $F -name "*.ts" -exec perl -pi -e 's|\@hilla/|\@vaadin/|g' '{}' ';'
     find $F -name "*.tsx" -exec perl -pi -e 's|\@hilla/|\@vaadin/|g' '{}' ';'
+    cleanFrontendFiles
   fi
 }
+
+cleanFrontendFiles() {
+  warn "Cleaning frontend package files"
+  cmd "rm -rf package*.json node_modules"
+  rm -rf package*.json node_modules
+}
+
 
 patchInitializer() {
   perl -pi -e 's|id\s+.dev\.hilla.\s+version\s+..+|id "com.vaadin" version "'$vers_'"|' build.gradle
