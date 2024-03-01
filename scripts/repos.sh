@@ -61,6 +61,15 @@ spring-petclinic/spring-petclinic-vaadin-flow
 form-filler-demo
 flow-hilla-hybrid-example
 "
+
+TODO="
+kubernetes-kit/kubernetes-kit-demo
+observability-kit/observability-kit-demo-hilla
+observability-kit/observability-kit-demo
+sso-kit/sso-kit-demo
+appsec-kit/appsec-kit-demo
+vaadin-sso-kit-keycloak-demo
+"
 # The following are disabled until karaf and osgi are supported in 24.x
 # and when we know how to PiT the others
 REPOS="

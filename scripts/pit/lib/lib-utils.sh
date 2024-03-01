@@ -746,6 +746,7 @@ cleanM2() {
 
 getLatestHillaVersion() {
   case "$1" in
+    *-SNAPSHOT) echo "$1" && return ;;
     2.*)    echo "$1" && return ;;
     24.[012].*) G="2.4.[09]*";;
     24.3[.-]*) G="2.5.*";;
