@@ -90,8 +90,12 @@ process.argv.forEach(a => {
     log(`Visited view ${label}\n`);
   }
 
+
   // close the login to save dialog, that is covering the menu toggle
-  await page.getByLabel('Close').click();
+  await page.getByLabel('Close')
+    // in 24.4 there is no close button, so we click the eye icon to continue
+    .or(page.locator('vaadin-radio-button').locator('vaadin-icon[icon="lumo:eye"]'))
+    .click();
   log(`Closed login to save\n`);
 
   // Show source code
