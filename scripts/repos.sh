@@ -60,6 +60,7 @@ spring-guides/gs-crud-with-vaadin/complete
 spring-petclinic/spring-petclinic-vaadin-flow
 form-filler-demo
 flow-hilla-hybrid-example
+appsec-kit-demo:appsec-kit
 "
 
 TODO="

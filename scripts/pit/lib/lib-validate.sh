@@ -56,6 +56,11 @@ runValidations() {
     return 1
   fi
 
+  [ -z "$TEST" ] && case "$name" in
+    skeleton-starter-flow|base-starter-flow-quarkus|skeleton-starter-flow-cdi|archetype-jetty)
+      checkNoSpringDependencies "$name" || return 1 ;;
+  esac
+
   # 4
   runInBackgroundToFile "$cmd" "$file" "$VERBOSE"
   waitUntilMessageInFile "$file" "$check" "$TIMEOUT" "$cmd" || return 1
@@ -67,6 +72,7 @@ runValidations() {
 
   [ -z "$TEST" -a "$mode" = prod ] && H=`cat $file | grep WARNING | grep 'deprecated$' | sed -e 's/^.*\/src\//src\//g'` && reportError "Deprecated API" "$H"
   [ -n "$TEST" ] || [ "$mode" != dev -o "$name" != default ] || checkBundleNotCreated "$file" || return 1
+
 
   if [ "$mode" = dev ]; then
     waitUntilFrontendCompiled "http://localhost:$port/" "$file"

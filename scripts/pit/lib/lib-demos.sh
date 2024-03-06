@@ -55,29 +55,30 @@ commitChanges() {
   git update-index --refresh >/dev/null
   git diff-index --quiet HEAD -- && return 0
 
-  _baseBranch=v`echo "$_vers" | cut -d '.' -f1`
+  _baseBranch=v`echo "$_vers" | cut -d '.' -f1,2`
   _headBranch="update-to-$_baseBranch"
+  _gaBranch="$_baseBranch.0"
 
-  remotes=`git ls-remote --heads 2>/dev/null | grep refs | sed -e 's|.*refs/heads/||g' | egrep "^$_baseBranch$"`
-  [ -n "$remotes" ] && log "Branch $_baseBranch already exists" || (log "Creating branch $_baseBranch" && git checkout -b $_baseBranch && git push) || return 1
+  remotes=`git ls-remote --heads 2>/dev/null | grep refs | sed -e 's|.*refs/heads/||g' | egrep "^$_headBranch$"`
+  [ -n "$remotes" ] && log "Branch $_headBranch already exists" || (log "Creating branch $_headBranch" && git checkout -q -b $_baseBranch && git push) || return 1
 
   owner=`echo "$_repo" | cut -d / -f2`
   repo=`echo "$_repo" | cut -d / -f3-100`
 
   log "Creating $_headBranch branch, committing and pushing changes"
-  git checkout -b $_headBranch
-  git push origin $_headBranch -d 2>/dev/null
+  git checkout -q -b $_headBranch
+  git push -q origin $_headBranch -d 2>/dev/null
   git add `ls -1d src frontend */src */frontend pom.xml */pom.xml 2>/dev/null | tr "\n" " "`
   git commit -q -m "chore: update to $_vers" -a
-  git push -q -f
-
-  pr_url=`curl -L \
+  git push -q -f 2>/dev/null
+  log "Creating PR for $_headBranch branch"
+  pr_url=`curl -s -L \
     -X POST \
     -H "Accept: application/vnd.github+json" \
     -H "Authorization: Bearer $_tk"\
     -H "X-GitHub-Api-Version: 2022-11-28" \
     https://api.github.com/repos/$owner/$repo/pulls \
-    -d '{"title":"chore: Update Vaadin '$_vers'","head":"'$_headBranch'","base":"'$_baseBranch'"}' | jq -r '.html_url' 2>/dev/null`
+    -d '{"title":"chore: PiT - Update to Vaadin v'$_vers'","head":"'$_headBranch'","base":"'$_baseBranch'","body":"Created by PiT Script when testing \`v'$_vers'\`.\nDo not merge until \`'$_gaBranch'\` GA is released."}' | jq -r '.html_url' 2>/dev/null`
   warn "Created PR $pr_url"
 }
 

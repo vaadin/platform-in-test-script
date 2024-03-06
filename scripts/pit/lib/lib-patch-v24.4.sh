@@ -26,6 +26,10 @@ applyv244Patches() {
         warn "Adding vaadin-maven-plugin to build block in pom.xml"
         perl -0777 -pi -e 's|(\s+)(</plugin>)|${1}${2}${1}<plugin>${1}    <groupId>com.vaadin</groupId>${1}    <artifactId>vaadin-maven-plugin</artifactId>${1}    <executions><execution><goals><goal>prepare-frontend</goal></goals></execution></executions>${1}</plugin>|' pom.xml
         ;;
+      skeleton-starter-flow|base-starter-flow-quarkus|skeleton-starter-flow-cdi|archetype-jetty)
+        warn "Adding exclusion for hilla-dev in pom.xml"
+        perl -0777 -pi -e 's!(\s+)(<artifactId>(vaadin|vaadin-quarkus-extension)</artifactId>)!${1}${2}${1}<exclusions>${1}    <exclusion>${1}        <groupId>com.vaadin</groupId>${1}        <artifactId>hilla-dev</artifactId>${1}    </exclusion>${1}</exclusions>!' pom.xml
+        ;;
   esac
 
   diff_=`git diff $D $F | egrep '^[+-]'`

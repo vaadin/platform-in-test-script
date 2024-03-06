@@ -373,6 +373,15 @@ checkBundleNotCreated() {
   fi
 }
 
+checkNoSpringDependencies() {
+  log "Checking Spring Dependencies in $1"
+  if mvn -B dependency:tree | grep -q "spring" ; then
+    err "Spring dependencies detected"
+    return 1
+  fi
+  log "No Spring dependencies detected"
+}
+
 ## Get a specific version from the platform versions.json
 ## $1 : platform branch
 ## $2 : module name
