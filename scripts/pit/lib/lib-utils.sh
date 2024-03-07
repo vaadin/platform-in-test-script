@@ -375,10 +375,9 @@ checkBundleNotCreated() {
 
 checkNoSpringDependencies() {
   log "Checking Spring Dependencies in $1"
-  if mvn -B dependency:tree | grep -q "spring" ; then
-    err "Spring dependencies detected"
-    return 1
-  fi
+  T=`mvn -ntp -B dependency:tree`
+  H=`echo "$T" | grep -i "spring"`
+  [ -n "$H" ] && error "There are spring dependencies" "$T\n------\n$H" && return 1
   log "No Spring dependencies detected"
 }
 
