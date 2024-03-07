@@ -58,28 +58,46 @@ commitChanges() {
   _baseBranch=v`echo "$_vers" | cut -d '.' -f1,2`
   _headBranch="update-to-$_baseBranch"
   _gaBranch="$_baseBranch.0"
-
-  remotes=`git ls-remote --heads 2>/dev/null | grep refs | sed -e 's|.*refs/heads/||g' | egrep "^$_headBranch$"`
-  [ -n "$remotes" ] && log "Branch $_headBranch already exists" || (log "Creating branch $_headBranch" && git checkout -q -b $_baseBranch && git push) || return 1
-
+  _tmpBranch="$_baseBranch.tmp"
   owner=`echo "$_repo" | cut -d / -f2`
   repo=`echo "$_repo" | cut -d / -f3-100`
 
-  log "Creating $_headBranch branch, committing and pushing changes"
-  git checkout -q -b $_headBranch
-  git push -q origin $_headBranch -d 2>/dev/null
+
+  remotes=`git ls-remote --heads 2>/dev/null | grep refs | sed -e 's|.*refs/heads/||g' | egrep "^$_headBranch$"`
+  if [ -n "$remotes" ]; then
+    log "Branch $_headBranch already exists"
+  fi
+
+  log "Committing and pushing changes"
+  git checkout -q -b $_tmpBranch
   git add `ls -1d src frontend */src */frontend pom.xml */pom.xml 2>/dev/null | tr "\n" " "`
+  git restore --staged `ls -1d pom.xml */pom.xml`
+
+  if [ -n "$remotes" ]; then
+    if git diff --quiet origin/$_headBranch; then
+      log "No new changes to commit"
+      return 0
+    fi
+  fi
+
   git commit -q -m "chore: update to $_vers" -a
-  git push -q -f 2>/dev/null
-  log "Creating PR for $_headBranch branch"
-  pr_url=`curl -s -L \
-    -X POST \
-    -H "Accept: application/vnd.github+json" \
-    -H "Authorization: Bearer $_tk"\
-    -H "X-GitHub-Api-Version: 2022-11-28" \
-    https://api.github.com/repos/$owner/$repo/pulls \
-    -d '{"title":"chore: PiT - Update to Vaadin v'$_vers'","head":"'$_headBranch'","base":"'$_baseBranch'","body":"Created by PiT Script when testing \`v'$_vers'\`.\nDo not merge until \`'$_gaBranch'\` GA is released."}' | jq -r '.html_url' 2>/dev/null`
-  warn "Created PR $pr_url"
+  # [ -n "$remotes" ] && git rebase origin/$_headBranch 2>/dev/null
+  git push -q -f origin $_tmpBranch:$_headBranch 2>/dev/null
+
+  if [ -n "$remotes" ]
+  then
+    log "PR for $_headBranch branch already exists"
+  else
+    log "Creating PR for $_headBranch branch"
+    pr_url=`curl -s -L \
+      -X POST \
+      -H "Accept: application/vnd.github+json" \
+      -H "Authorization: Bearer $_tk"\
+      -H "X-GitHub-Api-Version: 2022-11-28" \
+      https://api.github.com/repos/$owner/$repo/pulls \
+      -d '{"title":"chore: PiT - Update to Vaadin '$_baseBranch'","head":"'$_headBranch'","base":"'$_baseBranch'","body":"Created by PiT Script when testing \`v'$_vers'\`.\nDo not merge until \`'$_gaBranch'\` GA is released."}' | jq -r '.html_url' 2>/dev/null`
+    warn "Created PR $pr_url"
+  fi
 }
 
 ## Get install command for dev-mode
