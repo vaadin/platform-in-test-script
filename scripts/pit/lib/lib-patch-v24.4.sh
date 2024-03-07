@@ -36,7 +36,7 @@ applyv244Patches() {
   [ -n "$diff_" ] && echo "" && warn "Patched sources\n" && dim "====== BEGIN ======\n\n$diff_\n======  END  ======" || true
 
   changeMavenProperty jetty.version 11.0.20
-  mvFrontend
+  # mvFrontend
 }
 
 patchHillaSourcesV244() {
