@@ -34,6 +34,9 @@ applyv244Patches() {
 
   diff_=`git diff $D $F | egrep '^[+-]'`
   [ -n "$diff_" ] && echo "" && warn "Patched sources\n" && dim "====== BEGIN ======\n\n$diff_\n======  END  ======" || true
+
+  changeMavenProperty jetty.version 11.0.20
+  mvFrontend
 }
 
 patchHillaSourcesV244() {
@@ -46,16 +49,8 @@ patchHillaSourcesV244() {
     find $F -name "*.tsx" -exec perl -pi -e 's|\@hilla/react-form|\@vaadin/hilla-react-form|g' '{}' ';'
     find $F -name "*.ts" -exec perl -pi -e 's|\@hilla/|\@vaadin/|g' '{}' ';'
     find $F -name "*.tsx" -exec perl -pi -e 's|\@hilla/|\@vaadin/|g' '{}' ';'
-    #cleanFrontendFiles
   fi
 }
-
-cleanFrontendFiles() {
-  warn "Cleaning frontend package files"
-  cmd "rm -rf package*.json node_modules"
-  rm -rf package*.json node_modules
-}
-
 
 patchInitializer() {
   perl -pi -e 's|id\s+.dev\.hilla.\s+version\s+..+|id "com.vaadin" version "'$vers_'"|' build.gradle
@@ -87,5 +82,13 @@ patchPomV244() {
   changeMavenBlock dependency dev.hilla hilla-spring-boot-starter "\\\${vaadin.version}" com.vaadin vaadin-spring-boot-starter
   changeMavenBlock dependency dev.hilla hilla-react-spring-boot-starter "\\\${vaadin.version}" com.vaadin vaadin-spring-boot-starter
   changeMavenBlock plugin dev.hilla hilla-maven-plugin "\\\${vaadin.version}" com.vaadin vaadin-maven-plugin
+}
+
+mvFrontend() {
+  if [ -d frontend -a -d src/main ]; then
+    cmd "mv frontend src/main/frontend"
+    mv frontend src/main/frontend
+    warn "Moved ./frontend to ./src/main/frontend"
+  fi
 }
 
