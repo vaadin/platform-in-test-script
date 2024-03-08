@@ -756,11 +756,10 @@ cleanM2() {
 
 getLatestHillaVersion() {
   case "$1" in
-    *-SNAPSHOT) echo "$1" && return ;;
+    24.4.*|*-SNAPSHOT) echo "$1" && return ;;
     2.*)    echo "$1" && return ;;
     24.[012].*) G="2.4.[09]*";;
     24.3[.-]*) G="2.5.*";;
-    24.4[.-]*) G="24.4.*";;
     # When hilla 3.0 starts to be released, we can use this
     # 24.4-SNAPSHOT) echo "3.0-SNAPSHOT";;
     # 24.4.*) G="3.0.*";;
