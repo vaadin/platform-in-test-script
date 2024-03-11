@@ -78,7 +78,7 @@ runValidations() {
     waitUntilFrontendCompiled "http://localhost:$port/" "$file"
     _err=$?
     if [ "$_err" = 2 ]; then
-      warn "File tsconfig was modified and server threw an exception !! retrying ..."
+      warn "File tsconfig/types.d was modified and server threw an exception !! retrying ..."
       killAll
       mv "$file" "$file.tsconfig"
       runInBackgroundToFile "$cmd" "$file" "$VERBOSE"

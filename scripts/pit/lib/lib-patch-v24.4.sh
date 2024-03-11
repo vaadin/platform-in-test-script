@@ -32,11 +32,13 @@ applyv244Patches() {
         ;;
   esac
 
-  diff_=`git diff $D $F | egrep '^[+-]'`
-  [ -n "$diff_" ] && echo "" && warn "Patched sources\n" && dim "====== BEGIN ======\n\n$diff_\n======  END  ======" || true
+  changeMavenProperty jetty.version 11.0.20
 
-  # changeMavenProperty jetty.version 11.0.20
-  # mvFrontend
+  diff_=`git diff $D $F | egrep '^[+-]'`
+  [ -n "$diff_" ] && echo "" && warn "Patched sources\n" && dim "====== BEGIN ======\n\n$diff_\n======  END  ======" 
+
+  mvFrontend
+  addTypeModule
 }
 
 patchHillaSourcesV244() {
@@ -86,9 +88,21 @@ patchPomV244() {
 
 mvFrontend() {
   if [ -d frontend -a -d src/main ]; then
+    mkdir -p frontend/views
+    rm -f frontend/src/README*
+    rmdir frontend/src 2>/dev/null
+    echo "Place your React views or hand written templates in this folder." > frontend/views/README
     cmd "mv frontend src/main/frontend"
     mv frontend src/main/frontend
     warn "Moved ./frontend to ./src/main/frontend"
   fi
+}
+
+addTypeModule() {
+  [ ! -f package.json ] && return
+  grep -q '"type": *"module"' package.json && return
+  cmd "perl -pi -e 's|(\s+)(\"license\": \"[^\"]+\")|${1}${2},\\\n${1}\"type\": \"module\"|' package.json"
+  reportError "Updated package.json" "Added type: module to package.json"
+  perl -pi -e 's|(\s+)("license": "[^"]+")|${1}${2},\n${1}"type": "module"|' package.json
 }
 

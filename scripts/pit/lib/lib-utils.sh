@@ -312,7 +312,7 @@ waitUntilFrontendCompiled() {
        if egrep -q 'The TypeScript type declaration file .* has been updated' $__ofile; then
          [ -f tsconfig.json ] && _diff=`git diff tsconfig.json`
          [ -f types.d.ts ] && _diff="$_diff"`git diff types.d.ts`
-         echo ">>>> PiT: config file modified, retrying ...." >> $__ofile && reportOutErrors "$__ofile" "File config was modified and servlet threw an Exception" "$_diff"
+         echo ">>>> PiT: config file modified, retrying ...." >> $__ofile && reportOutErrors "$__ofile" "File tsconfig/types.d was modified and servlet threw an Exception" "$_diff"
          return 2
        else
          echo ">>>> PiT: Found Error when compiling frontend" >> $__ofile && reportOutErrors "$__ofile" "Error ($__err) checking dev-mode"
@@ -374,11 +374,17 @@ checkBundleNotCreated() {
 }
 
 checkNoSpringDependencies() {
-  log "Checking Spring Dependencies in $1"
   T=`mvn -ntp -B dependency:tree`
-  H=`echo "$T" | grep -i "spring"`
-  [ -n "$H" ] && error "There are spring dependencies" "$T\n------\n$H" && return 1
-  log "No Spring dependencies detected"
+  H=`echo "$T" | egrep -i "spring|hilla"`
+  [ -n "$H" ] && error "There are spring/hilla dependencies" "$T\n------\n$H" && return 1
+  log "No Spring/Hilla dependencies found"
+}
+
+## check that there are no warnings during vite compilation in the logs file
+checkViteCompilationWarnings() {
+  log "Checking Vite Compilation Warnings"
+  H=`grep "DevServerOutputTracker   : Failed" "$1"`
+  [ -n "$H" ] && reportOutErrors "$1" "Vite Compilation Warnings"
 }
 
 ## Get a specific version from the platform versions.json
@@ -508,7 +514,7 @@ changeBlock() {
 ## $1: property name
 ## $2: value (if value is 'remove' the property is removed)
 changeMavenProperty() {
-  __prop=$1; __val=$2; __ret=1;
+  __prop=$1; __val=$2; __ret=0;
   for __file in `getPomFiles`
   do
     if [ "$__val" != remove ]; then
@@ -517,7 +523,7 @@ changeMavenProperty() {
     fi
     [ -n "$TEST" ] && cmd "## Change Maven property $__prop from $__cur -> $__val"
     changeBlock "<$__prop>" "</$__prop>" "$__val" $__file
-    [ $? = 0 -a $__ret = 1 ] && __ret=0
+    [ $? != 0 ] && __ret=1
   done
   return $__ret
 }
