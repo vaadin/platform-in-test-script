@@ -117,7 +117,9 @@ getInstallCmdPrd() {
   isHeadless && H="$H -Dcom.vaadin.testbench.Parameters.headless=true -Dheadless" || H="$H -Dtest.headless=false" #for addon-template
   [ -n "$SKIPTESTS" ] && H="$H -DskipTests"
   case $1 in
-    *-gradle) echo "$GRADLE clean build -Pvaadin.productionMode -Philla.productionMode $PNPM";;
+    *-gradle)
+      expr "$_version" : '2\.' >/dev/null && H="-hilla.productionMode" || H="-Pvaadin.productionMode"
+      echo "$GRADLE clean build $H $PNPM";;
     *hilla*|base-starter-flow-quarkus|vaadin-form-example|flow-spring-examples|vaadin-oauth-example|layout-examples) echo "$MVN -B package -Pproduction $PNPM";;
     bakery-app-starter-flow-spring|skeleton-starter-flow-spring) echo "$MVN -B install -Pproduction,it $H $PNPM";;
     skeleton-starter-flow-cdi|k8s-demo-app) echo "$MVN -ntp -B verify -Pproduction $H $PNPM";;
@@ -292,7 +294,7 @@ runDemo() {
   printVersions || return 1
 
   _installCmdDev=`getInstallCmdDev $_demo`
-  _installCmdPrd=`getInstallCmdPrd $_demo`
+  _installCmdPrd=`getInstallCmdPrd $_demo $_version`
   _runCmdDev=`getRunCmdDev $_demo`
   _runCmdPrd=`getRunCmdPrd $_demo`
   _readyDev=`getReadyMessageDev $_demo`
