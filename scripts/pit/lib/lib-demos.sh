@@ -120,7 +120,8 @@ getInstallCmdPrd() {
     *-gradle)
       expr "$_version" : '2\.' >/dev/null && H="-hilla.productionMode" || H="-Pvaadin.productionMode"
       echo "$GRADLE clean build $H $PNPM";;
-    *hilla*|base-starter-flow-quarkus|vaadin-form-example|flow-spring-examples|vaadin-oauth-example|layout-examples) echo "$MVN -B package -Pproduction $PNPM";;
+    *-quarkus) echo "$MVN -ntp -B clean package -Pproduction $H $PNPM -Dquarkus.analytics.disabled=true";;
+    *hilla*|vaadin-form-example|flow-spring-examples|vaadin-oauth-example|layout-examples) echo "$MVN -B package -Pproduction $PNPM";;
     bakery-app-starter-flow-spring|skeleton-starter-flow-spring) echo "$MVN -B install -Pproduction,it $H $PNPM";;
     skeleton-starter-flow-cdi|k8s-demo-app) echo "$MVN -ntp -B verify -Pproduction $H $PNPM";;
     mpr-demo|spreadsheet-demo) echo "$MVN -ntp -B clean";;
@@ -135,6 +136,7 @@ getInstallCmdPrd() {
 getRunCmdDev() {
   case $1 in
     vaadin-flow-karaf-example) echo "$MVN -ntp -B -pl main-ui install -Prun $PNPM";;
+    *-quarkus) echo "$MVN -ntp -B $PNPM -Dquarkus.analytics.disabled=true";;
     base-starter-flow-osgi) echo "java -jar app/target/app.jar";;
     skeleton-starter-flow-cdi) echo "$MVN -ntp -B wildfly:run $PNPM";;
     base-starter-gradle) echo "$GRADLE jettyStart";; # should be appRun but reads from stdin and fails
