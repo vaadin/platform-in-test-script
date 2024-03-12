@@ -39,6 +39,10 @@ applyv244Patches() {
 
   # mvFrontend
   addTypeModule
+  downgradeJava
+
+  # always successful
+  return 0
 }
 
 patchHillaSourcesV244() {
@@ -104,5 +108,13 @@ addTypeModule() {
   cmd "perl -pi -e 's|(\s+)(\"license\": \"[^\"]+\")|${1}${2},\\\n${1}\"type\": \"module\"|' package.json"
   reportError "Updated package.json" "Added type: module to package.json"
   perl -pi -e 's|(\s+)("license": "[^"]+")|${1}${2},\n${1}"type": "module"|' package.json
+}
+
+downgradeJava() {
+  [ ! -f pom.xml ] && return
+  grep -q '<java.version>21</java.version>' pom.xml || return
+  cmd "perl -pi -e 's|<java.version>21</java.version>|<java.version>17</java.version>|' pom.xml"
+  perl -pi -e 's|<java.version>21</java.version>|<java.version>17</java.version>|' pom.xml
+  reportError "Downgraded Java version" "Changed java.version from 21 to 17 in pom.xml"
 }
 
