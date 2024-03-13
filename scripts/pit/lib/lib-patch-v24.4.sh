@@ -50,16 +50,16 @@ patchHillaSourcesV244() {
   cmd "find $D -name '*.java' -exec perl -pi -e 's/import dev.hilla/import com.vaadin.hilla/g' '{}' ';'"
   find $D -name '*.java' -exec perl -pi -e 's/import dev.hilla/import com.vaadin.hilla/g' '{}' ';'
   if [ -d "$F" ]; then
-    cmd "find $F -name '*.ts' -o -name '*.tsx' -exec perl -pi -e 's|\@hilla/form|\@vaadin/hilla-lit-form|g' '{}' ';'"
-         find $F -name '*.ts' -o -name '*.tsx' -exec perl -pi -e 's|\@hilla/form|\@vaadin/hilla-lit-form|g' '{}' ';'
-    cmd "find $F -name '*.ts' -o -name '*.tsx' -exec perl -pi -e 's|Frontend/generated/dev/hilla|Frontend/generated/com/vaadin/hilla|g' '{}' ';'"
-         find $F -name '*.ts' -o -name '*.tsx' -exec perl -pi -e 's|Frontend/generated/dev/hilla|Frontend/generated/com/vaadin/hilla|g' '{}' ';'
-    cmd "find $F -name '*.ts' -o -name '*.tsx' -exec perl -pi -e 's|\@hilla/frontend|\@vaadin/hilla-frontend|g' '{}' ';'"
-         find $F -name '*.ts' -o -name '*.tsx' -exec perl -pi -e 's|\@hilla/frontend|\@vaadin/hilla-frontend|g' '{}' ';'
-    cmd "find $F -name '*.ts' -o -name '*.tsx' -exec perl -pi -e 's|\@hilla/react-form|\@vaadin/hilla-react-form|g' '{}' ';'"
-         find $F -name '*.ts' -o -name '*.tsx' -exec perl -pi -e 's|\@hilla/react-form|\@vaadin/hilla-react-form|g' '{}' ';'
-    cmd "find $F -name '*.ts' -o -name '*.tsx' -exec perl -pi -e 's|\@hilla/|\@vaadin/|g' '{}' ';'"
-         find $F -name '*.ts' -o -name '*.tsx' -exec perl -pi -e 's|\@hilla/|\@vaadin/|g' '{}' ';'
+    cmd "find $F '(' -name '*.ts' -o -name '*.tsx' ')' -exec perl -pi -e 's|\@hilla/form|\@vaadin/hilla-lit-form|g' '{}' ';'"
+         find $F '(' -name '*.ts' -o -name '*.tsx' ')' -exec perl -pi -e 's|\@hilla/form|\@vaadin/hilla-lit-form|g' '{}' ';'
+    cmd "find $F '(' -name '*.ts' -o -name '*.tsx' ')' -exec perl -pi -e 's|Frontend/generated/dev/hilla|Frontend/generated/com/vaadin/hilla|g' '{}' ';'"
+         find $F '(' -name '*.ts' -o -name '*.tsx' ')' -exec perl -pi -e 's|Frontend/generated/dev/hilla|Frontend/generated/com/vaadin/hilla|g' '{}' ';'
+    cmd "find $F '(' -name '*.ts' -o -name '*.tsx' ')' -exec perl -pi -e 's|\@hilla/frontend|\@vaadin/hilla-frontend|g' '{}' ';'"
+         find $F '(' -name '*.ts' -o -name '*.tsx' ')' -exec perl -pi -e 's|\@hilla/frontend|\@vaadin/hilla-frontend|g' '{}' ';'
+    cmd "find $F '(' -name '*.ts' -o -name '*.tsx' ')' -exec perl -pi -e 's|\@hilla/react-form|\@vaadin/hilla-react-form|g' '{}' ';'"
+         find $F '(' -name '*.ts' -o -name '*.tsx' ')' -exec perl -pi -e 's|\@hilla/react-form|\@vaadin/hilla-react-form|g' '{}' ';'
+    cmd "find $F '(' -name '*.ts' -o -name '*.tsx' ')' -exec perl -pi -e 's|\@hilla/|\@vaadin/|g' '{}' ';'"
+         find $F '(' -name '*.ts' -o -name '*.tsx' ')' -exec perl -pi -e 's|\@hilla/|\@vaadin/|g' '{}' ';'
   fi
 }
 

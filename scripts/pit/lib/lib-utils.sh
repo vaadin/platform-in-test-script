@@ -441,7 +441,7 @@ changeMavenBlock() {
   __nvers=${4:-\$8}
   __grp2=${5:-$__grp}
   __id2=${6:-$__id}
-  __extra=${7:-\$11}
+  __extra=${7:-\$\{11\}}
   for __file in `getPomFiles`
   do
     cp $__file $$-1
