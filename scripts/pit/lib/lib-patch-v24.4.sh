@@ -41,7 +41,6 @@ applyv244Patches() {
 
   mvFrontend
   addTypeModule
-  downgradeJava
 
   # always successful
   return 0
@@ -121,11 +120,4 @@ addTypeModule() {
   reportError "Updated package.json" "Added type: module to package.json"
 }
 
-downgradeJava() {
-  [ ! -f pom.xml ] && return
-  grep -q '<java.version>21</java.version>' pom.xml || return
-  cmd "perl -pi -e 's|<java.version>21</java.version>|<java.version>17</java.version>|' pom.xml"
-  perl -pi -e 's|<java.version>21</java.version>|<java.version>17</java.version>|' pom.xml
-  warn "Downgraded Java version" "Changed java.version from 21 to 17 in pom.xml"
-}
 

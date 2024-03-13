@@ -81,7 +81,14 @@ applyPatches() {
       [ "$type_" != 'next' ] && return 0 || applyv244Patches "$app_" "$type_" "$vers_"
       ;;
   esac
+
+  downgradeJava
+
+  # always successful
+  return 0
 }
+
+
 
 ## Run at the beginning of Validate in order to skip upsupported app/version combination
 isUnsupported() {
@@ -95,6 +102,15 @@ isUnsupported() {
 
   ## Everything else is supported
   return 1
+}
+
+
+downgradeJava() {
+  [ ! -f pom.xml ] && return
+  grep -q '<java.version>21</java.version>' pom.xml || return
+  cmd "perl -pi -e 's|<java.version>21</java.version>|<java.version>17</java.version>|' pom.xml"
+  perl -pi -e 's|<java.version>21</java.version>|<java.version>17</java.version>|' pom.xml
+  warn "Downgraded Java version" "Changed java.version from 21 to 17 in pom.xml"
 }
 
 
