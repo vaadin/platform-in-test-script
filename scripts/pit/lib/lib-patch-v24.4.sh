@@ -39,8 +39,8 @@ applyv244Patches() {
   diff_=`git diff $D $F | egrep '^[+-]'`
   [ -n "$diff_" ] && echo "" && warn "Patched sources\n" && dim "====== BEGIN ======\n\n$diff_\n======  END  ======" 
 
-  mvFrontend
-  addTypeModule
+  # mvFrontend
+  # addTypeModule
 
   # always successful
   return 0
@@ -91,6 +91,7 @@ patchLitV244() {
   renameMavenProperty hilla.version vaadin.version
   changeMavenBlock dependency dev.hilla hilla "\\\${vaadin.version}" com.vaadin vaadin
   patchPomV244
+  cmd "perl -pi -e 's|(\s+)(<artifactId>vaadin-maven-plugin</artifactId>)|\${1}\${2}\n\${1}<configuration><reactEnable>false</reactEnable></configuration>|g' pom.xml"
   perl -pi -e "s|(\s+)(<artifactId>vaadin-maven-plugin</artifactId>)|\$1\$2\n\$1<configuration><reactEnable>false</reactEnable></configuration>|g" pom.xml
 }
 patchPomV244() {
