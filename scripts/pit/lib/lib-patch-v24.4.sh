@@ -6,29 +6,31 @@ applyv244Patches() {
 
   case $app_ in
       *-gradle)
-        echo "Patching Gradle project"
+        cmd "# Patching Gradle project"
         [ "$app_" = "initializer-hilla-gradle" ] && patchInitializer && patchReactV244
         patchGradV244
         patchHillaSourcesV244 $D $F
         ;;
       *-react|*-react-*|*-react_*|react-*|hilla-crm-tutorial|flow-hilla-hybrid-example)
-      echo "Patching React project"
+        cmd "# Patching React project"
         patchReactV244
         patchHillaSourcesV244 $D $F
         ;;
       *-lit|*-lit-*|*-lit_*|*-hilla-*|*-hilla|hilla-*)
-      echo "Patching Lit project"
+        cmd "# Patching Lit project"
         patchLitV244
         patchHillaSourcesV244 $D $F
         ;;
       gs-crud-with-vaadin)
         ## TODO remove this when gs-crud-with-vaadin is fixed
-        warn "Adding vaadin-maven-plugin to build block in pom.xml"
-        perl -0777 -pi -e 's|(\s+)(</plugin>)|${1}${2}${1}<plugin>${1}    <groupId>com.vaadin</groupId>${1}    <artifactId>vaadin-maven-plugin</artifactId>${1}    <executions><execution><goals><goal>prepare-frontend</goal></goals></execution></executions>${1}</plugin>|' pom.xml
+        cmd "# Adding vaadin-maven-plugin to build block in pom.xml"
+        cmd "perl -0777 -pi -e 's|(\s+)(</plugin>)|\${1}\${2}\${1}<plugin>\${1}    <groupId>com.vaadin</groupId>\${1}    <artifactId>vaadin-maven-plugin</artifactId>\${1}    <executions><execution><goals><goal>prepare-frontend</goal></goals></execution></executions>${1}</plugin>|' pom.xml"
+             perl -0777 -pi -e 's|(\s+)(</plugin>)|${1}${2}${1}<plugin>${1}    <groupId>com.vaadin</groupId>${1}    <artifactId>vaadin-maven-plugin</artifactId>${1}    <executions><execution><goals><goal>prepare-frontend</goal></goals></execution></executions>${1}</plugin>|' pom.xml
         ;;
       skeleton-starter-flow|base-starter-flow-quarkus|skeleton-starter-flow-cdi|archetype-jetty)
-        warn "Adding exclusion for hilla-dev in pom.xml"
-        perl -0777 -pi -e 's!(\s+)(<artifactId>(vaadin|vaadin-quarkus-extension)</artifactId>)!${1}${2}${1}<exclusions>${1}    <exclusion>${1}        <groupId>com.vaadin</groupId>${1}        <artifactId>hilla-dev</artifactId>${1}    </exclusion>${1}</exclusions>!' pom.xml
+        cmd "# Adding exclusion for hilla-dev in pom.xml"
+        cmd "perl -0777 -pi -e 's!(\s+)(<artifactId>(vaadin|vaadin-quarkus-extension)</artifactId>)!\${1}\${2}\${1}<exclusions>\${1}    <exclusion>\${1}        <groupId>com.vaadin</groupId>\${1}        <artifactId>hilla-dev</artifactId>\${1}    </exclusion>${1}</exclusions>!' pom.xml"
+             perl -0777 -pi -e 's!(\s+)(<artifactId>(vaadin|vaadin-quarkus-extension)</artifactId>)!${1}${2}${1}<exclusions>${1}    <exclusion>${1}        <groupId>com.vaadin</groupId>${1}        <artifactId>hilla-dev</artifactId>${1}    </exclusion>${1}</exclusions>!' pom.xml
         ;;
   esac
 
@@ -37,7 +39,7 @@ applyv244Patches() {
   diff_=`git diff $D $F | egrep '^[+-]'`
   [ -n "$diff_" ] && echo "" && warn "Patched sources\n" && dim "====== BEGIN ======\n\n$diff_\n======  END  ======" 
 
-  # mvFrontend
+  mvFrontend
   addTypeModule
   downgradeJava
 
@@ -46,19 +48,24 @@ applyv244Patches() {
 }
 
 patchHillaSourcesV244() {
-  find $D -name "*.java" -exec perl -pi -e 's/import dev.hilla/import com.vaadin.hilla/g' '{}' ';'
+  cmd "find $D -name '*.java' -exec perl -pi -e 's/import dev.hilla/import com.vaadin.hilla/g' '{}' ';'"
+  find $D -name '*.java' -exec perl -pi -e 's/import dev.hilla/import com.vaadin.hilla/g' '{}' ';'
   if [ -d "$F" ]; then
-    find $F -name "*.ts" -exec perl -pi -e 's|\@hilla/form|\@vaadin/hilla-lit-form|g' '{}' ';'
-    find $F -name "*.ts" -exec perl -pi -e 's|Frontend/generated/dev/hilla|Frontend/generated/com/vaadin/hilla|g' '{}' ';'
-    find $F -name "*.ts" -exec perl -pi -e 's|\@hilla/frontend|\@vaadin/hilla-frontend|g' '{}' ';'
-    find $F -name "*.tsx" -exec perl -pi -e 's|\@hilla/frontend|\@vaadin/hilla-frontend|g' '{}' ';'
-    find $F -name "*.tsx" -exec perl -pi -e 's|\@hilla/react-form|\@vaadin/hilla-react-form|g' '{}' ';'
-    find $F -name "*.ts" -exec perl -pi -e 's|\@hilla/|\@vaadin/|g' '{}' ';'
-    find $F -name "*.tsx" -exec perl -pi -e 's|\@hilla/|\@vaadin/|g' '{}' ';'
+    cmd "find $F -name '*.ts' -o -name '*.tsx' -exec perl -pi -e 's|\@hilla/form|\@vaadin/hilla-lit-form|g' '{}' ';'"
+         find $F -name '*.ts' -o -name '*.tsx' -exec perl -pi -e 's|\@hilla/form|\@vaadin/hilla-lit-form|g' '{}' ';'
+    cmd "find $F -name '*.ts' -o -name '*.tsx' -exec perl -pi -e 's|Frontend/generated/dev/hilla|Frontend/generated/com/vaadin/hilla|g' '{}' ';'"
+         find $F -name '*.ts' -o -name '*.tsx' -exec perl -pi -e 's|Frontend/generated/dev/hilla|Frontend/generated/com/vaadin/hilla|g' '{}' ';'
+    cmd "find $F -name '*.ts' -o -name '*.tsx' -exec perl -pi -e 's|\@hilla/frontend|\@vaadin/hilla-frontend|g' '{}' ';'"
+         find $F -name '*.ts' -o -name '*.tsx' -exec perl -pi -e 's|\@hilla/frontend|\@vaadin/hilla-frontend|g' '{}' ';'
+    cmd "find $F -name '*.ts' -o -name '*.tsx' -exec perl -pi -e 's|\@hilla/react-form|\@vaadin/hilla-react-form|g' '{}' ';'"
+         find $F -name '*.ts' -o -name '*.tsx' -exec perl -pi -e 's|\@hilla/react-form|\@vaadin/hilla-react-form|g' '{}' ';'
+    cmd "find $F -name '*.ts' -o -name '*.tsx' -exec perl -pi -e 's|\@hilla/|\@vaadin/|g' '{}' ';'"
+         find $F -name '*.ts' -o -name '*.tsx' -exec perl -pi -e 's|\@hilla/|\@vaadin/|g' '{}' ';'
   fi
 }
 
 patchInitializer() {
+  warn "# Patching initializer-hilla-gradle"
   perl -pi -e 's|id\s+.dev\.hilla.\s+version\s+..+|id "com.vaadin" version "'$vers_'"|' build.gradle
   perl -0777 -pi -e 's|(repositories.*mavenCentral..\s+)|$1maven { setUrl("https://maven.vaadin.com/vaadin-prereleases") }\n|ms' build.gradle
   perl -0777 -pi -e 's|(.*)|pluginManagement {repositories {\n mavenLocal()\nmaven { setUrl("https://maven.vaadin.com/vaadin-prereleases") }\ngradlePluginPortal()\n}}\n${1}|ms' settings.gradle
@@ -66,10 +73,14 @@ patchInitializer() {
 }
 
 patchGradV244() {
-  perl -pi -e "s|dev\.hilla:hilla-bom|com.vaadin:vaadin-bom|" build.gradle
-  perl -pi -e "s|dev\.hilla:hilla-(react-)?spring-boot-starter|com.vaadin:vaadin-spring-boot-starter|" build.gradle
-  [ -f gradle.properties ] && perl -pi -e "s|hillaVersion|vaadinVersion|" build.gradle settings.gradle gradle.properties
-  perl -pi -e "s|dev\.hilla|com.vaadin|" build.gradle settings.gradle
+  cmd "perl -pi -e 's|dev\.hilla:hilla-bom|com.vaadin:vaadin-bom|' build.gradle"
+       perl -pi -e 's|dev\.hilla:hilla-bom|com.vaadin:vaadin-bom|' build.gradle
+  cmd "perl -pi -e 's|dev\.hilla:hilla-(react-)?spring-boot-starter|com.vaadin:vaadin-spring-boot-starter|' build.gradle"
+       perl -pi -e 's|dev\.hilla:hilla-(react-)?spring-boot-starter|com.vaadin:vaadin-spring-boot-starter|' build.gradle
+  [ -f gradle.properties ] && cmd "perl -pi -e 's|hillaVersion|vaadinVersion|' build.gradle settings.gradle gradle.properties"
+  [ -f gradle.properties ] &&      perl -pi -e 's|hillaVersion|vaadinVersion|' build.gradle settings.gradle gradle.properties
+  cmd "perl -pi -e 's|dev\.hilla|com.vaadin|' build.gradle settings.gradle"
+       perl -pi -e 's|dev\.hilla|com.vaadin|' build.gradle settings.gradle
 }
 
 patchReactV244() {
@@ -105,9 +116,9 @@ mvFrontend() {
 addTypeModule() {
   [ ! -f package.json ] && return
   grep -q '"type": *"module"' package.json && return
-  cmd "perl -pi -e 's|(\s+)(\"license\": \"[^\"]+\")|${1}${2},\\\n${1}\"type\": \"module\"|' package.json"
-  reportError "Updated package.json" "Added type: module to package.json"
+  cmd "perl -pi -e 's|(\s+)(\"license\": \"[^\"]+\")|\${1}\${2},\\\n\${1}\"type\": \"module\"|' package.json"
   perl -pi -e 's|(\s+)("license": "[^"]+")|${1}${2},\n${1}"type": "module"|' package.json
+  reportError "Updated package.json" "Added type: module to package.json"
 }
 
 downgradeJava() {
@@ -115,6 +126,6 @@ downgradeJava() {
   grep -q '<java.version>21</java.version>' pom.xml || return
   cmd "perl -pi -e 's|<java.version>21</java.version>|<java.version>17</java.version>|' pom.xml"
   perl -pi -e 's|<java.version>21</java.version>|<java.version>17</java.version>|' pom.xml
-  reportError "Downgraded Java version" "Changed java.version from 21 to 17 in pom.xml"
+  warn "Downgraded Java version" "Changed java.version from 21 to 17 in pom.xml"
 }
 
