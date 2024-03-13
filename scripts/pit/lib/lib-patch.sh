@@ -10,6 +10,8 @@ applyPatches() {
   esac
   expr "$vers_" : ".*SNAPSHOT" >/dev/null && enableSnapshots
   expr "$vers_" : "24.3.0.alpha.*" >/dev/null && addSpringReleaseRepo
+  downgradeJava
+
   case $app_ in
     archetype-hotswap) enableJBRAutoreload ;;
     vaadin-oauth-example)
@@ -81,8 +83,6 @@ applyPatches() {
       [ "$type_" != 'next' ] && return 0 || applyv244Patches "$app_" "$type_" "$vers_"
       ;;
   esac
-
-  downgradeJava
 
   # always successful
   return 0
