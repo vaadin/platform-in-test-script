@@ -11,6 +11,7 @@ applyPatches() {
   expr "$vers_" : ".*SNAPSHOT" >/dev/null && enableSnapshots
   expr "$vers_" : "24.3.0.alpha.*" >/dev/null && addSpringReleaseRepo
   downgradeJava
+  removeDeprecated
 
   case $app_ in
     archetype-hotswap) enableJBRAutoreload ;;
@@ -52,7 +53,7 @@ applyPatches() {
     *hilla*|*-lit*|start)
       ## TODO: adjust 2.4 when hilla-quickstart-tutorial hilla-basics-tutorial are fixed
       # [ "$type_" = 'next' ] <-- removed because it fails in current start projects
-      if echo "$vers_" | grep -Eq "2\.5[\.-].*|24\.3[\.-].*|24\.4[\.-].*" ; then
+      if [ -d frontend ] && echo "$vers_" | grep -Eq "2\.5[\.-].*|24\.3[\.-].*|24\.4[\.-].*" ; then
         _v=`grep -r 'createRenderRoot(): Element' frontend | cut -d ':' -f1 | tr '\n' ' '`
         _cmd="perl -pi -e 's/createRenderRoot\(\): Element \| ShadowRoot/createRenderRoot\(\): HTMLElement | DocumentFragment/g' $_v"
         [ -n "$_v" ] && cmd "$_cmd" && eval "$_cmd"
@@ -110,7 +111,15 @@ downgradeJava() {
   grep -q '<java.version>21</java.version>' pom.xml || return
   cmd "perl -pi -e 's|<java.version>21</java.version>|<java.version>17</java.version>|' pom.xml"
   perl -pi -e 's|<java.version>21</java.version>|<java.version>17</java.version>|' pom.xml
-  warn "Downgraded Java version" "Changed java.version from 21 to 17 in pom.xml"
+  warn "Downgraded Java version from 21 to 17 in pom.xml"
+}
+
+removeDeprecated() {
+  [ ! -f pom.xml ] && return
+  grep -q '<productionMode>true</productionMode>' pom.xml || return
+  cmd "perl -0777 -pi -e 's|\s*<productionMode>true</productionMode>\s*||' pom.xml"
+  perl -pi -e 's|\s*<productionMode>true</productionMode>\s*||' pom.xml
+  warn "Removed deprecated productionMode from pom.xml"
 }
 
 

@@ -53,10 +53,10 @@ downloadInitializer() {
   _type=$2
   _deps=$3
   _url="https://start.spring.io/starter.zip?type=$_type&language=java&bootVersion=$_boot&baseDir=$_name&groupId=$_group&artifactId=$_name&name=$_name&description=$_name&packageName=$_group&packaging=jar&javaVersion=$_java&dependencies=$_deps"
-  cmd="curl -s $_url --output $_name.zip"
-  cmd "$cmd"
-  $cmd || return 1
+  cmd "curl -s '$_url' --output $_name.zip"
+  curl -s $_url --output $_name.zip || return 1
   unzip -q $_name.zip
+  cmd "unzip -q $_name.zip"
   cmd "cd $_name"
   cd $_name || return 1
   git init -q
