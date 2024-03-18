@@ -83,3 +83,15 @@ starter-wizard
 docs
 dsp-demo
 "
+
+
+# skeleton-starter-hilla-lit-gradle
+# skeleton-starter-hilla-react-gradle
+# skeleton-starter-hilla-react
+# skeleton-starter-hilla-lit
+
+# hilla-crm-tutorial
+# hilla-quickstart-tutorial
+# hilla-basics-tutorial
+
+# flow-hilla-hybrid-example

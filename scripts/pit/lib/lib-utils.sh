@@ -192,6 +192,14 @@ runInBackgroundToFile() {
   pid_run=$!
 }
 
+tsConfigModified() {
+  grep -q "'tsconfig.json' has been updated" $1 || return 1
+  H=`git diff tsconfig.json 2>/dev/null`
+  H="$H"`git diff types.d.ts 2>/dev/null`
+  echo ">>>> PiT: Found tsconfig.json modified" >> $1
+  reportOutErrors "File 'tsconfig.json' was modified and servlet threw an Exception" "$H"
+}
+
 ## Wait until the specified message appears in the log file
 waitUntilMessageInFile() {
   __file="$1"
@@ -205,12 +213,8 @@ waitUntilMessageInFile() {
     kill -0 $pid_run 2>/dev/null
     if [ $? != 0 ]
     then
-      if grep -q "'tsconfig.json' has been updated" $__ofile; then
-        H=`git diff tsconfig.json`
-        echo ">>>> PiT: tsconfig.json modified, retrying ...." >> $__ofile && reportOutErrors "File 'tsconfig.json' was modified and servlet threw an Exception" "$H" && return 2
-      else
-        reportOutErrors "$__file" "Error $__cmd failed to start" && return 1
-      fi
+      tsConfigModified $__file && return 2
+      reportOutErrors "$__file" "Error $__cmd failed to start" && return 1
     fi
     __lasted=`expr $3 - $__timeout`
     __perl="perl -pe 's~^.*($__message.*)~\$1~g'"
@@ -309,9 +313,7 @@ waitUntilFrontendCompiled() {
     H=`curl --retry 4 --retry-all-errors -f -s -v $__url -L -H Accept:text/html -o /dev/null 2>&1`
     __err=$?
     if [ $__err != 0 ]; then
-       if egrep -q 'The TypeScript type declaration file .* has been updated' $__ofile; then
-         [ -f tsconfig.json ] && _diff=`git diff tsconfig.json`
-         [ -f types.d.ts ] && _diff="$_diff"`git diff types.d.ts`
+       if tsConfigModified $__ofile; then
          echo ">>>> PiT: config file modified, retrying ...." >> $__ofile && reportOutErrors "$__ofile" "File tsconfig/types.d was modified and servlet threw an Exception" "$_diff"
          return 2
        else

@@ -63,10 +63,21 @@ commitChanges() {
   repo=`echo "$_repo" | cut -d / -f3-100`
 
 
+  remotes=`git ls-remote --heads 2>/dev/null | grep refs | sed -e 's|.*refs/heads/||g' | egrep "^$_baseBranch$"`
+  if [ -n "$remotes" ]; then
+    log "Branch $_baseBranch already exists commit manualy to that branch"
+
+  fi
+  exit
+
+  log "Creating branch $_baseBranch"
+  git push -q origin :$_baseBranch
+
   remotes=`git ls-remote --heads 2>/dev/null | grep refs | sed -e 's|.*refs/heads/||g' | egrep "^$_headBranch$"`
   if [ -n "$remotes" ]; then
     log "Branch $_headBranch already exists"
   fi
+
 
   log "Committing and pushing changes"
   git checkout -q -b $_tmpBranch
