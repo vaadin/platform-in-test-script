@@ -194,7 +194,6 @@ getReadyMessageDev() {
     spreadsheet-demo|layout-examples) echo "Started ServerConnector";;
     mpr-demo) echo "Vaadin is running in DEBUG MODE";;
     *-gradle|flow-spring-examples) echo "Tomcat started|started and listening";;
-    start) echo "Frontend compiled successfully";;
     *) echo "Frontend compiled successfully|Started .*Application|Started Server";;
   esac
 }
