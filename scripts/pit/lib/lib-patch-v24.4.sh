@@ -29,7 +29,7 @@ applyv244Patches() {
         ;;
       skeleton-starter-flow|base-starter-flow-quarkus|skeleton-starter-flow-cdi|archetype-jetty)
         cmd "# Adding exclusion for hilla-dev in pom.xml"
-        cmd "perl -0777 -pi -e 's!(\s+)(<artifactId>(vaadin|vaadin-quarkus-extension)</artifactId>)!\${1}\${2}\${1}<exclusions>\${1}    <exclusion>\${1}        <groupId>com.vaadin</groupId>\${1}        <artifactId>hilla-dev</artifactId>\${1}    </exclusion>${1}</exclusions>!' pom.xml"
+        cmd "perl -0777 -pi -e 's!(\s+)(<artifactId>(vaadin|vaadin-quarkus-extension)</artifactId>)!\${1}\${2}\${1}<exclusions>\${1}    <exclusion>\${1}        <groupId>com.vaadin</groupId>\${1}        <artifactId>hilla-dev</artifactId>\${1}    </exclusion>\${1}</exclusions>!' pom.xml"
              perl -0777 -pi -e 's!(\s+)(<artifactId>(vaadin|vaadin-quarkus-extension)</artifactId>)!${1}${2}${1}<exclusions>${1}    <exclusion>${1}        <groupId>com.vaadin</groupId>${1}        <artifactId>hilla-dev</artifactId>${1}    </exclusion>${1}</exclusions>!' pom.xml
         ;;
   esac
