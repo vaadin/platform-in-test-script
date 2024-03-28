@@ -52,7 +52,7 @@ bookstore-example
 bookstore-example:rtl-demo
 bakery-app-starter-flow-spring
 k8s-demo-app
-TatuLund/mpr-demo:mpr-7
+mpr-demo
 testbench-demo
 ce-demo
 start
