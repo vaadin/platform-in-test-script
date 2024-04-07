@@ -64,7 +64,11 @@ process.argv.forEach(a => {
   ];
   for (const label of views) {
     await page.locator('#newView').click();
-    await page.getByRole('heading', { name: label, exact: true }).click();
+    const viewLabel = await page.getByRole('heading', { name: label, exact: true });
+    if (!await viewLabel.isVisible()) {
+      await page.getByRole('heading', { name: 'Flow (Java)' }).click();
+    }
+    await viewLabel.click();
     await page.getByRole('button', { name: 'Add View' }).click();
     await page.getByRole('textbox', { name: 'Name' }).press('Escape');
     await page.waitForTimeout(500);
