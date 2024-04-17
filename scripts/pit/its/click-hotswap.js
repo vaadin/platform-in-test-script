@@ -27,6 +27,9 @@ async function exec(order, ops) {
     ls.stderr.on('data', (data) => stderr += data);
     ls.on('close', (code) => {
       if (code !== 0) {
+        console.log('>> ERROR ' + code + ' executing ' + order);
+        console.log('>> STDOUT\n' + stdout);
+        console.log('>> STDERR\n' + stderr);
         reject({ stdout, stderr, code });
       } else {
         resolve({ stdout, stderr, code });
