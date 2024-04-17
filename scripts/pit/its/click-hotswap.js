@@ -22,7 +22,7 @@ async function exec(order, ops) {
     const arg = order.split(/ +/).splice(1);
     console.log(`=> TEST: Executing -> ${order}`);
     let stdout = "", stderr = "";
-    const ls = spawn(cmd, arg);
+    const ls = spawn(cmd, arg, { shell: true });
     ls.stdout.on('data', (data) => stdout += data);
     ls.stderr.on('data', (data) => stderr += data);
     ls.on('close', (code) => {
