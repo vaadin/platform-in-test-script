@@ -40,7 +40,7 @@ generateStarter() {
   cmd "cd $_name"
   cd $_name || return 1
   ## if git configuration already exists, skip
-  if [! -d ".git" ]; then
+  if [ ! -d ".git" ]; then
     git init -q
     git config user.email | grep -q ... || git config user.email "vaadin-bot@vaadin.com"
     git config user.name  | grep -q ... || git config user.name "Vaadin Bot"
