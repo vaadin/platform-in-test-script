@@ -79,6 +79,7 @@ getStartTestFile() {
    default*|vaadin-quarkus|*_prerelease) echo "hello.js";;
    initializer*) echo "noop.js";; # disabled until we use vaadin initializr for flow and hilla
    archetype*) echo "click-hotswap.js";;
+   hilla-react-cli) echo "hilla-react-cli.js";;
    *) echo "start.js";;
   esac
 }
