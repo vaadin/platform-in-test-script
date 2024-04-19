@@ -33,16 +33,20 @@ generateStarter() {
     *spring)        cmd="$MVN -ntp -q -B archetype:generate -DarchetypeGroupId=com.vaadin -DarchetypeArtifactId=vaadin-archetype-spring-application -DarchetypeVersion=LATEST -DgroupId=com.vaadin.starter -DartifactId=$_name" ;;
     archetype*)     cmd="$MVN -ntp -q -B archetype:generate -DarchetypeGroupId=com.vaadin -DarchetypeArtifactId=vaadin-archetype-application -DarchetypeVersion=LATEST -DgroupId=com.vaadin.starter -DartifactId=$_name" ;;
     vaadin-quarkus) cmd="$MVN -ntp -q -B io.quarkus.platform:quarkus-maven-plugin:3.1.1.Final:create -Dextensions=vaadin -DwithCodestart -DprojectGroupId=com.vaadin.starter -DprojectArtifactId=$_name" ;;
+    hilla-*-cli)      cmd="npx @hilla/cli init --react $_name" ;;
   esac
   cmd "$cmd"
   $cmd || return 1
   cmd "cd $_name"
   cd $_name || return 1
-  git init -q
-  git config user.email | grep -q ... || git config user.email "vaadin-bot@vaadin.com"
-  git config user.name  | grep -q ... || git config user.name "Vaadin Bot"
-  git add .??* *
-  git commit -q -m 'First commit' -a
+  ## if git configuration already exists, skip
+  if [! -d ".git" ]; then
+    git init -q
+    git config user.email | grep -q ... || git config user.email "vaadin-bot@vaadin.com"
+    git config user.name  | grep -q ... || git config user.name "Vaadin Bot"
+    git add .??* *
+    git commit -q -m 'First commit' -a
+  fi
 }
 
 downloadInitializer() {
@@ -161,7 +165,7 @@ runStarter() {
      fi
     # 1
     case "$_preset" in
-      archetype*|vaadin-quarkus) generateStarter $_preset || return 1 ;;
+      archetype*|vaadin-quarkus|hilla-*-cli) generateStarter $_preset || return 1 ;;
       initializer-hilla-maven)   downloadInitializer $_preset maven-project  hilla,devtools || return 1 ;;
       initializer-hilla-gradle)  downloadInitializer $_preset gradle-project hilla,devtools || return 1 ;;
       # downloadInitializer initializer-vaadin-maven maven-project vaadin,devtools
