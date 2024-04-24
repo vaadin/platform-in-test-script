@@ -39,6 +39,12 @@ process.argv.forEach(a => {
   await page.waitForURL(`http://${host}:${port}/`);
   await page.getByRole('link').locator('text=/Personas/').click();
   await page.waitForURL(`http://${host}:${port}/personas`);
+
+  const dismiss = page.getByTestId('message').getByText('Dismiss');
+  if (await dismiss.isVisible()) {
+    await dismiss.getByText('Dismiss').click();
+  }
+
   await page.getByRole('button', { name: '+' }).locator('div').click();
   await page.waitForURL(`http://${host}:${port}/personas/new`);
   await page.locator('.detail').getByLabel('First Name').click();
