@@ -139,7 +139,7 @@ getInstallCmdPrd() {
     start) echo "$MVN -ntp -B install -Dmaven.test.skip -Pcircleci" ;;
     spring-petclinic-vaadin-flow) echo "$MVN -ntp -B install -Pproduction,it -DskipTests";;
     form-filler-demo) echo "$MVN -ntp -B clean install -Pproduction,it $H $PNPM -DOPENAI_TOKEN=$OPENAI_TOKEN";;
-    testbench-demo) echo "$MVN -ntp -B clean install -Pproduction,it $H $PNPM -Dselenium.version=4.18.1";;
+    testbench-demo) echo "$MVN -ntp -B clean install -Pproduction,it $H $PNPM -Dselenium.version=4.19.1";;
     *) echo "$MVN -ntp -B clean install -Pproduction,it $H $PNPM";;
   esac
 }
