@@ -25,7 +25,11 @@ process.argv.forEach(a => {
   await page.goto(`http://${host}:${port}/`);
   if (mode == 'dev') {
     await page.getByText('Don’t show again').click();
-    await page.getByText('Dismiss').nth(1).click();
+    if (await page.getByText('Dismiss').count() > 1) {
+      await page.getByText('Dismiss').nth(1).click();
+    } else {
+      await page.getByText('Dismiss').click();
+    }
   }
   await page.getByLabel('Username').click();
   await page.getByLabel('Username').fill('admin');
