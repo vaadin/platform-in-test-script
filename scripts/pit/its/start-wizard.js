@@ -63,15 +63,35 @@ process.argv.forEach(a => {
     'Grid with Filters',
   ];
   for (const label of views) {
+    log(`${label} creating view\n`);
     await page.locator('#newView').click();
+    await page.waitForTimeout(500);
     const viewLabel = await page.getByRole('heading', { name: label, exact: true });
     if (!await viewLabel.isVisible()) {
       await page.getByRole('heading', { name: 'Flow (Java)' }).click();
     }
+    log(`${label} clicking on ${viewLabel}\n`);
     await viewLabel.click();
-    await page.getByRole('button', { name: 'Add View' }).click();
-    await page.getByRole('textbox', { name: 'Name' }).press('Escape');
-    await page.waitForTimeout(500);
+    const addViewButton = page.getByRole('button', { name: 'Add View' });
+    log(`${label} clicking on ${addViewButton}\n`);
+    await addViewButton.click();
+    let newViewNameTextBox = page.getByRole('textbox', { name: 'Name' });
+    if (await newViewNameTextBox.isVisible()) {
+      log(`pushing escape on ${newViewNameTextBox} for ${label}\n`);
+      await newViewNameTextBox.press('Escape');
+    } else {
+      log(`${label} not visible ${newViewNameTextBox} sleeping 5sec\n`);
+      await page.waitForTimeout(5000);
+      newViewNameTextBox = page.getByRole('textbox', { name: 'Name' });
+      if (await newViewNameTextBox.isVisible()) {
+        log(`pushing escape on ${newViewNameTextBox} for ${label}\n`);
+        await newViewNameTextBox.press('Escape');
+      } else {
+        log(`let's see if fails ....`)
+      }
+    }
+    
+    await page.waitForTimeout(1000);
     log(`Created view ${label}\n`);
   }
 
