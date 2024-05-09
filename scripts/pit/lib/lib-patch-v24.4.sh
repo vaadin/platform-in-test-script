@@ -24,8 +24,8 @@ applyv244Patches() {
       gs-crud-with-vaadin)
         ## TODO remove this when gs-crud-with-vaadin is fixed
         cmd "# Adding vaadin-maven-plugin to build block in pom.xml"
-        cmd "perl -0777 -pi -e 's|(\s+)(</plugin>)|\${1}\${2}\${1}<plugin>\${1}    <groupId>com.vaadin</groupId>\${1}    <artifactId>vaadin-maven-plugin</artifactId>\${1}    <executions><execution><goals><goal>prepare-frontend</goal></goals></execution></executions>${1}</plugin>|' pom.xml"
-             perl -0777 -pi -e 's|(\s+)(</plugin>)|${1}${2}${1}<plugin>${1}    <groupId>com.vaadin</groupId>${1}    <artifactId>vaadin-maven-plugin</artifactId>${1}    <executions><execution><goals><goal>prepare-frontend</goal></goals></execution></executions>${1}</plugin>|' pom.xml
+        # cmd "perl -0777 -pi -e 's|(\s+)(</plugin>)|\${1}\${2}\${1}<plugin>\${1}    <groupId>com.vaadin</groupId>\${1}    <artifactId>vaadin-maven-plugin</artifactId>\${1}    <executions><execution><goals><goal>prepare-frontend</goal></goals></execution></executions>${1}</plugin>|' pom.xml"
+        #      perl -0777 -pi -e 's|(\s+)(</plugin>)|${1}${2}${1}<plugin>${1}    <groupId>com.vaadin</groupId>${1}    <artifactId>vaadin-maven-plugin</artifactId>${1}    <executions><execution><goals><goal>prepare-frontend</goal></goals></execution></executions>${1}</plugin>|' pom.xml
         cmd "perl -pi -e 's|WebEnvironment.NONE|WebEnvironment.MOCK|' src/test/java/com/example/crudwithvaadin/MainViewTests.java"
              perl -pi -e 's|WebEnvironment.NONE|WebEnvironment.MOCK|' src/test/java/com/example/crudwithvaadin/MainViewTests.java
         ;;
