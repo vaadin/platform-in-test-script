@@ -450,7 +450,7 @@ changeMavenBlock() {
     if [ "$4" = remove ]; then
       [ -n "$TEST" ] && cmd "## Remove $__file $__tag $__grp:$__id"
       _cmd="perl -0777 -pi -e 's|(\s+)(<$__tag>\s*<groupId>)($__grp)(</groupId>\s*<artifactId>)($__id)(</artifactId>)(\s*.*?)?(\s*</$__tag>)||msg' $__file"
-      perl -0777 -pi -e 's|(\s+)(<'$__tag'>\s*<groupId>)('$__grp')(</groupId>\s*<artifactId>)('$__id')(</artifactId>)(\s*.*?)?(\s*</'$__tag'>)||msg' $__file
+      perl -0777 -pi -e 's|(\s+)(<'$__tag'>\s*<groupId>)('$__grp')\s*(</groupId>\s*<artifactId>)('$__id')\s*(</artifactId>)(\s*.*?)?(\s*</'$__tag'>)||msg' $__file
     elif [ -n "$4" ]; then
       __content=`cat $__file`
       __found=`perl -0777 -pe 's|.*<'$__tag'>\s*<groupId>'$__grp'</groupId>\s*<artifactId>'$__id'</artifactId>\s*<version>([^<]+)</version>\s*.*?\s*</'$__tag'>.*|${1}|msg' $__file`
@@ -552,6 +552,7 @@ renameMavenProperty() {
 ## $2: groupId
 ## $3: artifactId
 removeMavenBlock() {
+  cmd "##remove $1 $2 $3"
   changeMavenBlock "$1" "$2" "$3" remove
 }
 

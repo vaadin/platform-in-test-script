@@ -11,7 +11,7 @@ applyv244Patches() {
         patchGradV244
         patchHillaSourcesV244 $D $F
         ;;
-      *-react|*-react-*|*-react_*|react-*|hilla-crm-tutorial|flow-hilla-hybrid-example)
+      *-react|*-react-*|*-react_*|react*|hilla-crm-tutorial|flow-hilla-hybrid-example)
         cmd "# Patching React project"
         patchReactV244
         patchHillaSourcesV244 $D $F
@@ -19,6 +19,18 @@ applyv244Patches() {
       *-lit|*-lit-*|*-lit_*|*-hilla-*|*-hilla|hilla-*)
         cmd "# Patching Lit project"
         patchLitV244
+        patchHillaSourcesV244 $D $F
+        ;;
+      test-hybrid)
+        cmd "# Patching Lit hybrid project"
+        patchPomHybridV244
+        patchLitV244
+        patchHillaSourcesV244 $D $F
+        ;;
+      test-hybrid-react_partial-prerelease)
+        cmd "# Patching React hybrid project"
+        PatchPomHybridV244
+        patchReactV244
         patchHillaSourcesV244 $D $F
         ;;
       gs-crud-with-vaadin)
@@ -101,6 +113,12 @@ patchPomV244() {
   changeMavenBlock dependency dev.hilla hilla-spring-boot-starter "\\\${vaadin.version}" com.vaadin vaadin-spring-boot-starter
   changeMavenBlock dependency dev.hilla hilla-react-spring-boot-starter "\\\${vaadin.version}" com.vaadin vaadin-spring-boot-starter
   changeMavenBlock plugin dev.hilla hilla-maven-plugin "\\\${vaadin.version}" com.vaadin vaadin-maven-plugin
+}
+
+patchPomHybridV244() {
+  removeMavenBlock dependency com.vaadin vaadin-bom
+  removeMavenBlock dependency com.vaadin vaadin
+  removeMavenBlock plugin "dev.hilla" "hilla-maven-plugin"
 }
 
 mvFrontend() {

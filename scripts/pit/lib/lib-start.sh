@@ -77,9 +77,10 @@ getStartTestFile() {
    flow-crm-tutorial*) echo "";;
    react-tutorial) echo "react.js";;
    default*|vaadin-quarkus|*_prerelease) echo "hello.js";;
-   initializer*) echo "noop.js";; # disabled until we use vaadin initializr for flow and hilla
+   initializer*) echo "noop.js";; # disabled until we use vaadin initializer for flow and hilla
    archetype*) echo "click-hotswap.js";;
    hilla-react-cli) echo "hilla-react-cli.js";;
+   react|react-crm-tutorial|test-hybrid*) echo "noop.js";;
    *) echo "start.js";;
   esac
 }
