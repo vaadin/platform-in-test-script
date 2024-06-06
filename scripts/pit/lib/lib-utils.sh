@@ -783,7 +783,17 @@ computeVersion() {
     *) echo "$2";;
   esac
 }
+
 computeProp() {
+    case $1 in
+      *hilla*gradle) echo "hillaVersion";;
+      *gradle) echo "vaadinVersion";;
+      *typescript*|*hilla*|*react*|*-lit*) echo "hilla.version";;
+      *) echo "vaadin.version";;
+    esac
+}
+
+computePropAfterPatch() {
   case $1 in
     *hilla*gradle) echo "hillaVersion";;
     *gradle) echo "vaadinVersion";;
