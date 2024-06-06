@@ -52,7 +52,7 @@ generateStarter() {
 downloadInitializer() {
   _name=$1
   _java=17
-  _boot=3.1.2
+  _boot=3.2.6
   _group=com.vaadin.initializer
   _type=$2
   _deps=$3
