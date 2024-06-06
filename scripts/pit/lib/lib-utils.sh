@@ -785,15 +785,9 @@ computeVersion() {
 }
 computeProp() {
   case $1 in
-    *hilla*gradle)
-      H=`getGradleVersion $1`
-      [ -n "$H" ] && echo "hillaVersion" || echo "vaadinVersion"
-      ;;
+    *hilla*gradle) echo "hillaVersion";;
     *gradle) echo "vaadinVersion";;
-    *typescript*|*hilla*|*react*|*-lit*)
-      H=`getCurrProperty $1 pom.xml`
-      [ -n "$H" ] && echo "hilla.version" || echo "vaadin.version"
-      ;;
+    *typescript*|*hilla*|*react*|*-lit*) echo "hilla.version";;
     *) echo "vaadin.version";;
   esac
 }
