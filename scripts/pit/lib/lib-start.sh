@@ -128,16 +128,7 @@ _needsLicense() {
 }
 
 _isNext() {
-  if expr "$1" : .*partial-nextprerelease$ >/dev/null; then
-    return 0
-  else
-    if [ -n "$3" ]; then
-      _vcurr=`getStartVersion $2 | cut -d. -f1,2`
-      _vnext=`echo $3 | cut -d. -f1,2`
-      [ "$_vcurr" = "$_vnext" ] && return 0 || return 1
-    fi
-    return 1
-  fi
+  expr "$1" : .*partial-nextprerelease$ >/dev/null
 }
 
 setStartVersion() {
@@ -148,16 +139,6 @@ setStartVersion() {
       setVersion $1 $2
     fi
 }
-
-getStartVersion() {
-    if [ -f "build.gradle" ]
-    then
-      getGradleVersion $1
-    else
-      getCurrProperty $1 pom.xml
-    fi
-}
-
 
 ## Run an App downloaded from start.vaadin.com by following the next steps
 # 1. generate the project and download from start.vaadin.com (if not in offline)
@@ -212,7 +193,7 @@ runStarter() {
 
   _needsLicense "$_preset" || removeProKey
 
-  if test -z "$NOCURRENT" && ! _isNext "$_preset" $_versionProp $_version
+  if test -z "$NOCURRENT" && ! _isNext "$_preset"
   then
     _current=`setStartVersion $_versionProp current`
     applyPatches $_preset current $_current dev || return 0
