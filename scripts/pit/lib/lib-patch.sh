@@ -12,7 +12,6 @@ applyPatches() {
   expr "$vers_" : "24.3.0.alpha.*" >/dev/null && addSpringReleaseRepo
   downgradeJava
   removeDeprecated
-
   case $app_ in
     archetype-hotswap) enableJBRAutoreload ;;
     vaadin-oauth-example)
@@ -45,6 +44,11 @@ applyPatches() {
       [ -n "$TEST" ] && ([ -z "$OPENAI_TOKEN" ] && cmd "export OPENAI_TOKEN=your_AI_token") && return 0
       [ -z "$OPENAI_TOKEN" ] && err "Set correctly the OPENAI_TOKEN env var" && return 1
       ;;
+    initializer*)
+       # https://github.com/vaadin/flow/issues/19526#issuecomment-2152719735
+       [ -d frontend/generated ] && GN=frontend/generated || GN=src/main/frontend/generated
+       [ -d $GN ] && cmd "Cleaning Generated folder: rm -rf $GN" && rm -rf $GN
+       ;;
     ### disabled until proper fix for init-app goal https://github.com/vaadin/hilla/issues/2053
     # initializer-hilla-maven)
     #   cmd "$MVN vaadin:init-app" && $MVN -q vaadin:init-app ;;
