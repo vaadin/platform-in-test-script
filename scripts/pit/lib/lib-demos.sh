@@ -6,6 +6,7 @@ checkoutDemo() {
   _demo=`getGitDemo $1`
   _branch=`getGitBranch $1`
   _folder=`getGitFolder $1`
+  _workdir="$_demo$_folder"
   _repo=`getGitRepo $1`
   _tk=${GITHUB_TOKEN:-${GHTK}}
   [ -n "$_tk" ] && __tk=${_tk}@
@@ -13,9 +14,15 @@ checkoutDemo() {
   [ -z "$TEST" ] && log "Checking out $1"
   cmd "git clone https://$_repo.git"
   [ -z "$VERBOSE" ] && _quiet="-q"
-  git clone $_quiet "$_gitUrl" || return 1
-  cmd "cd $_demo$_folder"
-  cd "$_demo$_folder"
+  if [ -z "$_offline" -o ! -d "$_workdir" ]
+  then
+    [ -d "$_workdir" ] && ([ -n "$TEST" ] || log "Removing project folder $_workdir") && rm -rf $_workdir
+    git clone $_quiet "$_gitUrl" || return 1
+  else
+    : ## TODO reset git
+  fi
+  cmd "cd $_workdir"
+  cd "$_workdir"
   [ -z "$_branch" ] || (cmd "git checkout $_branch" && git checkout $_quiet "$_branch")
 }
 ## returns the github repo URL of a demo
@@ -49,52 +56,62 @@ getGitDemo() {
 }
 
 commitChanges() {
-  _app=$1; _vers=$2;
+  _app=$1; _vers=$2; _compile="$3"
+
+  case $_app in
+    skeleton-starter-flow-spring|skeleton-starter-hilla-lit|skeleton-starter-hilla-react|start)
+      return;;
+  esac
 
   git ls-remote --heads >/dev/null 2>&1 || return 0
   git update-index --refresh >/dev/null
   git diff-index --quiet HEAD -- && return 0
 
-  _baseBranch=v`echo "$_vers" | cut -d '.' -f1,2`
+  _baseBranch=v`echo "$_vers" | cut -d '.' -f1`
   _headBranch="update-to-$_baseBranch"
   _gaBranch="$_baseBranch.0"
   _tmpBranch="$_baseBranch.tmp"
   owner=`echo "$_repo" | cut -d / -f2`
   repo=`echo "$_repo" | cut -d / -f3-100`
 
-
-  remotes=`git ls-remote --heads 2>/dev/null | grep refs | sed -e 's|.*refs/heads/||g' | egrep "^$_baseBranch$"`
-  if [ -n "$remotes" ]; then
-    log "Branch $_baseBranch already exists commit manualy to that branch"
-
-  fi
-  exit
-
-  log "Creating branch $_baseBranch"
-  git push -q origin :$_baseBranch
-
   remotes=`git ls-remote --heads 2>/dev/null | grep refs | sed -e 's|.*refs/heads/||g' | egrep "^$_headBranch$"`
   if [ -n "$remotes" ]; then
-    log "Branch $_headBranch already exists"
+    log "Branch $_app:$_headBranch already exists checkit and update it manually"
+    return 0
+  fi
+
+  baseremote=`git ls-remote --heads 2>/dev/null | grep refs | sed -e 's|.*refs/heads/||g' | egrep "^$_baseBranch$"`
+  if [ -z "$baseremote" ]; then
+    log "Branch $_app:$_baseBranch does not already exit create it before tyring to commit changes"
+    log "Creating branch $_baseBranch"
+    _currBranch=`git branch  --show-current`
+    git push -q -f origin $_currBranch:$_baseBranch || exit 1
+    # git push -q origin :$_baseBranch || exit 1
   fi
 
 
   log "Committing and pushing changes"
   git checkout -q -b $_tmpBranch
-  git add `ls -1d src frontend */src */frontend pom.xml */pom.xml 2>/dev/null | tr "\n" " "`
-  git restore --staged `ls -1d pom.xml */pom.xml`
+  git add -- `ls -1d frontend */frontend src */src */src/main/frontend pom.xml */pom.xml 2>/dev/null | tr "\n" " "` ':!generated'
+  git restore --staged `ls -1d pom.xml */pom.xml 2>/dev/null`
 
   if [ -n "$remotes" ]; then
     if git diff --quiet origin/$_headBranch; then
-      log "No new changes to commit"
+      log "No new changes to commit in $_app:$_headBranch"
       return 0
     fi
   fi
 
-  git commit -q -m "chore: update to $_vers" -a
-  # [ -n "$remotes" ] && git rebase origin/$_headBranch 2>/dev/null
-  git push -q -f origin $_tmpBranch:$_headBranch 2>/dev/null
+  if [ -n "$TEST" -a -n "$_compile" ]; then
+    log "Compiling for production to update package files ..."
+    cmd "$_compile"
+    $_compile  > mvn.log 2>&1
+    log "Exit status: $?"
+  fi
 
+  git commit -q -m "chore: update to $_vers" -a
+  [ -n "$remotes" ] && git rebase origin/$_headBranch 2>/dev/null
+  git push -q -f origin $_tmpBranch:$_headBranch 2>/dev/null
   if [ -n "$remotes" ]
   then
     log "PR for $_headBranch branch already exists"
@@ -106,8 +123,9 @@ commitChanges() {
       -H "Authorization: Bearer $_tk"\
       -H "X-GitHub-Api-Version: 2022-11-28" \
       https://api.github.com/repos/$owner/$repo/pulls \
-      -d '{"title":"chore: PiT - Update to Vaadin '$_baseBranch'","head":"'$_headBranch'","base":"'$_baseBranch'","body":"Created by PiT Script when testing \`v'$_vers'\`.\nDo not merge until \`'$_gaBranch'\` GA is released."}' | jq -r '.html_url' 2>/dev/null`
-    warn "Created PR $pr_url"
+      -d '{"title":"chore: PiT - Update to Vaadin '$_baseBranch'","head":"'$_headBranch'","base":"'$_baseBranch'","body":"Created by PiT Script"}' | jq -r '.html_url' 2>/dev/null`
+      # -d '{"title":"chore: PiT - Update to Vaadin '$_baseBranch'","head":"'$_headBranch'","base":"'$_baseBranch'","body":"Created by PiT Script when testing \`v'$_vers'\`.\nDo not merge until \`'$_gaBranch'\` GA is released."}' | jq -r '.html_url' 2>/dev/null`
+    warn "$_app Created PR $pr_url"
   fi
 }
 
@@ -132,8 +150,8 @@ getInstallCmdPrd() {
       expr "$_version" : '2\.' >/dev/null && H="-hilla.productionMode" || H="-Pvaadin.productionMode"
       echo "$GRADLE clean build $H $PNPM";;
     *-quarkus) echo "$MVN -ntp -B clean package -Pproduction $H $PNPM -Dquarkus.analytics.disabled=true";;
-    *hilla*|vaadin-form-example|flow-spring-examples|vaadin-oauth-example|layout-examples) echo "$MVN -B package -Pproduction $PNPM";;
-    bakery-app-starter-flow-spring|skeleton-starter-flow-spring) echo "$MVN -B install -Pproduction,it $H $PNPM";;
+    *hilla*|vaadin-form-example|flow-spring-examples|vaadin-oauth-example|layout-examples) echo "$MVN -ntp -B package -Pproduction $PNPM";;
+    bakery-app-starter-flow-spring|skeleton-starter-flow-spring) echo "$MVN -ntp -B install -Pproduction,it $H $PNPM";;
     skeleton-starter-flow-cdi|k8s-demo-app) echo "$MVN -ntp -B verify -Pproduction $H $PNPM";;
     mpr-demo|spreadsheet-demo) echo "$MVN -ntp -B clean";;
     start) echo "$MVN -ntp -B install -Dmaven.test.skip -Pcircleci" ;;
@@ -294,12 +312,7 @@ runDemo() {
   cd "$_tmp" || return 1
 
   _dir="$_tmp/$_demo"
-  if [ -z "$_offline" -o ! -d "$_dir" ]
-  then
-    [ -d "$_dir" ] && ([ -n "$TEST" ] || log "Removing project folder $_dir") && rm -rf $_dir
-    # 1
-    checkoutDemo $1 || return 1
-  fi
+  checkoutDemo $1 || return 1
 
   computeMvn
   computeGradle
@@ -339,7 +352,7 @@ runDemo() {
     if hasProduction $_demo; then
       # 6
       runValidations prod "$_version" "$_demo" "$_port" "$_installCmdPrd" "$_runCmdPrd" "$_readyPrd" "$_test" || return 1
-      [ -z "$COMMIT" ] || commitChanges $_demo $_version
+      [ -z "$COMMIT" ] || commitChanges $_demo $_version "$_installCmdPrd"
     fi
   fi
 }

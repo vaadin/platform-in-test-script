@@ -51,7 +51,7 @@ applyv244Patches() {
   changeMavenProperty jetty.version 11.0.20
 
   diff_=`git diff $D $F | egrep '^[+-]'`
-  [ -n "$diff_" ] && echo "" && warn "Patched sources\n" && dim "====== BEGIN ======\n\n$diff_\n======  END  ======" 
+  [ -n "$diff_" ] && echo "" && warn "Patched sources\n" && dim "====== BEGIN ======\n\n$diff_\n======  END  ======"
 
   [ "$app_" != start ] && mvFrontend
   # addTypeModule
@@ -129,6 +129,7 @@ mvFrontend() {
     echo "Place your React views or hand written templates in this folder." > frontend/views/README
     cmd "mv frontend src/main/frontend"
     mv frontend src/main/frontend
+    perl -pi -e 's|^/?(frontend/generated)|src/main/$1|' .gitignore
     warn "Moved ./frontend to ./src/main/frontend"
   fi
 }

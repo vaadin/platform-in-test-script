@@ -332,12 +332,21 @@ waitUntilFrontendCompiled() {
   done
 }
 
+getMavenVersion() {
+  for __vfile in `find * -name pom.xml 2>/dev/null | egrep -v 'target/|bin/'`
+  do
+    H=`getCurrProperty $__prop $__vfile`
+    [ -n "$H" ] && echo "$H" && return 0
+  done
+}
+
 ## Set the value of a property in the pom file, returning error if unchanged
 setVersion() {
   __prop=$1
   __nversion=$2
   [ "false" != "$3" ] && git checkout -q .
-  [ "$__nversion" = current ] && getCurrProperty $__prop pom.xml && return 1
+
+  [ "$__nversion" = current ] && getMavenVersion $__prop && return 1
   changeMavenProperty $__prop $__nversion && echo $__nversion
 }
 
@@ -481,11 +490,8 @@ changeMavenBlock() {
 ## $1: property name
 ## $2: pom.xml file to read
 getCurrProperty() {
-  for __file in `find * -name $2 2>/dev/null | egrep -v 'target/|bin/'`
-  do
-    H=`grep "<$1>" $__file | perl -pe 's|\s*<'$1'>(.+?)</'$1'>\s*|$1|'`
-    [ -n "$H" ] && echo "$H" && return 0
-  done
+  H=`grep "<$1>" $2 | perl -pe 's|\s*<'$1'>(.+?)</'$1'>\s*|$1|'`
+  [ -n "$H" ] && echo "$H" && return 0
 }
 
 ## change the content of a block in any file
@@ -494,21 +500,20 @@ getCurrProperty() {
 ## $3: new content of the block
 ## $4: file
 changeBlock() {
-  __left="$1"; __right="${2:-$1}"; __val="$3"; __file="$4";
-  cp $__file $$-1
+  __left="$1"; __right="${2:-$1}"; __val="$3"; __bfile="$4";
+  cp $__bfile $$-1
   if [ "$__val" = remove ]; then
-    _cmd="perl -0777 -pi -e 's|\s*($__left)([^\s]+)($__right>)\s*||g' $__file"
-          perl -0777 -pi -e 's|\s*('$__left')([^\s]+)('$__right')\s*||g' $__file
+    _cmd="perl -0777 -pi -e 's|\s*($__left)([^\s]+)($__right>)\s*||g' $__bfile"
+          perl -0777 -pi -e 's|\s*('$__left')([^\s]+)('$__right')\s*||g' $__bfile
   else
-    _cmd="perl -0777 -pi -e 's|($__left)([^\s]+)($__right)|\${1}${__val}\${3}|g' $__file"
-          perl -0777 -pi -e 's|('$__left')([^\s]+)('$__right')|${1}'"${__val}"'${3}|g' $__file
+    _cmd="perl -0777 -pi -e 's|($__left)([^\s]+)($__right)|\${1}${__val}\${3}|g' $__bfile"
+          perl -0777 -pi -e 's|('$__left')([^\s]+)('$__right')|${1}'"${__val}"'${3}|g' $__bfile
   fi
-  __diff=`diff -w $$-1 $__file`
+  __diff=`diff -w $$-1 $__bfile`
   rm -f $$-1
   [ -n "$__diff" ] && cmd "$_cmd" && __err=0 || __err=1
-  [ -z "$TEST" -a -n "$__diff" -a "$__val" =  remove ] && warn "Remove $__left in $__file"
-  [ -z "$TEST" -a -n "$__diff" -a "$__val" != remove ] && warn "Changed '$__left' to '$__val' in $__file"
-  return $__err
+  [ -z "$TEST" -a -n "$__diff" -a "$__val" =  remove ] && warn "Remove $__left in $__bfile"
+  [ -z "$TEST" -a -n "$__diff" -a "$__val" != remove ] && warn "Changed '$__left' to '$__val' in $__bfile"
 }
 
 ## change a maven property in the pom.xml, faster than
@@ -517,14 +522,14 @@ changeBlock() {
 ## $2: value (if value is 'remove' the property is removed)
 changeMavenProperty() {
   __prop=$1; __val=$2; __ret=0;
-  for __file in `getPomFiles`
+  for __propfile in `getPomFiles`
   do
     if [ "$__val" != remove ]; then
-      __cur=`getCurrProperty $__prop $__file`
+      __cur=`getCurrProperty $__prop $__propfile`
       [ -z "$__cur" ] && continue
     fi
-    [ -n "$TEST" ] && cmd "## Change Maven property $__prop from $__cur -> $__val"
-    changeBlock "<$__prop>" "</$__prop>" "$__val" $__file
+    [ -n "$TEST" ] && cmd "## Change Maven property $__prop from $__cur -> $__val in $__propfile"
+    changeBlock "<$__prop>" "</$__prop>" "$__val" $__propfile
     [ $? != 0 ] && __ret=1
   done
   return $__ret
@@ -782,6 +787,7 @@ computeVersion() {
     *hilla*) getLatestHillaVersion "$2";;
     *) echo "$2";;
   esac
+
 }
 
 computeProp() {
