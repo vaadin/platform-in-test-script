@@ -20,8 +20,6 @@ archetype-hotswap
 archetype-jetty
 archetype-spring
 vaadin-quarkus
-initializer-hilla-maven
-initializer-hilla-gradle
 hilla-react-cli"
 DEMOS="
 skeleton-starter-flow
