@@ -82,12 +82,12 @@ applyPatches() {
   #     ;;
   # esac
 
-  case $vers_ in
-    24.4*)
-      . $PIT_SCR_FOLDER/lib/lib-patch-v24.4.sh
-      [ "$type_" != 'next' ] && return 0 || applyv244Patches "$app_" "$type_" "$vers_"
-      ;;
-  esac
+  # case $vers_ in
+  #   24.4*)
+  #     . $PIT_SCR_FOLDER/lib/lib-patch-v24.4.sh
+  #     [ "$type_" != 'next' ] && return 0 || applyv244Patches "$app_" "$type_" "$vers_"
+  #     ;;
+  # esac
 
   # always successful
   return 0
