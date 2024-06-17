@@ -16,7 +16,7 @@ checkoutDemo() {
   [ -z "$VERBOSE" ] && _quiet="-q"
   if [ -z "$_offline" -o ! -d "$_workdir" ]
   then
-    [ -d "$_workdir" ] && ([ -n "$TEST" ] || log "Removing project folder $_workdir") && rm -rf $_workdir
+    [ -d "$_demo" ] && ([ -n "$TEST" ] || log "Removing project folder $_demo") && rm -rf $_demo
     git clone $_quiet "$_gitUrl" || return 1
   else
     : ## TODO reset git
