@@ -23,7 +23,8 @@ process.argv.forEach(a => {
   page.on('pageerror', err => console.log("> PAGEERROR:", ('' + err).replace(/\s+/g, ' ')));
 
   await page.goto(`http://${host}:${port}/`);
-  if (mode == 'dev') {
+  
+  if (mode == 'dev' && await page.getByText('Do not show this again').isVisible()) {
     await page.getByText('Do not show this again').click();
     await page.getByText('Dismiss').click();
   }
