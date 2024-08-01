@@ -81,6 +81,7 @@ getStartTestFile() {
    archetype*) echo "click-hotswap.js";;
    hilla-react-cli) echo "hilla-react-cli.js";;
    react) echo "react-starter.js";;
+   test-hybrid-react*) echo "hybrid-react.js";;
    test-hybrid*) echo "hybrid.js";;
    react-crm-tutorial) echo "noop.js";;
    *) echo "start.js";;
