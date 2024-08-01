@@ -770,13 +770,10 @@ cleanM2() {
 
 getLatestHillaVersion() {
   case "$1" in
-    24.4.*|*-SNAPSHOT) echo "$1" && return ;;
+    24.[45].*|*-SNAPSHOT) echo "$1" && return ;;
     2.*)    echo "$1" && return ;;
     24.[012].*) G="2.4.[09]*";;
     24.3[.-]*) G="2.5.*";;
-    # When hilla 3.0 starts to be released, we can use this
-    # 24.4-SNAPSHOT) echo "3.0-SNAPSHOT";;
-    # 24.4.*) G="3.0.*";;
   esac
   curl -s https://api.github.com/repos/vaadin/hilla/releases | jq -r '.[].tag_name' | egrep "^$G$" | head -1
 }
