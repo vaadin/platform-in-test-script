@@ -24,11 +24,12 @@ hilla-react-cli"
 DEMOS="
 skeleton-starter-flow
 skeleton-starter-flow-spring
-skeleton-starter-hilla-lit-gradle
+skeleton-starter-hilla-react
 skeleton-starter-hilla-react-gradle
 skeleton-starter-flow-cdi
-skeleton-starter-hilla-react
 skeleton-starter-hilla-lit
+skeleton-starter-hilla-lit-gradle
+skeleton-starter-kotlin-spring
 business-app-starter-flow
 base-starter-spring-gradle
 base-starter-flow-quarkus
@@ -63,6 +64,7 @@ spring-guides/gs-crud-with-vaadin/complete
 spring-petclinic/spring-petclinic-vaadin-flow
 form-filler-demo
 flow-hilla-hybrid-example
+designer-tutorial
 "
 
 TODO="
@@ -87,14 +89,3 @@ docs
 dsp-demo
 "
 
-
-# skeleton-starter-hilla-lit-gradle
-# skeleton-starter-hilla-react-gradle
-# skeleton-starter-hilla-react
-# skeleton-starter-hilla-lit
-
-# hilla-crm-tutorial
-# hilla-quickstart-tutorial
-# hilla-basics-tutorial
-
-# flow-hilla-hybrid-example
