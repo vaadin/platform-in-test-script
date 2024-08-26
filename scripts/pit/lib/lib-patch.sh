@@ -33,10 +33,12 @@ applyPatches() {
       rm -rf ~/vaadin/node*
       ;;
     ce-demo)
-    echo $vers_
+      echo $vers_
       case $vers_ in
-          24.5*) patchCeLicense ;;
-          *) installCeLicense ;;
+        # https://github.com/vaadin/collaboration-engine-internal/issues/1049   
+        # 24.5*) patchCeLicense ;; 
+        # CE is OS since 24.5.0
+        24.3*|24.4*) installCeLicense ;;
       esac
       ;;
     form-filler-demo)
