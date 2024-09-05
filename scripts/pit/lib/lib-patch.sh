@@ -68,7 +68,7 @@ applyPatches() {
 
   if [ "$type_" = 'current' ]; then
     case $vers_ in
-      24.4.*|24.3.*|2.4.*|2.5.*|3.0.*|current) : ;;
+      24.5.*|24.4.*|current) : ;;
       *) reportError "Using old version $vers_" "Please upgrade $app_ to latest stable" ;;
     esac
   fi
