@@ -514,6 +514,7 @@ changeBlock() {
   [ -n "$__diff" ] && cmd "$_cmd" && __err=0 || __err=1
   [ -z "$TEST" -a -n "$__diff" -a "$__val" =  remove ] && warn "Remove $__left in $__bfile"
   [ -z "$TEST" -a -n "$__diff" -a "$__val" != remove ] && warn "Changed '$__left' to '$__val' in $__bfile"
+  return $__err
 }
 
 ## change a maven property in the pom.xml, faster than
@@ -789,9 +790,9 @@ computeVersion() {
 
 computeProp() {
     case $1 in
-      *hilla*gradle) echo "hillaVersion";;
+      # *hilla*gradle) echo "hillaVersion";;
       *gradle) echo "vaadinVersion";;
-      *typescript*|*hilla*|*react*|*-lit*) echo "hilla.version";;
+      # *typescript*|*hilla*|*react*|*-lit*) echo "hilla.version";;
       *) echo "vaadin.version";;
     esac
 }
