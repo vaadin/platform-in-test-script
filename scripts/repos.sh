@@ -6,12 +6,12 @@ latest-lit
 latest-lit-top
 latest-java_partial-auth
 latest-lit_partial-auth
-flow-crm-tutorial_partial-latest
+flow-crm-tutorial
 react
 react-crm-tutorial
 react-tutorial
 test-hybrid
-test-hybrid-react_partial-prerelease
+test-hybrid-react
 default
 latest-lit_partial-nextprerelease
 latest-lit_partial-prerelease
