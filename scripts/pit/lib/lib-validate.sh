@@ -48,6 +48,8 @@ runValidations() {
 
   [ "$mode" = dev ] && rm -rf node_modules src/main/dev-bundle
 
+  [ -f pom.xml ] && runToFile "$MVN dependency:tree" "$file" "$VERBOSE"
+
   # 3
   runToFile "$compile" "$file" "$VERBOSE"
   if [ "$?" != 0 ]; then
