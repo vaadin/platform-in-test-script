@@ -277,6 +277,8 @@ getTest() {
 }
 
 ## Change version in build files
+## $1: name of the demo
+## $2: version to set
 setDemoVersion() {
   case "$1" in
     base-starter-flow-quarkus|mpr-demo|start|flow-hilla-hybrid-example)

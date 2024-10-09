@@ -1,11 +1,11 @@
+## MAIN script to be run for PiT tests
+## for a list of arguments run the script with --help option
+
 #!/bin/bash
 . `dirname $0`/../repos.sh
 . `dirname $0`/lib/lib-args.sh
 . `dirname $0`/lib/lib-start.sh
 . `dirname $0`/lib/lib-demos.sh
-
-## Clean background processes on exit
-trap "doExit" INT TERM EXIT
 
 ## Default configuration
 DEFAULT_PORT=8080
@@ -52,10 +52,6 @@ computeStarters() {
 
 ### MAIN
 main() {
-  # cd tmp
-  # initializers
-  # exit
-  # echo ""
 
   _start=`date +%s`
 
@@ -64,7 +60,7 @@ main() {
   ## Exit soon if the port is busy
   [ -n "$TEST" ] || checkBusyPort "$PORT" || exit 1
 
-  ## Install playwright in the background
+  ## Install playwright in the background (not used since there were some issues)
   # checkPlaywrightInstallation `computeAbsolutePath`/its/foo &
 
   ## Calculate which starters should be run based on the command line
@@ -87,8 +83,8 @@ main() {
   tmp="$pwd/tmp"
   mkdir -p "$tmp"
 
-  ## Remove local copy of cached artifacts
-  cleanM2 "$VERSION"
+  ## Remove local copy of cached artifacts if not --no-clean option is provided
+  [ -z "NO_CLEAN" ] && cleanM2 "$VERSION"
 
   ## Run presets (star.vaadin.com) or archetypes
   for i in $presets; do
@@ -132,6 +128,18 @@ fi
 
 ## compute and check arguments
 checkArgs ${@}
+
+## run a function of the libs in current folder and exit (just for testing a function in the lib)
+if [ -n "$RUN_FUCTION" ]; then
+  log "Running function: $RUN_FUCTION"
+  eval $RUN_FUCTION
+  error=$?
+  log "Exit with code $error"
+  exit 0
+fi
+
+## Clean background processes on exit
+trap "doExit" INT TERM EXIT
 
 ## run starters/demos
 main

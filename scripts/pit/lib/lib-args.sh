@@ -26,6 +26,10 @@ Use: $0 [version=] [starters=] [port=] [timeout=] [verbose] [offline] [interacti
  --help            Show this message
  --commit          Commit changes to the base branch
  --test            Checkout starters, and show steps and commands to execute, but don't run them
+ --skip-clean      Do not clean maven cache
+ --function        run only one function of the libs in current folder.
+                   everything after this argument is the function name and arguments passed to the function.
+                   you should take care with arguments that contain spaces, they should be quoted twice.
 EOF
   exit 1
 }
@@ -85,6 +89,12 @@ checkArgs() {
         ;;
       --test)
         TEST=true ;;
+      --skip-clean)
+        NO_CLEAN=true;;
+      --function)
+        shift
+        RUN_FUCTION=${*}
+        break ;;
       *) echo "Unknown option: $1" && usage && exit 1;;
     esac
     shift

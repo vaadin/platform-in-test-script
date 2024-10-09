@@ -321,6 +321,7 @@ checkHttpServlet() {
 }
 
 ## Hits an HTTP server until vaadin finishes to compile the frontend in dev-mode
+## This is the equivalent to open browser and wait for the spinner to disappear when frontend is compiling
 ## $1 url to check
 ## $2 file to send the output
 waitUntilFrontendCompiled() {
