@@ -12,32 +12,38 @@ Use: ./scripts/pit/run.sh [version=] [starters=] [port=] [timeout=] [verbose] [o
  --version=string  Vaadin version to test, if not given it only tests current stable, otherwise it runs tests against current stable and then against given version.
  --starters=list   List of demos or presets separated by comma to run (default: all) valid options:
                    · latest-java
-                   · latest-java_partial-nextprerelease
                    · latest-java-top
                    · latest-javahtml
                    · latest-lit
                    · latest-lit-top
                    · latest-java_partial-auth
                    · latest-lit_partial-auth
-                   · flow-crm-tutorial_partial-latest
+                   · flow-crm-tutorial
+                   · react
+                   · react-crm-tutorial
                    · react-tutorial
+                   · test-hybrid
+                   · test-hybrid-react
                    · default
-                   · default_partial-nextprerelease
+                   · latest-lit_partial-nextprerelease
+                   · latest-lit_partial-prerelease
+                   · latest-java_partial-auth_partial-prerelease
                    · archetype-hotswap
                    · archetype-jetty
                    · archetype-spring
                    · vaadin-quarkus
+                   · hilla-react-cli
                    · skeleton-starter-flow
                    · skeleton-starter-flow-spring
-                   · skeleton-starter-hilla-lit-gradle
+                   · skeleton-starter-hilla-react
                    · skeleton-starter-hilla-react-gradle
                    · skeleton-starter-flow-cdi
-                   · skeleton-starter-hilla-react
                    · skeleton-starter-hilla-lit
+                   · skeleton-starter-hilla-lit-gradle
+                   · skeleton-starter-kotlin-spring
                    · business-app-starter-flow
                    · base-starter-spring-gradle
                    · base-starter-flow-quarkus
-                   · base-starter-flow-osgi
                    · base-starter-gradle
                    · flow-crm-tutorial
                    · hilla-crm-tutorial
@@ -49,7 +55,6 @@ Use: ./scripts/pit/run.sh [version=] [starters=] [port=] [timeout=] [verbose] [o
                    · npm-addon-template
                    · client-server-addon-template
                    · spreadsheet-demo
-                   · vaadin-flow-karaf-example
                    · vaadin-form-example
                    · vaadin-rest-example
                    · vaadin-localization-example
@@ -66,6 +71,11 @@ Use: ./scripts/pit/run.sh [version=] [starters=] [port=] [timeout=] [verbose] [o
                    · testbench-demo
                    · ce-demo
                    · start
+                   · spring-guides/gs-crud-with-vaadin/complete
+                   · spring-petclinic/spring-petclinic-vaadin-flow
+                   · form-filler-demo
+                   · flow-hilla-hybrid-example
+                   · designer-tutorial
                    ·
  --demos           Run all demo projects
  --generated       Run all generated projects (start and archetypes)
@@ -85,7 +95,10 @@ Use: ./scripts/pit/run.sh [version=] [starters=] [port=] [timeout=] [verbose] [o
  --help            Show this message
  --commit          Commit changes to the base branch
  --test            Checkout starters, and show steps and commands to execute, but don't run them
-
+ --skip-clean      Do not clean maven cache
+ --function        run only one function of the libs in current folder.
+                   everything after this argument is the function name and arguments passed to the function.
+                   you should take care with arguments that contain spaces, they should be quoted twice.
 ```
 
 
