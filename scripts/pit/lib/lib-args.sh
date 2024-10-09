@@ -36,7 +36,6 @@ EOF
 
 ## check arguments passed to `run.sh` script and set global variables
 checkArgs() {
-  SECRETK=`openssl enc -aes-256-cbc -k secret -P -md sha1` || exit 1
   VERSION=current; PORT=$DEFAULT_PORT; TIMEOUT=$DEFAULT_TIMEOUT
   while [ -n "$1" ]
   do
