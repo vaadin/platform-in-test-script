@@ -1,3 +1,7 @@
+### LIBRARY for parsing arguments when `run.sh` is executed
+
+
+## the usage message, it should be synchronized with the function used for extracting the arguments below
 usage() {
   cat <<EOF
 Use: $0 [version=] [starters=] [port=] [timeout=] [verbose] [offline] [interactive] [skiptests] [pnpm] [vite] [help]
@@ -26,6 +30,7 @@ EOF
   exit 1
 }
 
+## check arguments passed to `run.sh` script and set global variables
 checkArgs() {
   SECRETK=`openssl enc -aes-256-cbc -k secret -P -md sha1` || exit 1
   VERSION=current; PORT=$DEFAULT_PORT; TIMEOUT=$DEFAULT_TIMEOUT

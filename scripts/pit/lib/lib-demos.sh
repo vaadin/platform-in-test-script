@@ -1,7 +1,11 @@
+## LIBRARY for testing demos that exist in github
+
 . `dirname $0`/lib/lib-validate.sh
 . `dirname $0`/lib/lib-patch.sh
 
 ## Checkout a branch of a vaadin repository in github
+## if the project is private the github token should be set in the GITHUB_TOKEN or GHTK environment variable
+## $1: the name of the demo in the form of `repo[:branch][/folder]`
 checkoutDemo() {
   _demo=`getGitDemo $1`
   _branch=`getGitBranch $1`
@@ -55,6 +59,11 @@ getGitDemo() {
   esac
 }
 
+## commit changes performed during testing on fhe next version
+## it should happend after first estable version is released e.g. 24.4.0
+## $1: the name of the demo
+## $2: the version of the demo
+## $3: the command to compile the project for production so that package files etc, are updated
 commitChanges() {
   _app=$1; _vers=$2; _compile="$3"
 
@@ -294,12 +303,15 @@ setDemoVersion() {
 }
 
 ## Run a Demo project by following the next steps
+# 0. compute variables and make preparations
 # 1. checkout the project from github (if not in offline)
-# 2. run validations in the current version to check that it's not broken
-# 3. run validations for the current version in prod-mode (if project can be run in prod and dev)
-# 4. increase version to the version used for PiT (if version given)
-# 5. run validations for the new version in dev-mode
-# 6. run validations for the new version in prod-mode (if project can be run in prod and dev)
+#    then compute other properties based in the sources
+# 2. apply patches to the project for the dev-mode if needed
+# 3. run validations in the current version to check that it's not broken
+# 4. run validations for the current version in prod-mode (if project can be run in prod and dev)
+# 5. increase version to the version used for PiT (if version given)
+# 6. run validations for the new version in dev-mode
+# 7. run validations for the new version in prod-mode (if project can be run in prod and dev)
 runDemo() {
   MVN=mvn
   GRADLE=gradle
@@ -312,6 +324,8 @@ runDemo() {
   cd "$_tmp" || return 1
 
   _dir="$_tmp/$_demo"
+
+  # 1
   checkoutDemo $1 || return 1
 
   computeMvn
@@ -327,30 +341,32 @@ runDemo() {
   _readyPrd=`getReadyMessagePrd $_demo`
   _port=`getPort $_demo`
   _test=`getTest $_demo`
+
   if [ -z "$NOCURRENT" ]
   then
     _current=`setDemoVersion $_demo current`
     [ -z "$_current" ] && reportError "Cannot get current version for $_demo"
+    # 2
     applyPatches "$_demo" current "$_current" dev || return 1
     if hasDev $_demo; then
-      # 2
+      # 3
       runValidations dev "$_current" "$_demo" "$_port" "$_installCmdDev" "$_runCmdDev" "$_readyDev" "$_test" || return 1
     fi
     if hasProduction $_demo; then
-      # 3
+      # 4
       runValidations prod "$_current" "$_demo" "$_port" "$_installCmdPrd" "$_runCmdPrd" "$_readyPrd" "$_test" || return 1
     fi
   fi
-  # 4
+  # 5
   if setDemoVersion $_demo $_version >/dev/null || [ -n "$NOCURRENT" ]
   then
     applyPatches "$_demo" next "$_version" prod || return 1
     if hasDev $_demo; then
-      # 5
+      # 6
       runValidations dev "$_version" "$_demo" "$_port" "$_installCmdDev" "$_runCmdDev" "$_readyDev" "$_test" || return 1
     fi
     if hasProduction $_demo; then
-      # 6
+      # 7
       runValidations prod "$_version" "$_demo" "$_port" "$_installCmdPrd" "$_runCmdPrd" "$_readyPrd" "$_test" || return 1
       [ -z "$COMMIT" ] || commitChanges $_demo $_version "$_installCmdPrd"
     fi

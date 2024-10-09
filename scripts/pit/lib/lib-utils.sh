@@ -44,6 +44,7 @@ killAll() {
   doKill ${pid_run} ${pid_tail} ${pid_bell}
   unset pid_run pid_tail pid_bell
 }
+## restore system as before running the script
 cleanAll() {
   restoreProKey
   unsetJBR
@@ -110,7 +111,7 @@ reportOutErrors() {
   reportError "$2" "$H"
 }
 
-## ask user a question, response is stored in key
+## ask user a question, response is stored in key variable
 ask() {
   # flush stdin
   while read -t1 ignore; do :; done
@@ -148,6 +149,10 @@ computeNpm() {
 }
 
 ## Run a command and outputs its stdout/stderr to a file
+## $1 command to run
+## $2 file to send the output
+## $3 verbose mode (it means that the output is also printed in the console)
+## $4 send only stdout to file (if not set, stdout and stderr are sent to the file)
 runToFile() {
   __cmd="$1"
   __file="$2"
@@ -174,6 +179,9 @@ runToFile() {
 }
 
 ## Run a process silently in background sending its output to a file
+## $1 command to run
+## $2 file to send the output
+## $3 verbose mode (it means that the output is also printed in the console)
 runInBackgroundToFile() {
   __cmd="$1"
   __file="$2"
@@ -192,6 +200,7 @@ runInBackgroundToFile() {
   pid_run=$!
 }
 
+## check whether flow modified the tsconfig.json file
 tsConfigModified() {
   grep -q "'tsconfig.json' has been updated" $1 || return 1
   H=`git diff tsconfig.json 2>/dev/null`
@@ -201,6 +210,10 @@ tsConfigModified() {
 }
 
 ## Wait until the specified message appears in the log file
+## $1 file continously check for the presence of a message
+## $2 message to wait for (it could be a regular expression, valid for egrep)
+## $3 timeout in seconds
+## $4 command that is sending the output to the file, used for logging it in case of failure
 waitUntilMessageInFile() {
   __file="$1"
   __message="$2"
@@ -230,6 +243,7 @@ waitUntilMessageInFile() {
 }
 
 ## Infinite loop playing a bell in console
+## Used in interactive moded for alerting the user that last command has finished
 playBell() {
   while true
   do
@@ -238,6 +252,7 @@ playBell() {
 }
 
 ## Alert user with a bell and wait until they push enter
+## only for interactive mode
 waitForUserWithBell() {
   __message=$1
   playBell &
@@ -291,6 +306,9 @@ checkBusyPort() {
 }
 
 ## Check that a HTTP servlet request responds with 200
+## $1 url to check
+## $2 file to send the output
+## $3 verbose mode (it means that the output is also printed in the console)
 checkHttpServlet() {
   __url="$1"
   __ofile="$2"
@@ -303,6 +321,8 @@ checkHttpServlet() {
 }
 
 ## Hits an HTTP server until vaadin finishes to compile the frontend in dev-mode
+## $1 url to check
+## $2 file to send the output
 waitUntilFrontendCompiled() {
   __url="$1"
   __ofile="$2"
@@ -332,6 +352,8 @@ waitUntilFrontendCompiled() {
   done
 }
 
+## get a property value from pom.xml, normally used for version of some dependency
+## $1: property name
 getMavenVersion() {
   for __vfile in `find * -name pom.xml 2>/dev/null | egrep -v 'target/|bin/'`
   do
@@ -341,6 +363,8 @@ getMavenVersion() {
 }
 
 ## Set the value of a property in the pom file, returning error if unchanged
+## $1: property name
+## $2: new value
 setVersion() {
   __prop=$1
   __nversion=$2
@@ -350,6 +374,8 @@ setVersion() {
   changeMavenProperty $__prop $__nversion && echo $__nversion
 }
 
+## Get the value of a property in the gradle.properties or build.gradle file, normally the version of a dependency
+## $1: property name
 getGradleVersion() {
   if [ -f "gradle.properties" ]; then
     cat gradle.properties | grep "$1" | cut -d "=" -f2
@@ -359,6 +385,8 @@ getGradleVersion() {
 }
 
 ## Set the value of a property in the gradle.properties file, returning error if unchanged
+## $1: property name
+## $2: new value
 setGradleVersion() {
   __gradleProperty=$1
   __nversion=$2
@@ -384,6 +412,7 @@ checkBundleNotCreated() {
   fi
 }
 
+## check that there are no spring or hilla dependencies in the project
 checkNoSpringDependencies() {
   T=`mvn -ntp -B dependency:tree`
   H=`echo "$T" | egrep -i "spring|hilla"`
@@ -442,9 +471,6 @@ getPomFiles() {
 ## $2: groupId
 ## $3: artifactId
 ## $4: version (keep the same if empty, delete if 'remove' value is provided, or do not modify if version tag is not present)
-## $5: new groupId (keep the same if empty)
-## $6: new artifactId (keep the same if empty)
-## $7: extra block after version tag until the end of the tag block (keep the same if empty)
 changeMavenBlock() {
   __tag=${1:-dependency}
   __grp=$2
@@ -568,6 +594,10 @@ removeMavenProperty() {
   changeMavenProperty "$1" remove
 }
 
+## set a maven property in a file
+## $1: maven pom file
+## $2: property name
+## $3: value
 setPropertyInFile() {
   __file=$1; __key=$2; __val=$3
   [ ! -f "$__file" ] && return 0
@@ -721,6 +751,7 @@ installJBRRuntime() {
   fi
 }
 
+## Unsets the jet brains java runtime used for testing the hotswap agent
 unsetJBR() {
   [ -z "$HOT" ] && return 0 || unset HOT
   warn "Un-setting PATH and JAVA_HOME ($JAVA_HOME)"
@@ -749,6 +780,7 @@ printTime() {
   log "Total time: $__mins' $__secs\""
 }
 
+## update Gradle to the version provided in $1
 upgradeGradle() {
   V=`$GRADLE --version | grep '^Gradle' | awk '{print $2}'`
   expr "$V" : "$1" >/dev/null && return
@@ -757,18 +789,21 @@ upgradeGradle() {
   $GRADLE wrapper -q --gradle-version $1
 }
 
+## list all demos that are available in the vaadin website (examples and starters)
 getReposFromWebsite() {
   _demos=`curl -s https://vaadin.com/examples-and-demos  | grep div | grep github.com/vaadin | perl -pe 's|(^.*)/github.com/vaadin/([\w\-]+).*|$2|g' | sort -u`
   _starters=`curl -s https://vaadin.com/hello-world-starters  | grep div | grep github.com/vaadin | perl -pe 's|(^.*)/github.com/vaadin/([\w\-]+).*|$2|g' | sort -u`
   printf "$_demos\n$_starters" | sort -u
 }
 
+## clean vaadin artifact from local maven repository with the version provided
 cleanM2() {
-  [ -n "$OFFLINE" -o -z "$1" -o ! -d ""`ls -1d ~/.m2/repository/com/vaadin/*/24.2.0.alpha6 2>/dev/null | head -1` ] && return
+  [ -n "$OFFLINE" -o -z "$1" -o ! -d ""`ls -1d ~/.m2/repository/com/vaadin/*/$1 2>/dev/null | head -1` ] && return
   warn "removing ~/.m2/repository/com/vaadin/*/$1"
   rm -rf ~/.m2/repository/com/vaadin/*/$1
 }
 
+## compute the latest version of hilla depending on the platform or hilla version provided in $1
 getLatestHillaVersion() {
   case "$1" in
     24.[45].*|*-SNAPSHOT) echo "$1" && return ;;
@@ -779,6 +814,8 @@ getLatestHillaVersion() {
   curl -s https://api.github.com/repos/vaadin/hilla/releases | jq -r '.[].tag_name' | egrep "^$G$" | head -1
 }
 
+## compute the version to be used for testing the project for the next release
+## version is provided with --version argument, but still it needs some adjustments if it's a hilla project
 computeVersion() {
   [ "$2" = current ] && echo "$2" && return
   case $1 in
@@ -788,6 +825,7 @@ computeVersion() {
 
 }
 
+## compute the property used for the version of the project
 computeProp() {
     case $1 in
       # *hilla*gradle) echo "hillaVersion";;
@@ -797,6 +835,8 @@ computeProp() {
     esac
 }
 
+## compute the property used for the version of the project after applying a patch for the next release
+## it was important when next version was for hilla/flow fussion (24.4)
 computePropAfterPatch() {
   case $1 in
     *hilla*gradle) echo "hillaVersion";;

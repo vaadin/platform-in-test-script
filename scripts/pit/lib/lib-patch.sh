@@ -1,3 +1,9 @@
+## LIBRARY for patching Vaadin starters or demos
+##   It has especial workarounds for specific apps.
+##   There could be especial patches for specific versions of Apps, Vaadin or Hilla
+##   Patches for special versions are maintained in separated files like lib-patch-v24.sh, lib-patch-v24.4.sh
+##   These especial patches are loaded and applied in this script
+
 __scripts=
 
 ## Run after updating Vaadin/Hilla versions in order to patch sources
@@ -35,8 +41,8 @@ applyPatches() {
     ce-demo)
       echo $vers_
       case $vers_ in
-        # https://github.com/vaadin/collaboration-engine-internal/issues/1049   
-        # 24.5*) patchCeLicense ;; 
+        # https://github.com/vaadin/collaboration-engine-internal/issues/1049
+        # 24.5*) patchCeLicense ;;
         # CE is OS since 24.5.0
         24.3*|24.4*) installCeLicense ;;
       esac

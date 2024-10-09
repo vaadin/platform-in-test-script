@@ -11,10 +11,13 @@ trap "doExit" INT TERM EXIT
 DEFAULT_PORT=8080
 DEFAULT_TIMEOUT=300
 
-# hilla-basics-tutorial
-
+## starters and demos list is maintained in the repos.sh file
 DEFAULT_STARTERS=`echo "$PRESETS$DEMOS" | tr "\n" "," | sed -e 's/^,//' | sed -e 's/,$//'`
 
+## run an specific starter or demo
+## $1: function to run (runStarter, runDemo)
+## $2: starter or demo name
+## $3: folder where the demo will be downloaded
 run() {
   [ -n "$TEST" ] && W=Testing || W=Executing
   log "================= $W $1 '$2' $OFFLINE =================="
@@ -32,6 +35,7 @@ run() {
   cleanAll
 }
 
+## compute what starters to run based on the command line arguments
 computeStarters() {
   ## Exclude starters beginning with the negated chart \!
   for i in `echo "$STARTERS" | tr ',' ' '`; do

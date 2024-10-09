@@ -1,3 +1,8 @@
+## LIBRARY for testing Vaadin starters that can be generated:
+## - from start.vaadin.com
+## - from spring initializer
+## - created with archetypes
+
 . `dirname $0`/lib/lib-validate.sh
 
 ## Generate an app from start.vaadin.com with the given preset, and unzip it in the current folder
@@ -26,6 +31,8 @@ downloadStarter() {
   cd $_dir
 }
 
+## Generates a starter by using archetype, or hilla/cli
+## TODO: add support for vaadi cli
 generateStarter() {
   _name=$1
   [ -z "$TEST" ] && log "Generating $1"
@@ -49,6 +56,8 @@ generateStarter() {
   fi
 }
 
+## Gemerate a starter using spring initializer website
+## TODO: Check versions
 downloadInitializer() {
   _name=$1
   _java=17
@@ -70,7 +79,9 @@ downloadInitializer() {
   git commit -q -m 'First commit' -a
 }
 
-## get the selenium IDE test file used for each starter
+## get the Playwright IDE test file used for each starter
+## thwey are located in the pit/its folder
+## TODO: check those returning noop.js
 getStartTestFile() {
   case $1 in
    *-auth*) echo "start-auth.js";;
@@ -88,6 +99,7 @@ getStartTestFile() {
   esac
 }
 
+## Get the clean command for the given starter
 _getClean() {
   case $1 in
     initializer-hilla-gradle) echo "$GRADLE clean" ;;
@@ -95,6 +107,7 @@ _getClean() {
   esac
 }
 
+## Get the command to compile the project in production mode
 _getCompProd() {
   case $1 in
     archetype-hotswap|archetype-jetty) echo "$MVN -ntp -B clean";;
@@ -103,6 +116,7 @@ _getCompProd() {
   esac
 }
 
+## Get the command to run the project in dev mode
 _getRunDev() {
   case $1 in
     vaadin-quarkus) echo "$MVN -ntp -B quarkus:dev";;
@@ -111,6 +125,8 @@ _getRunDev() {
     *) echo "$MVN -ntp -B $PNPM";;
   esac
 }
+
+## Get the command to run the project in production mode
 _getRunProd() {
   case $1 in
     archetype-hotswap|archetype-jetty) echo "$MVN -ntp -B -Pproduction -Dvaadin.productionMode jetty:run-war";;
@@ -120,7 +136,8 @@ _getRunProd() {
   esac
 }
 
-
+## Check whether the starter needs a pro license, if not, remove the pro key
+## so as we can check that there are no pro features in the starter
 _needsLicense() {
   case $1 in
     default*|archetype*) return 1;;
@@ -128,10 +145,12 @@ _needsLicense() {
   esac
 }
 
+## Check whether the run is a next prerelease (we have to increase the version with the --version provided)
 _isNext() {
   expr "$1" : .*partial-nextprerelease$ >/dev/null
 }
 
+## Set the version of the project to the given version
 setStartVersion() {
     if [ -f "build.gradle" ]
     then
@@ -142,13 +161,19 @@ setStartVersion() {
 }
 
 ## Run an App downloaded from start.vaadin.com by following the next steps
-# 1. generate the project and download from start.vaadin.com (if not in offline)
+# 0. compute properties and make preparations
+# 1. generate the project using archetypes or download from start.vaadin.com, initializer, etc
+#    if we are in offline mode we skip this step if the project already exists, and clean it instead
+#    it installs the JBR runtime if the project can be run with it
+#    it removes the pro key if the project does not need a pro license
 # 2. run validations in the current version to check that it's not broken
 # 3. run validations for the current version in prod-mode
 # 4. increase version to the version used for PiT (if version given)
 # 5. run validations for the new version in dev-mode
 # 6. run validations for the new version in prod-mode
 runStarter() {
+
+  # 0
   MVN=mvn
   _preset="$1"
   _tmp="$2"
@@ -162,13 +187,14 @@ runStarter() {
   cd "$_tmp"
   _folder=`echo "$_preset" | tr "_" "-"`
   _dir="$_tmp/$_folder"
+
+  #  1
   if [ -z "$_offline" -o ! -d "$_dir" ]
   then
      if [ -d "$_dir" ]; then
        [ -n "$TEST" ] && log "Removing project folder $_dir"
        (cmd "rm -rf $_dir" && rm -rf $_dir) || return 1
      fi
-    # 1
     case "$_preset" in
       archetype*|vaadin-quarkus|hilla-*-cli) generateStarter $_preset || return 1 ;;
       initializer-hilla-maven)   downloadInitializer $_preset maven-project  hilla,devtools || return 1 ;;

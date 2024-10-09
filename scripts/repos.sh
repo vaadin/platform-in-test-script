@@ -1,3 +1,6 @@
+## LIST of starters or demos used in PiT
+##  this is a shared list that could be also used in the gh utilities in this repo
+
 PRESETS="
 latest-java
 latest-java-top
