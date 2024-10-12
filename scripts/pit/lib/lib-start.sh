@@ -5,6 +5,18 @@
 
 . `dirname $0`/lib/lib-validate.sh
 
+## Initialize a git repository in the current starter project if not already
+## It's useful in the case we want to manually check PiT patches applied
+initGit() {
+  [ -d ".git" ] && return
+  git init -q
+  git config user.email | grep -q ... || git config user.email "vaadin-bot@vaadin.com"
+  git config user.name  | grep -q ... || git config user.name "Vaadin Bot"
+  git config advice.addIgnoredFile false
+  git add .??* * 2>/dev/null
+  git commit -q -m 'First commit' -a
+}
+
 ## Generate an app from start.vaadin.com with the given preset, and unzip it in the current folder
 ## multiple presets can be used by joining them with the `_` character
 downloadStarter() {
@@ -46,22 +58,16 @@ generateStarter() {
   $cmd || return 1
   cmd "cd $_name"
   cd $_name || return 1
-  ## if git configuration already exists, skip
-  if [ ! -d ".git" ]; then
-    git init -q
-    git config user.email | grep -q ... || git config user.email "vaadin-bot@vaadin.com"
-    git config user.name  | grep -q ... || git config user.name "Vaadin Bot"
-    git add .??* *
-    git commit -q -m 'First commit' -a
-  fi
+  initGit
 }
+
 
 ## Gemerate a starter using spring initializer website
 ## TODO: Check versions
 downloadInitializer() {
   _name=$1
   _java=17
-  _boot=3.2.6
+  _boot=3.3.4
   _group=com.vaadin.initializer
   _type=$2
   _deps=$3
@@ -72,11 +78,7 @@ downloadInitializer() {
   cmd "unzip -q $_name.zip"
   cmd "cd $_name"
   cd $_name || return 1
-  git init -q
-  git config user.email | grep -q ... || git config user.email "vaadin-bot@vaadin.com"
-  git config user.name  | grep -q ... || git config user.name "Vaadin Bot"
-  git add -f .??* *
-  git commit -q -m 'First commit' -a
+  initGit
 }
 
 ## get the Playwright IDE test file used for each starter
@@ -88,7 +90,7 @@ getStartTestFile() {
    flow-crm-tutorial*) echo "";;
    react-tutorial) echo "react.js";;
    default*|vaadin-quarkus|*_prerelease) echo "hello.js";;
-   initializer*) echo "noop.js";; # disabled until we use vaadin initializer for flow and hilla
+   initializer*) echo "initializer.js";;
    archetype*) echo "click-hotswap.js";;
    hilla-react-cli) echo "hilla-react-cli.js";;
    react) echo "react-starter.js";;
@@ -102,7 +104,7 @@ getStartTestFile() {
 ## Get the clean command for the given starter
 _getClean() {
   case $1 in
-    initializer-hilla-gradle) echo "$GRADLE clean" ;;
+    initializer-*-gradle*) echo "$GRADLE clean" ;;
     *) echo "$MVN -ntp -B clean";;
   esac
 }
@@ -111,8 +113,8 @@ _getClean() {
 _getCompProd() {
   case $1 in
     archetype-hotswap|archetype-jetty) echo "$MVN -ntp -B clean";;
-    initializer-hilla-gradle) echo "$GRADLE build -Dhilla.productionMode -Dvaadin.productionMode && rm -f ./build/libs/*-plain.jar";;
-    *) echo "$MVN -ntp -B -Pproduction package $PNPM";;
+    initializer-*-gradle*) echo "$GRADLE clean build -Dhilla.productionMode -Dvaadin.productionMode && rm -f ./build/libs/*-plain.jar";;
+    *) echo "$MVN -ntp -B -Pproduction clean package $PNPM";;
   esac
 }
 
@@ -120,8 +122,8 @@ _getCompProd() {
 _getRunDev() {
   case $1 in
     vaadin-quarkus) echo "$MVN -ntp -B quarkus:dev";;
-    initializer-hilla-maven) echo "$MVN -ntp -B spring-boot:run";;
-    initializer-hilla-gradle) echo "$GRADLE bootRun";;
+    initializer-*-maven*) echo "$MVN -ntp -B spring-boot:run";;
+    initializer-*-gradle*) echo "$GRADLE bootRun";;
     *) echo "$MVN -ntp -B $PNPM";;
   esac
 }
@@ -131,7 +133,7 @@ _getRunProd() {
   case $1 in
     archetype-hotswap|archetype-jetty) echo "$MVN -ntp -B -Pproduction -Dvaadin.productionMode jetty:run-war";;
     vaadin-quarkus) echo "java -jar target/quarkus-app/quarkus-run.jar";;
-    *gradle) echo "java -jar ./build/libs/*.jar";;
+    *gradle*) echo "java -jar ./build/libs/*.jar";;
     *) echo "java -jar -Dvaadin.productionMode target/*.jar";;
   esac
 }
@@ -172,7 +174,6 @@ setStartVersion() {
 # 5. run validations for the new version in dev-mode
 # 6. run validations for the new version in prod-mode
 runStarter() {
-
   # 0
   MVN=mvn
   _preset="$1"
@@ -197,10 +198,8 @@ runStarter() {
      fi
     case "$_preset" in
       archetype*|vaadin-quarkus|hilla-*-cli) generateStarter $_preset || return 1 ;;
-      initializer-hilla-maven)   downloadInitializer $_preset maven-project  hilla,devtools || return 1 ;;
-      initializer-hilla-gradle)  downloadInitializer $_preset gradle-project hilla,devtools || return 1 ;;
-      # downloadInitializer initializer-vaadin-maven maven-project vaadin,devtools
-      # downloadInitializer initializer-vaadin-gradle gradle-project vaadin,devtools
+      initializer-*-maven*)  downloadInitializer $_preset maven-project vaadin,devtools || return 1 ;;
+      initializer-*-gradle*) downloadInitializer $_preset gradle-project vaadin,devtools || return 1 ;;
       *) downloadStarter $_preset $_folder || return 1 ;;
     esac
   fi

@@ -23,7 +23,11 @@ archetype-hotswap
 archetype-jetty
 archetype-spring
 vaadin-quarkus
-hilla-react-cli"
+hilla-react-cli
+initializer-vaadin-maven-react
+initializer-vaadin-maven-flow
+initializer-vaadin-gradle-react
+initializer-vaadin-gradle-flow"
 DEMOS="
 skeleton-starter-flow
 skeleton-starter-flow-spring
@@ -67,8 +71,7 @@ spring-guides/gs-crud-with-vaadin/complete
 spring-petclinic/spring-petclinic-vaadin-flow
 form-filler-demo
 flow-hilla-hybrid-example
-designer-tutorial
-"
+designer-tutorial"
 
 TODO="
 appsec-kit-demo:appsec-kit
