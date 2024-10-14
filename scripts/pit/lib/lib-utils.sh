@@ -673,8 +673,8 @@ printVersions() {
 
 MAVEN_OPTS='$MAVEN_OPTS' MAVEN_ARGS='$MAVEN_ARGS' $MVN -version
 $_vers
-Node version: `'$NODE' --version`
-Npm version: `'$NPM' --version`
+Node version: `"$NODE" --version`
+Npm version: `"$NPM" --version`
 "
 }
 
