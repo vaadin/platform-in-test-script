@@ -4,7 +4,7 @@
 . `dirname $0`/lib/lib-patch.sh
 
 ## Checkout a branch of a vaadin repository in github
-## if the project is private the github token should be set in the GITHUB_TOKEN or GHTK environment variable
+## we add GITHUB_TOKEN or GHTK environment variable to the URL
 ## $1: the name of the demo in the form of `repo[:branch][/folder]`
 checkoutDemo() {
   _demo=`getGitDemo $1`
@@ -13,10 +13,11 @@ checkoutDemo() {
   _workdir="$_demo$_folder"
   _repo=`getGitRepo $1`
   _tk=${GITHUB_TOKEN:-${GHTK}}
-  [ -n "$_tk" ] && __tk=${_tk}@
-  _gitUrl="https://${__tk}${_repo}.git"
+  _base=${GITBASE:-https://gitub.com/}
+  [ -n "$_tk" ] && _base=`echo "$_base" | sed -e 's|\(https://\)|\\1'$_tk'@|'`
+  _gitUrl="${_base}${_repo}.git"
   [ -z "$TEST" ] && log "Checking out $1"
-  cmd "git clone https://$_repo.git"
+  cmd "git clone $GITBASE$_repo.git"
   [ -z "$VERBOSE" ] && _quiet="-q"
   if [ -z "$_offline" -o ! -d "$_workdir" ]
   then
@@ -33,8 +34,8 @@ checkoutDemo() {
 getGitRepo() {
   _repo=`echo $1 | cut -d : -f1`
   case $_repo in
-    */*) echo "github.com/"`echo $_repo | cut -d / -f1,2`;;
-    *) echo "github.com/vaadin/"`echo $_repo` ;;
+    */*) echo echo $_repo | cut -d / -f1,2 ;;
+    *) echo "vaadin/"`echo $_repo` ;;
   esac
 }
 ## returns the current branch of a demo

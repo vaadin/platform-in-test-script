@@ -36,7 +36,7 @@ EOF
 
 ## check arguments passed to `run.sh` script and set global variables
 checkArgs() {
-  VERSION=current; PORT=$DEFAULT_PORT; TIMEOUT=$DEFAULT_TIMEOUT
+  VERSION=current; GITBASE="https://github.com/"; PORT=$DEFAULT_PORT; TIMEOUT=$DEFAULT_TIMEOUT
   while [ -n "$1" ]
   do
     arg=`echo "$1" | grep = | cut -d= -f2`
@@ -94,6 +94,8 @@ checkArgs() {
         shift
         RUN_FUCTION=${*}
         break ;;
+      --git-ssh) GITBASE="git@github.com:" ;;
+
       *) echo "Unknown option: $1" && usage && exit 1;;
     esac
     shift
