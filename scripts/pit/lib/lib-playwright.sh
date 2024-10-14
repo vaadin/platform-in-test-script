@@ -14,7 +14,7 @@ installPlaywright() {
   # @playwright/test
   (cd $_dir && runToFile "${NPM} install --no-audit playwright" "$_pfile" "$VERBOSE") || return 1
   (cd $_dir && runToFile "npx playwright install chromium" "$_pfile" "$VERBOSE") || return 1
-  isLinux && (cd $_dir && runToFile "${NODE} ./node_modules/.bin/playwright install-deps chromium" "$_pfile" "$VERBOSE") || true
+  isLinux && (cd $_dir && runToFile "'${NODE}' ./node_modules/.bin/playwright install-deps chromium" "$_pfile" "$VERBOSE") || true
 }
 
 ## Check if playwright is installed, otherwise install it
@@ -33,7 +33,7 @@ runPlaywrightTests() {
   [ -f "$_test_file" ] && checkPlaywrightInstallation $_test_file || return 0
   _args="--port=$_port --name=$5 --mode=$_mode"
   isHeadless && _args="$_args --headless"
-  PATH=$PATH runToFile "$NODE $_test_file $_args" "$_pfile" "$VERBOSE" true
+  PATH=$PATH runToFile "'$NODE' $_test_file $_args" "$_pfile" "$VERBOSE" true
   err=$?
   [ -n "$TEST" ] && return 0
   H=`grep '> CONSOLE:' "$_pfile" | perl -pe 's/(> CONSOLE: Received xhr.*?feat":).*/$1 .../g'`

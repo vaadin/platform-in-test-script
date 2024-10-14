@@ -156,7 +156,7 @@ runCmd() {
   _cmd="${*}"
   cmd "$_cmd"
   [ true = "$_skip" -o test = "$_skip" ] && return 0
-  eval $_cmd
+  eval "$_cmd"
 }
 
 ## Run a command and outputs its stdout/stderr to a file
