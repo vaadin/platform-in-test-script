@@ -12,10 +12,7 @@ isWindows() {
 removeProKey() {
   if [ -f ~/.vaadin/proKey ]; then
     _cmd="mv ~/.vaadin/proKey ~/.vaadin/proKey-$$"
-    [ -z "$TEST" ] && warn "Removing proKey license"
-    cmd "$_cmd"
-    [ -n "$TEST" ] && return 0
-    eval $_cmd
+    runCmd "$TEST" "Removing proKey license" "mv ~/.vaadin/proKey ~/.vaadin/proKey-$$"
   fi
 }
 ## Restore pro-key removed in previous function
@@ -23,11 +20,8 @@ restoreProKey() {
   [ ! -f ~/.vaadin/proKey-$$ ] && return
   H=`cat ~/.vaadin/proKey 2>/dev/null`
   _cmd="mv ~/.vaadin/proKey-$$ ~/.vaadin/proKey"
-  [ -z "$TEST" ] && warn "Restoring proKey license"
-  cmd "$_cmd"
-  eval $_cmd
-  [ -n "$TEST" ] && return 0
-  [ -n "$H" ] && reportError "A proKey was generated while running validation" "$H" && return 1
+  runCmd "$TEST" "Restoring proKey license" "mv ~/.vaadin/proKey-$$ ~/.vaadin/proKey"
+  [ -z "$TEST" -a -n "$H" ] && reportError "A proKey was generated while running validation" "$H" && return 1
 }
 
 ## Kills a process with its children and wait until complete
@@ -77,7 +71,7 @@ warn() {
   print '> ' 0 33 "$*"
 }
 cmd() {
-  cmd_=`echo "$*"`
+  cmd_=`printf "$*" | perl -pe 's|\n|\\\\\\\n|g'`
   print '  ' 1 34 " $cmd_"
 }
 dim() {
@@ -146,6 +140,23 @@ computeNpm() {
   NPX=`which npx`
   NODE=`which node`
   [ -x $_VNODE/bin/node -a -f $_NPMJS ] && export PATH=$_VNODE/bin:$PATH && NODE=$_VNODE/bin/node && NPM="$NODE $_NPMJS"
+}
+
+## Run a command, and shows a message explaining it
+## $1: whether run or not the command, used for testing
+## $2: message to show
+## $*: command line order and arguments
+runCmd() {
+  _skip=$1
+  shift
+  [ -z "$2" ] && echo "bad arguments to runCmd" && return 1
+  [ -n "$1" -a -z "$TEST" ] && log "$1"
+  [ -n "$1" -a -n "$TEST" ] && cmd "## $1"
+  shift
+  _cmd="${*}"
+  cmd "$_cmd"
+  [ true = "$_skip" -o test = "$_skip" ] && return 0
+  eval $_cmd
 }
 
 ## Run a command and outputs its stdout/stderr to a file
@@ -398,10 +409,8 @@ setGradleVersion() {
   if [ -f "gradle.properties" ]; then
     setPropertyInFile gradle.properties $__gradleProperty $__nversion
   elif [ -f "build.gradle" ]; then
-    cmd "perl -pi -e 's/^(.*set.*$__gradleProperty.*?)(\\d[^\"]+)(.*)\$/\${1}${__nversion}\${3}/g' build.gradle"
-         perl -pi -e 's/^(.*set.*'$__gradleProperty'.*?)(\d[^"]+)(.*)$/${1}'$__nversion'${3}/g' build.gradle
-    cmd "perl -pi -e \"s/(id +'com\\.vaadin' +version +')[\\d\\.]+(')/\\\${1}${__nversion}\\\${2}/\" build.gradle"
-         perl -pi -e "s/(id +'com\.vaadin' +version +')[\d\.]+(')/\${1}$__nversion\${2}/" build.gradle
+    runCmd false "Changing $__gradleProperty to $__nversion in build.gradle" "perl -pi -e 's/^(.*set.*$__gradleProperty.*?)(\\d[^\"]+)(.*)\$/\${1}${__nversion}\${3}/g' build.gradle"
+    runCmd false "Changing vaadin plugin to $__nversion in build.gradle" "perl -pi -e \"s/(id +'com\\.vaadin' +version +')[\\d\\.]+(')/\\\${1}${__nversion}\\\${2}/\" build.gradle"
   fi
 }
 
@@ -487,7 +496,6 @@ changeMavenBlock() {
   do
     cp $__file $$-1
     if [ "$4" = remove ]; then
-      [ -n "$TEST" ] && cmd "## Remove $__file $__tag $__grp:$__id"
       _cmd="perl -0777 -pi -e 's|(\s+)(<$__tag>\s*<groupId>)($__grp)(</groupId>\s*<artifactId>)($__id)(</artifactId>)(\s*.*?)?(\s*</$__tag>)||msg' $__file"
       perl -0777 -pi -e 's|(\s+)(<'$__tag'>\s*<groupId>)('$__grp')\s*(</groupId>\s*<artifactId>)('$__id')\s*(</artifactId>)(\s*.*?)?(\s*</'$__tag'>)||msg' $__file
     elif [ -n "$4" ]; then
@@ -507,10 +515,12 @@ changeMavenBlock() {
     fi
     cp $__file $$-2
     __diff=`diff -w $$-1 $$-2`
-    [ -z "$TEST" -a -n "$__diff" -a "$4" =  remove ] && warn "Removed $__file $__tag $__grp:$__id"
-    [ -z "$TEST" -a -n "$__diff" -a "$4" != remove ] && warn "Changed $__file $__tag $__grp:$__id -> $__grp2:$__id2:$4 $9"
-    [ -n "$TEST" -a -n "$__diff" ] && cmd "## Changed Maven Block $__tag $__grp:$__id -> $__grp2:$__id2:$4 $9"
-    [ -n "$__diff" ] && cmd "$_cmd"
+    if [ -n "$__diff" ]; then
+      [ "$4" = remove ] && __msg="Remove" || __msg="Change"
+      [ -z "$TEST" ] && warn "$__msg $__tag $__grp:$__id"
+      [ -n "$TEST" ] && cmd "## $__msg Maven Block $__tag $__grp:$__id -> $__grp2:$__id2:$4 $9"
+      cmd "$_cmd"
+    fi
     rm -f $$-1 $$-2
   done
 }
@@ -555,13 +565,16 @@ changeMavenProperty() {
   __prop=$1; __val=$2; __ret=0;
   for __propfile in `getPomFiles`
   do
-    if [ "$__val" != remove ]; then
-      __cur=`getCurrProperty $__prop $__propfile`
-      [ -z "$__cur" ] && continue
+    __cur=`getCurrProperty $__prop $__propfile`
+    if [ "$__val" != remove -a "$__val" != "$__cur" ]; then
+      runCmd false "Changing Maven property $__prop from $__cur -> $__val in $__propfile" \
+        "perl -pi -e 's|(\s*<'$__prop'>)[^\s]+(</'$__prop'>)|\${1}${__val}\${2}|g' $__propfile"
+      __ret=$?
+    elif [ "$__val" = remove -a -n "$__cur" ]; then
+      runCmd false "Removing Maven property $__prop from $__propfile" \
+        "perl -pi -e 's|(\s*<'$__prop'>)[^\s]+(</'$__prop'>)||g' $__propfile"
+      __ret=$?
     fi
-    [ -n "$TEST" ] && cmd "## Change Maven property $__prop from $__cur -> $__val in $__propfile"
-    changeBlock "<$__prop>" "</$__prop>" "$__val" $__propfile
-    [ $? != 0 ] && __ret=1
   done
   return $__ret
 }
@@ -573,11 +586,10 @@ renameMavenProperty() {
   __prop1=$1; __prop2=$2; __ret=1;
   for __file in `getPomFiles`
   do
-    __cur=`getCurrProperty $__prop $__file`
+    __cur=`getCurrProperty $__prop1 $__file`
     [ -z "$__cur" ] && continue
-    [ -n "$TEST" ] && cmd "## Rename Maven property $__prop1 -> $__prop2"
-    cmd "perl -0777 -pi -e 's|(<$__prop1>[^\s]+)(/$__prop1>)|<$__prop2>$__cur</$__prop2>|g' $__file"
-         perl -0777 -pi -e 's|(<'$__prop1'>[^\s]+)(/'$__prop1'>)|<'$__prop2'>'$__cur'</'$__prop2'>|g' $__file
+    runCmd false "Rename Maven property $__prop1 -> $__prop2" \
+      "perl -0777 -pi -e 's|(<$__prop1>[^\s]+)(/$__prop1>)|<$__prop2>$__cur</$__prop2>|g' $__file"
     [ $? = 0 -a $__ret = 1 ] && __ret=0
   done
   return $__ret
@@ -588,7 +600,6 @@ renameMavenProperty() {
 ## $2: groupId
 ## $3: artifactId
 removeMavenBlock() {
-  cmd "##remove $1 $2 $3"
   changeMavenBlock "$1" "$2" "$3" remove
 }
 
@@ -598,8 +609,8 @@ removeMavenProperty() {
   changeMavenProperty "$1" remove
 }
 
-## set a maven property in a file
-## $1: maven pom file
+## set a property in a properties file
+## $1: property file
 ## $2: property name
 ## $3: value
 setPropertyInFile() {
@@ -666,35 +677,33 @@ Npm version: `$NPM --version`
 "
 }
 
-## adds extr repo to the pom.xml
+## Add extr repo to the pom.xml
+## $1: repo url
 addRepoToPom() {
   U="$1"
   grep -q "$U" pom.xml && return 0
-  [ -z "$TEST" ] && log "Adding $U repository"
   for R in repositor pluginRepositor; do
     if ! grep -q $R'ies>' pom.xml; then
-      cmd "perl -pi -e 's|(\s*)(</properties>)|\$1\$2\\\n\$1<${R}ies><${R}y><id>v</id><url>${U}</url></${R}y></${R}ies>|' pom.xml"
-           perl -pi -e 's|(\s*)(</properties>)|$1$2\n$1<'$R'ies><'$R'y><id>v</id><url>'$U'</url></'$R'y></'$R'ies>|' pom.xml
+      __cmd="perl -pi -e 's|(\s*)(</project>)|\$1\$1<${R}ies><${R}y><id>v</id><url>${U}</url></${R}y></${R}ies>\n\$1\$2|' pom.xml"
     else
-      cmd "perl -pi -e 's|(\s*)(<${R}ies>)|\$1\$2\\\n\$1\$1<${R}y><id>v</id><url>${U}</url></${R}y>|' pom.xml"
-      perl -pi -e 's|(\s*)(<'$R'ies>)|$1$2\n$1$1<'$R'y><id>v</id><url>'$U'</url></'$R'y>|' pom.xml
+      __cmd="perl -pi -e 's|(\s*)(<${R}ies>)|\$1\$2\n\$1\$1<${R}y><id>v</id><url>${U}</url></${R}y>|' pom.xml"
     fi
+    runCmd false "Adding $U repository to pom.xml" "$__cmd"
   done
 }
 
+## Add extr repo to gradle files
+## $1: repo url
 addRepoToGradle() {
   U="$1"
-  H=`[ -f settings.gradle ] && grep -q "$U" settings.gradle`
+  H=`[ -f settings.gradle ] && grep "$U" settings.gradle`
   if [ -z "$H" ]; then
-    [ -z "$TEST" ] && log "Adding $U repository to settings.gradle"
-    echo "" >> settings.gradle
-    cmd "perl -0777 -pi -e 's|^|pluginManagement {\\\n  repositories {\\\n    maven { url = \"$U\" }\\\n    gradlePluginPortal()\\\n  }\\\n}\\\n|' settings.gradle"
-    perl -0777 -pi -e 's|^|pluginManagement {\n  repositories {\n    maven { url = "'$U'" }\n    gradlePluginPortal()\n  }\n}\n|' settings.gradle
+    runCmd false "Adding $U repository to settings.gradle" \
+      "perl -0777 -pi -e 's|^|pluginManagement {\n  repositories {\n    maven { url = \"$U\" }\n    gradlePluginPortal()\n  }\n}\n|' settings.gradle"
   fi
   grep -q "$U" build.gradle && return 0
-  [ -z "$TEST" ] && log "Adding $U repository to build.gradle"
-  cmd "perl -pi -e 's|(repositories\s*{)|\$1\\\n    maven { url \"$U\" }|' build.gradle"
-       perl -pi -e 's|(repositories\s*{)|$1\n    maven { url "'$U'" }|' build.gradle
+  runCmd false "Adding $U repository to build.gradle" \
+    "perl -pi -e 's|(repositories\s*{)|\$1\n    maven { url \"$U\" }|' build.gradle"
 }
 
 ## adds the pre-releases repositories to the pom.xml
@@ -717,24 +726,12 @@ enableSnapshots() {
   done
 }
 
-## runs a command, and shows a message explaining it
-## $1: message to show
-## $*: command line order and arguments
-runCmd() {
-  [ -z "$2" ] && echo "bad arguments to runCmd" && return 1
-  [ -n "$1" ] && log "$1"
-  shift
-  _cmd="${*}"
-  cmd "$_cmd"
-  eval $_cmd
-}
-
 ## Downloads a file from the internet
 ## $1: the URL
 download() {
   [ -z "$VERBOSE" ] && __S="-s"
   [ -n "$2" ] && __O="-o $2"
-  runCmd "Downloading $1" "curl $__S -L $__O $1"
+  runCmd false "Downloading $1" "curl $__S -L $__O $1"
 }
 
 ## Installs jet brains java runtime, used for testing the hotswap agent
@@ -753,7 +750,7 @@ installJBRRuntime() {
   fi
   if [ ! -d /tmp/jbr ]; then
     mkdir -p /tmp/jbr
-    runCmd "Extracting JBR" "tar -xf /tmp/JBR.tgz -C /tmp/jbr --strip-components 1" || return 1
+    runCmd false "Extracting JBR" "tar -xf /tmp/JBR.tgz -C /tmp/jbr --strip-components 1" || return 1
   fi
 
   [ -d /tmp/jbr/Contents/Home/ ] && H=/tmp/jbr/Contents/Home || H=/tmp/jbr
@@ -762,7 +759,6 @@ installJBRRuntime() {
   __PATH=$PATH
   __HOME=$JAVA_HOME
   export PATH="$H/bin:$PATH" JAVA_HOME="$H" HOT="-XX:+AllowEnhancedClassRedefinition -XX:HotswapAgent=fatjar"
-
 
   if [ ! -f $H/lib/hotswap/hotswap-agent.jar ] ; then
     mkdir -p $H/lib/hotswap
@@ -802,11 +798,10 @@ printTime() {
 
 ## update Gradle to the version provided in $1
 upgradeGradle() {
+  [ -z "$1" ] && return
   V=`$GRADLE --version | grep '^Gradle' | awk '{print $2}'`
   expr "$V" : "$1" >/dev/null && return
-  warn "Upgrading Gradle Wrapper from $V to $1"
-  cmd "$GRADLE wrapper -q --gradle-version $1"
-  $GRADLE wrapper -q --gradle-version $1
+  runCmd false "Upgrading Gradle from $V to $1" "$GRADLE wrapper -q --gradle-version $1"
 }
 
 ## list all demos that are available in the vaadin website (examples and starters)
