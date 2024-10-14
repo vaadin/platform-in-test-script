@@ -122,15 +122,16 @@ computeAbsolutePath() {
 }
 ## Compute the maven command to use for the project and stores in MVN env variable
 computeMvn() {
-  [ -f ./mvnw ] && MVN=./mvnw
-  isWindows && [ -f ./mvnw.cmd ] && MVN=./mvnw.cmd
+  [ -x ./mvnw ] && MVN=./mvnw
+  isWindows && [ -x ./mvnw.bat ] && MVN=./mvnw.bat
+  isWindows && [ -x ./mvnw.cmd ] && MVN=./mvnw.cmd
 }
 
 ## Compute the gradle command to use for the project and stores in GRADLE env variable
 computeGradle() {
-  [ -f ./gradlew ] && GRADLE=./gradlew
-  isWindows && [ -f ./gradlew.cmd ] && GRADLE=./gradlew.cmd
-  isWindows && [ -f ./gradlew.bat ] && GRADLE=./gradlew.bat
+  [ -x ./gradlew ] && GRADLE=./gradlew
+  isWindows && [ -x ./gradlew.bat ] && GRADLE=./gradlew.bat
+  isWindows && [ -x ./gradlew.cmd ] && GRADLE=./gradlew.cmd
 }
 
 ## Compute npm command used for installing playwright
