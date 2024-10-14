@@ -9,14 +9,14 @@ const isWin = /^win/.test(process.platform);
 let buildCmd, buildArgs;
 if (fs.existsSync('mvnw') ) {
   if (isWin) {
-    buildCmd = fs.existsSync('./mvnw.bat') ? './mvnw.bat' : './mvnw.cmd';
+    buildCmd = fs.existsSync('mvnw.bat') ? 'mvnw.bat' : 'mvnw.cmd';
   } else {
     buildCmd = './mvnw';
   }
   buildArgs = 'compiler:compile';
 } else if (fs.existsSync('gradlew')) {
   if (isWin) {
-    buildCmd = fs.existsSync('./gradlew.bat') ? './gradlew.bat' : './gradlew.cmd';
+    buildCmd = fs.existsSync('gradlew.bat') ? 'gradlew.bat' : 'gradlew.cmd';
   } else {
     buildCmd = './gradlew';
   }
