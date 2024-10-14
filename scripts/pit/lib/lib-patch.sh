@@ -41,9 +41,7 @@ applyPatches() {
     ce-demo)
       echo $vers_
       case $vers_ in
-        # https://github.com/vaadin/collaboration-engine-internal/issues/1049
-        # 24.5*) patchCeLicense ;;
-        # CE is OS since 24.5.0
+        # 24.5+ does not need license
         24.3*|24.4*) installCeLicense ;;
       esac
       ;;
@@ -180,57 +178,5 @@ installCeLicense() {
   warn "Creating license file ./$LIC with the \$CE_LICENSE content"
   cmd "echo \"\$CE_LICENSE\" > $LIC"
   echo "$CE_LICENSE" > $LIC
-}
-
-patchCeLicense() {
-warn "Patching CE License in src/main/java/com/jensjansson/ce/Application.java"
-cat <<EOF > src/main/java/com/jensjansson/ce/Application.java || return 1
-package com.jensjansson.ce;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
-
-import com.jensjansson.ce.bot.BotManager;
-import com.jensjansson.ce.data.service.PersonService;
-import com.vaadin.collaborationengine.CollaborationEngine;
-import com.vaadin.collaborationengine.CollaborationEngineConfiguration;
-import com.vaadin.flow.component.page.AppShellConfigurator;
-import com.vaadin.flow.component.page.Push;
-import com.vaadin.flow.server.PWA;
-import com.vaadin.flow.server.ServiceInitEvent;
-import com.vaadin.flow.server.VaadinServiceInitListener;
-import com.vaadin.flow.theme.Theme;
-
-/**
- * The entry point of the Spring Boot application.
- */
-@SpringBootApplication
-@PWA(name = "CE Demo", shortName = "CE Demo")
-@Push
-@Theme("ce-demo")
-public class Application extends SpringBootServletInitializer
-        implements AppShellConfigurator, VaadinServiceInitListener {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(Application.class);
-
-    public static void main(String[] args) {
-        SpringApplication.run(Application.class, args);
-    }
-
-    @Autowired
-    PersonService personService;
-
-    @Override
-    public void serviceInit(ServiceInitEvent serviceInitEvent) {
-        CollaborationEngine ce = CollaborationEngine.configure(serviceInitEvent.getSource(),
-                new CollaborationEngineConfiguration());
-        BotManager.createInstance(personService, ce);
-    }
-}
-EOF
 }
 

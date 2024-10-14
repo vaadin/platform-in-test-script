@@ -398,7 +398,10 @@ setGradleVersion() {
   if [ -f "gradle.properties" ]; then
     setPropertyInFile gradle.properties $__gradleProperty $__nversion
   elif [ -f "build.gradle" ]; then
-    perl -pi -e 's/^(.*set.*'$__gradleProperty'.*?)(\d[^"]+)(.*)$/${1}'$__nversion'${3}/g' build.gradle
+    cmd "perl -pi -e 's/^(.*set.*$__gradleProperty.*?)(\\d[^\"]+)(.*)\$/\${1}${__nversion}\${3}/g' build.gradle"
+         perl -pi -e 's/^(.*set.*'$__gradleProperty'.*?)(\d[^"]+)(.*)$/${1}'$__nversion'${3}/g' build.gradle
+    cmd "perl -pi -e \"s/(id +'com\\.vaadin' +version +')[\\d\\.]+(')/\\\${1}${__nversion}\\\${2}/\" build.gradle"
+         perl -pi -e "s/(id +'com\.vaadin' +version +')[\d\.]+(')/\${1}$__nversion\${2}/" build.gradle
   fi
 }
 
@@ -665,7 +668,6 @@ Npm version: `$NPM --version`
 
 ## adds extr repo to the pom.xml
 addRepoToPom() {
-  [ ! -f pom.xml ] && ([ -n "$TEST" ] || log "Not a Maven proyect, not adding prereleases repository") && return 0
   U="$1"
   grep -q "$U" pom.xml && return 0
   [ -z "$TEST" ] && log "Adding $U repository"
@@ -680,14 +682,31 @@ addRepoToPom() {
   done
 }
 
+addRepoToGradle() {
+  U="$1"
+  H=`[ -f settings.gradle ] && grep -q "$U" settings.gradle`
+  if [ -z "$H" ]; then
+    [ -z "$TEST" ] && log "Adding $U repository to settings.gradle"
+    echo "" >> settings.gradle
+    cmd "perl -0777 -pi -e 's|^|pluginManagement {\\\n  repositories {\\\n    maven { url = \"$U\" }\\\n    gradlePluginPortal()\\\n  }\\\n}\\\n|' settings.gradle"
+    perl -0777 -pi -e 's|^|pluginManagement {\n  repositories {\n    maven { url = "'$U'" }\n    gradlePluginPortal()\n  }\n}\n|' settings.gradle
+  fi
+  grep -q "$U" build.gradle && return 0
+  [ -z "$TEST" ] && log "Adding $U repository to build.gradle"
+  cmd "perl -pi -e 's|(repositories\s*{)|\$1\\\n    maven { url \"$U\" }|' build.gradle"
+       perl -pi -e 's|(repositories\s*{)|$1\n    maven { url "'$U'" }|' build.gradle
+}
+
 ## adds the pre-releases repositories to the pom.xml
 addPrereleases() {
-  addRepoToPom "https://maven.vaadin.com/vaadin-prereleases"
+  [ -f pom.xml ] && addRepoToPom "https://maven.vaadin.com/vaadin-prereleases"
+  [ -f build.gradle ] && addRepoToGradle "https://maven.vaadin.com/vaadin-prereleases"
 }
 
 # adds spring pre-releases repo to pom.xml
 addSpringReleaseRepo() {
-  addRepoToPom "https://repo.spring.io/milestone/"
+  [ -f pom.xml ] && addRepoToPom "https://repo.spring.io/milestone/"
+  [ -f build.gradle ] && addRepoToGradle "https://repo.spring.io/milestone/"
 }
 
 ## enables snapshots for the pre-releases repositories in pom.xml
@@ -830,7 +849,7 @@ computeVersion() {
 computeProp() {
     case $1 in
       # *hilla*gradle) echo "hillaVersion";;
-      *gradle) echo "vaadinVersion";;
+      *gradle*) echo "vaadinVersion";;
       # *typescript*|*hilla*|*react*|*-lit*) echo "hilla.version";;
       *) echo "vaadin.version";;
     esac

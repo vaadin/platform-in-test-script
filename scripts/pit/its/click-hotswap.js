@@ -3,12 +3,12 @@ const fs = require('fs');
 const { spawn } = require('child_process');
 const os = require('os');
 
-const sleep = ms => new Promise(r => setTimeout(r, ms));
 const compileMvn = async () => await exec(`${/^win/.test(process.platform) ? 'mvn.cmd' : 'mvn'} compiler:compile`);
 async function compile(page) {
   await compileMvn();
   console.log('=> TEST: Sleeping 10secs');
-  await sleep(10000);
+  await page.waitForTimeout(10000);
+
   if (/jetty/.test(name)) {
     console.log('=> TEST: Reloading Page ');
     await page.reload();
