@@ -87,7 +87,7 @@ reportError() {
   warn "reporting error: $__head"
   [ -z "$GITHUB_STEP_SUMMARY" ] && return
   H=`echo "$*" | awk '{print substr ($0, 0, 300)}' | tail -n 100000`
-  cat << EOF >> $GITHUB_STEP_SUMMARY
+  cat << EOF >> "$GITHUB_STEP_SUMMARY"
 <details>
 <summary><h4>$__head</h4></summary>
 <pre>
@@ -176,14 +176,14 @@ runToFile() {
   if [ -z "$__verbose" ]
   then
     if [ -z "$__stdout" ]; then
-      eval "$__cmd" >> $__file 2>&1
+      eval "$__cmd" >> "$__file" 2>&1
       err=$?
     else
-      eval "$__cmd" >> $__file
+      eval "$__cmd" >> "$__file"
       err=$?
     fi
   else
-    eval "$__cmd" 2>&1 | tee -a $__file
+    eval "$__cmd" 2>&1 | tee -a "$__file"
     err=$?
   fi
   [ $err != 0 ] && reportOutErrors "$__file" "Error ($err) running $__cmd" && return 1 || return 0
@@ -201,22 +201,22 @@ runInBackgroundToFile() {
   expr "$1" : ".*mvn " >/dev/null && E=" $MAVEN_ARGS" || E=""
   cmd "$__cmd $E"
   [ -n "$TEST" ] && return
-  touch $__file
+  touch "$__file"
   if [ -n "$__verbose" ]
   then
     tail -f "$__file" &
     pid_tail=$!
   fi
-  $__cmd >> $__file 2>&1 &
+  $__cmd >> "$__file" 2>&1 &
   pid_run=$!
 }
 
 ## check whether flow modified the tsconfig.json file
 tsConfigModified() {
-  grep -q "'tsconfig.json' has been updated" $1 || return 1
+  grep -q "'tsconfig.json' has been updated" "$1" || return 1
   H=`git diff tsconfig.json 2>/dev/null`
   H="$H"`git diff types.d.ts 2>/dev/null`
-  echo ">>>> PiT: Found tsconfig.json modified" >> $1
+  echo ">>>> PiT: Found tsconfig.json modified" >> "$1"
   reportOutErrors "File 'tsconfig.json' was modified and servlet threw an Exception" "$H"
 }
 
@@ -237,15 +237,15 @@ waitUntilMessageInFile() {
     kill -0 $pid_run 2>/dev/null
     if [ $? != 0 ]
     then
-      tsConfigModified $__file && return 2
+      tsConfigModified "$__file" && return 2
       reportOutErrors "$__file" "Error $__cmd failed to start" && return 1
     fi
     __lasted=`expr $3 - $__timeout`
     __perl="perl -pe 's~^.*($__message.*)~\$1~g'"
-    egrep -q "$__message" $__file  \
+    egrep -q "$__message" "$__file"  \
       && H=`egrep "$__message" $__file | eval "$__perl" | head -1` \
       && log "Found '$H' in $__file after $__lasted secs" \
-      && echo ">>>> PiT: Found '$H' after $__lasted secs" >> $__file \
+      && echo ">>>> PiT: Found '$H' after $__lasted secs" >> "$__file" \
       && sleep 3 && return 0
     sleep 10 && __timeout=`expr $__timeout - 2`
   done
@@ -294,7 +294,7 @@ waitUntilPort() {
   log "Waiting for port $1 to be available"
   __i=1
   while true; do
-    checkPort $1 && echo ">>>> PiT: Checked that port $1 is listening" >> $3 && return 0
+    checkPort $1 && echo ">>>> PiT: Checked that port $1 is listening" >> "$3" && return 0
     __i=`expr $__i + 1`
     [ $__i -gt $2 ] && err "Server not listening in port $1 after $2 secs" && return 1
   done
@@ -346,10 +346,10 @@ waitUntilFrontendCompiled() {
     __err=$?
     if [ $__err != 0 ]; then
        if tsConfigModified $__ofile; then
-         echo ">>>> PiT: config file modified, retrying ...." >> $__ofile && reportOutErrors "$__ofile" "File tsconfig/types.d was modified and servlet threw an Exception" "$_diff"
+         echo ">>>> PiT: config file modified, retrying ...." >> "$__ofile" && reportOutErrors "$__ofile" "File tsconfig/types.d was modified and servlet threw an Exception" "$_diff"
          return 2
        else
-         echo ">>>> PiT: Found Error when compiling frontend" >> $__ofile && reportOutErrors "$__ofile" "Error ($__err) checking dev-mode"
+         echo ">>>> PiT: Found Error when compiling frontend" >> "$__ofile" && reportOutErrors "$__ofile" "Error ($__err) checking dev-mode"
          return 1
        fi
     fi
@@ -357,7 +357,7 @@ waitUntilFrontendCompiled() {
       sleep 3
       __time=`expr $__time + 3`
     else
-      echo ">>>> PiT: Checked that frontend is compiled and dev-mode is ready after $__time secs" >> $__ofile
+      echo ">>>> PiT: Checked that frontend is compiled and dev-mode is ready after $__time secs" >> "$__ofile"
       log "Found a valid response after $__time secs"
       return
     fi
@@ -626,7 +626,7 @@ setPropertyInFile() {
           perl -pi -e 's|\s*('$__key')\s*([=:]).*|${1}${2}'"${__val}|g" $__file
   else
     _cmd="echo '$__key=$__val' >> $__file"
-          echo "$__key=$__val" >> $__file
+          echo "$__key=$__val" >> "$__file"
   fi
   __diff=`diff -w $$-1 $__file`
   rm -f $$-1
@@ -779,7 +779,7 @@ unsetJBR() {
 ## it modifies jetty in pom.xml and configures the hotswap-agent.properties
 enableJBRAutoreload() {
   _p=src/main/resources/hotswap-agent.properties
-  mkdir -p `dirname $_p` && echo "autoHotswap=true" > $_p
+  mkdir -p `dirname $_p` && echo "autoHotswap=true" > "$_p"
   [ -z "$TEST" ] && warn "Disabled Jetty autoreload"
   changeMavenProperty scan -1
 }
