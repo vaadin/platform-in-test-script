@@ -4,15 +4,28 @@ const assert = require('assert');
 
 const { spawn } = require('child_process');
 const fs = require('fs');
+const isWin = /^win/.test(process.platform);
 
-let compileProject;
-if (fs.existsSync('mvnw')) {
-  const buildCmd = /^win/.test(process.platform) ? 'mvnw.cmd' : './mvnw';
-  compileProject = async () => await exec(`${buildCmd} compiler:compile`);
+let buildCmd, buildArgs;
+if (fs.existsSync('mvnw') ) {
+  if (isWin) {
+    buildCmd = fs.existsSync('./mvnw.bat') ? './mvnw.bat' : './mvnw.cmd';
+  } else {
+    buildCmd = './mvnw';
+  }
+  buildArgs = 'compiler:compile';
+} else if (fs.existsSync('gradlew')) {
+  if (isWin) {
+    buildCmd = fs.existsSync('./gradlew.bat') ? './gradlew.bat' : './gradlew.cmd';
+  } else {
+    buildCmd = './gradlew';
+  }
+  buildArgs = 'compileJava';
 } else {
-  const buildCmd = /^win/.test(process.platform) ? 'gradlew.cmd' : './gradlew';
-  compileProject = async () => await exec(`${buildCmd} compileJava`);
+  throw new Error('No build tool found');
 }
+
+const compileProject = async () => await exec(`${buildCmd} ${buildArgs}`);
 const log = s => process.stderr.write(`\x1b[1m=> TEST: \x1b[0;33m${s}\x1b[0m`);
 
 async function compile(page) {
@@ -84,7 +97,7 @@ process.argv.forEach(a => {
     const linkText = /react/.test(name) ?
       'Create a view for coding the UI in TypeScript with Hilla and React' :
       'Create a view for coding the UI in Java with Flow';
-    const viewName = /react/.test(name) ? '@index.tsx' : 'HomeView.java'; 
+    const viewName = /react/.test(name) ? '@index.tsx' : 'HomeView.java';
 
     log(`Creating ${viewName} view using copilot\n`);
     await page.getByRole('link', { name: linkText }).click();

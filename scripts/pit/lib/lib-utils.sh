@@ -130,6 +130,7 @@ computeMvn() {
 computeGradle() {
   [ -f ./gradlew ] && GRADLE=./gradlew
   isWindows && [ -f ./gradlew.cmd ] && GRADLE=./gradlew.cmd
+  isWindows && [ -f ./gradlew.bat ] && GRADLE=./gradlew.bat
 }
 
 ## Compute npm command used for installing playwright
@@ -672,8 +673,8 @@ printVersions() {
 
 MAVEN_OPTS='$MAVEN_OPTS' MAVEN_ARGS='$MAVEN_ARGS' $MVN -version
 $_vers
-Node version: `$NODE --version`
-Npm version: `$NPM --version`
+Node version: `'$NODE' --version`
+Npm version: `'$NPM' --version`
 "
 }
 
