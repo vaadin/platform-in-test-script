@@ -34,7 +34,7 @@ checkoutDemo() {
 getGitRepo() {
   _repo=`echo $1 | cut -d : -f1`
   case $_repo in
-    */*) echo echo $_repo | cut -d / -f1,2 ;;
+    */*) echo $_repo | cut -d / -f1,2 ;;
     *) echo "vaadin/"`echo $_repo` ;;
   esac
 }
