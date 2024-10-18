@@ -37,7 +37,7 @@ while [ -n "$1" ]; do
           D=`echo "$i" | cut -d "ç" -f3`
           L=`echo "$i" | cut -d "ç" -f4`
           T=`echo "$i" | cut -d "ç" -f5`
-          echo "  > https://github.com/$V/$arg/pull/$N - ($B) $D - [$L $T]" | tr "ç" "\t"
+          echo "  # > https://github.com/$V/$arg/pull/$N - ($B) $D - [$L $T]" | tr "ç" "\t"
           if [ "$3" = "merge" ]; then
             $0 --merge=$arg $N
           elif [ "$3" = "close" ]; then
