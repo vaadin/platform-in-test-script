@@ -19,17 +19,20 @@ Use: $0 [version=] [starters=] [port=] [timeout=] [verbose] [offline] [interacti
  --skip-current    Skip running build in current version
  --skip-prod       Skip production validations
  --skip-dev        Skip dev-mode validations
+ --skip-clean      Do not clean maven cache
  --pnpm            Use pnpm instead of npm to speed up frontend compilation (default npm)
  --vite            Use vite inetad of webpack to speed up frontend compilation (default webpack)
  --list            Show the list of available starters
  --hub             Use selenium hub instead of local chrome, it assumes that selenium docker is running as service in localhost
- --help            Show this message
  --commit          Commit changes to the base branch
  --test            Checkout starters, and show steps and commands to execute, but don't run them
- --skip-clean      Do not clean maven cache
+ --git-ssh         Use git-ssh instead of https to checkout projects (you need a valid ssh key)
+ --headless        Run the browser in headless mode even if interactive mode is enabled
+ --headed          Run the browser in headed mode even if interactive mode is disabled
  --function        run only one function of the libs in current folder.
                    everything after this argument is the function name and arguments passed to the function.
                    you should take care with arguments that contain spaces, they should be quoted twice.
+ --help            Show this message
 EOF
   exit 1
 }

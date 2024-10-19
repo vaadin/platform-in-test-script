@@ -3,7 +3,7 @@
 
 ## Check whether playwright is installed in node_modules folder of the test node-script
 isInstalledPlaywright() {
-  _dir=`dirname $1`
+  _dir=`dirname "$1"`
   (cd "$_dir" && \
     echo -e "const { chromium } = require('playwright');\n" | $NODE - 2>/dev/null)
 }
@@ -20,21 +20,21 @@ installPlaywright() {
 
 ## Check if playwright is installed, otherwise install it
 checkPlaywrightInstallation() {
-  [ -n "$UPDATE" ] && installPlaywright $1
-  isInstalledPlaywright $1 && return 0
-  installPlaywright $1
+  [ -n "$UPDATE" ] && installPlaywright "$1"
+  isInstalledPlaywright "$1" && return 0
+  installPlaywright "$1"
 }
 
 ## Run playwright tests
 runPlaywrightTests() {
-  _test_file=$1
+  _test_file="$1"
   _port=$2
   _mode=$3
   _pfile="playwright-$_mode-"`uname`".out"
-  [ -f "$_test_file" ] && checkPlaywrightInstallation $_test_file || return 0
+  [ -f "$_test_file" ] && checkPlaywrightInstallation "$_test_file" || return 0
   _args="--port=$_port --name=$5 --mode=$_mode"
   isHeadless && _args="$_args --headless"
-  PATH=$PATH runToFile "'$NODE' $_test_file $_args" "$_pfile" "$VERBOSE" true
+  PATH=$PATH runToFile "'$NODE' '$_test_file' $_args" "$_pfile" "$VERBOSE" true
   err=$?
   [ -n "$TEST" ] && return 0
   H=`grep '> CONSOLE:' "$_pfile" | perl -pe 's/(> CONSOLE: Received xhr.*?feat":).*/$1 .../g'`
@@ -43,7 +43,7 @@ runPlaywrightTests() {
   H=`grep '> JSERROR:' "$_pfile"`
   [ -n "$H" ] && reportError "Console Errors in $_mode mode $5" "$H" && echo "$H" && return 1
   H=`tail -15 $_pfile`
-  [ $err != 0 ] && reportOutErrors "$4" "Error ($err) running Visual-Test ("`basename $_pfile`")" || echo ">>>> PiT: playwright $_test_file done" >> $__file
+  [ $err != 0 ] && reportOutErrors "$4" "Error ($err) running Visual-Test ("`basename $_pfile`")" || echo ">>>> PiT: playwright '$_test_file' done" >> $__file
   return $err
 }
 
