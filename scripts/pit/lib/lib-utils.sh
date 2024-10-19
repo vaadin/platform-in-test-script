@@ -141,7 +141,7 @@ computeNpm() {
   NPM=`which npm`
   NPX=`which npx`
   NODE=`which node`
-  [ -x $_VNODE/bin/node -a -f $_NPMJS ] && export PATH=$_VNODE/bin:$PATH && NODE=$_VNODE/bin/node && NPM="$NODE $_NPMJS"
+  [ -x "$_VNODE/bin/node" -a -f "$_NPMJS" ] && export PATH="$_VNODE/bin:$PATH" && NODE="$_VNODE/bin/node" && NPM="'$NODE' $_NPMJS"
 }
 
 ## Run a command, and shows a message explaining it
@@ -661,7 +661,7 @@ enableVite() {
 ## Compute whether the headless argument must be set
 isHeadless() {
   IP=`hostname -i 2>/dev/null`
-  test -z "$VERBOSE" -o -n "$IP"
+  test "$HEADLESS" = true -o -z "$VERBOSE" -a "$HEADLESS" != false -o -n "$IP"
 }
 
 ## print used versions of node, java and maven

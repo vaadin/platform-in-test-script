@@ -95,7 +95,8 @@ checkArgs() {
         RUN_FUCTION=${*}
         break ;;
       --git-ssh) GITBASE="git@github.com:" ;;
-
+      --headless) HEADLESS=true ;;
+      --headed)   HEADLESS=false ;;
       *) echo "Unknown option: $1" && usage && exit 1;;
     esac
     shift

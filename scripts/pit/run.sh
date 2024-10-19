@@ -95,7 +95,7 @@ main() {
     run runDemo "$i" "$tmp"
   done
 
-  cd $pwd
+  cd "$pwd"
 
   [ -n "$TEST" ] && return
 
