@@ -4,8 +4,6 @@
 ##   Patches for special versions are maintained in separated files like lib-patch-v24.sh, lib-patch-v24.4.sh
 ##   These especial patches are loaded and applied in this script
 
-__scripts=
-
 ## Run after updating Vaadin/Hilla versions in order to patch sources
 applyPatches() {
   app_=$1; type_=$2; vers_=$3; mod_=$4
@@ -17,7 +15,6 @@ applyPatches() {
   expr "$vers_" : ".*SNAPSHOT" >/dev/null && enableSnapshots
   expr "$vers_" : "24.3.0.alpha.*" >/dev/null && addSpringReleaseRepo
   downgradeJava
-  removeDeprecated
   case $app_ in
     archetype-hotswap) enableJBRAutoreload ;;
     vaadin-oauth-example)
@@ -54,20 +51,6 @@ applyPatches() {
        [ -d frontend/generated ] && GN=frontend/generated || GN=src/main/frontend/generated
        [ -d $GN ] && cmd "Cleaning Generated folder: rm -rf $GN" && rm -rf $GN
        ;;
-    ### disabled until proper fix for init-app goal https://github.com/vaadin/hilla/issues/2053
-    # initializer-hilla-maven)
-    #   cmd "$MVN vaadin:init-app" && $MVN -q vaadin:init-app ;;
-    # initializer-hilla-gradle)
-    #   cmd "$GRADLE -q hillaInitApp" && $GRADLE -q hillaInitApp  >/dev/null ;;
-    *hilla*|*-lit*|start)
-      ## TODO: adjust 2.4 when hilla-quickstart-tutorial hilla-basics-tutorial are fixed
-      # [ "$type_" = 'next' ] <-- removed because it fails in current start projects
-      if [ -d frontend ] && echo "$vers_" | grep -Eq "2\.5[\.-].*|24\.3[\.-].*|24\.4[\.-].*" ; then
-        _v=`grep -r 'createRenderRoot(): Element' frontend | cut -d ':' -f1 | tr '\n' ' '`
-        _cmd="perl -pi -e 's/createRenderRoot\(\): Element \| ShadowRoot/createRenderRoot\(\): HTMLElement | DocumentFragment/g' $_v"
-        [ -n "$_v" ] && cmd "$_cmd" && eval "$_cmd"
-      fi
-      ;;
   esac
 
   if [ "$type_" = 'current' ]; then
@@ -76,23 +59,6 @@ applyPatches() {
       *) reportError "Using old version $vers_" "Please upgrade $app_ to latest stable" ;;
     esac
   fi
-
-  # case $vers_ in
-  #   24.0*|2.0*)
-  #     . $PIT_SCR_FOLDER/lib/lib-patch-v24.sh
-  #     [ "$type_" != 'next' ] && return 0 || applyv24Patches "$app_" "$type_" "$vers_"
-  #     ;;
-  #   2.3*)
-  #     [ "$type_" != 'current' ] && cmd "rm -rf package.json node_modules" && rm -rf package.json node_modules || return 0
-  #     ;;
-  # esac
-
-  # case $vers_ in
-  #   24.4*)
-  #     . $PIT_SCR_FOLDER/lib/lib-patch-v24.4.sh
-  #     [ "$type_" != 'next' ] && return 0 || applyv244Patches "$app_" "$type_" "$vers_"
-  #     ;;
-  # esac
 
   # always successful
   return 0
@@ -104,16 +70,12 @@ applyPatches() {
 isUnsupported() {
   app_=$1; mod_=$2; vers_=$3;
 
-  ## FIXED - Jetty fails in 23.3 + Linux https://github.com/vaadin/flow/issues/16097
-  # [ $app_ = archetype-jetty -a $vers_ = 23.3.6 -a $mod_ = dev ] && isLinux && return 0
-
   ## Karaf and OSGi unsupported in 24.x
   [ $app_ = vaadin-flow-karaf-example -o $app_ = base-starter-flow-osgi ] && return 0
 
   ## Everything else is supported
   return 1
 }
-
 
 downgradeJava() {
   [ ! -f pom.xml ] && return
@@ -123,53 +85,50 @@ downgradeJava() {
   warn "Downgraded Java version from 21 to 17 in pom.xml"
 }
 
-removeDeprecated() {
-  [ ! -f pom.xml ] && return
-  grep -q '<productionMode>true</productionMode>' pom.xml || return
-  cmd "perl -0777 -pi -e 's|\s*<productionMode>true</productionMode>\s*||' pom.xml"
-  perl -pi -e 's|\s*<productionMode>true</productionMode>\s*||' pom.xml
-  warn "Removed deprecated productionMode from pom.xml"
-}
-
-
+# removeDeprecated() {
+#   [ ! -f pom.xml ] && return
+#   grep -q '<productionMode>true</productionMode>' pom.xml || return
+#   cmd "perl -0777 -pi -e 's|\s*<productionMode>true</productionMode>\s*||' pom.xml"
+#   perl -pi -e 's|\s*<productionMode>true</productionMode>\s*||' pom.xml
+#   warn "Removed deprecated productionMode from pom.xml"
+# }
 
 ## FIXED - k8s-demo-app 23.3.0.alpha2
-patchOldSpringProjects() {
-  changeMavenBlock parent org.springframework.boot spring-boot-starter-parent 2.7.4
-}
+# patchOldSpringProjects() {
+#   changeMavenBlock parent org.springframework.boot spring-boot-starter-parent 2.7.4
+# }
 
 ## FIXED - bakery 23.1
-patchRouterLink() {
-  find src -name "*.java" | xargs perl -pi -e 's/RouterLink\(null, /RouterLink("", /g'
-  H=`git status --porcelain src`
-  if [ -n "$H" ]; then
-    log "patched RouterLink occurrences in files: $F"
-  fi
-}
+# patchRouterLink() {
+#   find src -name "*.java" | xargs perl -pi -e 's/RouterLink\(null, /RouterLink("", /g'
+#   H=`git status --porcelain src`
+#   if [ -n "$H" ]; then
+#     log "patched RouterLink occurrences in files: $F"
+#   fi
+# }
 
 ## FIXED - Karaf 23.2.2
-patchKarafLicenseOsgi() {
-  __pom=main-ui/pom.xml
-  [ -f $__pom ] && warn "Patching $__pom (adding license-checker 1.10.0)" && perl -pi -e \
-    's,</dependencies>,<dependency><groupId>com.vaadin</groupId><artifactId>license-checker</artifactId><version>1.10.0</version></dependency></dependencies>,' \
-    $__pom
-}
+# patchKarafLicenseOsgi() {
+#   __pom=main-ui/pom.xml
+#   [ -f $__pom ] && warn "Patching $__pom (adding license-checker 1.10.0)" && perl -pi -e \
+#     's,</dependencies>,<dependency><groupId>com.vaadin</groupId><artifactId>license-checker</artifactId><version>1.10.0</version></dependency></dependencies>,' \
+#     $__pom
+# }
 
 ## FIXED - skeleton-starter-flow-spring 23.3.0.alpha2
-patchIndexTs() {
-  __file="frontend/index.ts"
-  if test -f "$__file" && grep -q 'vaadin/flow-frontend' $__file; then
-    warn "patch 23.3.0.alpha2 - Patching $__file because it has vaadin/flow-frontend/ occurrences"
-    perl -pi -e 's,\@vaadin/flow-frontend/,Frontend/generated/jar-resources/,g' $__file
-  fi
-}
+# patchIndexTs() {
+#   __file="frontend/index.ts"
+#   if test -f "$__file" && grep -q 'vaadin/flow-frontend' $__file; then
+#     warn "patch 23.3.0.alpha2 - Patching $__file because it has vaadin/flow-frontend/ occurrences"
+#     perl -pi -e 's,\@vaadin/flow-frontend/,Frontend/generated/jar-resources/,g' $__file
+#   fi
+# }
 
 ## FIXED - latest-typescript*, vaadin-flow-karaf-example, base-starter-flow-quarkus, base-starter-flow-osgi, 23.3.0.alpha3
-patchTsConfig() {
-  H=`ls -1 tsconfig.json */tsconfig.json 2>/dev/null`
-  [ -n "$H" ] && warn "patch 23.3.0.alpha3 - Removing $H" && rm -f tsconfig.json */tsconfig.json
-}
-
+# patchTsConfig() {
+#   H=`ls -1 tsconfig.json */tsconfig.json 2>/dev/null`
+#   [ -n "$H" ] && warn "patch 23.3.0.alpha3 - Removing $H" && rm -f tsconfig.json */tsconfig.json
+# }
 
 installCeLicense() {
   LIC=ce-license.json

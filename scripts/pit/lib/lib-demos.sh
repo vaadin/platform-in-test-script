@@ -134,7 +134,6 @@ commitChanges() {
       -H "X-GitHub-Api-Version: 2022-11-28" \
       https://api.github.com/repos/$owner/$repo/pulls \
       -d '{"title":"chore: PiT - Update to Vaadin '$_baseBranch'","head":"'$_headBranch'","base":"'$_baseBranch'","body":"Created by PiT Script"}' | jq -r '.html_url' 2>/dev/null`
-      # -d '{"title":"chore: PiT - Update to Vaadin '$_baseBranch'","head":"'$_headBranch'","base":"'$_baseBranch'","body":"Created by PiT Script when testing \`v'$_vers'\`.\nDo not merge until \`'$_gaBranch'\` GA is released."}' | jq -r '.html_url' 2>/dev/null`
     warn "$_app Created PR $pr_url"
   fi
 }
@@ -142,7 +141,6 @@ commitChanges() {
 ## Get install command for dev-mode
 getInstallCmdDev() {
   case $1 in
-    # base-starter-flow-quarkus|skeleton-starter-flow-cdi|mpr-demo|spreadsheet-demo) echo "$MVN -ntp -B clean $PNPM";;
     *-gradle) echo "$GRADLE clean" ;;
     multi-module-example) echo "$MVN -ntp -B clean install -DskipTests $PNPM";;
     start) echo "rm -rf package-lock.json node_modules target frontend/generated; $MVN -ntp -B clean";;
@@ -215,8 +213,7 @@ getReadyMessageDev() {
   case $1 in
     base-starter-flow-osgi) echo "HTTP:8080";;
     skeleton-starter-flow-cdi) echo "Vaadin is running in DEVELOPMENT mode";;
-    skeleton-starter-flow-spring) echo "Started Application";; # frontend bundle built
-    bakery-app-starter-flow-spring) echo "Started Application";; # frontend bundle built
+    skeleton-starter-flow-spring|bakery-app-starter-flow-spring) echo "Started Application";;
     base-starter-flow-quarkus) echo "Listening on:";;
     vaadin-flow-karaf-example) echo "Artifact deployed";;
     spreadsheet-demo|layout-examples) echo "Started ServerConnector";;
@@ -231,13 +228,11 @@ getReadyMessagePrd() {
   case $1 in
     skeleton-starter-flow-spring|k8s-demo-app) echo "Vaadin is running in production mode";;
     base-starter-flow-quarkus) echo "Listening on: http://0.0.0.0:8080";;
-    bakery-app-starter-flow-spring) echo "Started Application";;
     skeleton-starter-flow-cdi) echo "Registered web contex";;
     mpr-demo|spreadsheet-demo) echo "Started ServerConnector";;
     *-gradle) echo "Tomcat started|started and listening";;
-    hilla-*-tutorial) echo "Started Application";;
     client-server-addon-template) echo 'Started ServerConnector.*:8080}';;
-    start) echo "Started .*Application|Started Server";;
+    bakery*|hilla-*-tutorial|start) echo "Started .*Application|Started Server";;
     *) getReadyMessageDev $1;;
   esac
 }
@@ -282,10 +277,9 @@ getTest() {
 ## $2: version to set
 setDemoVersion() {
   case "$1" in
-    base-starter-flow-quarkus|mpr-demo|start|flow-hilla-hybrid-example)
+    base-starter-flow-quarkus|mpr-demo)
        if setVersion vaadin.version "$2"; then
         setFlowVersion "$2"
-        [ "$1" = start -o "$1" = flow-hilla-hybrid-example ] && setVersion hilla.version `getLatestHillaVersion "$2"` false
         [ "$1" = mpr-demo ] && setMprVersion "$2"
         return 0
        else

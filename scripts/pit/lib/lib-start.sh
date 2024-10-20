@@ -22,7 +22,7 @@ initGit() {
 downloadStarter() {
   _preset=$1
   _presets=""
-  _dir=$2
+  _dir="$2"
   for _p in `echo "$_preset" | tr "_" " "`
   do
     _presets="$_presets&preset=$_p"
@@ -52,12 +52,10 @@ generateStarter() {
     *spring)        cmd="$MVN -ntp -q -B archetype:generate -DarchetypeGroupId=com.vaadin -DarchetypeArtifactId=vaadin-archetype-spring-application -DarchetypeVersion=LATEST -DgroupId=com.vaadin.starter -DartifactId=$_name" ;;
     archetype*)     cmd="$MVN -ntp -q -B archetype:generate -DarchetypeGroupId=com.vaadin -DarchetypeArtifactId=vaadin-archetype-application -DarchetypeVersion=LATEST -DgroupId=com.vaadin.starter -DartifactId=$_name" ;;
     vaadin-quarkus) cmd="$MVN -ntp -q -B io.quarkus.platform:quarkus-maven-plugin:3.1.1.Final:create -Dextensions=vaadin -DwithCodestart -DprojectGroupId=com.vaadin.starter -DprojectArtifactId=$_name" ;;
-    hilla-*-cli)      cmd="npx @hilla/cli init --react $_name" ;;
+    hilla-*-cli)    cmd="npx @hilla/cli init --react $_name" ;;
   esac
-  cmd "$cmd"
-  $cmd || return 1
-  cmd "cd $_name"
-  cd $_name || return 1
+  runCmd false "Generating $1" "$cmd" || return 1
+  runCmd false "Changing to $_name dir" "cd '$_name'" || return 1
   initGit
 }
 
@@ -72,12 +70,9 @@ downloadInitializer() {
   _type=$2
   _deps=$3
   _url="https://start.spring.io/starter.zip?type=$_type&language=java&bootVersion=$_boot&baseDir=$_name&groupId=$_group&artifactId=$_name&name=$_name&description=$_name&packageName=$_group&packaging=jar&javaVersion=$_java&dependencies=$_deps"
-  cmd "curl -s '$_url' --output $_name.zip"
-  curl -s $_url --output $_name.zip || return 1
-  unzip -q $_name.zip
-  cmd "unzip -q $_name.zip"
-  cmd "cd $_name"
-  cd $_name || return 1
+  runCmd false "Downloading $_name" "curl -s '$_url' --output $_name.zip" || return 1
+  runCmd false "Unzipping $_name" "unzip -q '$_name.zip'" || return 1
+  runCmd false "Changing to $_name dir" "cd '$_name'" || return 1
   initGit
 }
 
@@ -179,11 +174,11 @@ runStarter() {
   _preset="$1"
   _tmp="$2"
   _port="$3"
-  _versionProp=`computeProp $_preset`
-  _version=`computeVersion $_versionProp $4`
+  _versionProp=`computeProp "$_preset"`
+  _version=`computeVersion "$_versionProp" "$4"`
   _offline="$5"
 
-  _test=`getStartTestFile $_preset`
+  _test=`getStartTestFile "$_preset"`
 
   cd "$_tmp"
   _folder=`echo "$_preset" | tr "_" "-"`
@@ -193,14 +188,13 @@ runStarter() {
   if [ -z "$_offline" -o ! -d "$_dir" ]
   then
      if [ -d "$_dir" ]; then
-       [ -n "$TEST" ] && log "Removing project folder $_dir"
-       (cmd "rm -rf $_dir" && rm -rf $_dir) || return 1
+       runCmd false "Cleaning project folder $_dir" "rm -rf '$_dir'" || return 1
      fi
     case "$_preset" in
-      archetype*|vaadin-quarkus|hilla-*-cli) generateStarter $_preset || return 1 ;;
-      initializer-*-maven*)  downloadInitializer $_preset maven-project vaadin,devtools || return 1 ;;
-      initializer-*-gradle*) downloadInitializer $_preset gradle-project vaadin,devtools || return 1 ;;
-      *) downloadStarter $_preset $_folder || return 1 ;;
+      archetype*|vaadin-quarkus|hilla-*-cli) generateStarter "$_preset" || return 1 ;;
+      initializer-*-maven*)  downloadInitializer "$_preset" maven-project vaadin,devtools || return 1 ;;
+      initializer-*-gradle*) downloadInitializer "$_preset" gradle-project vaadin,devtools || return 1 ;;
+      *) downloadStarter "$_preset" "$_folder" || return 1 ;;
     esac
   fi
 
@@ -212,16 +206,16 @@ runStarter() {
 
   _msg="Started .*Application|Frontend compiled|Started ServerConnector|Started Vite|Listening on:"
   _msgprod="Started .*Application|Started ServerConnector|Listening on:"
-  _prod=`_getRunProd $_preset`
-  _dev=`_getRunDev $_preset`
-  _compile=`_getCompProd $_preset`
-  _clean=`_getClean $_preset`
+  _prod=`_getRunProd "$_preset"`
+  _dev=`_getRunDev "$_preset"`
+  _compile=`_getCompProd "$_preset"`
+  _clean=`_getClean "$_preset"`
 
   _needsLicense "$_preset" || removeProKey
 
   if test -z "$NOCURRENT" && ! _isNext "$_preset"
   then
-    _current=`setStartVersion $_versionProp current`
+    _current=`setStartVersion "$_versionProp" current`
     applyPatches $_preset current $_current dev || return 0
     # 2
     if [ -z "$NODEV" ]; then
@@ -234,10 +228,10 @@ runStarter() {
   fi
 
   # 4
-  if _isNext "$_preset" || setStartVersion $_versionProp $_version >/dev/null
+  if _isNext "$_preset" || setStartVersion "$_versionProp" "$_version" >/dev/null
   then
     [ -d ~/.vaadin/node ] && cmd "rm -rf ~/.vaadin/node" && rm -rf ~/.vaadin/node
-    applyPatches $_preset next $_version prod || return 0
+    applyPatches "$_preset" next "$_version" prod || return 0
     # 5
     if [ -z "$NODEV" ]; then
       MAVEN_ARGS="$MAVEN_ARGS" MAVEN_OPTS="$HOT" runValidations dev "$_version" "$_preset" "$_port" "$_clean" "$_dev" "$_msg" "$_test" || return 1
