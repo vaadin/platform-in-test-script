@@ -30,17 +30,10 @@ downloadStarter() {
   _url="https://start.vaadin.com/dl?${_presets}&projectName=${_preset}"
   _zip="$_preset.zip"
 
-  [ -z "$TEST" ] && log "Downloading $1"
-  cmd "curl -s -f '$_url' -o $_zip"
-  cmd "unzip $_zip"
   [ -z "$VERBOSE" ] && _silent="-s"
-
-  curl $_silent -f "$_url" -o $_zip \
-    && unzip -q $_zip \
-    && rm -f $_zip || return 1
-
-  cmd "cd $_dir"
-  cd $_dir
+  runCmd false "Downloading $1" "curl $_silent -f '$_url' -o '$_zip'" || return 1
+  runCmd false "Unzipping $_name" "unzip -q '$_zip'" && rm -f "$_zip" || return 1
+  runCmd false "Changing to $_dir dir" "cd '$_dir'" || return 1
 }
 
 ## Generates a starter by using archetype, or hilla/cli
@@ -71,7 +64,7 @@ downloadInitializer() {
   _deps=$3
   _url="https://start.spring.io/starter.zip?type=$_type&language=java&bootVersion=$_boot&baseDir=$_name&groupId=$_group&artifactId=$_name&name=$_name&description=$_name&packageName=$_group&packaging=jar&javaVersion=$_java&dependencies=$_deps"
   runCmd false "Downloading $_name" "curl -s '$_url' --output $_name.zip" || return 1
-  runCmd false "Unzipping $_name" "unzip -q '$_name.zip'" || return 1
+  runCmd false "Unzipping $_name" "unzip -q '$_name.zip'" && rm -f "$_name.zip" || return 1
   runCmd false "Changing to $_name dir" "cd '$_name'" || return 1
   initGit
 }
