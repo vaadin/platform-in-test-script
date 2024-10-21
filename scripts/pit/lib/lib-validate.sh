@@ -114,6 +114,13 @@ runValidations() {
   # 12
   [ -z "$TEST" ] && bold "----> The version $version of '$name' app was successfully built and tested in $mode mode.\n"
   [ -n "$TEST" ] || (killAll && sleep 5)
+
+  # 13
+  if [ -z "$TEST" ]; then
+    H=`grep 12b7fc85f50e8c82cb6f4b03e12f2335 ~/.vaadin/usage-statistics.json`
+    [ -n "$H" ] && reportError "Usage Statistics" "$H" && return 1
+  fi
+  return 0
 }
 
 
