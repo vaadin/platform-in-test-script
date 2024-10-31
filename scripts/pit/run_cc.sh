@@ -198,6 +198,12 @@ uninstallExistingRelease() {
   fi
 }
 
+# Function to stop and delete the whole minikube cluster
+stopMinikube() {
+  minikube stop
+  minikube delete
+}
+
 
 # Main function
 main() {
@@ -252,6 +258,9 @@ main() {
 
   # Uninstall Control Center after tests
   uninstallControlCenter
+
+  # Stop and delete minikube cluster
+  stopMinikube
 
   # Report the elapsed time
   _end=$(date +%s)
