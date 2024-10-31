@@ -27,7 +27,8 @@ hilla-react-cli
 initializer-vaadin-maven-react
 initializer-vaadin-maven-flow
 initializer-vaadin-gradle-react
-initializer-vaadin-gradle-flow"
+initializer-vaadin-gradle-flow
+collaborative-master-detail-view"
 DEMOS="
 skeleton-starter-flow
 skeleton-starter-flow-spring
