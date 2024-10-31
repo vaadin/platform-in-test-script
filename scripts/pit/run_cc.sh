@@ -51,7 +51,18 @@ startDocker() {
   if ! pgrep -x "dockerd" > /dev/null; then
     log "Starting Docker..."
     open -a Docker || sudo systemctl start docker
-    sleep 10  # Allow some time for Docker to initialize
+
+    # Wait for Docker to be ready
+    SECONDS=0
+    until docker info > /dev/null 2>&1; do
+      if [ "$SECONDS" -ge "$TIMEOUT" ]; then
+        log "Error: Docker did not start within $TIMEOUT seconds."
+        exit 1
+      fi
+      log "Waiting for Docker to start..."
+      sleep 2
+    done
+
     log "Docker started successfully."
   else
     log "Docker is already running."
@@ -145,19 +156,23 @@ installControlCenter() {
     -n $NAMESPACE --create-namespace \
     --set serviceAccount.clusterAdmin=true \
     --set service.type=LoadBalancer --set service.port=$SERVICE_PORT \
-    --wait --timeout ${TIMEOUT}s --debug
+    --wait --debug
 }
 
 # Function to check if the Control Center service is up
 checkControlCenter() {
   log "Checking if Vaadin Control Center is accessible..."
   SERVICE_IP=$(kubectl get svc -n $NAMESPACE $RELEASE_NAME -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-  if [ -z "$SERVICE_IP" ]; then
-    log "Control Center service IP is not yet available."
+  if echo "$SERVICE_IP" | grep -q "error"; then
+    log "Error fetching service IP: $SERVICE_IP"
     return 1
   fi
-
-  curl -s --head "http://$SERVICE_IP:$SERVICE_PORT" | grep "200 OK" &>/dev/null
+  if [ -z "$SERVICE_IP" ]; then
+    log "Control Center service IP is not yet available on http://$SERVICE_IP:$SERVICE_PORT"
+    return 1
+  fi
+  log "Curl to http://$SERVICE_IP:$SERVICE_PORT headers..."
+  curl -s -L --head "http://$SERVICE_IP:$SERVICE_PORT" | grep "200 OK" &>/dev/null
   return $?
 }
 
@@ -214,10 +229,13 @@ main() {
   # Check if Control Center is up
   MAX_RETRIES=5
   for ((i=1; i<=MAX_RETRIES; i++)); do
+    S=checkControlCenter
+    log "constrol center result: $S" 
     if checkControlCenter; then
       log "Vaadin Control Center is running successfully."
       break
     else
+      log 
       log "Attempt $i: Vaadin Control Center is not accessible yet. Retrying in 10 seconds..."
       sleep 100
     fi
