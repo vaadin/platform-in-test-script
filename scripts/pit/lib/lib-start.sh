@@ -85,7 +85,7 @@ getStartTestFile() {
    test-hybrid-react*) echo "hybrid-react.js";;
    test-hybrid*) echo "hybrid.js";;
    react-crm-tutorial) echo "noop.js";;
-   collaborative-master-detail-view) echo "cooperativeview.js";;
+   collaboration) echo "collaboration.js";;
    *) echo "start.js";;
   esac
 }

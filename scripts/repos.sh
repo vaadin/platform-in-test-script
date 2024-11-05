@@ -28,7 +28,7 @@ initializer-vaadin-maven-react
 initializer-vaadin-maven-flow
 initializer-vaadin-gradle-react
 initializer-vaadin-gradle-flow
-collaborative-master-detail-view"
+collaboration"
 DEMOS="
 skeleton-starter-flow
 skeleton-starter-flow-spring

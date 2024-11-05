@@ -24,10 +24,23 @@ process.argv.forEach(a => {
 
   await page.goto(`http://${host}:${port}/`);
 
-  await page.getByText('Eugenia', { exact: true }).click();
+  await page.getByText('#support').click();
+  await page.getByText('#casual').click();
+  await page.getByText('#general').click();
+  await page.getByLabel('Message').click();
+  await page.getByLabel('Message').fill('Test');
+  await page.getByRole('button', { name: 'Send' }).click();
+  await page.getByRole('link', { name: 'Master Detail' }).click();
+  await page.getByText('Gene', { exact: true }).click();
+  await page.getByLabel('First Name', { exact: true }).click();
+  await page.getByLabel('First Name', { exact: true }).fill('Gene James');
   await page.getByText('Marguerite', { exact: true }).click();
-  await page.getByLabel('Last Name', { exact: true }).click();
-  await page.getByLabel('Last Name', { exact: true }).fill('Ishii123');
+  await page.getByLabel('First Name', { exact: true }).click();
+  await page.getByText('Cora', { exact: true }).click();
+  await page.getByLabel('First Name', { exact: true }).click();
+  await page.getByLabel('First Name', { exact: true }).fill('Cora Jane');
+  await page.getByRole('button', { name: 'Save' }).click();
+  await page.getByRole('button', { name: 'Cancel' }).click();
 
   // ---------------------
   await context.close();
