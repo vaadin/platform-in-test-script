@@ -28,7 +28,8 @@ process.argv.forEach(a => {
   await page.evaluate(() =>
     window.localStorage.setItem("vaadin.live-reload.dismissedNotifications","liveReloadUnavailable,preserveOnRefreshWarning")
   );
-  await page.getByText('click here').click();
+  // this notification is not shown any more, so this check is not needed
+  //await page.getByText('click here').click();
   await page.waitForURL(`http://${host}:${port}/login`);
 
   await page.getByLabel('Username').fill('admin');
