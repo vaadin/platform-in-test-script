@@ -5,6 +5,8 @@
 . `dirname $0`/lib/lib-args.sh
 . `dirname $0`/lib/lib-start.sh
 . `dirname $0`/lib/lib-demos.sh
+. `dirname $0`/lib/lib-utils.sh
+. `dirname $0`/lib/lib-validate.sh
 
 # Default configuration
 NAMESPACE="control-center"
@@ -12,11 +14,8 @@ RELEASE_NAME="control-center"
 HELM_REPO="oci://docker.io/vaadin/control-center"
 SERVICE_PORT=8000
 TIMEOUT=600  # Timeout in seconds
-
-# Function to log messages
-log() {
-  echo "$(date '+%Y-%m-%d %H:%M:%S') - $1"
-}
+PORT_HTTP=80
+PORT_HTTPS=443
 
 # Function to install Docker if not installed
 installDocker() {
@@ -162,31 +161,26 @@ installControlCenter() {
 # Function to check if the Control Center service is up
 checkControlCenter() {
   log "Checking if Vaadin Control Center is accessible..."
+  checkPort $SERVICE_PORT 60 && echo "Port $SERVICE_PORT is available" || return 1
   SERVICE_IP=$(kubectl get svc -n $NAMESPACE $RELEASE_NAME -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-  if echo "$SERVICE_IP" | grep -q "error"; then
-    log "Error fetching service IP: $SERVICE_IP"
-    return 1
-  fi
-  if [ -z "$SERVICE_IP" ]; then
-    log "Control Center service IP is not yet available on http://$SERVICE_IP:$SERVICE_PORT"
-    return 1
-  fi
-  log "Curl to http://$SERVICE_IP:$SERVICE_PORT headers..."
-  curl -s -L --head "http://$SERVICE_IP:$SERVICE_PORT" | grep "200 OK" &>/dev/null
-  return $?
+    if echo "$SERVICE_IP" | grep -q "error"; then
+      log "Error fetching service IP: $SERVICE_IP"
+      return 1
+    fi
+    if [ -z "$SERVICE_IP" ]; then
+      log "Control Center service IP is not yet available on http://$SERVICE_IP:$SERVICE_PORT"
+      return 1
+    fi
+  checkHttpServlet "http://$SERVICE_IP:$SERVICE_PORT/" "/dev/stdout" || return 1
 }
 
-# Function to uninstall Vaadin Control Center
-uninstallControlCenter() {
-  log "Uninstalling Vaadin Control Center..."
-  helm uninstall $RELEASE_NAME -n $NAMESPACE
-}
-
-# Function to uninstall existing Helm release if it exists
+# Function to uninstall existing control-center release if it exists
 uninstallExistingRelease() {
+  log "Uninstalling Vaadin Control Center"
   if helm list -n $NAMESPACE | grep -q $RELEASE_NAME; then
     log "Found existing Helm release '$RELEASE_NAME'. Uninstalling..."
-    helm uninstall $RELEASE_NAME -n $NAMESPACE
+    kubectl delete ns $RELEASE_NAME --ignore-not-found
+    kubectl delete ns ingress-nginx --ignore-not-found
     if [ $? -eq 0 ]; then
       log "Successfully uninstalled existing release '$RELEASE_NAME'."
     else
@@ -198,6 +192,13 @@ uninstallExistingRelease() {
   fi
 }
 
+availablePorts(){
+ # Check if the port is already taken by other app
+  [ -n "$TEST" ] || checkBusyPort "$SERVICE_PORT" || exit 1
+  [ -n "$TEST" ] || checkBusyPort "$PORT_HTTP" || exit 1
+  [ -n "$TEST" ] || checkBusyPort "$PORT_HTTPS" || exit 1
+  
+}
 # Function to stop and delete the whole minikube cluster
 stopMinikube() {
   minikube stop
@@ -224,40 +225,36 @@ main() {
   
   # Install Helm if it's not already installed
   installHelm
- 
-  # Uninstall any existing Helm release with the same name
-  # in case something still running
-  uninstallExistingRelease
   
+  # Are ports available for the installation
+  availablePorts
   # Install Vaadin Control Center
   installControlCenter
 
   # Check if Control Center is up
   MAX_RETRIES=5
+  CONTROL_CENTER_UP=false
+  
   for ((i=1; i<=MAX_RETRIES; i++)); do
-    S=checkControlCenter
-    log "constrol center result: $S" 
-    if checkControlCenter; then
-      log "Vaadin Control Center is running successfully."
-      break
+    if [ "$CONTROL_CENTER_UP" = false ]; then
+      S=$(checkControlCenter)  # Capture the output of checkControlCenter
+      log "control center result: $S" 
+      if checkControlCenter; then
+        log "Vaadin Control Center is running successfully."
+        CONTROL_CENTER_UP=true
+      else
+        log "Attempt $i: Vaadin Control Center is not accessible yet. Retrying in 10 seconds..."
+        sleep 10
+      fi
     else
-      log 
-      log "Attempt $i: Vaadin Control Center is not accessible yet. Retrying in 10 seconds..."
-      sleep 100
+      break
     fi
   done
-
-  # Final check
-  if ! checkControlCenter; then
-    log "Vaadin Control Center failed to start."
-    uninstallControlCenter
-    exit 1
-  fi
 
   # Run Playwright tests here (add your Playwright test commands)
 
   # Uninstall Control Center after tests
-  uninstallControlCenter
+  uninstallExistingRelease
 
   # Stop and delete minikube cluster
   stopMinikube
