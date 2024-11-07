@@ -1,5 +1,4 @@
 const { chromium } = require('playwright');
-const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 let headless = false, host = 'localhost', port = '8000', hub = false;
 process.argv.forEach(a => {
@@ -33,7 +32,6 @@ process.argv.forEach(a => {
     await page.getByLabel('Passkey').fill(process.env.PASS_KEY)
     await page.getByRole('button', {name: 'Next'}).click()
 
-    await page.locator('input[type="text"]').click({timeout: 60000});
     await page.locator('input[type="text"]').fill('keycloak-local.alcala.org');
     await page.getByRole('button', {name: 'Next'}).click()
 
