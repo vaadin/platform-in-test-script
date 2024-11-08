@@ -38,7 +38,7 @@ process.argv.forEach(a => {
     await page.getByRole('button', {name: 'Deploy'}).click()
 
     await page.getByLabel('Application Name', {exact: true}).fill('App1')
-    await page.getByLabel('Image', {exact: true}).fill('k8sdemos/bakery-cc')
+    await page.getByLabel('Image', {exact: true}).fill('k8sdemos/bakery-cc:latest')
     await page.getByLabel('Application URI', {exact: true}).locator('input[type="text"]').fill('app1-local.alcala.org')
 
     await page.getByLabel('Upload').click();
