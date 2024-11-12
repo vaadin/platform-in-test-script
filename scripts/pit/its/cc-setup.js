@@ -1,6 +1,9 @@
 const {chromium} = require('playwright');
 const log = s => process.stderr.write(`   ${s}`);
 
+const ADMIN_EMAIL = 'john.doe@admin.com';
+const ADMIN_PASSWORD = 'adminPassword';
+
 let headless = false, host = 'localhost', port = '8000', hub = false;
 process.argv.forEach(a => {
     if (/^--headless/.test(a)) {
@@ -41,8 +44,8 @@ if (!process.env.PASS_KEY) {
 
     await page.getByLabel('First Name').fill('John')
     await page.getByLabel('Last Name').fill('Doe')
-    await page.getByLabel('E-mail Address').fill('john.doe@gmail.com')
-    await page.getByLabel('Password', {exact: true}).fill('test123')
+    await page.getByLabel('E-mail Address').fill(ADMIN_EMAIL)
+    await page.getByLabel('Password', {exact: true}).fill(ADMIN_PASSWORD)
     await page.getByRole('button', {name: 'Next'}).click()
 
     await page.getByRole('button', {name: 'Install Control Center'}).click()

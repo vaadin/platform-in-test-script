@@ -1,6 +1,8 @@
 const { chromium } = require('playwright');
 const path = require('path');
-const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+const ADMIN_EMAIL = 'john.doe@admin.com';
+const ADMIN_PASSWORD = 'adminPassword';
 
 let headless = false, host = 'localhost', port = '8000', hub = false;
 process.argv.forEach(a => {
@@ -19,7 +21,6 @@ process.argv.forEach(a => {
         chromiumSandbox: false
     });
     const context = await browser.newContext({ ignoreHTTPSErrors: true });
-    const log = s => process.stderr.write(`   ${s}`);
 
     // Open new page
     const page = await context.newPage();
@@ -29,9 +30,8 @@ process.argv.forEach(a => {
     // Go to http://${host}:${port}/
     await page.goto(`http://${host}:${port}/`);
 
-
-    await page.getByLabel('Email').fill('john.doe@gmail.com')
-    await page.getByLabel('Password', {exact: true}).fill('test123')
+    await page.getByLabel('Email').fill(ADMIN_EMAIL)
+    await page.getByLabel('Password', {exact: true}).fill(ADMIN_PASSWORD)
     await page.getByRole('button', {name: 'Sign In'}).click()
 
     await page.getByRole('button', {name: 'Manage applications'}).click()
