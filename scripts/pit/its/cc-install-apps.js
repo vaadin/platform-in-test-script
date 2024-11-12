@@ -1,5 +1,7 @@
 const { chromium } = require('playwright');
 const path = require('path');
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const { expect } = require('@playwright/test');
 
 const ADMIN_EMAIL = 'john.doe@admin.com';
 const ADMIN_PASSWORD = 'adminPassword';
@@ -34,7 +36,7 @@ process.argv.forEach(a => {
     await page.getByLabel('Password', {exact: true}).fill(ADMIN_PASSWORD)
     await page.getByRole('button', {name: 'Sign In'}).click()
 
-    await page.getByRole('button', {name: 'Manage applications'}).click()
+    await page.getByRole('listitem').filter({ hasText: 'Settings'}).click()
     await page.getByRole('button', {name: 'Deploy'}).click()
 
     await page.getByLabel('Application Name', {exact: true}).fill('App1')
@@ -48,6 +50,12 @@ process.argv.forEach(a => {
     await fileChooser.setFiles(path.join(__dirname, 'app1-local.alcala.org.pem'));
 
     fileChooserPromise.then(await page.locator('.detail-layout').getByRole('button', {name: 'Deploy'}).click())
+
+    await page.getByRole('listitem').filter({ hasText: 'Settings'}).click()
+
+    await expect(await page.getByRole('listitem')
+        .filter({ hasText: 'Applications'})
+        .textContent()).toEqual('Applications1');
 
     // ---------------------
     await context.close();
