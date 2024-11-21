@@ -1,6 +1,5 @@
 const { chromium } = require('playwright');
 const path = require('path');
-const sleep = ms => new Promise(r => setTimeout(r, ms));
 const { expect } = require('@playwright/test');
 
 const ADMIN_EMAIL = 'john.doe@admin.com';

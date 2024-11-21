@@ -41,7 +41,8 @@ process.argv.forEach(a => {
     await page.getByRole('button', {name: 'Sign In'}).click()
 
     await page.goto(`http://${host}:${port}/settings/apps/app1`);
-    await page.getByLabel("Identity Management").click()
+    await page.getByLabel('Identity Management').click()
+    await page.getByRole('button', {name: 'Update'}).click()
 
     await page.goto(`http://${host}:${port}/app/app1/idm/users`);
     await page.getByRole('button', {name: 'Create'}).click()
