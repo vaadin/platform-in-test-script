@@ -739,14 +739,20 @@ download() {
 ## Installs jet brains java runtime, used for testing the hotswap agent
 ## It updates JAVA_HOME and PATH variables, and sets the HOT one with the parameters to enable it.
 installJBRRuntime() {
-  __hsau="https://github.com/HotswapProjects/HotswapAgent/releases/download/1.4.2-SNAPSHOT/hotswap-agent-1.4.2-SNAPSHOT.jar"
+  # https://github.com/HotswapProjects/HotswapAgent/releases/
+  __hvers="2.0.1"
+  # https://github.com/JetBrains/JetBrainsRuntime/releases
+  __jvers="21.0.5"
+  __vers="b631.16"
+
+  __hsau="https://github.com/HotswapProjects/HotswapAgent/releases/download/RELEASE-${__hvers}/hotswap-agent-${__hvers}.jar"
   __jurl="https://cache-redirector.jetbrains.com/intellij-jbr"
-  __vers="b653.32"
+
   warn "Installing JBR for hotswap testing"
 
-  isLinux   && __jurl="$__jurl/jbr-17.0.6-linux-x64-${__vers}.tar.gz"
-  isMac     && __jurl="$__jurl/jbr-17.0.6-osx-x64-${__vers}.tar.gz"
-  isWindows && __jurl="$__jurl/jbr-17.0.6-windows-x64-${__vers}.tar.gz"
+  isLinux   && __jurl="$__jurl/jbr-${__jvers}-linux-x64-${__vers}.tar.gz"
+  isMac     && __jurl="$__jurl/jbr-${__jvers}-osx-x64-${__vers}.tar.gz"
+  isWindows && __jurl="$__jurl/jbr-${__jvers}-windows-x64-${__vers}.tar.gz"
   if [ ! -f /tmp/JBR.tgz ]; then
     download "$__jurl" "/tmp/JBR.tgz" || return 1
   fi
