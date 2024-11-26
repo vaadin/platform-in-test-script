@@ -19,26 +19,17 @@ PORT_HTTPS=443
 
 # Function to install Docker if not installed
 installDocker() {
-  if ! command -v docker &> /dev/null; then
+  if ! checkCommands docker; then
     log "Docker is not installed. Installing Docker..."
-    OS=$(uname -s)
-    case $OS in
-      Linux)
-        curl -fsSL https://get.docker.com -o get-docker.sh
-        sh get-docker.sh
-        rm get-docker.sh
-        ;;
-      Darwin)
-        brew install --cask docker
-        ;;
-      MINGW*|CYGWIN*)
-        choco install docker-desktop
-        ;;
-      *)
-        log "Unsupported OS: $OS. Please install Docker manually."
-        exit 1
-        ;;
-    esac
+    if isLinux; then
+      download https://get.docker.com /tmp/docker.sh
+      sh /tmp/docker.sh || exit 1
+      rm -f /tmp/docker.sh
+    elif isMac; then
+      brew install --cask docker || exit 1
+    elif isWindows; then
+      choco install docker-desktop -y || exit 1
+    fi
     log "Docker installed successfully."
   else
     log "Docker is already installed."
@@ -47,7 +38,7 @@ installDocker() {
 
 # Function to start Docker
 startDocker() {
-  if ! pgrep -x "dockerd" > /dev/null; then
+  if ! getPids "dockerd"; then
     log "Starting Docker..."
     open -a Docker || sudo systemctl start docker
 
@@ -161,7 +152,9 @@ installControlCenter() {
 # Function to check if the Control Center service is up
 checkControlCenter() {
   log "Checking if Vaadin Control Center is accessible..."
-  checkPort $SERVICE_PORT 60 && echo "Port $SERVICE_PORT is available" || return 1
+  set -x
+  checkPort $SERVICE_PORT 60 || return 1
+  set +x
   SERVICE_IP=$(kubectl get svc -n $NAMESPACE $RELEASE_NAME -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
     if echo "$SERVICE_IP" | grep -q "error"; then
       log "Error fetching service IP: $SERVICE_IP"
@@ -208,6 +201,15 @@ stopMinikube() {
 
 # Main function
 main() {
+  isWindows && log "Docker Installation in Windows not yet supported" && exit 1
+  isLinux   && _I=install
+  isMac     && _I=brew
+  isWindows && _I=choco
+  checkCommands jq curl $_I || exit 1
+
+  # Are ports available for the installation
+  availablePorts
+
   _start=$(date +%s)
 
   log "===================== Running Vaadin Control Center Test ============================"
@@ -226,15 +228,13 @@ main() {
   # Install Helm if it's not already installed
   installHelm
   
-  # Are ports available for the installation
-  availablePorts
   # Install Vaadin Control Center
   installControlCenter
 
   # Check if Control Center is up
   MAX_RETRIES=5
   CONTROL_CENTER_UP=false
-  
+
   for ((i=1; i<=MAX_RETRIES; i++)); do
     if [ "$CONTROL_CENTER_UP" = false ]; then
       S=$(checkControlCenter)  # Capture the output of checkControlCenter
@@ -264,5 +264,4 @@ main() {
   log "Tests completed in $(($_end - $_start)) seconds."
 }
 
-# Main execution
 main

@@ -1,5 +1,6 @@
-### LIBRARY for parsing arguments when `run.sh` is executed
+. `dirname $0`/lib/lib-utils.sh
 
+### LIBRARY for parsing arguments when `run.sh` is executed
 
 ## the usage message, it should be synchronized with the function used for extracting the arguments below
 usage() {
