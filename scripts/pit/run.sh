@@ -139,6 +139,7 @@ if expr "$*" : '.*--path' >/dev/null; then
 fi
 
 ## compute and check arguments
+checkCommands jq curl || exit 1
 checkArgs ${@}
 
 ## run a function of the libs in current folder and exit (just for testing a function in the lib)

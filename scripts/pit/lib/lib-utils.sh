@@ -8,6 +8,17 @@ isWindows() {
   ! isLinux && ! isMac
 }
 
+## Check if a set of commands passed as arguments are installed
+checkCommands() {
+  type command >/dev/null 2>&1 || exit 1
+  for command_name in $*; do
+    if ! command -v "$command_name" >/dev/null 2>&1; then
+        err "Command: '$command_name' is not installed" && return 1
+    fi
+  done
+  return 0
+}
+
 ## Remove pro-key for testing core-only apps
 removeProKey() {
   if [ -f ~/.vaadin/proKey ]; then
@@ -22,6 +33,18 @@ restoreProKey() {
   _cmd="mv ~/.vaadin/proKey-$$ ~/.vaadin/proKey"
   runCmd "$TEST" "Restoring proKey license" "mv ~/.vaadin/proKey-$$ ~/.vaadin/proKey"
   [ -z "$TEST" -a -n "$H" ] && reportError "A proKey was generated while running validation" "$H" && return 1
+}
+
+## get pids for process
+getPids() {
+  if type pgrep >/dev/null 2>&1; then
+   _P=`pgrep "$1"`
+  elif type tasklist >/dev/null 2>&1; then
+   _P=`tasklist | findstr "$1" | awk '{print $2}'`
+  else
+   err "No pgrep or tasklist installed" && exit 1
+  fi
+  [ -n "$_P" ] && echo "$_P" && return 0 || return 1
 }
 
 ## Kills a process with its children and wait until complete
@@ -287,10 +310,10 @@ waitForUserManualTesting() {
 
 ## Check the port is occupied
 checkPort() {
-  curl -s telnet://localhost:$1 >/dev/null &
+  curl -s telnet://localhost:$1 >/dev/null 2>/dev/null &
   pid_curl=$!
   isWindows && sleep 4 || sleep 2
-  kill $pid_curl 2>/dev/null || return 1
+  kill $pid_curl >/dev/null 2>/dev/null || return 1
 }
 
 ## Wait until port is listening
@@ -520,7 +543,7 @@ changeMavenBlock() {
     __diff=`diff -w $$-1 $$-2`
     if [ -n "$__diff" ]; then
       [ "$4" = remove ] && __msg="Remove" || __msg="Change"
-      [ -z "$TEST" ] && warn "$__msg $__tag $__grp:$__id"
+      [ -z "$TEST" ] && warn "$__msg $__tag $__grp:$__id $__nvers"
       [ -n "$TEST" ] && cmd "## $__msg Maven Block $__tag $__grp:$__id -> $__grp2:$__id2:$4 $9"
       cmd "$_cmd"
     fi
@@ -738,7 +761,7 @@ enableSnapshots() {
 ## $1: the URL
 download() {
   [ -z "$VERBOSE" ] && __S="-s"
-  [ -n "$2" ] && __O="-o $2"
+  [ -n "$2" -a "$2" != '-' ] && __O="-o $2"
   runCmd false "Downloading $1" "curl $__S -L $__O $1"
 }
 
