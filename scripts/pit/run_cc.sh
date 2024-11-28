@@ -44,7 +44,7 @@ startDocker() {
 
     # Wait for Docker to be ready
     SECONDS=0
-    until docker info > /dev/null 2>&1; do
+    until docker help  > /dev/null 2>&1; do
       if [ "$SECONDS" -ge "$TIMEOUT" ]; then
         log "Error: Docker did not start within $TIMEOUT seconds."
         exit 1
@@ -146,15 +146,22 @@ installControlCenter() {
     -n $NAMESPACE --create-namespace \
     --set serviceAccount.clusterAdmin=true \
     --set service.type=LoadBalancer --set service.port=$SERVICE_PORT \
+    --set domain=example \
     --wait --debug
 }
+
+## Check if CC is up and accessible
+## same parameters as checkPort; first is port to check on localhost and second is the timeout in second
+isControlCenterAccessible(){
+  timeout $2 curl -s http://localhost:$1 -o /dev/null
+  return $?
+}
+
 
 # Function to check if the Control Center service is up
 checkControlCenter() {
   log "Checking if Vaadin Control Center is accessible..."
-  set -x
-  checkPort $SERVICE_PORT 60 || return 1
-  set +x
+  isControlCenterAccessible $SERVICE_PORT 3 || return 1
   SERVICE_IP=$(kubectl get svc -n $NAMESPACE $RELEASE_NAME -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
     if echo "$SERVICE_IP" | grep -q "error"; then
       log "Error fetching service IP: $SERVICE_IP"
@@ -201,11 +208,11 @@ stopMinikube() {
 
 # Main function
 main() {
-  isWindows && log "Docker Installation in Windows not yet supported" && exit 1
+  #isWindows && log "Docker Installation in Windows not yet supported" && exit 1
   isLinux   && _I=install
   isMac     && _I=brew
   isWindows && _I=choco
-  checkCommands jq curl $_I || exit 1
+  #checkCommands jq curl $_I || exit 1
 
   # Are ports available for the installation
   availablePorts
@@ -231,14 +238,22 @@ main() {
   # Install Vaadin Control Center
   installControlCenter
 
+  # explicit port forwarding in Windows
+  if isWindows; then
+    log "Setting up port forwarding"
+    kubectl -n control-center port-forward deployment/control-center 8000:8080 &
+    port_forward_pid=$!
+  fi
+
+  # log "Ok, now try for 1000 seconds, please"
+  # sleep 1000
+
   # Check if Control Center is up
   MAX_RETRIES=5
   CONTROL_CENTER_UP=false
 
   for ((i=1; i<=MAX_RETRIES; i++)); do
     if [ "$CONTROL_CENTER_UP" = false ]; then
-      S=$(checkControlCenter)  # Capture the output of checkControlCenter
-      log "control center result: $S" 
       if checkControlCenter; then
         log "Vaadin Control Center is running successfully."
         CONTROL_CENTER_UP=true
@@ -252,6 +267,13 @@ main() {
   done
 
   # Run Playwright tests here (add your Playwright test commands)
+
+
+  # Stop port forwarding on windows
+  if isWindows; then
+   log "Stopping port forwarding"
+   kill $port_forward_pid
+  fi
 
   # Uninstall Control Center after tests
   uninstallExistingRelease
