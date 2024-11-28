@@ -539,17 +539,17 @@ getCurrProperty() {
 ## change the content of a block in any file
 ## $1: left regular expression
 ## $2: right regular expression
-## $3: new content of the block
+## $3: new content of the block, you need to provide ${1} ${2} ${3} to use the left, old content and right groups
 ## $4: file
 changeBlock() {
   __left="$1"; __right="${2:-$1}"; __val="$3"; __bfile="$4";
   cp $__bfile $$-1
   if [ "$__val" = remove ]; then
-    _cmd="perl -0777 -pi -e 's|\s*($__left)([^\s]+)($__right>)\s*||g' $__bfile"
-          perl -0777 -pi -e 's|\s*('$__left')([^\s]+)('$__right')\s*||g' $__bfile
+    _cmd="perl -0777 -pi -e 's|($__left)(.*?)($__right)||gs' $__bfile"
+          perl -0777 -pi -e 's|('$__left')(.*?)('$__right')||gs' $__bfile
   else
-    _cmd="perl -0777 -pi -e 's|($__left)([^\s]+)($__right)|\${1}${__val}\${3}|g' $__bfile"
-          perl -0777 -pi -e 's|('$__left')([^\s]+)('$__right')|${1}'"${__val}"'${3}|g' $__bfile
+    _cmd="perl -0777 -pi -e 's|($__left)(.*?)($__right)|${__val}|gs' $__bfile"
+          perl -0777 -pi -e 's|('$__left')(.*?)('$__right')|'"${__val}"'|gs' $__bfile
   fi
   __diff=`diff -w $$-1 $__bfile`
   rm -f $$-1
@@ -724,7 +724,7 @@ addSpringReleaseRepo() {
 enableSnapshots() {
   for __file in `getPomFiles`
   do
-    changeBlock '<snapshots>\s+<enabled>' '</enabled>\s+</snapshots>' 'true' $__file
+    changeBlock '<snapshots>\s+<enabled>' '</enabled>\s+</snapshots>' '${1}true${3}'  $__file
   done
 }
 
