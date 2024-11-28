@@ -457,8 +457,7 @@ getVersionFromPlatform() {
 setVersionFromPlatform() {
   __nversion=$1
   [ $__nversion = current ] && return
-  B=`echo $__nversion | cut -d . -f1,2`
-  VERS=`getVersionFromPlatform $B $2`
+  VERS=`getVersionFromPlatform $__nversion $2`
   [ -z "$VERS" ] && VERS=`getVersionFromPlatform master $2`
   setVersion $3 "$VERS" false
 }
