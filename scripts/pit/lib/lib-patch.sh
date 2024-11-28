@@ -14,7 +14,9 @@ applyPatches() {
   esac
   expr "$vers_" : ".*SNAPSHOT" >/dev/null && enableSnapshots
   expr "$vers_" : "24.3.0.alpha.*" >/dev/null && addSpringReleaseRepo
+  checkProjectUsingOldVaadin "$type_" "$vers_"
   downgradeJava
+
   case $app_ in
     archetype-hotswap) enableJBRAutoreload ;;
     vaadin-oauth-example)
@@ -28,43 +30,29 @@ applyPatches() {
     mpr-demo)
       SS=~/vaadin.spreadsheet.developer.license
       [ ! -f $SS ] && err "Install a Valid License $SS" && return 1
-      [ -z "$TEST" ] && warn removing tsconfig.json
-      cmd "rm -f tsconfig.json"
-      rm -f tsconfig.json
-      [ -z "$TEST" ] && warn removing ~/vaadin/node*
-      cmd "rm -rf ~/vaadin/node*"
-      rm -rf ~/vaadin/node*
-      ;;
-    ce-demo)
-      echo $vers_
-      case $vers_ in
-        # 24.5+ does not need license
-        24.3*|24.4*) installCeLicense ;;
-      esac
       ;;
     form-filler-demo)
       [ -n "$TEST" ] && ([ -z "$OPENAI_TOKEN" ] && cmd "export OPENAI_TOKEN=your_AI_token") && return 0
       [ -z "$OPENAI_TOKEN" ] && err "Set correctly the OPENAI_TOKEN env var" && return 1
       ;;
-    initializer*)
-       # https://github.com/vaadin/flow/issues/19526#issuecomment-2152719735
-       [ -d frontend/generated ] && GN=frontend/generated || GN=src/main/frontend/generated
-       [ -d $GN ] && cmd "Cleaning Generated folder: rm -rf $GN" && rm -rf $GN
-       ;;
+    vaadin-quarkus)
+      log "Fixing quarkus dependencyManagement https://vaadin.com/docs/latest/flow/integrations/quarkus#quarkus.vaadin.knownissues"
+      moveQuarkusBomToBottom
+      ;;
   esac
-
-  if [ "$type_" = 'current' ]; then
-    case $vers_ in
-      24.6.*|24.5.*|current) : ;;
-      *) reportError "Using old version $vers_" "Please upgrade $app_ to latest stable" ;;
-    esac
-  fi
 
   # always successful
   return 0
 }
 
-
+## We use this function to check if the project in its reporitory has not been updated to latest stable vaadin version
+checkProjectUsingOldVaadin() {
+  [ "$1" != 'current' ] && return
+  case $vers_ in
+    24.6.*|24.5.*|current) : ;;
+    *) reportError "Using old version $vers_" "Please upgrade $app_ to latest stable" ;;
+  esac
+}
 
 ## Run at the beginning of Validate in order to skip upsupported app/version combination
 isUnsupported() {
@@ -77,12 +65,21 @@ isUnsupported() {
   return 1
 }
 
+## The minimum version of Java supported by vaadin is 17, hence we test for it
 downgradeJava() {
   [ ! -f pom.xml ] && return
   grep -q '<java.version>21</java.version>' pom.xml || return
   cmd "perl -pi -e 's|<java.version>21</java.version>|<java.version>17</java.version>|' pom.xml"
   perl -pi -e 's|<java.version>21</java.version>|<java.version>17</java.version>|' pom.xml
   warn "Downgraded Java version from 21 to 17 in pom.xml"
+}
+
+## Moves quarkus dependency to the bottom of the dependencyManagement block
+moveQuarkusBomToBottom() {
+  changeBlock  \
+    '<dependencyManagement>\s*<dependencies>)(\s*<dependency>\s*<groupId>\${quarkus\.platform\.group-id}.*?</dependency>' \
+    '\s*</dependencies>\s*</dependencyManagement>' \
+    '${1}${3}${2}${4}' pom.xml
 }
 
 # removeDeprecated() {
@@ -130,12 +127,13 @@ downgradeJava() {
 #   [ -n "$H" ] && warn "patch 23.3.0.alpha3 - Removing $H" && rm -f tsconfig.json */tsconfig.json
 # }
 
-installCeLicense() {
-  LIC=ce-license.json
-  [ -n "$TEST" ] && ([ -z "$CE_LICENSE" ] && cmd "## Put a valid CE License in ./$LIC" || cmd "## Copy your CE License to ./$LIC") && return 0
-  [ -z "$CE_LICENSE" ] && err "No \$CE_LICENSE provided" && [ -z "$TEST" ] && return 1
-  warn "Creating license file ./$LIC with the \$CE_LICENSE content"
-  cmd "echo \"\$CE_LICENSE\" > $LIC"
-  echo "$CE_LICENSE" > $LIC
-}
+## FIXED - ce does not need any license since 24.5
+# installCeLicense() {
+#   LIC=ce-license.json
+#   [ -n "$TEST" ] && ([ -z "$CE_LICENSE" ] && cmd "## Put a valid CE License in ./$LIC" || cmd "## Copy your CE License to ./$LIC") && return 0
+#   [ -z "$CE_LICENSE" ] && err "No \$CE_LICENSE provided" && [ -z "$TEST" ] && return 1
+#   warn "Creating license file ./$LIC with the \$CE_LICENSE content"
+#   cmd "echo \"\$CE_LICENSE\" > $LIC"
+#   echo "$CE_LICENSE" > $LIC
+# }
 
