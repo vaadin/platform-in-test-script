@@ -208,11 +208,11 @@ stopMinikube() {
 
 # Main function
 main() {
-  #isWindows && log "Docker Installation in Windows not yet supported" && exit 1
+  isWindows && log "Docker Installation in Windows not yet supported" && exit 1
   isLinux   && _I=install
   isMac     && _I=brew
   isWindows && _I=choco
-  #checkCommands jq curl $_I || exit 1
+  checkCommands jq curl $_I || exit 1
 
   # Are ports available for the installation
   availablePorts
