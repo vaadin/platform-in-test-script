@@ -48,7 +48,6 @@ hilla-quickstart-tutorial
 hilla-basics-tutorial
 flow-quickstart-tutorial
 addon-template
-addon-starter-flow
 npm-addon-template
 client-server-addon-template
 spreadsheet-demo
