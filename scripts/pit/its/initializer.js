@@ -4,7 +4,11 @@ const assert = require('assert');
 
 const { spawn } = require('child_process');
 const fs = require('fs');
+const Net = require('net');
 const isWin = /^win/.test(process.platform);
+const screenshots = "screenshots.out"
+let headless = false, host = 'localhost', port = '8080', mode = 'prod', name;
+
 
 let buildCmd, buildArgs;
 if (fs.existsSync('mvnw') ) {
@@ -28,10 +32,36 @@ if (fs.existsSync('mvnw') ) {
 const compileProject = async () => await exec(`${buildCmd} ${buildArgs}`);
 const log = s => process.stderr.write(`\x1b[1m=> TEST: \x1b[0;33m${s}\x1b[0m`);
 
-async function compile(page) {
+async function isPortTaken(port) {
+  return new Promise((resolve, reject) => {
+    const tester = Net.createServer()
+        .once('error', err => resolve(true))
+        .once('listening', () => {
+          log(`Port ${port} not listening\n`);
+          tester.close();
+          resolve(false);
+        })
+        .listen(port)
+  });
+}
+
+async function reload(page, url) {
+  log(`reloading page\n`);
+  let i = 0;
+  while(i++ < 30 && ! await isPortTaken(port)) {
+    await page.waitForTimeout(2000);
+  }
+  await page.reload();
+  await page.waitForURL(url);
+  log(`page reloaded\n`);
+  await takeScreenshot(page, 'view-reloaded');
+}
+
+async function compile(page, url) {
   log('Re-compiling project\n');
   await compileProject();
   await page.waitForTimeout(10000);
+  await reload(page, url)
 }
 
 async function exec(order, ops) {
@@ -56,7 +86,6 @@ async function exec(order, ops) {
   });
 }
 
-let headless = false, host = 'localhost', port = '8080', mode = 'prod', name;
 process.argv.forEach(a => {
   if (/^--headless/.test(a)) {
     headless = true;
@@ -68,6 +97,13 @@ process.argv.forEach(a => {
     name = a.split('=')[1];
   }
 });
+
+let sscount = 0;
+async function takeScreenshot(page, name) {
+  const path = `${screenshots}/${++sscount}-${name}-${mode}.png`;
+  await page.screenshot({ path });
+  log(`Screenshot taken: ${path}\n`);
+}
 
 (async () => {
 
@@ -88,6 +124,7 @@ process.argv.forEach(a => {
   await page.goto(url);
   await page.waitForURL(url);
   await page.waitForTimeout(3000);
+  await takeScreenshot(page, 'view-loaded');
 
   if (mode == 'prod') {
     log("Skipping creating views for production mode\n");
@@ -102,17 +139,21 @@ process.argv.forEach(a => {
     log(`Creating ${viewName} view using copilot\n`);
     await page.getByRole('link', { name: linkText }).click();
     await page.waitForTimeout(2000);
-    await page.reload();
-    await page.waitForURL(url);
+    await takeScreenshot(page, 'view-created');
+    await reload(page, url);
     const view = (await exec(`find src/main/frontend src/main/java -name '${viewName}'`)).stdout.trim();
     assert.ok(fs.existsSync(view));
 
     // Compile the application so as spring-devtools watches the changes
-    await compile(page);
+    await compile(page, url);
+
+    await takeScreenshot(page, 'app-compiled');
 
     // Wait for the frontend to be built
+    log(`Checking if the new view is Building\n`);
     const building = page.getByText('Building');
     if (await building.isVisible()) {
+      await takeScreenshot(page, 'view-building');
       log(`Waiting for frontend to be built ...`)
       while(await building.isVisible()) {
         process.stderr.write(".");
@@ -122,15 +163,10 @@ process.argv.forEach(a => {
     }
 
     log(`checking if the new view is available\n`);
-    try {
-      // it could happen that port is not available yet
-      await page.reload();
-    } catch (error) {
-      await page.waitForTimeout(2000);
-      await page.reload();
-    }
-    await page.waitForURL(url);
+    await reload(page, url);
     await page.waitForTimeout(2000);
+    await takeScreenshot(page, 'view-reloaded-after-compiling');
+
     const text = page.getByText('Welcome');
     assert.ok(await text.isVisible());
 
