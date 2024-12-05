@@ -41,7 +41,7 @@ killAll() {
 ## restore system as before running the script
 cleanAll() {
   restoreProKey
-  unsetJBR
+  unsetJavaPath
 }
 
 ## Exit the script after some process cleanup
@@ -673,7 +673,9 @@ printVersions() {
 
 MAVEN_OPTS='$MAVEN_OPTS' MAVEN_ARGS='$MAVEN_ARGS' $MVN -version
 $_vers
+NODE=$NODE
 Node version: `"$NODE" --version`
+NPM=$NPM
 Npm version: `"$NPM" --version`
 "
 }
@@ -759,27 +761,58 @@ installJBRRuntime() {
     mkdir -p /tmp/jbr
     runCmd false "Extracting JBR" "tar -xf /tmp/JBR.tgz -C /tmp/jbr --strip-components 1" || return 1
   fi
-
-  [ -d /tmp/jbr/Contents/Home/ ] && H=/tmp/jbr/Contents/Home || H=/tmp/jbr
-  [ -z "$TEST" ] && log "Setting JAVA_HOME=$H PATH=$H/bin:\$PATH"
-  cmd "export PATH=$H/bin:\$PATH JAVA_HOME=$H"
-  __PATH=$PATH
-  __HOME=$JAVA_HOME
-  export PATH="$H/bin:$PATH" JAVA_HOME="$H" HOT="-XX:+AllowEnhancedClassRedefinition -XX:HotswapAgent=fatjar"
-
   if [ ! -f $H/lib/hotswap/hotswap-agent.jar ] ; then
     mkdir -p $H/lib/hotswap
     download "$__hsau" "$H/lib/hotswap/hotswap-agent.jar" || return 1
     log "Installed "`ls -1 $H/lib/hotswap/hotswap-agent.jar`
   fi
+
+  setJavaPath "/tmp/jbr" || return 1
+}
+
+## Installs a certain version of OPENJDK
+# $1: version (eg: 17, 21, 23)
+installJDKRuntime() {
+  __version=$1
+  base_url="https://download.oracle.com/java"
+  isLinux && os_suffix="linux-x64" && __ext="tar.gz"
+  isMac && os_suffix="macos-x64" && __ext="tar.gz"
+  isWindows && os_suffix="windows-x64" && __ext="zip"
+  [ -z "$__version" -o -z "$os_suffix" ] && return 1
+  __nversion="$__version"
+  __vpath="latest"
+  [ "$__version" = "18" ] && __nversion="18.0.1" && __vpath="archive"
+  [ "$__version" = "17" ] && __nversion="17.0.12" && __vpath="archive"
+  tar_file="jdk-${__nversion}_${os_suffix}_bin.${__ext}"
+  tmp_dir="/tmp/jdk-${__version}"
+  __jurl="${base_url}/${__version}/${__vpath}/${tar_file}"
+  if [ ! -f "/tmp/$tar_file" ]; then
+    download "$__jurl" "/tmp/$tar_file" || return 1
+  fi
+  [ -d "$tmp_dir" ] && rm -rf "$tmp_dir"
+  mkdir -p "$tmp_dir"
+  runCmd false "Extracting JDK-$__version" "tar -xf "/tmp/$tar_file" -C "$tmp_dir" --strip-components 1" || return 1
+
+  setJavaPath "$tmp_dir" || return 1
+}
+
+setJavaPath() {
+  H=`find "$1" -name Home -type d`
+  [ -z "$H" ] && H=$tmp_dir
+  [ -z "$TEST" ] && log "Setting JAVA_HOME=$H PATH=$H/bin:\$PATH"
+  [ ! -d "$H/bin" ] && return 1
+  cmd "export PATH=$H/bin:\$PATH JAVA_HOME=$H"
+  __PATH=$PATH
+  __HOME=$JAVA_HOME
+  export PATH="$H/bin:$PATH" JAVA_HOME="$H"
 }
 
 ## Unsets the jet brains java runtime used for testing the hotswap agent
-unsetJBR() {
-  [ -z "$HOT" ] && return 0 || unset HOT
-  warn "Un-setting PATH and JAVA_HOME ($JAVA_HOME)"
+unsetJavaPath() {
+  [ -n "$__HOME" ] && warn "Un-setting PATH and JAVA_HOME ($JAVA_HOME)"
   [ -n "$__PATH" ] && export PATH=$__PATH && unset __PATH
   [ -n "$__HOME" ] && export JAVA_HOME=$__HOME && unset __HOME || unset JAVA_HOME
+  [ -n "$HOT" ]    && unset HOT
 }
 
 ## enables autoreload for preparing jet brains java runtime

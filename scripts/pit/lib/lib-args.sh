@@ -4,14 +4,14 @@
 ## the usage message, it should be synchronized with the function used for extracting the arguments below
 usage() {
   cat <<EOF
-Use: $0 [version=] [starters=] [port=] [timeout=] [verbose] [offline] [interactive] [skiptests] [pnpm] [vite] [help]
+Use: $0 with the next options:
 
  --version=string  Vaadin version to test, if not given it only tests current stable, otherwise it runs tests against current stable and then against given version.
- --starters=list   List of demos or presets separated by comma to run (default: all) valid options:`echo ,$DEFAULT_STARTERS | sed -e 's/,/\n                   · /g'`
  --demos           Run all demo projects
  --generated       Run all generated projects (start and archetypes)
  --port=number     HTTP port for thee servlet container (default: $DEFAULT_PORT)
  --timeout=number  Time in secs to wait for server to start (default $DEFAULT_TIMEOUT)
+ --jdk=NN          Use a specific JDK version to run the tests
  --verbose         Show server output (default silent)
  --offline         Do not remove already downloaded projects, and do not use network for mvn (default online)
  --interactive     Play a bell and ask user to manually test the application (default non interactive)
@@ -33,6 +33,7 @@ Use: $0 [version=] [starters=] [port=] [timeout=] [verbose] [offline] [interacti
                    everything after this argument is the function name and arguments passed to the function.
                    you should take care with arguments that contain spaces, they should be quoted twice.
  --help            Show this message
+ --starters=list   List of demos or presets separated by comma to run (default: all) valid options:`echo ,$DEFAULT_STARTERS | sed -e 's/,/\n                   · /g'`
 EOF
   exit 1
 }
@@ -60,6 +61,7 @@ checkArgs() {
         STARTERS="$S";;
       --version=*) VERSION="$arg";;
       --timeout=*) TIMEOUT="$arg";;
+      --jdk=*) JDK="$arg";;
       --verbose|--debug) VERBOSE=true;;
       --offline) OFFLINE=true;;
       --interactive) INTERACTIVE=true;;

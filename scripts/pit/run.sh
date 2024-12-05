@@ -88,10 +88,23 @@ main() {
 
   ## Run presets (star.vaadin.com) or archetypes
   for i in $presets; do
+    if expr "$i" : '.*-hotswap' >/dev/null; then
+      installJBRRuntime || continue
+    elif [ -n "$JDK" ]; then
+      installJDKRuntime "$JDK" || continue
+    fi
     run runStarter "$i" "$tmp"
   done
+
   ## Run demos (proper starters in github)
   for i in $demos; do
+    if expr "$i" : '.*_jdk' >/dev/null; then
+      _jdk=`echo "$i" | sed -e 's|.*_jdk||'`
+      i=`echo "$i" | sed -e 's|_jdk.*||'`
+      installJDKRuntime "$_jdk" || continue
+    elif [ -n "$JDK" ]; then
+      installJDKRuntime "$JDK" || continue
+    fi
     run runDemo "$i" "$tmp"
   done
 
@@ -99,12 +112,12 @@ main() {
 
   [ -n "$TEST" ] && return
 
-  _error=0
   ## Report success and failed projects
   for i in $success
   do
     bold "🟢 Starter $i built successfully"
   done
+  _error=0
   for i in $failed
   do
     files=`echo $tmp/$i/*.out`
@@ -113,7 +126,6 @@ main() {
   done
 
   printTime $_start
-
   return $_error
 }
 

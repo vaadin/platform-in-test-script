@@ -65,6 +65,7 @@ bookstore-example:rtl-demo
 bakery-app-starter-flow-spring
 k8s-demo-app
 mpr-demo
+mpr-demo_jdk17
 testbench-demo
 ce-demo
 start

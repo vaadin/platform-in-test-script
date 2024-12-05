@@ -18,7 +18,9 @@ applyPatches() {
   downgradeJava
 
   case $app_ in
-    archetype-hotswap) enableJBRAutoreload ;;
+    archetype-hotswap)
+      ## need to happen in patch phase not in the run phase
+      enableJBRAutoreload ;;
     vaadin-oauth-example)
       setPropertyInFile src/main/resources/application.properties \
         spring.security.oauth2.client.registration.google.client-id \

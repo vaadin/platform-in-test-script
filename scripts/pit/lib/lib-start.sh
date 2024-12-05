@@ -40,11 +40,10 @@ downloadStarter() {
 ## TODO: add support for vaadi cli
 generateStarter() {
   _name=$1
-  [ -z "$TEST" ] && log "Generating $1"
   case $_name in
     *spring)        cmd="$MVN -ntp -q -B archetype:generate -DarchetypeGroupId=com.vaadin -DarchetypeArtifactId=vaadin-archetype-spring-application -DarchetypeVersion=LATEST -DgroupId=com.vaadin.starter -DartifactId=$_name" ;;
     archetype*)     cmd="$MVN -ntp -q -B archetype:generate -DarchetypeGroupId=com.vaadin -DarchetypeArtifactId=vaadin-archetype-application -DarchetypeVersion=LATEST -DgroupId=com.vaadin.starter -DartifactId=$_name" ;;
-    vaadin-quarkus) cmd="$MVN -ntp -q -B io.quarkus.platform:quarkus-maven-plugin:3.1.1.Final:create -Dextensions=vaadin -DwithCodestart -DprojectGroupId=com.vaadin.starter -DprojectArtifactId=$_name" ;;
+    vaadin-quarkus) cmd="$MVN -ntp -q -B io.quarkus.platform:quarkus-maven-plugin:create -Dextensions=vaadin -DwithCodestart -DprojectGroupId=com.vaadin.starter -DprojectArtifactId=$_name" ;;
     hilla-*-cli)    cmd="npx @hilla/cli init --react $_name" ;;
   esac
   runCmd false "Generating $1" "$cmd" || return 1
@@ -191,8 +190,6 @@ runStarter() {
       *) downloadStarter "$_preset" "$_folder" || return 1 ;;
     esac
   fi
-
-  [ "$_preset" = archetype-hotswap ] && installJBRRuntime
 
   computeMvn
   computeGradle
