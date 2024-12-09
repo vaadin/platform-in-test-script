@@ -146,7 +146,7 @@ if [ -n "$RUN_FUCTION" ]; then
   log "Running function: $RUN_FUCTION"
   eval $RUN_FUCTION
   error=$?
-  log "Exit with code $error"
+  [ "$error" = 0 ] && log "OK" || err "Error"
   exit 0
 fi
 
