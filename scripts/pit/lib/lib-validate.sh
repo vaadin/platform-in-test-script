@@ -38,6 +38,8 @@ runValidations() {
   echo "" >&2
   [ -z "$TEST" ] && bold "----> Running builds and tests on app $name, mode=$mode, port=$port, version=$version, mvn=$MVN"
   [ -n "$TEST" ] && cmd "### Run PiT for: app=$name mode=$mode version=$version"
+  [ -n "$MAVEN_ARGS" ] && cmd "## MAVEN_ARGS='$MAVEN_ARGS'"
+  [ -n "$MAVEN_OPTS" ] && cmd "## MAVEN_OPTS='$MAVEN_OPTS'"
 
   isUnsupported $name $mode $version && ([ -n "$TEST" ] || warn "Skipping $name $mode $version because of unsupported") && return 0
 

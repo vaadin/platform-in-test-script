@@ -766,7 +766,7 @@ installJBRRuntime() {
     download "$__hsau" "$H/lib/hotswap/hotswap-agent.jar" || return 1
     log "Installed "`ls -1 $H/lib/hotswap/hotswap-agent.jar`
   fi
-
+  export HOT="-XX:+AllowEnhancedClassRedefinition -XX:HotswapAgent=fatjar"
   setJavaPath "/tmp/jbr" || return 1
 }
 
