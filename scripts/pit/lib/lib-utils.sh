@@ -798,7 +798,7 @@ installJDKRuntime() {
 
 setJavaPath() {
   H=`find "$1" -name Home -type d`
-  [ -z "$H" ] && H=$tmp_dir
+  [ -z "$H" ] && H="$1"
   [ -z "$TEST" ] && log "Setting JAVA_HOME=$H PATH=$H/bin:\$PATH"
   [ ! -d "$H/bin" ] && return 1
   cmd "export PATH=$H/bin:\$PATH JAVA_HOME=$H"
