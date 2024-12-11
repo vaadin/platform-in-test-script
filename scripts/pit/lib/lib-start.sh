@@ -193,6 +193,7 @@ runStarter() {
 
   computeMvn
   computeGradle
+
   printVersions || return 1
 
   _msg="Started .*Application|Frontend compiled|Started ServerConnector|Started Vite|Listening on:"

@@ -671,7 +671,7 @@ printVersions() {
   [ $? != 0 ] && err "Error $? when running $MVN, $_vers" && return 1
   log "==== VERSIONS ====
 
-MAVEN_OPTS='$MAVEN_OPTS' MAVEN_ARGS='$MAVEN_ARGS' $MVN -version
+MAVEN_OPTS='$HOT $MAVEN_OPTS' MAVEN_ARGS='$MAVEN_ARGS' $MVN -version
 $_vers
 NODE=$NODE
 Node version: `"$NODE" --version`
@@ -761,13 +761,13 @@ installJBRRuntime() {
     mkdir -p /tmp/jbr
     runCmd false "Extracting JBR" "tar -xf /tmp/JBR.tgz -C /tmp/jbr --strip-components 1" || return 1
   fi
-  if [ ! -f $H/lib/hotswap/hotswap-agent.jar ] ; then
-    mkdir -p $H/lib/hotswap
+  setJavaPath "/tmp/jbr" || return 1
+  if [ ! -f $JAVA_HOME/lib/hotswap/hotswap-agent.jar ] ; then
+    mkdir -p $JAVA_HOME/lib/hotswap
     download "$__hsau" "$H/lib/hotswap/hotswap-agent.jar" || return 1
     log "Installed "`ls -1 $H/lib/hotswap/hotswap-agent.jar`
   fi
   export HOT="-XX:+AllowEnhancedClassRedefinition -XX:HotswapAgent=fatjar"
-  setJavaPath "/tmp/jbr" || return 1
 }
 
 ## Installs a certain version of OPENJDK
