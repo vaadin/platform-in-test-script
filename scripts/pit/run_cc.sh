@@ -95,7 +95,11 @@ startMinikube() {
   log "Minikube started successfully."
   # Run minikube tunnel in the background
   echo "Starting minikube tunnel in the background..."
-  nohup minikube tunnel &> minikube_tunnel.log &
+  if isLinux || isMac; then
+    sudo nohup minikube tunnel &> minikube_tunnel.log &
+  else
+    nohup minikube tunnel &> minikube_tunnel.log &
+  fi
   
   # Capture the process ID to monitor if needed
   tunnel_pid=$!
@@ -152,9 +156,7 @@ installControlCenter() {
 # Function to check if the Control Center service is up
 checkControlCenter() {
   log "Checking if Vaadin Control Center is accessible..."
-  set -x
   checkPort $SERVICE_PORT 60 || return 1
-  set +x
   SERVICE_IP=$(kubectl get svc -n $NAMESPACE $RELEASE_NAME -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
     if echo "$SERVICE_IP" | grep -q "error"; then
       log "Error fetching service IP: $SERVICE_IP"
@@ -250,6 +252,8 @@ main() {
       break
     fi
   done
+
+  exit
 
   # Run Playwright tests here (add your Playwright test commands)
 
