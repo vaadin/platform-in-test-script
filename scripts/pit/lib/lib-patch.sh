@@ -18,6 +18,9 @@ applyPatches() {
   downgradeJava
 
   case $app_ in
+    initializer-*gradle*)
+      ## fails with java 21 in windows
+      addJvmImplementationToGradle;;
     k8s-demo-app)
       ## fails in 24.6.0
       changeMavenBlock parent org.springframework.boot spring-boot-starter-parent 3.3.4 ;;
