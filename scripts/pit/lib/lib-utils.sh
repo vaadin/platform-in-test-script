@@ -575,6 +575,8 @@ changeMavenProperty() {
       runCmd false "Removing Maven property $__prop from $__propfile" \
         "perl -pi -e 's|(\s*<'$__prop'>)[^\s]+(</'$__prop'>)||g' $__propfile"
       __ret=$?
+    else
+      __ret=1
     fi
   done
   return $__ret
