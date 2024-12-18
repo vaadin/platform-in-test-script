@@ -44,10 +44,20 @@ applyPatches() {
       log "Fixing quarkus dependencyManagement https://vaadin.com/docs/latest/flow/integrations/quarkus#quarkus.vaadin.knownissues"
       moveQuarkusBomToBottom
       ;;
+    initializer-*gradle*)
+      ## fails with java 21 in windows
+      removeGradleJavaLanguageVersion;;
   esac
 
   # always successful
   return 0
+}
+
+removeGradleJavaLanguageVersion() {
+  [ ! -f "build.gradle" ] && return
+  runCmd false "Removing JavaLanguageVersion from build.gradle" \
+       "perl -0777 -pi -e 's|.*JavaLanguageVersion.*||' build.gradle"
+  git diff build.gradle
 }
 
 ## We use this function to check if the project in its reporitory has not been updated to latest stable vaadin version
