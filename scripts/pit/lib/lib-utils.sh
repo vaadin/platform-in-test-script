@@ -712,12 +712,6 @@ addRepoToGradle() {
     "perl -pi -e 's|(repositories\s*{)|\$1\n    maven { url \"$U\" }|' build.gradle"
 }
 
-addJvmImplementationToGradle() {
-  [ ! -f "build.gradle" ] && return
-  runCmd false "Adding JvmImplementation.J9 to build.gradle" \
-        "perl -0777 -pi -e 's|(toolchain *{)(\s*)|\${1}\${2}implementation = JvmImplementation.J9\${2}|ms' build.gradle"
-}
-
 ## adds the pre-releases repositories to the pom.xml
 addPrereleases() {
   [ -f pom.xml ] && addRepoToPom "https://maven.vaadin.com/vaadin-prereleases"
