@@ -894,6 +894,12 @@ computeProp() {
     esac
 }
 
+computeJavaMajor() {
+  JavaMajor=`java -version 2>&1 | sed -n 's/.*version "\([0-9]*\).*/\1/p'`
+  [ -z "$JavaMajor" ] && err "Could not determine Java version minor" && return 1
+  echo $JavaMajor
+}
+
 ## compute the property used for the version of the project after applying a patch for the next release
 ## it was important when next version was for hilla/flow fussion (24.4)
 computePropAfterPatch() {

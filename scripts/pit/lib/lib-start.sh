@@ -56,7 +56,7 @@ generateStarter() {
 ## TODO: Check versions
 downloadInitializer() {
   _name=$1
-  _java=17
+  _java=`computeJavaMajor`
   _boot=3.3.4
   _group=com.vaadin.initializer
   _type=$2
