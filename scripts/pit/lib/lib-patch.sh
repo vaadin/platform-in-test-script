@@ -18,9 +18,6 @@ applyPatches() {
   downgradeJava
 
   case $app_ in
-    k8s-demo-app)
-      ## fails in 24.6.0
-      changeMavenBlock parent org.springframework.boot spring-boot-starter-parent 3.3.4 ;;
     archetype-hotswap)
       ## need to happen in patch phase not in the run phase
       enableJBRAutoreload ;;
