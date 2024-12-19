@@ -44,9 +44,9 @@ applyPatches() {
       log "Fixing quarkus dependencyManagement https://vaadin.com/docs/latest/flow/integrations/quarkus#quarkus.vaadin.knownissues"
       moveQuarkusBomToBottom
       ;;
-    initializer-*gradle*)
+    ## initializer-*gradle*)
       ## fails with java 21 in windows
-      removeGradleJavaLanguageVersion;;
+      ## removeGradleJavaLanguageVersion;;
   esac
 
   # always successful
@@ -55,6 +55,8 @@ applyPatches() {
 
 removeGradleJavaLanguageVersion() {
   [ ! -f "build.gradle" ] && return
+  cp $__file $$-1
+  _major=`java -version 2>&1 | sed -n 's/.*version "\([0-9]*\).*/\1/p'`
   runCmd false "Removing JavaLanguageVersion from build.gradle" \
        "perl -0777 -pi -e 's|.*JavaLanguageVersion.*||' build.gradle"
   git diff build.gradle

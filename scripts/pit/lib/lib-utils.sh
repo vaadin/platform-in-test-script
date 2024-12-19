@@ -132,6 +132,7 @@ computeGradle() {
   [ -x ./gradlew ] && GRADLE=./gradlew
   isWindows && [ -x ./gradlew.bat ] && GRADLE=./gradlew.bat
   isWindows && [ -x ./gradlew.cmd ] && GRADLE=./gradlew.cmd
+  GRADLE="$GRADLE -Porg.gradle.java.installations.auto-detect=false"
 }
 
 ## Compute npm command used for installing playwright
