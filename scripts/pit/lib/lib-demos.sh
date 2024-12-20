@@ -218,7 +218,7 @@ getReadyMessageDev() {
     vaadin-flow-karaf-example) echo "Artifact deployed";;
     spreadsheet-demo|layout-examples) echo "Started ServerConnector";;
     mpr-demo) echo "Vaadin is running in DEBUG MODE";;
-    start) echo "Restarting due to";;
+    start) echo "Application running at http:";;
     *-gradle|flow-spring-examples) echo "Tomcat started|started and listening";;
     *) echo "Frontend compiled successfully|Started .*Application|Started Server";;
   esac
