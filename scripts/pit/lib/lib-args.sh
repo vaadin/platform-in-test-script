@@ -53,10 +53,10 @@ checkArgs() {
         S=""
         for i in `echo "$arg" | tr ',' ' '`
         do
-          # H=`printf "$PRESETS\n$DEMOS" | egrep "^$i$|/$i$|/$i[/:]|^$i[/:]" | tr "\n" ","`
-          H=`printf "$PRESETS\n$DEMOS" | egrep "^$i$|/$i$|/$i[/:]|^$i[/:]" | head -1`
-          [ -z "$H" ] && err "Unknown starter: $i" && exit 1
-          [ -n "$S" ] && S="$S,$H" || S="$H"
+          n=${i#\!}
+          H=`printf "$PRESETS\n$DEMOS" | egrep "^$n$|/$n$|/$n[/:]|^$n[/:]" | head -1`
+          [ -z "$H" ] && err "Unknown starter: $n" && exit 1
+          [ "$n" = "$i" ] && S="$S,$H" || S="$i"
         done
         STARTERS="$S";;
       --version=*) VERSION="$arg";;
@@ -72,9 +72,12 @@ checkArgs() {
       --pnpm) PNPM="-Dpnpm.enable=true";;
       --vite) VITE=true;;
       --list*)
-        [ -z "$STARTERS" ] && STARTERS="$DEFAULT_STARTERS"
-        L=`echo "$STARTERS" | tr "," "\n" | grep ...`
-        [ -n "$arg" ] && echo "$L" | xargs -n $arg | tr ' ' , || echo "$L"
+        for i in `echo "${STARTERS#,}" | tr "," " "`; do
+          [ "${i#\!}" != "$i" ] && STARTERS="" && DEFAULT_STARTERS=`echo "$DEFAULT_STARTERS" | grep -v "${i#\!}"`
+        done
+        [ -z "$STARTERS" ] && STARTERS="${DEFAULT_STARTERS}" || STARTERS=`echo "$STARTERS" | tr "," "\n" | grep ...`
+        [ -z "$arg" ] && arg=1
+        echo "$STARTERS" | xargs -n $arg | tr ' ' '\n'
         exit 0
         ;;
       --help) usage && exit 0;;
