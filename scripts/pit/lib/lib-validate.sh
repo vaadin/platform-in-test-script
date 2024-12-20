@@ -29,6 +29,9 @@ runValidations() {
   [ -n "$7" ] && check="$7" || check=""
   [ -n "$8" ] && test="$PIT_SCR_FOLDER/its/$8" || test=""
 
+  ## start takes a long to compile the frontend in dev-mode
+  [ "$name" = "start" -a "$TIMEOUT" -le "300" ] && timeout=500 || timeout="$TIMEOUT"
+
   file="$name-$mode-$version-"`uname`".out"
   rm -f $file
   [ "$mode" = prod ] && expr "$compile" : "$MVN" >/dev/null && compile="$compile -Dmaven.compiler.showDeprecation"
@@ -76,7 +79,7 @@ runValidations() {
   runInBackgroundToFile "$cmd" "$file" "$VERBOSE"
 
   # 5
-  waitUntilMessageInFile "$file" "$check" "$TIMEOUT" "$cmd" || return 1
+  waitUntilMessageInFile "$file" "$check" "$timeout" "$cmd" || return 1
   waitUntilAppReady "$name" "$port" 60 "$file" || return 1
 
   # 6
@@ -97,7 +100,7 @@ runValidations() {
       killAll
       mv "$file" "$file.tsconfig"
       runInBackgroundToFile "$cmd" "$file" "$VERBOSE"
-      waitUntilMessageInFile "$file" "$check" "$TIMEOUT" "$cmd" || return 1
+      waitUntilMessageInFile "$file" "$check" "$timeout" "$cmd" || return 1
       waitUntilAppReady "$name" "$port" 60 "$file" || return 1
       waitUntilFrontendCompiled "http://localhost:$port/" "$file" || return 1
     elif [ "$_err" != 0 ]; then

@@ -233,6 +233,7 @@ waitUntilMessageInFile() {
   __message="$2"
   __timeout="$3"
   __cmd="$4"
+  __sleep=4
   [ -n "$TEST" ] && cmd "## Wait for: '$__message'" || log "Waiting for server to start, timeout=$__timeout secs, message='$__message'"
   [ -n "$TEST" ] && return 0
   while [ $__timeout -gt 0 ]
@@ -249,10 +250,10 @@ waitUntilMessageInFile() {
       && H=`egrep "$__message" $__file | eval "$__perl" | head -1` \
       && log "Found '$H' in $__file after $__lasted secs" \
       && echo ">>>> PiT: Found '$H' after $__lasted secs" >> "$__file" \
-      && sleep 3 && return 0
-    sleep 10 && __timeout=`expr $__timeout - 2`
+      && sleep $__sleep && return 0
+    sleep $__sleep && __timeout=`expr $__timeout - $__sleep`
   done
-  reportOutErrors "$__file"  "Error could not find '$__message' in $__file after $__timeout secs"
+  reportOutErrors "$__file"  "Timeout: could not find '$__message' in $__file after $3 secs"
   return 1
 }
 

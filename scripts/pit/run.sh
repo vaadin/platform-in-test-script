@@ -12,7 +12,7 @@ DEFAULT_PORT=8080
 DEFAULT_TIMEOUT=300
 
 ## starters and demos list is maintained in the repos.sh file
-DEFAULT_STARTERS=`echo "$PRESETS$DEMOS" | tr "\n" "," | sed -e 's/^,//' | sed -e 's/,$//'`
+DEFAULT_STARTERS=`echo "$PRESETS$DEMOS" | grep ...`
 
 ## run an specific starter or demo
 ## $1: function to run (runStarter, runDemo)
