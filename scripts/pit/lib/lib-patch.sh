@@ -14,6 +14,7 @@ applyPatches() {
   esac
   expr "$vers_" : ".*SNAPSHOT" >/dev/null && enableSnapshots
   expr "$vers_" : "24.3.0.alpha.*" >/dev/null && addSpringReleaseRepo
+  expr "$vers_" : "24.7*" >/dev/null && patchReactRouterDom
   checkProjectUsingOldVaadin "$type_" "$vers_"
   downgradeJava
 
@@ -45,6 +46,13 @@ applyPatches() {
 
   # always successful
   return 0
+}
+
+patchReactRouterDom() {
+  if [ -d src/main/frontend/views ] && grep -q "from 'react-router-dom'" src/main/frontend/views/*.ts*; then
+    warn "Patching src/main/frontend/views/*.ts* because they have 'from 'react-router-dom''"
+    perl -pi -e "s|(from 'react-router)-dom'|\$1'|g" src/main/frontend/views/*.ts*
+  fi
 }
 
 ## We use this function to check if the project in its reporitory has not been updated to latest stable vaadin version
