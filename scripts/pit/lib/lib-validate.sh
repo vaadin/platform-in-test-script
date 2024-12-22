@@ -19,6 +19,8 @@ set -o pipefail
 # 10. check that the app is accessible via http and response is a valid servlet response
 # 11. run UI test with selenium IDE (if not skipped)
 # 12. kill remaining processes
+# 13. check that the app is not using a default ID for statistics
+# 14. remove .out file if the process was successful
 runValidations() {
   [ -n "$1" ] && mode="$1" || mode=""
   [ -n "$2" ] && version="$2" || version=""
@@ -113,7 +115,8 @@ runValidations() {
 
   # 11
   if [ -z "$SKIPTESTS" ]; then
-    runPlaywrightTests "$test" "$port" "$mode" "$file" "$name" "$version" || return 1
+    _pfile="playwright-$_mode-"`uname`".out"
+    runPlaywrightTests "$test" "$port" "$mode" "$_pfile" "$name" "$version" && rm -f "$_pfile" || return 1
   fi
 
   # 12
@@ -125,6 +128,9 @@ runValidations() {
     H=`grep 12b7fc85f50e8c82cb6f4b03e12f2335 ~/.vaadin/usage-statistics.json`
     [ -n "$H" ] && reportError "Using a default ID for Statistics" "$H"
   fi
+
+  # 14
+  rm -f "$file"
   return 0
 }
 
