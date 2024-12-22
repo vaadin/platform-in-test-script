@@ -77,7 +77,7 @@ checkArgs() {
         done
         [ -z "$STARTERS" ] && STARTERS="${DEFAULT_STARTERS}" || STARTERS=`echo "$STARTERS" | tr "," "\n" | grep ...`
         [ -z "$arg" ] && arg=1
-        echo "$STARTERS" | xargs -n $arg | tr ' ' '\n'
+        echo "$STARTERS" | xargs -n $arg | tr ' ' ,
         exit 0
         ;;
       --help) usage && exit 0;;
