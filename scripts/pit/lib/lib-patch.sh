@@ -51,7 +51,7 @@ applyPatches() {
 patchReactRouterDom() {
   if [ -d src/main/frontend/views ] && grep -q "from 'react-router-dom'" src/main/frontend/views/*.ts*; then
     warn "Patching src/main/frontend/views/*.ts* because they have 'from 'react-router-dom''"
-    perl -pi -e "s|(from 'react-router)-dom'|\$1'|g" src/main/frontend/views/*.ts*
+    perl -pi -e "s|(from ['\"]react-router)-dom(['\"])|\$1\$2|g" src/main/frontend/views/*.ts*
   fi
 }
 
