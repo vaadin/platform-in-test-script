@@ -50,10 +50,10 @@ applyPatches() {
 
 ## REPORTED in: https://github.com/vaadin/hilla/issues/3082
 patchReactRouterDom() {
-  if [ -d src/main/frontend/views ] && grep -q "from 'react-router-dom'" src/main/frontend/*.ts* src/main/frontend/views/*.ts*; then
-    warn "Patching src/main/frontend/views/*.ts* because they have 'from 'react-router-dom''"
-    perl -pi -e "s|(from ['\"]react-router)-dom(['\"])|\$1\$2|g" src/main/frontend/*.ts* src/main/frontend/views/*.ts*
-  fi
+  F=src/main/frontend
+  [ ! -d "$F" ] && return
+  find $F '(' -name '*.ts' -o -name '*.tsx' ')' -exec perl -pi -e "s| +from +.react-router-dom.| from 'react-router'|g" '{}' ';'
+  git diff --quiet -- "$F" || warn "Patched $F because it has 'from 'react-router-dom' occurrences"
 }
 
 ## TODO: report this in https://github.com/vaadin/flow-hilla-hybrid-example/blob/v24/src/main/frontend/index.tsx#L13
