@@ -14,7 +14,7 @@ applyPatches() {
   esac
   expr "$vers_" : ".*SNAPSHOT" >/dev/null && enableSnapshots
   expr "$vers_" : "24.3.0.alpha.*" >/dev/null && addSpringReleaseRepo
-  expr "$vers_" : "24.7*" >/dev/null && patchReactRouterDom
+  expr "$vers_" : "24.7*" >/dev/null && patchReactRouterDom && patchFutureRouter
   checkProjectUsingOldVaadin "$type_" "$vers_"
   downgradeJava
 
@@ -48,10 +48,19 @@ applyPatches() {
   return 0
 }
 
+## REPORTED in: https://github.com/vaadin/hilla/issues/3082
 patchReactRouterDom() {
-  if [ -d src/main/frontend/views ] && grep -q "from 'react-router-dom'" src/main/frontend/views/*.ts*; then
+  if [ -d src/main/frontend/views ] && grep -q "from 'react-router-dom'" src/main/frontend/*.ts* src/main/frontend/views/*.ts*; then
     warn "Patching src/main/frontend/views/*.ts* because they have 'from 'react-router-dom''"
-    perl -pi -e "s|(from ['\"]react-router)-dom(['\"])|\$1\$2|g" src/main/frontend/views/*.ts*
+    perl -pi -e "s|(from ['\"]react-router)-dom(['\"])|\$1\$2|g" src/main/frontend/*.ts* src/main/frontend/views/*.ts*
+  fi
+}
+
+## TODO: report this in https://github.com/vaadin/flow-hilla-hybrid-example/blob/v24/src/main/frontend/index.tsx#L13
+patchFutureRouter() {
+  if [ -f src/main/frontend/index.ts* ] && grep -q "RouterProvider" src/main/frontend/index.ts*; then
+    warn "Patching src/main/frontend/index.ts* because it has 'RouterProvider'"
+    perl -pi -e "s|(<RouterProvider.*)future=.*?( */>)|\$1\$2|g" src/main/frontend/index.ts*
   fi
 }
 
