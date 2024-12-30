@@ -1,15 +1,26 @@
 const { chromium, webkit } = require('playwright');
+const screenshots = "screenshots.out"
 
-let headless = false, host = 'localhost', port = '8080', hub = false;
+let headless = false, host = 'localhost', port = '8080', mode = 'prod', name;
 process.argv.forEach(a => {
   if (/^--headless/.test(a)) {
     headless = true;
-  } else if (/^--ip=/.test(a)) {
-    ip = a.split('=')[1];
   } else if (/^--port=/.test(a)) {
     port = a.split('=')[1];
+  } else if (/^--mode=/.test(a)) {
+    mode = a.split('=')[1];
+  } else if (/^--name=/.test(a)) {
+    name = a.split('=')[1];
   }
 });
+
+let sscount = 0;
+async function takeScreenshot(page, name) {
+  const path = `${screenshots}/${++sscount}-${name}-${mode}.png`;
+  await page.screenshot({ path });
+  log(`Screenshot taken: ${path}\n`);
+}
+const log = s => process.stderr.write(`\x1b[1m=> TEST: \x1b[0;33m${s}\x1b[0m`);
 
 (async () => {
   const browser = await chromium.launch({
@@ -27,6 +38,7 @@ process.argv.forEach(a => {
   // Go to http://localhost:8080/
   await page.goto(`http://${host}:${port}/`);
 
+  await takeScreenshot(page, 'initial-view');
   // Click input[type="text"]
   await page.locator('input[type="text"]').click({timeout:60000});
 
@@ -35,6 +47,8 @@ process.argv.forEach(a => {
 
   // Click text=Say hello
   await page.locator('vaadin-button').click();
+  await takeScreenshot(page, 'button-clicked');
+
 
   // Look for the text, sometimes rendered in an alert, sometimes in the dom
   let m;
