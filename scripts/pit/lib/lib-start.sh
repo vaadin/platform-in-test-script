@@ -57,7 +57,7 @@ generateStarter() {
 downloadInitializer() {
   _name=$1
   _java=`computeJavaMajor`
-  _boot=3.3.4
+  _boot=3.4.1
   _group=com.vaadin.initializer
   _type=$2
   _deps=$3
