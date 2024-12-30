@@ -14,7 +14,7 @@ applyPatches() {
   esac
   expr "$vers_" : ".*SNAPSHOT" >/dev/null && enableSnapshots
   expr "$vers_" : "24.3.0.alpha.*" >/dev/null && addSpringReleaseRepo
-  expr "$vers_" : "24.7*" >/dev/null && patchReactRouterDom && patchFutureRouter
+  expr "$vers_" : "24.7.*" >/dev/null && patchReactRouterDom && patchFutureRouter
   checkProjectUsingOldVaadin "$type_" "$vers_"
   downgradeJava
 
