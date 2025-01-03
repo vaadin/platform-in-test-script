@@ -2,7 +2,7 @@
 
 . `dirname $0`/../repos.sh
 
-REPOS=`echo "$REPOS$DEMOS" | cut -d ":" -f1 | sort -u | egrep -v 'spring-guides|spring-petclinic-vaadin-flow'`
+REPOS=`echo "$REPOS$DEMOS" | cut -d ":" -f1 | sort -u | egrep -v 'spring-guides|spring-petclinic-vaadin-flow|_jdk'`
 
 usage() {
   cat <<EOF
