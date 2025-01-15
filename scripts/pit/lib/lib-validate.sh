@@ -110,7 +110,7 @@ runValidations() {
 
   # 11
   if [ -z "$SKIPTESTS" ]; then
-    runPlaywrightTests "$test" "$port" "$mode" "$file" "$name" "$version" || return 1
+    runPlaywrightTests "$test" "$file" "$mode" "$name" "--port=$port" || return 1
   fi
 
   # 12

@@ -69,6 +69,7 @@ cleanAll() {
 
 ## Exit the script after some process cleanup
 doExit() {
+  set +x
   echo ""
   killAll
   cleanAll
@@ -124,6 +125,7 @@ EOF
 ## $1: file
 ## $2: report header
 reportOutErrors() {
+  [ -f "$1" ] || return
   H=`cat "$1" | egrep -v ' *at |org.atmosphere.cpr.AtmosphereFramework' | tail -300`
   reportError "$2" "$H"
 }

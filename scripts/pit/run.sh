@@ -6,6 +6,7 @@
 . `dirname $0`/lib/lib-args.sh
 . `dirname $0`/lib/lib-start.sh
 . `dirname $0`/lib/lib-demos.sh
+. `dirname $0`/lib/lib-cc.sh
 
 ## Default configuration
 DEFAULT_PORT=8080
@@ -96,9 +97,13 @@ main() {
     run runStarter "$i" "$tmp"
   done
 
+
   ## Run demos (proper starters in github)
   for i in $demos; do
-    if expr "$i" : '.*_jdk' >/dev/null; then
+    if [ $i = control-center ]; then
+      run runControlCenter start
+      continue
+    elif expr "$i" : '.*_jdk' >/dev/null; then
       _jdk=`echo "$i" | sed -e 's|.*_jdk||'`
       i=`echo "$i" | sed -e 's|_jdk.*||'`
       installJDKRuntime "$_jdk" || continue
@@ -107,6 +112,7 @@ main() {
     fi
     run runDemo "$i" "$tmp"
   done
+  
 
   cd "$pwd"
 
@@ -155,4 +161,5 @@ fi
 trap "doExit" INT TERM EXIT
 
 ## run starters/demos
+
 main

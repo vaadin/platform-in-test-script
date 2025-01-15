@@ -28,8 +28,10 @@ initializer-vaadin-maven-react
 initializer-vaadin-maven-flow
 initializer-vaadin-gradle-react
 initializer-vaadin-gradle-flow
-collaboration"
+collaboration
+"
 DEMOS="
+control-center
 skeleton-starter-flow
 skeleton-starter-flow-spring
 skeleton-starter-hilla-react
