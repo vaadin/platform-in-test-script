@@ -41,6 +41,10 @@ jobs:
         uses: helm/kind-action@v1
         with:
           install_only: false
+      # - name: Install Socat
+      #   run: |
+      #     sudo apt-get update
+      #     sudo apt-get install -y socat
       - name: Instal Kind and Control Center
         env:
           CC_KEY: ${{ secrets.CC_KEY }}

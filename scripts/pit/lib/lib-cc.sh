@@ -10,15 +10,6 @@ CC_TLS=control-center-tls
 CC_CLUSTER=cc-cluster
 CC_NS=control-center
 
-checkCcCommands() {
-  type command >/dev/null 2>&1 || return 1
-  for command_name in $*; do
-    if ! command -v "$command_name" >/dev/null 2>&1; then
-        err "Command: '$command_name' is not installed" && return 1
-    fi
-  done
-}
-
 getPids() {
   H=`grep -a "" /proc/*/cmdline 2>/dev/null | xargs -0 | grep -v grep | perl -pe 's|/proc/(.*?)/cmdline:|$1 |g'`
   if [ -n "$H" ]
@@ -48,18 +39,13 @@ stopCloudProvider() {
 startPortForward() {
   [ -z "$3" ] && echo "startPortForward name-space service port" && return 1
   H=`getPids "kubectl port-forward $2"`
-  echo "$H"
   [ -n "$H" ] && return 0
 
-  port="${4:-3}"
-  log "Starting k8s port-forward $1 $2 -> ${3:-2}"
-  if [ "$port" -le 1024 ];
-  then
-    cmd=`which kubectl`" port-forward $2 $port:$3 -n $1 > /tmp/kubectl-port-forward.logs 2>&1 &"
-    echo "# $cmd"  
-    sudo bash -c "$cmd" 
+  log "Starting k8s port-forward $1 $2 $3 -> $4"
+  if isLinux || isMac ; then
+    sudo KUBECONFIG="$HOME/.kube/config" kubectl port-forward $2 $4:$3 -n $1 &
   else
-    kubectl port-forward $2 $port:$3 -n $1 > /tmp/kubectl-port-forward.logs 2>&1 &
+    kubectl port-forward $2 $4:$3 -n $1 &
   fi
 }
 
@@ -182,7 +168,7 @@ runControlCenter() {
     computeNpm
     case "$1" in
       start)
-        checkCcCommands kind helm docker kubectl || return 1
+        checkCommands kind helm docker kubectl || return 1
         deleteCluster
         createCluster || return 1
         stopCloudProvider
@@ -190,10 +176,11 @@ runControlCenter() {
         installCC || waitForCC 400 || return 1
         [ -n "$CC_KEY" -a -n "$CC_CERT" ] && installTls || return 1
         forwardIngress || return 1
+        sleep 2
         tmp_pass=`kubectl -n $CC_NS get secret control-center-user -o go-template="{{ .data.password | base64decode | println }}"`
         log "Control Center installed, login to https://$CC_CONTROL with the username $CC_EMAIL and password: $tmp_pass"
         test=`computeAbsolutePath`/its/cc-setup.js
-        echo "$test"
+        checkPort 443 || return 1
         runPlaywrightTests "$test" "" "prod" "control-center" --url=https://$CC_CONTROL  --email=$CC_EMAIL
         deleteCluster
         ;;
