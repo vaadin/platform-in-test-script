@@ -13,7 +13,7 @@ installPlaywright() {
   _pfile="playwright-"`uname`".out"
   _dir=`dirname "$1"`
   # @playwright/test
-  (cd "$_dir" && runToFile "'${NPM}' install --no-audit playwright" "$_pfile" "$VERBOSE") || return 1
+  (cd "$_dir" && runToFile "'${NPM}' install --no-audit playwright @playwright/test" "$_pfile" "$VERBOSE") || return 1
   (cd "$_dir" && runToFile "npx playwright install chromium" "$_pfile" "$VERBOSE") || return 1
   isLinux && (cd "$_dir" && runToFile "'${NODE}' ./node_modules/.bin/playwright install-deps chromium" "$_pfile" "$VERBOSE") || true
 }
