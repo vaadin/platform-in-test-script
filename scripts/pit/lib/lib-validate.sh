@@ -115,8 +115,7 @@ runValidations() {
 
   # 11
   if [ -z "$SKIPTESTS" ]; then
-    _pfile="playwright-$_mode-"`uname`".out"
-    runPlaywrightTests "$test" "$port" "$mode" "$_pfile" "$name" "$version" && rm -f "$_pfile" || return 1
+    runPlaywrightTests "$test" "$file" "$mode" "$name" "--port=$port" || return 1
   fi
 
   # 12

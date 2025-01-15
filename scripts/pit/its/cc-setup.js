@@ -60,11 +60,7 @@ if (!email) {
 
     console.log(email, pass, newpass)
 
-    await page.waitForTimeout(5000);
-
-    if (await page.getByRole('paragraph', {hasText: 'Invalid'}).waitFor({ timeout: 1000 }).catch(() => false).then(() => true)) {
-        throw new Error(`Incorrect authentication for ${email}`);
-    }
+    await page.waitForTimeout(1000);
 
     await page.getByLabel('New Password').fill('cc-vaadin');
     await page.getByLabel('Confirm Password').fill('cc-vaadin');

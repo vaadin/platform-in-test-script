@@ -1,0 +1,37 @@
+name: PiT
+on:
+  workflow_dispatch:
+  push:
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    services:
+      docker:
+        image: docker:dind
+        options: --privileged --shm-size=2g    
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - run: |
+          echo "OK OK "
+          node --version
+          type node
+      # - name: Install Docker
+      #   run: |
+      #     apt-get update
+      #     apt-get install -y docker.io          
+      # - name: Test Docker
+      #   run: |
+      #     docker version
+      #     docker info     
+      - name: Create k8s Kind Cluster
+        uses: helm/kind-action@v1           
+      - name: Load images
+        run: |
+           docker ps
+           kind get clusters
+           id
+           pwd
+           apt list --installed
+
