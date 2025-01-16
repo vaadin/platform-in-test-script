@@ -35,6 +35,8 @@ runPlaywrightTests() {
 
   _pfile="playwright-$_mode-"`uname`".out"
   [ -f "$_test_file" ] && checkPlaywrightInstallation "$_test_file" || return 0
+
+  set +x
   _args="$* --name=$_name --mode=$_mode"
   isHeadless && _args="$_args --headless"
   PATH=$PATH runToFile "'$NODE' '$_test_file' $_args" "$_pfile" "$VERBOSE" true

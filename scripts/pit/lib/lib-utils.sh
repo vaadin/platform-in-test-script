@@ -37,14 +37,14 @@ restoreProKey() {
 
 ## get pids for process
 getPids() {
-  if type pgrep >/dev/null 2>&1; then
-   _P=`pgrep "$1"`
-  elif type tasklist >/dev/null 2>&1; then
-   _P=`tasklist | findstr "$1" | awk '{print $2}'`
-  else
-   err "No pgrep or tasklist installed" && exit 1
+  H=`grep -a "" /proc/*/cmdline 2>/dev/null | xargs -0 | grep -v grep | perl -pe 's|/proc/(.*?)/cmdline:|$1 |g'`
+  if [ -n "$H" ]
+  then
+    _P=`echo "$H" | grep "$1" | awk '{print $1}'`
+  else   
+    _P=`ps -feaw | grep "$1" | grep -v grep | awk '{print $2}'`
   fi
-  [ -n "$_P" ] && echo "$_P" && return 0 || return 1
+  [ -n "$_P" ] && echo "$_P" | tr "\n" " " && return 0 || return 1
 }
 
 ## Kills a process with its children and wait until complete
@@ -95,7 +95,7 @@ warn() {
   print '> ' 0 33 "$*"
 }
 cmd() {
-  cmd_=`printf "$*" | perl -pe 's|\n|\\\\\\\n|g'`
+  cmd_=`printf "$*" | tr -s " " | perl -pe 's|\n|\\\\\\\n|g'`
   print '  ' 1 34 " $cmd_"
 }
 dim() {
