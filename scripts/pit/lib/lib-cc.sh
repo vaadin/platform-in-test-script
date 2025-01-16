@@ -10,25 +10,12 @@ CC_TLS=control-center-tls
 CC_CLUSTER=cc-cluster
 CC_NS=control-center
 
-getPids() {
-  H=`grep -a "" /proc/*/cmdline 2>/dev/null | xargs -0 | grep -v grep | perl -pe 's|/proc/(.*?)/cmdline:|$1 |g'`
-  if [ -n "$H" ]
-  then
-    _P=`echo "$H" | grep "$1" | awk '{print $1}'`
-  else   
-    _P=`ps -feaw | grep "$1" | grep -v grep | awk '{print $2}'`
-  fi
-  [ -n "$_P" ] && echo "$_P" && return 0 || return 1
-}
-
 startCloudProvider() {
    docker container inspect kind-cloud-provider >/dev/null 2>&1 && log "Docker Kind Cloud Provider already running" && return
-   log "Starting Docker KinD Cloud Provider"
-   cmd="docker run --name kind-cloud-provider --rm  -d --network kind \
-     -v /var/run/docker.sock:/var/run/docker.sock \
-     rophy/cloud-provider-kind:0.4.0-20241026-r1"
-   echo "#" $cmd
-   eval "$cmd"
+   runCmd "$TEST" "Starting Docker KinD Cloud Provider" \
+    "docker run --name kind-cloud-provider --rm  -d --network kind \
+      -v /var/run/docker.sock:/var/run/docker.sock \
+      rophy/cloud-provider-kind:0.4.0-20241026-r1"
 }
 
 stopCloudProvider() {
@@ -40,17 +27,18 @@ startPortForward() {
   [ -z "$3" ] && echo "startPortForward name-space service port" && return 1
   H=`getPids "kubectl port-forward $2"`
   [ -n "$H" ] && return 0
-
+  KUBECTL=`which kubectl`
   log "Starting k8s port-forward $1 $2 $3 -> $4"
   if isLinux || isMac ; then
-    sudo KUBECONFIG="$HOME/.kube/config" kubectl port-forward $2 $4:$3 -n $1 &
+    log "listening to ports <1024 requires sudo, type your password if requested"
+    sudo true || return 1
+    sudo KUBECONFIG="$HOME/.kube/config" $KUBECTL port-forward $2 $4:$3 -n $1 &
   else
-    kubectl port-forward $2 $4:$3 -n $1 &
+    $KUBECTL port-forward $2 $4:$3 -n $1 &
   fi
 }
 
 stopPortForward() {
-  set -x
   H=`getPids kubectl "port-forward service/$1"`
   [ -z "$H" ] && return 0
   log "Stoping k8s port-forward $1 (pid $H)"
@@ -66,22 +54,21 @@ stopForwardIngress() {
 }
 
 createCluster() {
-  log "Creating cluster"
-  echo "# kind create cluster --name $CC_CLUSTER"
-  kind create cluster --name $CC_CLUSTER || return 1
-  kubectl config use-context kind-$CC_CLUSTER
-  kubectl config set-context --current --namespace=$CC_NS
+  runCmd "$TEST" "Creating KinD cluster: $CC_CLUSTER" \
+   "kind create cluster --name $CC_CLUSTER" || return 1
+  runCmd "$TEST" "Setting default namespace $CC_NS" \
+   "kubectl config set-context --current --namespace=$CC_NS"
 }
 
 deleteCluster() {
-  log "Deleting cluster"
-  kind delete cluster --name $CC_CLUSTER
+  runCmd "$TEST" "Deleting Cluster $CC_CLUSTER" \
+   "kind delete cluster --name $CC_CLUSTER" || return 1
 }
 
 installCC() {
-  log "Installing Control Center"
-  [ -n "$DEBUG" ] && D=--debug
-  cmd="helm install control-center oci://docker.io/vaadin/control-center \
+  [ -n "$VERBOSE" ] && D=--debug
+  runCmd "$TEST" "Installing Vaadin Control Center" \
+   "helm install control-center oci://docker.io/vaadin/control-center \
     -n $CC_NS --create-namespace \
     --set domain=$CC_DOMAIN \
     --set user.email=$CC_EMAIL \
@@ -91,8 +78,6 @@ installCC() {
     --set keycloak.tlsSecret=$CC_TLS \
     --set livenessProbe.failureThreshold=10 \
     --wait $D"
-  echo "#" $cmd
-  eval $cmd || return 1
 }
 
 waitForCC() {
@@ -114,41 +99,6 @@ waitForCC() {
   done  
 }
 
-installDashBoard() {
-  helm upgrade --install kubernetes-dashboard kubernetes-dashboard/kubernetes-dashboard \
-    --create-namespace --namespace kubernetes-dashboard || return 1
-  
-  cat << EOF | kubectl create -n kubernetes-dashboard -f - >/dev/null 2>&1
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: admin-user
-  namespace: kubernetes-dashboard
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: admin-user
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cluster-admin
-subjects:
-- kind: ServiceAccount
-  name: admin-user
-  namespace: kubernetes-dashboard
-EOF
-cc_auth=`kubectl -n kubernetes-dashboard create token admin-user` 
-[ -z "$cc_auth" ] && return 1
-startPortForward kubernetes-dashboard service/kubernetes-dashboard-kong-proxy 443 8443
-log "Login into dashboard with this token: $cc_auth"
-}
-
-uninstallDashBoard() {
-  stopPortForward kubernetes-dashboard
-  kubectl delete ns kubernetes-dashboard
-}
-
 uninstallCC() {
   kubectl delete ns $CC_NS
   kubectl delete ns ingress-nginx   
@@ -160,7 +110,8 @@ installTls() {
   echo -e "$CC_CERT" > $f1
   f2=/tmp/cc-tls.key
   echo -e "$CC_KEY" > $f2
-  kubectl -n $CC_NS create secret tls $CC_TLS --key "$f2" --cert "$f1"
+  runCmd "$TEST" "Creating TLS secret $CC_TLS" \
+    "kubectl -n $CC_NS create secret tls $CC_TLS --key '$f2' --cert '$f1'"
   rm -f $f1 $f2
 }
 
@@ -182,6 +133,7 @@ runControlCenter() {
         test=`computeAbsolutePath`/its/cc-setup.js
         checkPort 443 || return 1
         runPlaywrightTests "$test" "" "prod" "control-center" --url=https://$CC_CONTROL  --email=$CC_EMAIL
+        stopForwardIngress
         deleteCluster
         ;;
       stop)
