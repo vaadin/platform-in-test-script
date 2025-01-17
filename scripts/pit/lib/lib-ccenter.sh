@@ -101,7 +101,7 @@ runControlCenter() {
         tmp_email=`kubectl get secret control-center-user -o go-template="{{ .data.email | base64decode | println }}"`
         computeTemporaryPassword
         [ -n "$CC_KEY" -a -n "$CC_CERT" ] && installTls || NO_TLS="--notls"
-        forwardIngress || return 1
+        forwardIngress $CC_NS || return 1
         runPwTests || return 1
         err=$?
         if [ -z "$KEEPCC" ]; then
