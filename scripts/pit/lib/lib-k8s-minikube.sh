@@ -1,5 +1,7 @@
 #!/bin/bash
 
+## NOTE: this file is not used right now, it's keeped as reference for future testing of CC in minikube
+
 # Load necessary libraries
 . `dirname $0`/../repos.sh
 . `dirname $0`/lib/lib-args.sh
@@ -268,4 +270,5 @@ main() {
   log "Tests completed in $(($_end - $_start)) seconds."
 }
 
-main
+## Not used at the moment
+# main
