@@ -1,7 +1,6 @@
 . `dirname $0`/lib/lib-utils.sh
 . `dirname $0`/lib/lib-playwright.sh
 
-PIT_SCR_FOLDER=`computeAbsolutePath`
 set -o pipefail
 
 ## Run validations against one APP or DEMO by following next steps:

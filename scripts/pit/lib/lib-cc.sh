@@ -15,7 +15,7 @@ CC_TESTS="cc-setup.js cc-install-apps.js"
 startCloudProvider() {
    [ -z "$TEST" ] && docker container inspect kind-cloud-provider >/dev/null 2>&1 && log "Docker Kind Cloud Provider already running" && return
    runCmd "$TEST" "Starting Docker KinD Cloud Provider" \
-    "docker run --name kind-cloud-provider --rm  -d --network kind \
+    "docker run --quiet --name kind-cloud-provider --rm  -d --network kind \
       -v /var/run/docker.sock:/var/run/docker.sock \
       rophy/cloud-provider-kind:0.4.0-20241026-r1"
 }
@@ -106,29 +106,29 @@ waitForCC() {
           sleep 1
           ;;
       esac
-  done  
+  done
 }
 
 uninstallCC() {
   kubectl delete ns $CC_NS
-  kubectl delete ns ingress-nginx   
+  kubectl delete ns ingress-nginx
 }
 
 installTls() {
-  [ -z "$CC_KEY" -o -z "$CC_CERT" ] && log "Skiping TLS certificate installation, because it was not provided provided" && return
   [ -z "$TEST" ] && log "Installing TLS $CC_TLS for $CC_DOMAIN" || cmd "## Creating TLS files from envs"
   f1=/tmp/cc-tls.crt
   cmd 'echo -e "$CC_CERT" > $f1'
-  echo -e "$CC_CERT" > $f1
+  echo -e "$CC_CERT" > $f1 || return 1
   f2=/tmp/cc-tls.key
   cmd 'echo -e "$CC_KEY" > $f2'
-  echo -e "$CC_KEY" > $f2
+  echo -e "$CC_KEY" > $f2 || return 1
   runCmd "$TEST" "Creating TLS secret $CC_TLS_A in cluster" \
     "kubectl -n $CC_NS create secret tls $CC_TLS_A --key '$f2' --cert '$f1'" || return 1
   runCmd "$TEST" "Creating TLS secret $CC_TLS_K in cluster" \
     "kubectl -n $CC_NS create secret tls $CC_TLS_K --key '$f2' --cert '$f1'" || return 1
+  cat $f2 $f2 > /tmp/$CC_DOMAIN.pem
   rm -f $f1 $f2
-  pod=`kubectl -n $CC_NS get pods | grep control-center-ingress-nginx-controller | awk '{print $1}'`
+  pod=`kubectl -n $CC_NS get pods | grep control-center-ingress-nginx-controller | awk '{print $1}'` || return 1
   [ -n "$pod" ] && runCmd "$TEST" "Reloading nginx in $pod" "kubectl exec $pod -- nginx -s reload" || return 1
   # runCmd "$TEST" "Restaring ingress" \
   #   "kubectl -n $CC_NS rollout restart deployment control-center-ingress-nginx-controller" || return 1
@@ -144,9 +144,8 @@ computeTemporaryPassword() {
 
 runPwTests() {
   [ -n "$SKIPPW" ] && return 0
-  its_folder=`computeAbsolutePath`/its
   for f in $CC_TESTS; do
-    runPlaywrightTests "$its_folder/$f" "" "prod" "control-center" --url=https://$CC_CONTROL  --email=$CC_EMAIL || return 1
+    runPlaywrightTests "$PIT_SCR_FOLDER/its/$f" "" "prod" "control-center" --url=https://$CC_CONTROL  --email=$CC_EMAIL $NO_TLS || return 1
   done
 }
 
@@ -163,7 +162,7 @@ runControlCenter() {
         installCC || waitForCC 400 || return 1
         tmp_email=`kubectl get secret control-center-user -o go-template="{{ .data.email | base64decode | println }}"`
         computeTemporaryPassword
-        installTls
+        [ -n "$CC_KEY" -a -n "$CC_CERT" ] && installTls || NO_TLS="--notls"
         forwardIngress || return 1
         runPwTests || return 1
         err=$?
