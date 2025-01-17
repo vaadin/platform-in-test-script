@@ -34,6 +34,15 @@ if (!email) {
     return;
 }
 
+const screenshots = "screenshots.out"
+let sscount = 0;
+async function takeScreenshot(page, name) {
+  const path = `${screenshots}/${++sscount}-${name}.png`;
+  await page.waitForTimeout(1000);
+  await page.screenshot({ path });
+  log(`Screenshot taken: ${path}\n`);
+}
+
 (async () => {
     if (!tmppass) {
         tmppass = await run(`kubectl -n control-center get secret control-center-user -o go-template="{{ .data.password | base64decode | println }}"`);
@@ -51,34 +60,30 @@ if (!email) {
 
     await page.goto(`${url}`);
 
+    await takeScreenshot(page, 'view-loaded');
     await expect(page.getByLabel('Email')).toBeVisible();
 
     await page.getByLabel('Email').fill(email);
     await page.getByLabel('Password').fill(tmppass);
-    await page.waitForTimeout(500);
     await page.getByRole('button', {name: 'Sign In'}).click()
 
-    console.log(email, tmppass, pass)
-
-    await page.waitForTimeout(1000);
+    await takeScreenshot(page, 'logged-in');
 
     await page.getByLabel('New Password').fill(pass);
     await page.getByLabel('Confirm Password').fill(pass);
-    await page.waitForTimeout(500);
     await page.getByRole('button', { name: 'Submit' }).click();
+
+    await takeScreenshot(page, 'password-changed');
 
     await page.getByLabel('First Name').fill(email);
     await page.getByLabel('Last Name').fill(email);
-    await page.waitForTimeout(500);
     await page.getByRole('button', { name: 'Submit' }).click();
-    await page.waitForTimeout(500);
-    await page.getByRole('button', { name: 'Manage applications' }).click();
-    await page.waitForTimeout(500);
 
+    await takeScreenshot(page, 'user-configured');
+
+    await page.getByRole('button', { name: 'Manage applications' }).click();
     await expect(page.getByRole('heading', { name: 'Applications' })).toBeVisible();
 
-    console.log(`User ${email} confgigured with password ${pass}`);
-  
     await context.close();
     await browser.close();
 })();
