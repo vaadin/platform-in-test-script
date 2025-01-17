@@ -1,5 +1,6 @@
-## LIBRARY for installing and running playwright tests
+PIT_SCR_FOLDER=`computeAbsolutePath`
 
+## LIBRARY for installing and running playwright tests
 
 ## Check whether playwright is installed in node_modules folder of the test node-script
 isInstalledPlaywright() {

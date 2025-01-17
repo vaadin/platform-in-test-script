@@ -3,11 +3,6 @@ const path = require('path');
 const { expect } = require('@playwright/test');
 const fs = require('fs');
 
-const ADMIN_EMAIL = 'john.doe@admin.com';
-const ADMIN_PASSWORD = 'adminPassword';
-
-
-
 let headless = false, port = '8000', url, email, pass='Servantes', ignoreHTTPSErrors = false;
 process.argv.forEach(a => {
     if (/^--headless/.test(a)) {
@@ -28,17 +23,21 @@ process.argv.forEach(a => {
 if (!email) {
     log(`Skipping the setup of Control center because of missing --email= parameter\n`)
     return;
+} else {
+
 }
 
 const log = s => process.stderr.write(`   ${s}`);
 const screenshots = "screenshots.out"
 let sscount = 0;
 async function takeScreenshot(page, name) {
-  const path = `${screenshots}/${++sscount}-${name}.png`;
+  var scr = path.basename(__filename);
+  const file = `${screenshots}/${scr}-${++sscount}-${name}.png`;
   await page.waitForTimeout(1000);
-  await page.screenshot({ path });
-  log(`Screenshot taken: ${path}\n`);
+  await page.screenshot({ path: file });
+  log(`Screenshot taken: ${file}\n`);
 }
+
 
 (async () => {
     const browser = await chromium.launch({
@@ -73,14 +72,20 @@ async function takeScreenshot(page, name) {
     await page.getByLabel('Image', {exact: true}).fill('k8sdemos/bakery-cc:latest')
     await page.getByLabel('Application URI', {exact: true}).locator('input[type="text"]').fill('app1-local.alcala.org')
 
-    await page.getByLabel('Upload').click();
-    const fileChooserPromise = page.waitForEvent('filechooser');
-    await page.getByText('Browse').click();
-    const fileChooser = await fileChooserPromise;
-    await fileChooser.setFiles('domain.pem');
-    fileChooserPromise.then(await page.locator('.detail-layout').getByRole('button', {name: 'Deploy'}).click())
-    await takeScreenshot(page, 'pem-uploaded');
 
+    const cert = [ 'alcala.org', 'app1-local.alcala.org' ].map(a => `/tmp/${a}.pem`).filter( a => fs.existsSync(a))[0]
+    if (cert) {
+        await page.getByLabel('Upload').click();
+        const fileChooserPromise = page.waitForEvent('filechooser');
+        await page.getByText('Browse').click();
+        const fileChooser = await fileChooserPromise;
+        await fileChooser.setFiles(cert);
+        fileChooserPromise.then(await page.locator('.detail-layout').getByRole('button', {name: 'Deploy'}).click())
+    } else {
+        await page.getByLabel('Generate').click();
+    }
+
+    await takeScreenshot(page, 'form-filled');
     await page.getByRole('listitem').filter({ hasText: 'Settings'}).click()
 
     await expect(await page.getByRole('listitem')

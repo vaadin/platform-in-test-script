@@ -2,6 +2,7 @@ const {chromium} = require('playwright');
 const { expect } = require('@playwright/test');
 const { exec } = require('child_process');
 const promisify = require('util').promisify;
+const path = require('path');
 
 const log = s => process.stderr.write(`   ${s}`);
 const run = async cmd => (await promisify(exec)(cmd)).stdout;
@@ -37,10 +38,11 @@ if (!email) {
 const screenshots = "screenshots.out"
 let sscount = 0;
 async function takeScreenshot(page, name) {
-  const path = `${screenshots}/${++sscount}-${name}.png`;
+  var scr = path.basename(__filename);
+  const file = `${screenshots}/${scr}-${++sscount}-${name}.png`;
   await page.waitForTimeout(1000);
-  await page.screenshot({ path });
-  log(`Screenshot taken: ${path}\n`);
+  await page.screenshot({ path: file });
+  log(`Screenshot taken: ${file}\n`);
 }
 
 (async () => {
