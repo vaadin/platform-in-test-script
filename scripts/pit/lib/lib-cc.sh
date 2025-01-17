@@ -6,8 +6,8 @@ CC_DOMAIN=alcala.org
 CC_CONTROL=control-local.$CC_DOMAIN
 CC_AUTH=auth-local.$CC_DOMAIN
 CC_EMAIL=admin@$CC_DOMAIN
-CC_TLS_A=control-center-tls
-CC_TLS_K=keycloak-tls
+CC_TLS_A=cc-control-app-tls
+CC_TLS_K=cc-control-login-tls
 CC_CLUSTER=cc-cluster
 CC_NS=control-center
 CC_TESTS="cc-setup.js cc-install-apps.js"
@@ -127,9 +127,11 @@ installTls() {
     "kubectl -n $CC_NS create secret tls $CC_TLS_A --key '$f2' --cert '$f1'" || return 1
   runCmd "$TEST" "Creating TLS secret $CC_TLS_K in cluster" \
     "kubectl -n $CC_NS create secret tls $CC_TLS_K --key '$f2' --cert '$f1'" || return 1
-  runCmd "$TEST" "Restaring ingress" \
-    "kubectl -n $CC_NS rollout restart deployment control-center-ingress-nginx-controller" || return 1
   rm -f $f1 $f2
+  pod=`kubectl -n $CC_NS get pods | grep control-center-ingress-nginx-controller | awk '{print $1}'`
+  [ -n "$pod" ] && runCmd "$TEST" "Reloading nginx in $pod" "kubectl exec $pod -- nginx -s reload" || return 1
+  # runCmd "$TEST" "Restaring ingress" \
+  #   "kubectl -n $CC_NS rollout restart deployment control-center-ingress-nginx-controller" || return 1
 }
 
 computeTemporaryPassword() {
