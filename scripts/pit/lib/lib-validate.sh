@@ -114,7 +114,7 @@ runValidations() {
   checkHttpServlet "http://localhost:$port/" "$file" || return 1
 
   # 11
-  if [ -z "$SKIPTESTS" ]; then
+  if [ -z "$SKIPTESTS" -a -z "$SKIPPW" ]; then
     runPlaywrightTests "$test" "$file" "$mode" "$name" "--port=$port" || return 1
   fi
 

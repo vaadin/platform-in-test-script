@@ -21,6 +21,8 @@ Use: $0 with the next options:
  --skip-prod       Skip production validations
  --skip-dev        Skip dev-mode validations
  --skip-clean      Do not clean maven cache
+ --skip-pw         Do not run playwright tests
+ --keep-cc         Keep control-center running after tests
  --pnpm            Use pnpm instead of npm to speed up frontend compilation (default npm)
  --vite            Use vite inetad of webpack to speed up frontend compilation (default webpack)
  --list            Show the list of available starters
@@ -70,6 +72,8 @@ checkArgs() {
       --skip-current) NOCURRENT=true;;
       --skip-dev) NODEV=true;;
       --skip-prod) NOPROD=true;;
+      --skip-pw) SKIPPW=true;;
+      --keep-cc) KEEPCC=true;;
       --pnpm) PNPM="-Dpnpm.enable=true";;
       --vite) VITE=true;;
       --list*)
