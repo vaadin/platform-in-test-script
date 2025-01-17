@@ -103,8 +103,6 @@ main() {
     if [ $i = control-center ]; then
       mkdir -p tmp/$i && cd tmp/$i
       run runControlCenter start
-      pwd
-      find .
       cd "$pwd"
       continue
     elif expr "$i" : '.*_jdk' >/dev/null; then
