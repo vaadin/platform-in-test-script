@@ -3,6 +3,7 @@ const path = require('path');
 const { expect } = require('@playwright/test');
 const fs = require('fs');
 
+
 let headless = false, port = '8000', url, email, pass='Servantes', ignoreHTTPSErrors = false;
 process.argv.forEach(a => {
     if (/^--headless/.test(a)) {
@@ -23,15 +24,13 @@ process.argv.forEach(a => {
 if (!email) {
     log(`Skipping the setup of Control center because of missing --email= parameter\n`)
     return;
-} else {
-
 }
 
 const log = s => process.stderr.write(`   ${s}`);
 const screenshots = "screenshots.out"
 let sscount = 0;
 async function takeScreenshot(page, name) {
-  var scr = path.basename(__filename);
+  const scr = path.basename(__filename);
   const file = `${screenshots}/${scr}-${++sscount}-${name}.png`;
   await page.waitForTimeout(1000);
   await page.screenshot({ path: file });
@@ -62,6 +61,7 @@ async function takeScreenshot(page, name) {
     await page.getByLabel('Password').fill(pass);
     await page.waitForTimeout(500);
     await page.getByRole('button', {name: 'Sign In'}).click()
+    log(`Logging in as ${email} ${pass}...\n`);
     await takeScreenshot(page, 'logged-in');
 
     await page.getByRole('listitem').filter({ hasText: 'Settings'}).click()
@@ -72,8 +72,9 @@ async function takeScreenshot(page, name) {
     await page.getByLabel('Image', {exact: true}).fill('k8sdemos/bakery-cc:latest')
     await page.getByLabel('Application URI', {exact: true}).locator('input[type="text"]').fill('app1-local.alcala.org')
 
-
-    const cert = [ 'alcala.org', 'app1-local.alcala.org' ].map(a => `/tmp/${a}.pem`).filter( a => fs.existsSync(a))[0]
+    const host = url.replace(/^.*:\/\//, '').replace(/\/.*$/, '');
+    const domain = host.replace(/.*?\.]/, '');
+    const cert = [ domain, host ].map(a => `/tmp/${a}.pem`).filter( a => fs.existsSync(a))[0]
     if (cert) {
         await page.getByLabel('Upload').click();
         const fileChooserPromise = page.waitForEvent('filechooser');

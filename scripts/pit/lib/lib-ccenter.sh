@@ -15,16 +15,13 @@ CC_TESTS="cc-setup.js cc-install-apps.js"
 
 installCC() {
   [ -n "$VERBOSE" ] && D=--debug
+  [ -n "$CC_KEY" -a -n "$CC_CERT" ] && args="--set app.tlsSecret=$CC_TLS_A --set keycloak.tlsSecret=$CC_TLS_K"
   runCmd "$TEST" "Installing Vaadin Control Center" \
    "helm install control-center oci://docker.io/vaadin/control-center \
-    -n $CC_NS --create-namespace \
+    -n $CC_NS --create-namespace --set livenessProbe.failureThreshold=10 \
     --set domain=$CC_DOMAIN \
     --set user.email=$CC_EMAIL \
-    --set app.host=$CC_CONTROL \
-    --set keycloak.host=$CC_AUTH \
-    --set keycloak.tlsSecret=$CC_TLS_K \
-    --set app.tlsSecret=$CC_TLS_A \
-    --set livenessProbe.failureThreshold=10 \
+    --set app.host=$CC_CONTROL --set keycloak.host=$CC_AUTH $args \
     --wait $D"
 }
 
@@ -92,16 +89,21 @@ runControlCenter() {
     case "$1" in
       start)
         checkCommands kind helm docker kubectl || return 1
-        deleteCluster $CC_CLUSTER
+        ## Clean up from a previous run
         stopForwardIngress $CC_NS
-        createCluster $CC_CLUSTER $CC_NS || return 1
         stopCloudProvider
+        deleteCluster $CC_CLUSTER
+        ## Start a new cluster
+        createCluster $CC_CLUSTER $CC_NS || return 1
         startCloudProvider || return 1
+        ## Install Control Center
         installCC || waitForCC 400 || return 1
         tmp_email=`kubectl get secret control-center-user -o go-template="{{ .data.email | base64decode | println }}"`
         computeTemporaryPassword
-        [ -n "$CC_KEY" -a -n "$CC_CERT" ] && installTls || NO_TLS="--notls"
         forwardIngress $CC_NS || return 1
+        ## Update TLS certificates
+        [ -n "$CC_KEY" -a -n "$CC_CERT" ] && installTls || NO_TLS="--notls"
+        ## Run Playwright tests
         runPwTests || return 1
         err=$?
         if [ -z "$KEEPCC" ]; then
