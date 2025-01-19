@@ -41,7 +41,7 @@ getPids() {
   if [ -n "$H" ]
   then
     _P=`echo "$H" | grep "$1" | awk '{print $1}'`
-  else   
+  else
     _P=`ps -feaw | grep "$1" | grep -v grep | awk '{print $2}'`
   fi
   [ -n "$_P" ] && echo "$_P" | tr "\n" " " && return 0 || return 1
@@ -184,7 +184,16 @@ runCmd() {
   _cmd="${*}"
   cmd "$_cmd"
   [ true = "$_skip" -o test = "$_skip" ] && return 0
-  eval "$_cmd"
+  if expr "$_cmd" : ".*&$" >/dev/null
+  then
+    _cmd=`echo "$_cmd" | sed -e 's/&$//'`
+    eval "$_cmd" &
+    _pid=$!
+    sleep 2
+    kill -0 $_pid 2>/dev/null || return 1
+  else
+    eval "$_cmd"
+  fi
 }
 
 ## Run a command and outputs its stdout/stderr to a file
@@ -356,7 +365,7 @@ checkHttpServlet() {
   [ -n "$TEST" ] && return 0
   rm -f $__cfile
   log "Checking whether url $__url returns HTTP 200"
-  runToFile "curl -s --fail -I -L -H Accept:text/html $__url" "$__cfile" "$VERBOSE"
+  runToFile "curl -s --fail -I -L --insecure -H Accept:text/html $__url" "$__cfile" "$VERBOSE"
   [ $? != 0 ] && reportOutErrors "$__ofile" "Server Logs" && return 1 || return 0
 }
 
@@ -390,6 +399,16 @@ waitUntilFrontendCompiled() {
       log "Found a valid response after $__time secs"
       return
     fi
+  done
+}
+
+waitUntilHttpResponse() {
+  log "Waiting for HTTP response in $1"
+  while true; do
+    H=`curl -s -I -L --insecure --fail $1 | grep ^HTTP`
+    [ -n "$H" ] && return 0
+    printf "."
+    sleep 3
   done
 }
 

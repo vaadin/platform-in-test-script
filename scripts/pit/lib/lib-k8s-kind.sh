@@ -3,9 +3,11 @@
 startCloudProvider() {
    [ -z "$TEST" ] && docker container inspect kind-cloud-provider >/dev/null 2>&1 && log "Docker Kind Cloud Provider already running" && return
    runCmd "$TEST" "Starting Docker KinD Cloud Provider" \
-    "docker run --quiet --name kind-cloud-provider --rm  -d --network kind \
+    "docker run --quiet --name kind-cloud-provider --rm  -d  \
       -v /var/run/docker.sock:/var/run/docker.sock \
       rophy/cloud-provider-kind:0.4.0-20241026-r1"
+
+      # --network kind -p 443:443
 }
 
 stopCloudProvider() {
@@ -15,32 +17,38 @@ stopCloudProvider() {
   docker ps | grep envoyproxy/envoy | awk '{print $1}' | xargs docker kill 2>/dev/null
 }
 
-startPortForward() {
-  [ -z "$3" ] && echo "args err usage: startPortForward name-space service port" && return 1
-  H=`getPids "kubectl port-forward $2"`
-  [ -n "$H" ] && return 0
-  KUBECTL=`which kubectl`
-  [ -z "$TEST" ] && log "Starting k8s port-forward $1 $2 $3 -> $4"
-  if isLinux || isMac ; then
-    [ -z "$TEST" ] && log "listening to ports <1024 requires sudo, type your password if requested"
-    [ -n "$TEST" ] && cmd "## Start k8s port-forward service $2 port:$3 -> localhost:$4"
-    cmd "sudo KUBECONFIG=\$HOME/.kube/config kubectl port-forward $2 $4:$3 -n $1"
-    [ -z "$TEST" ] && sudo -n true || sudo true
-    sudo -n true || return 1
-    [ -z "$TEST" ] && sudo -n KUBECONFIG="$HOME/.kube/config" $KUBECTL port-forward $2 $4:$3 -n $1 &
-  else
-    [ -n "$TEST" ] && cmd "## Start k8s port-forward service $2 port:$3 -> localhost:$4"
-    cmd "KUBECONFIG=\$HOME/.kube/config kubectl port-forward $2 $4:$3 -n $1"
-    [ -z "$TEST" ] && $KUBECTL port-forward $2 $4:$3 -n $1 &
-  fi
-  [ -z "$TEST" ] && sleep 2 || return 0
+##
+# $1: command
+setSuid() {
+  W=`which $1` || return 1
+  R=`realpath $W` || return 1
+  O=`ls -l "$R" | awk '{print $3}'`
+  P=`ls -l "$R" | awk '{print $1}'`
+  echo "$O $P"
+  [ "$O" = "root" ] || runCmd "$TEST" "Changing owner to root to: $R" "sudo chown root $R" || return 1
+  expr "$P" : "^-..s" >/dev/null || runCmd "$TEST" "Setting sUI to $R" "sudo chmod u+s $R" || return 1
 }
 
+##
+# $1: namespace
+# $2: service
+# $3: port in guest
+# $4: target port in host
+startPortForward() {
+  H=`getPids "kubectl port-forward $2"`
+  [ -n "$H" ] && log "Already running k8s port-forward $1 $2 $3 -> $4 with pid $H" && return 0
+  [ -z "$TEST" ] && log "Starting k8s port-forward $1 $2 $3 -> $4"
+  [ "$4" -le 1024 ] && setSuid kubectl || return 1
+  runCmd "$TEST" "Starting k8s port-forward $1 $2 $3 -> $4" \
+    "kubectl port-forward $2 $4:$3 -n $1 &"
+}
+
+##
+# $1: service
 stopPortForward() {
   H=`getPids kubectl "port-forward service/$1"`
   [ -z "$H" ] && return 0
-  log "Stoping k8s port-forward $1 (pid $H)"
-  sudo bash -c "kill -9 $H" || return 1
+  runCmd "$TEST" "Stoping k8s port-forward $1" "kill -TERM $H" || return 1
 }
 
 forwardIngress() {
@@ -51,18 +59,33 @@ stopForwardIngress() {
   stopPortForward control-center-ingress-nginx-controller
 }
 
+##
+# $1: cluster name
+# $2: namespace
 createCluster() {
+  kind get clusters | grep -q "^$1$" && return 0
   runCmd "$TEST" "Creating KinD cluster: $1" \
    "kind create cluster --name $1" || return 1
   runCmd "$TEST" "Setting default namespace $2" \
    "kubectl config set-context --current --namespace=$2"
 }
 
+##
+# $1: cluster name
 deleteCluster() {
+  kind get clusters | grep -q "^$1$" || return 0
   runCmd "$TEST" "Deleting Cluster $1" \
    "kind delete cluster --name $1" || return 1
 }
 
+##
+# $1: cluster name
+# $2: namespace
+deleteNamespace() {
+  kind get clusters | grep "^$1$" || return 0
+  kubectl get ns | grep "^$2" || return 0
+  runCmd "$TEST" "Cleaning KinD Cluster $1, Namespace: $2" "kubectl delete ns $2"
+}
 
 
 

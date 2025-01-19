@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 ## MAIN script to be run for PiT tests
 ## for a list of arguments run the script with --help option
 
@@ -114,7 +116,7 @@ main() {
     fi
     run runDemo "$i" "$tmp"
   done
-  
+
 
   cd "$pwd"
 
