@@ -11,9 +11,9 @@ startCloudProvider() {
 }
 
 stopCloudProvider() {
-  docker ps | grep -q kind-cloud-provider || return
+  docker ps | grep kind-cloud-provider || return 0
   runCmd "$TEST" "Stoping Docker KinD Cloud Provider" \
-    "docker kill kind-cloud-provider" || return
+    "docker kill kind-cloud-provider" || return 1
   docker ps | grep envoyproxy/envoy | awk '{print $1}' | xargs docker kill 2>/dev/null
 }
 
@@ -35,6 +35,7 @@ setSuid() {
 # $3: port in guest
 # $4: target port in host
 startPortForward() {
+  echo 1 "$1"
   H=`getPids "kubectl port-forward $2"`
   [ -n "$H" ] && log "Already running k8s port-forward $1 $2 $3 -> $4 with pid $H" && return 0
   [ -z "$TEST" ] && log "Starting k8s port-forward $1 $2 $3 -> $4"
@@ -52,7 +53,7 @@ stopPortForward() {
 }
 
 forwardIngress() {
-  startPortForward $1 service/control-center-ingress-nginx-controller 443 443
+  startPortForward ${1:-$CC_NS} service/control-center-ingress-nginx-controller 443 443
 }
 
 stopForwardIngress() {
