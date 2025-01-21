@@ -415,8 +415,8 @@ waitUntilHttpResponse() {
   while true; do
     H=`$cmd 2>&1`
     err=$?
-    [ $err != 0 ] && echo "$H" | grep  " refused" && warn "ERROR Server not listening in URL $1" && return 1
-    [ $err = 0 ] && echo "$H" | eval $cgrep && return 0 || (printf . && sleep 3)
+    [ $err != 0 ] && echo "$H" | grep  " refused" && printf "\n" && warn "ERROR Server not listening in URL $1" && return 1
+    [ $err = 0 ] && echo "$H" | eval $cgrep && printf "\n" && return 0 || (printf . && sleep 3)
     elapsed=`expr ${elapsed:-0} + 1`
     [ "$elapsed" -ge "${3:-180}" ] && log "Timeout ${3:-180} sec. exceeded." && return 1
   done

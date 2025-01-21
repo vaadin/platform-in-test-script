@@ -55,11 +55,11 @@ waitForCC() {
 
 ## Uninstall control-center
 uninstallCC() {
-  H=`kubectl get ns`
-  echo "$H" | egrep -q "^$CC_NS " || return 0
-  [ -n "$VERBOSE" ] && D=--debug || D=""
-  runCmd "$TEST" "Uninstalling Control-Center" helm uninstall control-center --wait -n $CC_NS $D
-  runCmd "$TEST" "Removing namespace $CC_NS" kubectl delete ns $CC_NS --v=6
+  H=`kubectl get ns 2>&1`
+  [ $? = 0 ] && echo "$H" | egrep -q "^$CC_NS " || return 0
+  [ -n "$VERBOSE" ] && HD=--debug && KD=--v=10
+  runCmd "$TEST" "Uninstalling Control-Center" helm uninstall control-center --wait -n $CC_NS $HD
+  runCmd "$TEST" "Removing namespace $CC_NS" kubectl delete ns $CC_NS $KD
 }
 
 ## Configure secrets for the control-center and the keycloak servers
