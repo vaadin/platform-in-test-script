@@ -402,13 +402,23 @@ waitUntilFrontendCompiled() {
   done
 }
 
+## Read a valid response from an HTTP server, if https, it does not check the certificate
+## $1: url to check
+## $2: regex to check in the response, default is '< HTTP/' (note the < symbol since we use curl -v)
+## $3: timeout in seconds (default 180)
 waitUntilHttpResponse() {
+  [ -n "$TEST" ] && return 0
   log "Waiting for HTTP response in $1"
+  cgrep="egrep -q '${2:-^< HTTP/}'"
+  cmd="curl -s -L -v --insecure $1"
+  cmd "$cmd 2>&1 | $cgrep"
   while true; do
-    H=`curl -s -I -L --insecure --fail $1 | grep ^HTTP`
-    [ -n "$H" ] && return 0
-    printf "."
-    sleep 3
+    H=`$cmd 2>&1`
+    err=$?
+    [ $err != 0 ] && echo "$H" | grep  " refused" && warn "ERROR Server not listening in URL $1" && return 1
+    [ $err = 0 ] && echo "$H" | eval $cgrep && return 0 || (printf . && sleep 3)
+    elapsed=`expr ${elapsed:-0} + 1`
+    [ "$elapsed" -ge "${3:-180}" ] && log "Timeout ${3:-180} sec. exceeded." && return 1
   done
 }
 

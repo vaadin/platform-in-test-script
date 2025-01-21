@@ -53,7 +53,8 @@ stopPortForward() {
 }
 
 forwardIngress() {
-  startPortForward ${1:-$CC_NS} service/control-center-ingress-nginx-controller 443 443
+  startPortForward ${1:-$CC_NS} service/control-center-ingress-nginx-controller 443 443 > /tmp/forwardIngress.log 2>&1 || return 1
+  sleep 3
 }
 
 stopForwardIngress() {
@@ -77,15 +78,6 @@ deleteCluster() {
   kind get clusters | grep -q "^$1$" || return 0
   runCmd "$TEST" "Deleting Cluster $1" \
    "kind delete cluster --name $1" || return 1
-}
-
-##
-# $1: cluster name
-# $2: namespace
-deleteNamespace() {
-  kind get clusters | grep "^$1$" || return 0
-  kubectl get ns | grep "^$2" || return 0
-  runCmd "$TEST" "Cleaning KinD Cluster $1, Namespace: $2" "kubectl delete ns $2"
 }
 
 

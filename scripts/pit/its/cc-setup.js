@@ -23,7 +23,7 @@ process.argv.forEach(a => {
         tmppass = a.split('=')[1];
     } else if (/^--notls/.test(a)) {
         ignoreHTTPSErrors = true;
-    } 
+    }
 });
 
 if (!url) {
@@ -38,7 +38,7 @@ if (!email) {
 const screenshots = "screenshots.out"
 let sscount = 0;
 async function takeScreenshot(page, name) {
-  var scr = path.basename(__filename);
+  const scr = path.basename(__filename);
   const file = `${screenshots}/${scr}-${++sscount}-${name}.png`;
   await page.waitForTimeout(1000);
   await page.screenshot({ path: file });

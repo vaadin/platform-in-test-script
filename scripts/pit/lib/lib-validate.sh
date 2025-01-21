@@ -1,8 +1,6 @@
 . `dirname $0`/lib/lib-utils.sh
 . `dirname $0`/lib/lib-playwright.sh
 
-set -o pipefail
-
 ## Run validations against one APP or DEMO by following next steps:
 # 0. set variables
 # 1. checks whether port is not busy

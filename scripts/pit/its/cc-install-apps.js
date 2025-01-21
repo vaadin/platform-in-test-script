@@ -18,7 +18,7 @@ process.argv.forEach(a => {
         pass = a.split('=')[1];
     } else if (/^--notls/.test(a)) {
         ignoreHTTPSErrors = true;
-    } 
+    }
 });
 
 if (!email) {
@@ -84,6 +84,7 @@ async function takeScreenshot(page, name) {
         fileChooserPromise.then(await page.locator('.detail-layout').getByRole('button', {name: 'Deploy'}).click())
     } else {
         await page.getByLabel('Generate').click();
+        await page.locator('.detail-layout').getByRole('button', {name: 'Deploy'}).click();
     }
 
     await takeScreenshot(page, 'form-filled');

@@ -3,12 +3,14 @@
 ## MAIN script to be run for PiT tests
 ## for a list of arguments run the script with --help option
 
-#!/bin/bash
 . `dirname $0`/../repos.sh
 . `dirname $0`/lib/lib-args.sh
 . `dirname $0`/lib/lib-start.sh
 . `dirname $0`/lib/lib-demos.sh
 . `dirname $0`/lib/lib-ccenter.sh
+
+set -o pipefail
+
 
 ## Default configuration
 DEFAULT_PORT=8080
@@ -59,9 +61,6 @@ main() {
   _start=`date +%s`
 
   [ -z "$TEST" ] && log "===================== Running PiT Tests ============================================" \
-
-  ## Exit soon if the port is busy
-  [ -n "$TEST" ] || checkBusyPort "$PORT" || exit 1
 
   ## Install playwright in the background (not used since there were some issues)
   # checkPlaywrightInstallation `computeAbsolutePath`/its/foo &
@@ -114,6 +113,8 @@ main() {
     elif [ -n "$JDK" ]; then
       installJDKRuntime "$JDK" || continue
     fi
+    ## Exit soon if the port is busy
+    [ -n "$TEST" ] || checkBusyPort "$PORT" || exit 1
     run runDemo "$i" "$tmp"
   done
 
