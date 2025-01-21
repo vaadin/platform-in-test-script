@@ -42,10 +42,10 @@ waitForCC() {
         "")
           log "Control center not installed in k8s" && return 1 ;;
         Running*)
-          echo "" && log "Done ($elapsed secs.) - $H"
+          echo "" && log "Done ($elapsed secs.) - Status: $H"
           return 0 ;;
         *)
-          [ "$H" != "$last" ] && ([ -n "$last" ] && echo "" || true) && log "Control center initializing - $H" || printf .
+          [ "$H" != "$last" ] && ([ -n "$last" ] && echo "" || true) && log "Control center initializing - Status: $H" || printf .
           last="$H"
           sleep 1
           ;;
