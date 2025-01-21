@@ -246,6 +246,8 @@ runInBackgroundToFile() {
   fi
   $__cmd >> "$__file" 2>&1 &
   pid_run=$!
+  sleep 2
+  kill -0 $pid_run 2>/dev/null || return 1
 }
 
 ## check whether flow modified the tsconfig.json file

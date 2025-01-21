@@ -40,8 +40,7 @@ startPortForward() {
   [ -n "$H" ] && log "Already running k8s port-forward $1 $2 $3 -> $4 with pid $H" && return 0
   [ -z "$TEST" ] && log "Starting k8s port-forward $1 $2 $3 -> $4"
   [ "$4" -le 1024 ] && setSuid kubectl || return 1
-  runCmd "$TEST" "Starting k8s port-forward $1 $2 $3 -> $4" \
-    "kubectl port-forward $2 $4:$3 -n $1 &"
+  runInBackgroundToFile "kubectl port-forward $2 $4:$3 -n $1" "k8s-port-forward-$3-$4.log" || return 1
 }
 
 ##
@@ -53,7 +52,7 @@ stopPortForward() {
 }
 
 forwardIngress() {
-  startPortForward ${1:-$CC_NS} service/control-center-ingress-nginx-controller 443 443 > /tmp/forwardIngress.log 2>&1 || return 1
+  startPortForward ${1:-$CC_NS} service/control-center-ingress-nginx-controller 443 443 || return 1
   sleep 3
 }
 

@@ -18,7 +18,7 @@ CC_TESTS="cc-setup.js cc-install-apps.js"
 installCC() {
   [ -n "$VERBOSE" ] && D=--debug || D=""
   ## TODO: why this fails
-  # [ -n "$CC_KEY" -a -n "$CC_CERT" ] && args="--set app.tlsSecret=$CC_TLS_A --set keycloak.tlsSecret=$CC_TLS_K" || args=""
+  [ -n "$CC_KEY" -a -n "$CC_CERT" ] && args="--set app.tlsSecret=$CC_TLS_A --set keycloak.tlsSecret=$CC_TLS_K" || args=""
   runCmd "$TEST" "Installing Vaadin Control Center" \
    "time helm install control-center oci://docker.io/vaadin/control-center \
     -n $CC_NS --create-namespace --set livenessProbe.failureThreshold=20 \
@@ -108,7 +108,7 @@ showTemporaryPassword() {
 runPwTests() {
   computeNpm
   [ -n "$SKIPPW" ] && return 0
-  [ -z "$CC_CERT" -o -z "$CC_KEY" ] && NO_TLS=--notls || NO_TLS=--notls
+  [ -z "$CC_CERT" -o -z "$CC_KEY" ] && NO_TLS=--notls
   for f in $CC_TESTS; do
     ## loop until we get a valid https response from the control-center and keycloak
     waitUntilHttpResponse https://$CC_CONTROL '^< HTTP/2 401' || return 1
@@ -120,39 +120,30 @@ runPwTests() {
 
 ## Main method for running control center
 runControlCenter() {
-    case "$1" in
-      start)
-        checkCommands kind helm docker kubectl || return 1
-        ## Clean up from a previous run
-        stopCloudProvider
-        uninstallCC $CC_CLUSTER $CC_NS
-        # deleteCluster $CC_CLUSTER
-        ## Start a new cluster
-        createCluster $CC_CLUSTER $CC_NS || return 1
-        # startCloudProvider || return 1
-        ## Install Control Center
-        installCC || return 1
-        ## Control center takes a long time to start
-        waitForCC 900 || return 1
-        ## Forward the ingress (it needs root access since it uses port 443)
-        forwardIngress $CC_NS || return 1
-        ## Show temporary user-email and password in the terminal
-        showTemporaryPassword
-        ## Install TLS certificates for the control-center and keycloak
-        installTls
-        ## Run Playwright tests
-        runPwTests || return 1
-        if [ -z "$KEEPCC" ]; then
-          stopForwardIngress
-          deleteCluster
-        fi
-        ;;
-      stop)
-        stopCloudProvider
-        stopPortForward
-        deleteCluster
-        ;;
-    esac
+  checkCommands kind helm docker kubectl || return 1
+  ## Clean up from a previous run
+  # stopCloudProvider
+  uninstallCC $CC_CLUSTER $CC_NS
+  # deleteCluster $CC_CLUSTER
+  ## Start a new cluster
+  createCluster $CC_CLUSTER $CC_NS || return 1
+  # startCloudProvider || return 1
+  ## Install Control Center
+  installCC || return 1
+  ## Control center takes a long time to start
+  waitForCC 900 || return 1
+  ## Show temporary user-email and password in the terminal
+  showTemporaryPassword
+  ## Install TLS certificates for the control-center and keycloak
+  installTls
+  ## Forward the ingress (it needs root access since it uses port 443)
+  forwardIngress $CC_NS || return 1
+  ## Run Playwright tests
+  runPwTests || return 1
+  if [ -z "$KEEPCC" ]; then
+    stopForwardIngress || return 1
+    deleteCluster || return 1
+  fi
 }
 
 
