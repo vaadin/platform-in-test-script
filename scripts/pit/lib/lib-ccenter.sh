@@ -80,17 +80,17 @@ installTls() {
   runCmd "$TEST" "Creating TLS secret $CC_TLS_K in cluster" \
     "kubectl -n $CC_NS create secret tls $CC_TLS_K --key '$f2' --cert '$f1'" || return 1
 
-  kubectl patch ingress control-center -n $CC_NS --type=merge --patch \
+  runCmd "$TEST" "patching $CC_TLS_A" kubectl patch ingress control-center -n $CC_NS --type=merge --patch \
     '{"spec": {"tls": [{"hosts": ["'$CC_CONTROL'"],"secretName": "'$CC_TLS_A'"}]}}'
 
-  kubectl patch ingress control-center -n $CC_NS --type=merge --patch \
+  runCmd "$TEST" "patching $CC_TLS_AK" kubectl patch ingress control-center -n $CC_NS --type=merge --patch \
     '{"spec": {"tls": [{"hosts": ["'$CC_AUTH'"],"secretName": "'$CC_TLS_K'"}]}}'
 
   cat $f2 $f2 > /tmp/$CC_DOMAIN.pem
   rm -f $f1 $f2
   pod=`kubectl -n $CC_NS get pods | grep control-center-ingress-nginx-controller | awk '{print $1}'` || return 1
   [ -n "$pod" ] && runCmd "$TEST" "Reloading nginx in $pod" "kubectl exec $pod -n "$CC_NS" -- nginx -s reload" || return 1
-  sleep 10
+  runCmd "$TEST" "Waiting for reloaging" sleep 10
   # runCmd "$TEST" "Restaring ingress" \
   #   "kubectl -n $CC_NS rollout restart deployment control-center-ingress-nginx-controller" || return 1
 }

@@ -24,7 +24,6 @@ setSuid() {
   R=`realpath $W` || return 1
   O=`ls -l "$R" | awk '{print $3}'`
   P=`ls -l "$R" | awk '{print $1}'`
-  echo "$O $P"
   [ "$O" = "root" ] || runCmd "$TEST" "Changing owner to root to: $R" "sudo chown root $R" || return 1
   expr "$P" : "^-..s" >/dev/null || runCmd "$TEST" "Setting sUI to $R" "sudo chmod u+s $R" || return 1
 }
@@ -35,7 +34,6 @@ setSuid() {
 # $3: port in guest
 # $4: target port in host
 startPortForward() {
-  echo 1 "$1"
   H=`getPids "kubectl port-forward $2"`
   [ -n "$H" ] && log "Already running k8s port-forward $1 $2 $3 -> $4 with pid $H" && return 0
   [ -z "$TEST" ] && log "Starting k8s port-forward $1 $2 $3 -> $4"
@@ -53,7 +51,6 @@ stopPortForward() {
 
 forwardIngress() {
   startPortForward ${1:-$CC_NS} service/control-center-ingress-nginx-controller 443 443 || return 1
-  sleep 3
 }
 
 stopForwardIngress() {
