@@ -90,7 +90,7 @@ installTls() {
   rm -f $f1 $f2
   pod=`kubectl -n $CC_NS get pods | grep control-center-ingress-nginx-controller | awk '{print $1}'` || return 1
   [ -n "$pod" ] && runCmd "$TEST" "Reloading nginx in $pod" "kubectl exec $pod -n "$CC_NS" -- nginx -s reload" || return 1
-  runCmd "$TEST" "Waiting for reloaging" sleep 10
+  runCmd "$TEST" "Waiting for reloading ingress" sleep 10
   # runCmd "$TEST" "Restaring ingress" \
   #   "kubectl -n $CC_NS rollout restart deployment control-center-ingress-nginx-controller" || return 1
 }
@@ -108,11 +108,16 @@ showTemporaryPassword() {
 runPwTests() {
   computeNpm
   [ -n "$SKIPPW" ] && return 0
-  [ -z "$CC_CERT" -o -z "$CC_KEY" ] && NO_TLS=--notls
+  NO_TLS=--notls
   for f in $CC_TESTS; do
     ## loop until we get a valid https response from the control-center and keycloak
     waitUntilHttpResponse https://$CC_CONTROL '^< HTTP/2 401' || return 1
     waitUntilHttpResponse https://$CC_AUTH Keycloak || return 1
+    if [ -n "$CC_CERT" -a -n "$CC_KEY" ];then
+      waitUntilHttpResponse https://$CC_CONTROL 'SSL certificate verify ok|subject: CN=.*.alcala.org' || return 1
+      waitUntilHttpResponse https://$CC_AUTH 'SSL certificate verify ok|subject: CN=.*.alcala.org' || return 1
+      NO_TLS=""
+    fi
     runPlaywrightTests "$PIT_SCR_FOLDER/its/$f" "" "prod" "control-center" --url=https://$CC_CONTROL  --email=$CC_EMAIL $NO_TLS || return 1
     sleep 3
   done
