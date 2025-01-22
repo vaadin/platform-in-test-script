@@ -81,10 +81,10 @@ installTls() {
     "kubectl -n $CC_NS create secret tls $CC_TLS_K --key '$f2' --cert '$f1'" || return 1
 
   runCmd "$TEST" "patching $CC_TLS_A" kubectl patch ingress control-center -n $CC_NS --type=merge --patch \
-    '{"spec": {"tls": [{"hosts": ["'$CC_CONTROL'"],"secretName": "'$CC_TLS_A'"}]}}'
+    "'"'{"spec": {"tls": [{"hosts": ["'$CC_CONTROL'"],"secretName": "'$CC_TLS_A'"}]}}'"'"
 
   runCmd "$TEST" "patching $CC_TLS_AK" kubectl patch ingress control-center -n $CC_NS --type=merge --patch \
-    '{"spec": {"tls": [{"hosts": ["'$CC_AUTH'"],"secretName": "'$CC_TLS_K'"}]}}'
+    "'"'{"spec": {"tls": [{"hosts": ["'$CC_AUTH'"],"secretName": "'$CC_TLS_K'"}]}}'"'"
 
   cat $f2 $f2 > /tmp/$CC_DOMAIN.pem
   rm -f $f1 $f2
