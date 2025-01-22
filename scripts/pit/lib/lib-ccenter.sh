@@ -14,6 +14,14 @@ CC_CLUSTER=cc-cluster
 CC_NS=control-center
 CC_TESTS="cc-setup.js cc-install-apps.js"
 
+checkDockerRunning() {
+
+  if ! docker ps > /dev/null 2>&1; then
+    err "!! Docker is not running. Please start Docker and try again. !!"
+    return 1
+  fi
+}
+
 ## Install Control Center with Helm
 installCC() {
   [ -n "$VERBOSE" ] && D=--debug || D=""
@@ -126,6 +134,8 @@ runPwTests() {
 ## Main method for running control center
 runControlCenter() {
   checkCommands kind helm docker kubectl || return 1
+  checkBusyPort "443" || return 1
+  checkDockerRunning || return 1
   ## Clean up from a previous run
   # stopCloudProvider
   uninstallCC $CC_CLUSTER $CC_NS
