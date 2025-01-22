@@ -6,7 +6,7 @@ PIT_SCR_FOLDER=`computeAbsolutePath`
 isInstalledPlaywright() {
   _dir=`dirname "$1"`
   (cd "$_dir" && \
-    echo -e "const { chromium } = require('playwright');\n" | "$NODE" - 2>/dev/null)
+    echo -e "const { chromium } = require('@playwright/test');\n" | "$NODE" - 2>/dev/null)
 }
 
 ## Install playwright in the folder of the test node-script

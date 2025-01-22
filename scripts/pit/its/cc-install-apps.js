@@ -46,7 +46,9 @@ async function takeScreenshot(page, name) {
     });
     const context = await browser.newContext({ ignoreHTTPSErrors: ignoreHTTPSErrors });
 
+    if(process.env.CC_CERT){
     fs.writeFileSync('domain.pem', `${process.env.CC_CERT.replace(/\\n/g, "\n")}\n${process.env.CC_KEY.replace(/\\n/g, "\n")}`);
+    }
 
     const page = await context.newPage();
     page.on('console', msg => console.log("> CONSOLE:", (msg.text() + ' - ' + msg.location().url).replace(/\s+/g, ' ')));

@@ -20,6 +20,7 @@ stopCloudProvider() {
 ##
 # $1: command
 setSuid() {
+  isWindows && return 0
   W=`which $1` || return 1
   R=`realpath $W` || return 1
   O=`ls -l "$R" | awk '{print $3}'`
