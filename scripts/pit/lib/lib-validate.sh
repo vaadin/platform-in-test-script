@@ -1,9 +1,6 @@
 . `dirname $0`/lib/lib-utils.sh
 . `dirname $0`/lib/lib-playwright.sh
 
-PIT_SCR_FOLDER=`computeAbsolutePath`
-set -o pipefail
-
 ## Run validations against one APP or DEMO by following next steps:
 # 0. set variables
 # 1. checks whether port is not busy
@@ -114,9 +111,8 @@ runValidations() {
   checkHttpServlet "http://localhost:$port/" "$file" || return 1
 
   # 11
-  if [ -z "$SKIPTESTS" ]; then
-    _pfile="playwright-$_mode-"`uname`".out"
-    runPlaywrightTests "$test" "$port" "$mode" "$_pfile" "$name" "$version" && rm -f "$_pfile" || return 1
+  if [ -z "$SKIPTESTS" -a -z "$SKIPPW" ]; then
+    runPlaywrightTests "$test" "$file" "$mode" "$name" "--port=$port" || return 1
   fi
 
   # 12

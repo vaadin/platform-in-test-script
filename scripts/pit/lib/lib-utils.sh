@@ -8,6 +8,17 @@ isWindows() {
   ! isLinux && ! isMac
 }
 
+## Check if a set of commands passed as arguments are installed
+checkCommands() {
+  type command >/dev/null 2>&1 || exit 1
+  for command_name in $*; do
+    if ! command -v "$command_name" >/dev/null 2>&1; then
+        err "Command: '$command_name' is not installed" && return 1
+    fi
+  done
+  return 0
+}
+
 ## Remove pro-key for testing core-only apps
 removeProKey() {
   if [ -f ~/.vaadin/proKey ]; then
@@ -22,6 +33,18 @@ restoreProKey() {
   _cmd="mv ~/.vaadin/proKey-$$ ~/.vaadin/proKey"
   runCmd "$TEST" "Restoring proKey license" "mv ~/.vaadin/proKey-$$ ~/.vaadin/proKey"
   [ -z "$TEST" -a -n "$H" ] && reportError "A proKey was generated while running validation" "$H" && return 1
+}
+
+## get pids for process
+getPids() {
+  H=`grep -a "" /proc/*/cmdline 2>/dev/null | xargs -0 | grep -v grep | perl -pe 's|/proc/(.*?)/cmdline:|$1 |g'`
+  if [ -n "$H" ]
+  then
+    _P=`echo "$H" | grep "$1" | awk '{print $1}'`
+  else
+    _P=`ps -feaw | grep "$1" | grep -v grep | awk '{print $2}'`
+  fi
+  [ -n "$_P" ] && echo "$_P" | tr "\n" " " && return 0 || return 1
 }
 
 ## Kills a process with its children and wait until complete
@@ -46,6 +69,7 @@ cleanAll() {
 
 ## Exit the script after some process cleanup
 doExit() {
+  set +x
   echo ""
   killAll
   cleanAll
@@ -71,7 +95,7 @@ warn() {
   print '> ' 0 33 "$*"
 }
 cmd() {
-  cmd_=`printf "$*" | perl -pe 's|\n|\\\\\\\n|g'`
+  cmd_=`printf "$*" | tr -s " " | perl -pe 's|\n|\\\\\\\n|g'`
   print '  ' 1 34 " $cmd_"
 }
 dim() {
@@ -101,6 +125,7 @@ EOF
 ## $1: file
 ## $2: report header
 reportOutErrors() {
+  [ -f "$1" ] || return
   H=`cat "$1" | egrep -v ' *at |org.atmosphere.cpr.AtmosphereFramework' | tail -300`
   reportError "$2" "$H"
 }
@@ -159,7 +184,16 @@ runCmd() {
   _cmd="${*}"
   cmd "$_cmd"
   [ true = "$_skip" -o test = "$_skip" ] && return 0
-  eval "$_cmd"
+  if expr "$_cmd" : ".*&$" >/dev/null
+  then
+    _cmd=`echo "$_cmd" | sed -e 's/&$//'`
+    eval "$_cmd" &
+    _pid=$!
+    sleep 2
+    kill -0 $_pid 2>/dev/null || return 1
+  else
+    eval "$_cmd"
+  fi
 }
 
 ## Run a command and outputs its stdout/stderr to a file
@@ -212,6 +246,8 @@ runInBackgroundToFile() {
   fi
   $__cmd >> "$__file" 2>&1 &
   pid_run=$!
+  sleep 2
+  kill -0 $pid_run 2>/dev/null || return 1
 }
 
 ## check whether flow modified the tsconfig.json file
@@ -287,10 +323,10 @@ waitForUserManualTesting() {
 
 ## Check the port is occupied
 checkPort() {
-  curl -s telnet://localhost:$1 >/dev/null &
+  curl -s telnet://localhost:$1 >/dev/null 2>/dev/null &
   pid_curl=$!
   isWindows && sleep 4 || sleep 2
-  kill $pid_curl 2>/dev/null || return 1
+  kill $pid_curl >/dev/null 2>/dev/null || return 1
 }
 
 ## Wait until port is listening
@@ -331,7 +367,7 @@ checkHttpServlet() {
   [ -n "$TEST" ] && return 0
   rm -f $__cfile
   log "Checking whether url $__url returns HTTP 200"
-  runToFile "curl -s --fail -I -L -H Accept:text/html $__url" "$__cfile" "$VERBOSE"
+  runToFile "curl -s --fail -I -L --insecure -H Accept:text/html $__url" "$__cfile" "$VERBOSE"
   [ $? != 0 ] && reportOutErrors "$__ofile" "Server Logs" && return 1 || return 0
 }
 
@@ -365,6 +401,27 @@ waitUntilFrontendCompiled() {
       log "Found a valid response after $__time secs"
       return
     fi
+  done
+}
+
+## Read a valid response from an HTTP server, if https, it does not check the certificate
+## $1: url to check
+## $2: regex to check in the response, default is '< HTTP/' (note the < symbol since we use curl -v)
+## $3: timeout in seconds (default 180)
+waitUntilHttpResponse() {
+  [ -n "$TEST" ] && return 0
+  log "Waiting for HTTP response in $1"
+  cgrep="egrep -q '${2:-^< HTTP/}'"
+  cmd="curl -s -L -v --insecure $1"
+  cmd "$cmd 2>&1 | $cgrep"
+  elapsed=0
+  while true; do
+    H=`$cmd 2>&1`
+    err=$?
+    [ $err != 0 ] && echo "$H" | grep  " refused" && printf "\n" && warn "ERROR Server not listening in URL $1" && return 1
+    [ $err = 0 ] && echo "$H" | eval $cgrep && printf "\n" && return 0 || (printf . && sleep 3)
+    elapsed=`expr $elapsed + 3`
+    [ "$elapsed" -ge "${3:-180}" ] && printf "\n" && log "Timeout ${3:-180} sec. exceeded.\n$H" && return 1
   done
 }
 
@@ -520,7 +577,7 @@ changeMavenBlock() {
     __diff=`diff -w $$-1 $$-2`
     if [ -n "$__diff" ]; then
       [ "$4" = remove ] && __msg="Remove" || __msg="Change"
-      [ -z "$TEST" ] && warn "$__msg $__tag $__grp:$__id"
+      [ -z "$TEST" ] && warn "$__msg $__tag $__grp:$__id $__nvers"
       [ -n "$TEST" ] && cmd "## $__msg Maven Block $__tag $__grp:$__id -> $__grp2:$__id2:$4 $9"
       cmd "$_cmd"
     fi
@@ -738,7 +795,7 @@ enableSnapshots() {
 ## $1: the URL
 download() {
   [ -z "$VERBOSE" ] && __S="-s"
-  [ -n "$2" ] && __O="-o $2"
+  [ -n "$2" -a "$2" != '-' ] && __O="-o $2"
   runCmd false "Downloading $1" "curl $__S -L $__O $1"
 }
 
