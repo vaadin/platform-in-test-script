@@ -404,27 +404,6 @@ waitUntilFrontendCompiled() {
   done
 }
 
-## Read a valid response from an HTTP server, if https, it does not check the certificate
-## $1: url to check
-## $2: regex to check in the response, default is '< HTTP/' (note the < symbol since we use curl -v)
-## $3: timeout in seconds (default 180)
-waitUntilHttpResponse() {
-  [ -n "$TEST" ] && return 0
-  log "Waiting for HTTP response in $1"
-  cgrep="egrep -q '${2:-^< HTTP/}'"
-  cmd="curl -s -L -v --insecure $1"
-  cmd "$cmd 2>&1 | $cgrep"
-  elapsed=0
-  while true; do
-    H=`$cmd 2>&1`
-    err=$?
-    [ $err != 0 ] && echo "$H" | grep  " refused" && printf "\n" && warn "ERROR Server not listening in URL $1" && return 1
-    [ $err = 0 ] && echo "$H" | eval $cgrep && printf "\n" && return 0 || (printf . && sleep 3)
-    elapsed=`expr $elapsed + 3`
-    [ "$elapsed" -ge "${3:-180}" ] && printf "\n" && log "Timeout ${3:-180} sec. exceeded.\n$H" && return 1
-  done
-}
-
 ## get a property value from pom.xml, normally used for version of some dependency
 ## $1: property name
 getMavenVersion() {
