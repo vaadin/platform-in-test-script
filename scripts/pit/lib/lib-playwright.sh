@@ -46,7 +46,7 @@ runPlaywrightTests() {
   [ -n "$TEST" ] && return 0
   H=`grep '> CONSOLE:' "$_pfile" | perl -pe 's/(> CONSOLE: Received xhr.*?feat":).*/$1 .../g'`
   H=`echo "$H" | egrep -v 'Atmosphere|Vaadin push loaded|Websocket successfully opened|Websocket closed|404.*favicon.ico'`
-  [ -n "$H" ] && [ "$_mode" = "prod" ] && reportError "Console Warnings in $mode mode $5" "$H" && echo "$H"
+  [ -n "$H" ] && [ "$_mode" = "prod" ] && reportError "Console Warnings in $_mode mode $5" "$H" && echo "$H"
   H=`grep '> JSERROR:' "$_pfile"`
   [ -n "$H" ] && reportError "Console Errors in $_msg" "$H" && echo "$H" && return 1
   H=`tail -15 $_pfile`
