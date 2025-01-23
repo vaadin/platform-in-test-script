@@ -3,9 +3,9 @@
 . `dirname $0`/lib/lib-k8s-kind.sh
 
 ## Configuration
-CC_DOMAIN=alcala.org
-CC_CONTROL=control-local.$CC_DOMAIN
-CC_AUTH=auth-local.$CC_DOMAIN
+CC_DOMAIN=local.alcala.org
+CC_CONTROL=control.$CC_DOMAIN
+CC_AUTH=auth.$CC_DOMAIN
 CC_EMAIL=admin@$CC_DOMAIN
 # Original cert secrets are: control-center-cert and control-center-keycloak-cert
 CC_TLS_A=cc-control-app-tls
@@ -73,6 +73,7 @@ uninstallCC() {
 ## Configure secrets for the control-center and the keycloak servers
 installTls() {
   [ -z "$CC_KEY" -o -z "$CC_CERT" ] && log "No CC_KEY and CC_CERT provided, skiping TLS installation" && return 0
+  [ -n "$CC_FULL" ] && CC_CERT=$CC_FULL
   [ -z "$TEST" ] && log "Installing TLS $CC_TLS for $CC_CONTROL and $CC_AUT" || cmd "## Creating TLS files from envs"
   f1=/tmp/cc-tls.crt
   cmd 'echo -e "$CC_CERT" > $f1'
@@ -82,6 +83,9 @@ installTls() {
   echo -e "$CC_KEY" > $f2 || return 1
   # BASE64_KEY=`echo -n "$CC_KEY" | openssl base64 -A`
   # BASE64_CERT=`echo -n "$CC_CERT" | openssl base64 -A`
+
+  kubectl get secret $CC_TLS_A -n $CC_N >/dev/null 2>&1 && kubectl delete secret $CC_TLS_A -n $CC_NS
+  kubectl get secret $CC_TLS_K -n $CC_N >/dev/null 2>&1 && kubectl delete secret $CC_TLS_K -n $CC_NS
 
   runCmd "$TEST" "Creating TLS secret $CC_TLS_A in cluster" \
     "kubectl -n $CC_NS create secret tls $CC_TLS_A --key '$f2' --cert '$f1'" || return 1
@@ -94,7 +98,7 @@ installTls() {
   runCmd "$TEST" "patching $CC_TLS_AK" kubectl patch ingress control-center -n $CC_NS --type=merge --patch \
     "'"'{"spec": {"tls": [{"hosts": ["'$CC_AUTH'"],"secretName": "'$CC_TLS_K'"}]}}'"'"
 
-  cat $f2 $f2 > /tmp/$CC_DOMAIN.pem
+  cat $f1 $f2 > /tmp/$CC_DOMAIN.pem
   rm -f $f1 $f2
   pod=`kubectl -n $CC_NS get pods | grep control-center-ingress-nginx-controller | awk '{print $1}'` || return 1
   [ -n "$pod" ] && runCmd "$TEST" "Reloading nginx in $pod" "kubectl exec $pod -n "$CC_NS" -- nginx -s reload" || return 1
@@ -119,11 +123,11 @@ runPwTests() {
   NO_TLS=--notls
   for f in $CC_TESTS; do
     ## loop until we get a valid https response from the control-center and keycloak
-    waitUntilHttpResponse https://$CC_CONTROL '^< HTTP/2 401' || return 1
+    waitUntilHttpResponse https://$CC_CONTROL '^< HTTP.* 401' || return 1
     waitUntilHttpResponse https://$CC_AUTH Keycloak || return 1
     if [ -n "$CC_CERT" -a -n "$CC_KEY" ];then
-      waitUntilHttpResponse https://$CC_CONTROL 'SSL certificate verify ok|subject: CN=.*.alcala.org' || return 1
-      waitUntilHttpResponse https://$CC_AUTH 'SSL certificate verify ok|subject: CN=.*.alcala.org' || return 1
+      waitUntilHttpResponse https://$CC_CONTROL 'SSL certificate verify ok|subject: CN=.*'$CC_DOMAIN || return 1
+      waitUntilHttpResponse https://$CC_AUTH 'SSL certificate verify ok|subject: CN=.*'$CC_DOMAIN || return 1
       NO_TLS=""
     fi
     runPlaywrightTests "$PIT_SCR_FOLDER/its/$f" "" "prod" "control-center" --url=https://$CC_CONTROL  --email=$CC_EMAIL $NO_TLS || return 1

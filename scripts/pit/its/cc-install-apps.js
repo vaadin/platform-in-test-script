@@ -72,7 +72,7 @@ async function takeScreenshot(page, name) {
 
     await page.getByLabel('Application Name', {exact: true}).fill('App1')
     await page.getByLabel('Image', {exact: true}).fill('k8sdemos/bakery-cc:latest')
-    await page.getByLabel('Application URI', {exact: true}).locator('input[type="text"]').fill('app1-local.alcala.org')
+    await page.getByLabel('Application URI', {exact: true}).locator('input[type="text"]').fill('app1.local.alcala.org')
 
     const host = url.replace(/^.*:\/\//, '').replace(/\/.*$/, '');
     const domain = host.replace(/.*?\.]/, '');
