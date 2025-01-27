@@ -4,7 +4,6 @@
 PRESETS="
 latest-java
 latest-java-top
-latest-javahtml
 latest-lit
 latest-lit-top
 latest-java_partial-auth
