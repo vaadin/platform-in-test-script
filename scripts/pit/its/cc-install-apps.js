@@ -21,18 +21,18 @@ const {log, args, createPage, closePage, takeScreenshot, waitForServerReady} = r
     await waitForServerReady(page, arg.url);
 
     await expect(page.getByLabel('Email')).toBeVisible();
-    await takeScreenshot(page, 'view-loaded');
+    await takeScreenshot(page, __filename, 'view-loaded');
 
     await page.getByLabel('Email').fill(arg.email);
     await page.getByLabel('Password').fill(arg.pass);
     await page.waitForTimeout(500);
     await page.getByRole('button', {name: 'Sign In'}).click()
     log(`Logging in as ${arg.email} ${arg.pass}...\n`);
-    await takeScreenshot(page, 'logged-in');
+    await takeScreenshot(page, __filename, 'logged-in');
 
     await page.getByRole('listitem').filter({ hasText: 'Settings'}).click()
     await page.getByRole('button', {name: 'Deploy'}).click()
-    await takeScreenshot(page, 'form-opened');
+    await takeScreenshot(page, __filename, 'form-opened');
 
     await page.getByLabel('Application Name', {exact: true}).fill(app)
     await page.getByLabel('Image', {exact: true}).fill('k8sdemos/bakery-cc:latest')
@@ -49,14 +49,14 @@ const {log, args, createPage, closePage, takeScreenshot, waitForServerReady} = r
         await page.locator('.detail-layout').getByRole('button', {name: 'Deploy'}).click();
     }
 
-    await takeScreenshot(page, 'form-filled');
+    await takeScreenshot(page, __filename, 'form-filled');
     await page.getByRole('listitem').filter({ hasText: 'Settings'}).click()
 
     await expect(await page.getByRole('listitem')
         .filter({ hasText: 'Applications'})
         .textContent()).toEqual('Applications1');
 
-    await takeScreenshot(page, 'application-created');
+    await takeScreenshot(page, __filename, 'application-created');
 
     await closePage(page);
 })();

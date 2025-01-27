@@ -64,9 +64,9 @@ async function closePage(page) {
 
 const screenshots = "screenshots.out"
 let sscount = 0;
-async function takeScreenshot(page, name) {
-  const scr = path.basename(__filename);
-  const file = `${screenshots}/${scr}-${++sscount}-${name}.png`;
+async function takeScreenshot(page, name, descr) {
+  const scr = path.basename(name);
+  const file = `${screenshots}/${scr}-${++sscount}-${descr}.png`;
   await page.waitForTimeout(1000);
   await page.screenshot({ path: file });
   log(`Screenshot taken: ${file}\n`);

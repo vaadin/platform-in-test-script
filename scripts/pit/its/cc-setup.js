@@ -16,27 +16,27 @@ const {log, run, args, createPage, closePage, takeScreenshot, waitForServerReady
     await waitForServerReady(page, arg.url);
     await page.locator('html').first().innerHTML();
 
-    await takeScreenshot(page, 'view-before-loaded');
+    await takeScreenshot(page, __filename, 'view-before-loaded');
     await expect(page.getByLabel('Email')).toBeVisible();
-    await takeScreenshot(page, 'view-after-loaded');
+    await takeScreenshot(page, __filename, 'view-after-loaded');
 
     log(`login with user ${arg.email} and password ${arg.tmppass}`);
     await page.getByLabel('Email').fill(arg.email);
     await page.getByLabel('Password').fill(arg.tmppass);
     await page.getByRole('button', {name: 'Sign In'}).click()
 
-    await takeScreenshot(page, 'logged-in');
+    await takeScreenshot(page, __filename, 'logged-in');
 
     await page.getByLabel('New Password').fill(arg.pass);
     await page.getByLabel('Confirm Password').fill(arg.pass);
     await page.getByRole('button', { name: 'Submit' }).click();
 
-    await takeScreenshot(page, 'password-changed');
+    await takeScreenshot(page, __filename, 'password-changed');
 
     await page.getByLabel('First Name').fill(arg.email);
     await page.getByLabel('Last Name').fill(arg.email);
     await page.getByRole('button', { name: 'Submit' }).click();
-    await takeScreenshot(page, 'user-configured');
+    await takeScreenshot(page, __filename, 'user-configured');
 
     await waitForServerReady(page, arg.url);
 
@@ -45,4 +45,4 @@ const {log, run, args, createPage, closePage, takeScreenshot, waitForServerReady
     await page.waitForTimeout(5000);
 
     await closePage(page);
-})();
+    })();
