@@ -44,6 +44,7 @@ installCC() {
 # NOTE: --wait is not working properly since there are pods restarting because of performance issues
 # $1: timeout in seconds (default 900)
 waitForCC() {
+  [ -n "$TEST" ] && return 0
   log "Waiting for Control Center to be ready"
   last=""
   while true; do
@@ -75,6 +76,7 @@ uninstallCC() {
 }
 
 checkTls() {
+  [ -n "$TEST" ] && return 0
   for i in `kubectl get ingresses -n $CC_NS | grep nginx | awk '{print $1}'`; do
     log "$i"
     H=`kubectl get ingress $i -n $CC_NS -o jsonpath='{.spec.rules[0].host}'`
@@ -89,8 +91,7 @@ checkTls() {
 installTls() {
   [ -z "$CC_KEY" -o -z "$CC_CERT" ] && log "No CC_KEY and CC_CERT provided, skiping TLS installation" && return 0
   [ -n "$CC_FULL" ] && CC_CERT=$CC_FULL
-  [ -z "$TEST" ] && log "Installing TLS $CC_TLS for $CC_CONTROL and $CC_AUT" || cmd "## Creating TLS files from envs"
-  log "Creating certificate file for apps in this domain: $CC_DOMAIN.pem"
+  [ -z "$TEST" ] && log "Installing TLS $CC_TLS for $CC_CONTROL and $CC_AUT" || cmd "## Creating TLS file '$CC_DOMAIN.pem' from envs"
   f1=cc-tls.crt
   f2=cc-tls.key
   echo -e "$CC_CERT" > $f1 || return 1
@@ -114,6 +115,8 @@ installTls() {
     "'"'{"spec": {"tls": [{"hosts": ["'$CC_CONTROL'"],"secretName": "'$CC_TLS_A'"}]}}'"'"
   runCmd "$TEST" "patching $CC_TLS_K" kubectl patch ingress $CC_ING_K -n $CC_NS --type=merge --patch \
     "'"'{"spec": {"tls": [{"hosts": ["'$CC_AUTH'"],"secretName": "'$CC_TLS_K'"}]}}'"'"
+
+  [ -n "$TEST" ] && return 0
 
   pod=`kubectl -n $CC_NS get pods | grep control-center-ingress-nginx-controller | awk '{print $1}'` || return 1
   [ -n "$pod" ] && runCmd "$TEST" "Reloading nginx in $pod" "kubectl exec $pod -n "$CC_NS" -- nginx -s reload" || return 1
@@ -164,7 +167,7 @@ runControlCenter() {
   forwardIngress $CC_NS || return 1
   ## Run Playwright tests
   runPwTests || return 1
-  if [ -z "$KEEPCC" ]; then
+  if [ -z "$TEST" -a -z "$KEEPCC" ]; then
     stopForwardIngress || return 1
     deleteCluster $CC_CLUSTER || return 1
   fi
