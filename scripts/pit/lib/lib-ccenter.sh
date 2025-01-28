@@ -19,7 +19,7 @@ CC_CLUSTER=cc-cluster
 CC_NS=control-center
 
 ## UI tests to run after the control-center is installed
-CC_TESTS="cc-setup.js cc-install-apps.js"
+CC_TESTS="cc-setup.js cc-install-apps.js cc-identity-management.js"
 
 checkDockerRunning() {
   if ! docker ps > /dev/null 2>&1; then
@@ -138,7 +138,7 @@ runPwTests() {
   [ -n "$SKIPPW" ] && return 0
   [ -z "$CC_CERT" -o -z "$CC_KEY" ] && NO_TLS=--notls || NO_TLS=""
   for f in $CC_TESTS; do
-    runPlaywrightTests "$PIT_SCR_FOLDER/its/$f" "" "prod" "control-center" --url=https://$CC_CONTROL  --email=$CC_EMAIL $NO_TLS || return 1
+    runPlaywrightTests "$PIT_SCR_FOLDER/its/$f" "" "prod" "control-center" --url=https://$CC_CONTROL  --login=$CC_EMAIL $NO_TLS || return 1
     sleep 3
   done
 }

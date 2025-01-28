@@ -28,8 +28,8 @@ const args = () => {
       ret.port = a.split('=')[1];
     } else if (/^--url=/.test(a)) {
       ret.url = a.split('=')[1];
-    } else if (/^--email=/.test(a)) {
-      ret.email = a.split('=')[1];
+    } else if (/^--login=/.test(a)) {
+      ret.login = a.split('=')[1];
     } else if (/^--pass=/.test(a)) {
       ret.pass = a.split('=')[1];
     } else if (/^--tmppass=/.test(a)) {
@@ -39,8 +39,8 @@ const args = () => {
     }
   });
   if (!ret.url) {
-    ret.url = `http://${host}:${port}/`;
-  } 
+    ret.url = `http://${ret.host}:${ret.port}/`;
+  }
   return ret;
 };
 
@@ -66,7 +66,8 @@ const screenshots = "screenshots.out"
 let sscount = 0;
 async function takeScreenshot(page, name, descr) {
   const scr = path.basename(name);
-  const file = `${screenshots}/${scr}-${++sscount}-${descr}.png`;
+  const cnt = String(++sscount).padStart(2, "0");
+  const file = `${screenshots}/${scr}-${cnt}-${descr}.png`;
   await page.waitForTimeout(1000);
   await page.screenshot({ path: file });
   log(`Screenshot taken: ${file}\n`);
