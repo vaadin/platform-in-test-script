@@ -72,7 +72,7 @@ const {log, args, createPage, closePage, takeScreenshot, waitForServerReady} = r
     await page.getByRole('contentinfo').getByRole('button', { name: 'Create' }).click();
     await takeScreenshot(page, __filename, 'user-created');
 
-    await page.goto(url);
+    await waitForServerReady(page, url);
     await takeScreenshot(page, __filename, `app-${app}-loaded`);
 
     log(`Logging in ${app} as ${user} ...\n`);
