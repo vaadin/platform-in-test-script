@@ -1,7 +1,5 @@
 const { expect} = require('@playwright/test');
-const fs = require('fs');
 const {log, args, createPage, closePage, takeScreenshot, waitForServerReady} = require('./test-utils');
-
 
 (async () => {
     const arg = args();
@@ -23,7 +21,7 @@ const {log, args, createPage, closePage, takeScreenshot, waitForServerReady} = r
     await expect(page.getByLabel('Email')).toBeVisible();
     await takeScreenshot(page, __filename, 'view-loaded');
 
-    log(`Logging in as ${arg.login} ${arg.pass}...\n`);
+    log(`Logging in CC as ${arg.login} ${arg.pass}...\n`);
     await page.getByLabel('Email').fill(arg.login);
     await page.getByLabel('Password').fill(arg.pass);
     await page.getByRole('button', {name: 'Sign In'}).click()
@@ -35,11 +33,10 @@ const {log, args, createPage, closePage, takeScreenshot, waitForServerReady} = r
     log(`App: ${app} installed in: ${url}\n`);
 
     await page.locator('vaadin-select vaadin-input-container div').click();
-    await page.getByRole('option', { name: 'bakery-cc' }).locator('div').nth(2).click();
+    await page.getByRole('option', { name: app }).locator('div').nth(2).click();
     await takeScreenshot(page, __filename, 'selected-app');
     await page.getByRole('link', { name: 'Identity Management' }).click();
     await page.getByRole('button', { name: 'Enable Identity Management' }).click();
-    await takeScreenshot(page, __filename, 'app-updated');
     await takeScreenshot(page, __filename, 'enabled');
 
     await page.getByRole('link', { name: 'Roles' }).click();

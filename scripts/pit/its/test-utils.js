@@ -85,7 +85,7 @@ async function waitForServerReady(page, url, options = {}) {
     try {
       const response = await page.goto(url);
       // Check if the response status is not 503
-      if (response && response.status() !== 503) {
+      if (response && response.status() < 400) {
         log(`Attempt ${attempt} Server is ready and returned a valid response. ${response.status()}\n`);
         return response;
       } else {
