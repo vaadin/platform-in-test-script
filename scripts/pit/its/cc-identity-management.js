@@ -40,10 +40,11 @@ const {log, args, createPage, closePage, takeScreenshot, waitForServerReady} = r
     await page.getByRole('link', { name: 'Identity Management' }).click();
     await page.getByRole('button', { name: 'Enable Identity Management' }).click();
     await takeScreenshot(page, __filename, 'app-updated');
-    await takeScreenshot(page, __filename, 'identity-management-enabled');
+    await takeScreenshot(page, __filename, 'enabled');
 
     await page.getByRole('link', { name: 'Roles' }).click();
     await page.getByRole('button', { name: 'Create' }).click();
+    await takeScreenshot(page, __filename, 'role-form');
     await page.getByLabel('Name').fill(role);
     await page.getByLabel('Description').fill(role);
     await takeScreenshot(page, __filename, 'role-filled');
@@ -52,6 +53,7 @@ const {log, args, createPage, closePage, takeScreenshot, waitForServerReady} = r
 
     await page.getByRole('link', { name: 'Groups' }).click();
     await page.getByRole('button', { name: 'Create' }).click();
+    await takeScreenshot(page, __filename, 'group-form');
     await page.getByLabel('Name').fill(group);
     await page.locator(checkboxSelectorRole).click();
     await takeScreenshot(page, __filename, 'group-filled');
@@ -60,6 +62,7 @@ const {log, args, createPage, closePage, takeScreenshot, waitForServerReady} = r
 
     await page.getByRole('link', { name: 'Users' }).click();
     await page.getByRole('button', { name: 'Create' }).click();
+    await takeScreenshot(page, __filename, 'user-form');
     await page.getByLabel('First Name').fill(role);
     await page.getByLabel('Last Name').fill('user');
     await page.getByLabel('E-mail Address').fill(user);
