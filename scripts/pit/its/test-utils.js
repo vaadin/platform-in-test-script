@@ -8,8 +8,18 @@ defineConfig({
   expect: {timeout: 30 * 1000},
 });
 
-const log = (s) => process.stderr.write(`   ${s}`);
+function log(...args) {
+  process.stderr.write(`\x1b[0m> \x1b[0;32m${args}\x1b[0m`);
+}
+function out(...args) {
+  process.stderr.write(`\x1b[2m\x1b[196m${args}\x1b[0m`);
+}
+function err(...args) {
+  process.stderr.write(`\x1b[0;31m${args}\x1b[0m`);
+}
+
 const run = async (cmd) => (await promisify(exec)(cmd)).stdout;
+
 
 const args = () => {
   const ret = {
@@ -52,8 +62,8 @@ async function createPage(headless, ignoreHTTPSErrors) {
     });
     const context = await browser.newContext({ignoreHTTPSErrors: ignoreHTTPSErrors });
     const page = await context.newPage();
-    page.on('console', msg => console.log("> CONSOLE:", (msg.text() + ' - ' + msg.location().url).replace(/\s+/g, ' ')));
-    page.on('pageerror', err => console.log("> PAGEERROR:", ('' + err).replace(/\s+/g, ' ')));
+    page.on('console', msg => out("> CONSOLE:", (msg.text() + ' - ' + msg.location().url).replace(/\s+/g, ' '), '\n'));
+    page.on('pageerror', e => err("> PAGEERROR:", ('' + e).replace(/\s+/g, ' '), '\n'));
     page.browser = browser;
     return page;
 }
@@ -70,7 +80,7 @@ async function takeScreenshot(page, name, descr) {
   const file = `${screenshots}/${scr}-${cnt}-${descr}.png`;
   await page.waitForTimeout(1000);
   await page.screenshot({ path: file });
-  log(`Screenshot taken: ${file}\n`);
+  out(`Screenshot taken: ${file}\n`);
 }
 
 // Wait for the server to be ready and to get a valid response
@@ -86,17 +96,18 @@ async function waitForServerReady(page, url, options = {}) {
       const response = await page.goto(url);
       // Check if the response status is not 503
       if (response && response.status() < 400) {
-        log(`Attempt ${attempt} Server is ready and returned a valid response. ${response.status()}\n`);
+        out(`Attempt ${attempt} Server is ready and returned a valid response. ${response.status()}\n`);
         return response;
       } else {
-        log(`Attempt ${attempt} Server is not ready yet. ${response.status()}\n`);
+        out(`Attempt ${attempt} Server is not ready yet. ${response.status()}\n`);
       }
     } catch (error) {
       if (error.message.includes('net::ERR_CERT_AUTHORITY_INVALID')) {
-        log(`Attempt ${attempt} Server has not a valid certificate, install it for ${url} or use --notls flag\n`);
+        err(`Attempt ${attempt} Server has not a valid certificate, install it for ${url} or use --notls flag\n`);
       } else {
-        log(`Attempt ${attempt} Server failed with error: ${error.message}\n`);
+        err(`Attempt ${attempt} Server failed with error: ${error.message}\n`);
       }
+      throw new Error(`Server Error ${error}.\n`);
     }
     await page.waitForTimeout(retryInterval);
   }
@@ -104,7 +115,7 @@ async function waitForServerReady(page, url, options = {}) {
 }
 
 module.exports = {
-  log,
+  log, out, err,
   run,
   args,
   createPage,
