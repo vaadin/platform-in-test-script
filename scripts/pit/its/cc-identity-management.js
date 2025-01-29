@@ -50,6 +50,7 @@ const {log, args, createPage, closePage, takeScreenshot, waitForServerReady} = r
 
     log(`Adding Role, Group and User ...\n`);
     await page.getByRole('link', { name: 'Roles' }).click();
+    await page.waitForTimeout(2000);
     await page.getByRole('button', { name: 'Create' }).click();
     await takeScreenshot(page, __filename, 'role-form');
     await page.getByLabel('Name').fill(role);
@@ -59,6 +60,7 @@ const {log, args, createPage, closePage, takeScreenshot, waitForServerReady} = r
     await takeScreenshot(page, __filename, 'role-created');
 
     await page.getByRole('link', { name: 'Groups' }).click();
+    await page.waitForTimeout(2000);
     await page.getByRole('button', { name: 'Create' }).click();
     await takeScreenshot(page, __filename, 'group-form');
     await page.getByLabel('Name').fill(group);
@@ -68,6 +70,7 @@ const {log, args, createPage, closePage, takeScreenshot, waitForServerReady} = r
     await takeScreenshot(page, __filename, 'group-created');
 
     await page.getByRole('link', { name: 'Users' }).click();
+    await page.waitForTimeout(2000);
     await page.getByRole('button', { name: 'Create' }).click();
     await takeScreenshot(page, __filename, 'user-form');
     await page.getByLabel('First Name').fill(role);

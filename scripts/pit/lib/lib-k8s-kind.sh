@@ -1,22 +1,5 @@
 . `dirname $0`/lib/lib-utils.sh
 
-startCloudProvider() {
-   [ -z "$TEST" ] && docker container inspect kind-cloud-provider >/dev/null 2>&1 && log "Docker Kind Cloud Provider already running" && return
-   runCmd "$TEST" "Starting Docker KinD Cloud Provider" \
-    "docker run --quiet --name kind-cloud-provider --rm  -d  \
-      -v /var/run/docker.sock:/var/run/docker.sock \
-      rophy/cloud-provider-kind:0.4.0-20241026-r1"
-
-      # --network kind -p 443:443
-}
-
-stopCloudProvider() {
-  docker ps | grep kind-cloud-provider || return 0
-  runCmd "$TEST" "Stoping Docker KinD Cloud Provider" \
-    "docker kill kind-cloud-provider" || return 1
-  docker ps | grep envoyproxy/envoy | awk '{print $1}' | xargs docker kill 2>/dev/null
-}
-
 ## Check that the command has SUID bit set
 # $1: command
 hasSUID() {
@@ -84,7 +67,8 @@ stopForwardIngress() {
 ##
 # $1: cluster name
 # $2: namespace
-createCluster() {
+createKindCluster() {
+  checkCommands kind || return 1
   kind get clusters | grep -q "^$1$" && return 0
   runCmd "$TEST" "Creating KinD cluster: $1" \
    "kind create cluster --name $1" || return 1
@@ -94,15 +78,10 @@ createCluster() {
 
 ##
 # $1: cluster name
-deleteCluster() {
+deleteKindCluster() {
   kind get clusters | grep -q "^$1$" || return 0
   runCmd "$TEST" "Deleting Cluster $1" \
    "kind delete cluster --name $1" || return 1
 }
-
-
-
-
-
 
 

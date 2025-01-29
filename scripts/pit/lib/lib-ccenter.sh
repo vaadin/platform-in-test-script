@@ -92,11 +92,17 @@ checkTls() {
   done
 }
 
+reloadIngress() {
+  [ -n "$TEST" ] && return 0
+  pod=`kubectl -n $CC_NS get pods | grep control-center-ingress-nginx-controller | awk '{print $1}'` || return 1
+  [ -n "$pod" ] && runCmd "$TEST" "Reloading nginx in $pod" "kubectl exec $pod -n "$CC_NS" -- nginx -s reload" || return 1
+}
+
 ## Configure secrets for the control-center and the keycloak servers
 installTls() {
   [ -n "$SKIPHELM" ] && return 0
   [ -z "$CC_KEY" -o -z "$CC_CERT" ] && log "No CC_KEY and CC_CERT provided, skiping TLS installation" && return 0
-  [ -n "$CC_FULL" ] && CC_CERT=$CC_FULL
+  [ -n "$CC_FULL" ] && CC_CERT="$CC_FULL"
   [ -z "$TEST" ] && log "Installing TLS $CC_TLS for $CC_CONTROL and $CC_AUT" || cmd "## Creating TLS file '$CC_DOMAIN.pem' from envs"
   f1=cc-tls.crt
   f2=cc-tls.key
@@ -124,8 +130,7 @@ installTls() {
 
   [ -n "$TEST" ] && return 0
 
-  pod=`kubectl -n $CC_NS get pods | grep control-center-ingress-nginx-controller | awk '{print $1}'` || return 1
-  [ -n "$pod" ] && runCmd "$TEST" "Reloading nginx in $pod" "kubectl exec $pod -n "$CC_NS" -- nginx -s reload" || return 1
+  reloadIngress || return 1
 }
 
 ## Show temporary user-email and password in the terminal
@@ -144,38 +149,51 @@ runPwTests() {
   [ -z "$CC_CERT" -o -z "$CC_KEY" ] && NO_TLS=--notls || NO_TLS=""
   for f in $CC_TESTS; do
     runPlaywrightTests "$PIT_SCR_FOLDER/its/$f" "" "prod" "control-center" --url=https://$CC_CONTROL  --login=$CC_EMAIL $NO_TLS || return 1
-    [ "$f" = cc-install-apps.js ] && checkTls
+    [ "$f" = cc-install-apps.js ] && reloadIngress && checkTls
     sleep 3
   done
 }
 
 ## Main method for running control center
 runControlCenter() {
-  checkCommands kind helm docker kubectl || return 1
-  checkBusyPort "443" || return 1
+  CLUSTER=${CLUSTER:-$CC_CLUSTER}
+
+  checkCommands docker kubectl helm  || return 1
   checkDockerRunning || return 1
-  ## Clean up from a previous run
-  [ -z "$SKIPHELM" ] && uninstallCC $CC_CLUSTER $CC_NS
-  # deleteCluster $CC_CLUSTER
-  ## Start a new cluster
-  createCluster $CC_CLUSTER $CC_NS || return 1
-  # startCloudProvider || return 1
+
+  ## Start a new kind cluster if needed
+  [ "$CLUSTER" != "$CC_CLUSTER" ] || createKindCluster $CC_CLUSTER $CC_NS || return 1
+
+  ## Set the context to the cluster
+  kubectl config set-context $CLUSTER || return 1
+  kubectl config set-context --current --namespace=$CC_NS || return 1
+  kubectl get ns >/dev/null 2>&1 || return 1
+
+  ## Clean up CC from a previous run unless SKIPHELM is set
+  [ -z "$SKIPHELM" ] && uninstallCC $CLUSTER $CC_NS
+
   ## Install Control Center
   installCC || return 1
   ## Control center takes a long time to start
   waitForCC 900 || return 1
+
   ## Show temporary user-email and password in the terminal
   showTemporaryPassword
+
   ## Install TLS certificates for the control-center and keycloak
   installTls && checkTls || return 1
+
   ## Forward the ingress (it needs root access since it uses port 443)
-  forwardIngress $CC_NS || return 1
-  ## Run Playwright tests
+  # checkBusyPort "443"
+  checkPort 443 || forwardIngress $CC_NS || return 1
+
+  ## Run Playwright tests for the control-center
   runPwTests || return 1
   if [ -z "$TEST" -a -z "$KEEPCC" ]; then
     stopForwardIngress || return 1
-    deleteCluster $CC_CLUSTER || return 1
+    [ "$CLUSTER" != "$CC_CLUSTER" ] || deleteKindCluster $CC_CLUSTER || return 1
   fi
+  return 0
 }
 
 
