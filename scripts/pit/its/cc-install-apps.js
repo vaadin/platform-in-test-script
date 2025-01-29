@@ -1,6 +1,6 @@
 const { expect} = require('@playwright/test');
 const fs = require('fs');
-const {log, args, createPage, closePage, takeScreenshot, waitForServerReady, run} = require('./test-utils');
+const {log, args, run, createPage, closePage, takeScreenshot, waitForServerReady} = require('./test-utils');
 
 const arg = args();
 let count = 0;
@@ -22,22 +22,25 @@ async function installApp(app, page) {
     await page.getByLabel('Image', {exact: true}).fill(`k8sdemos/${app}:latest`)
     await page.getByLabel('Application URI', {exact: true}).locator('input[type="text"]').fill(uri)
     if (cert) {
-        log(`Uploading certificate ${cert} for ${app} ...\n`);
+        log(`Uploading certificate ${cert} for ${app}...\n`);
         await page.getByLabel('Upload').click();
         const fileChooserPromise = page.waitForEvent('filechooser');
         await page.getByText('Browse').click();
         const fileChooser = await fileChooserPromise;
         await fileChooser.setFiles(cert);
-        fileChooserPromise.then(await page.locator('.detail-layout').getByRole('button', {name: 'Deploy'}).click())
+        await takeScreenshot(page, __filename, `form-filled-${app}`);
+        await page.locator('.detail-layout').getByRole('button', {name: 'Deploy'}).click();
     } else {
+        log(`No certificate found for ${app}...\n`);
         log(`No certificate found for ${app}\n`);
         run(`pwd`);
         run(`ls -l`);
         await page.getByLabel('Generate').click();
+        await takeScreenshot(page, __filename, `form-filled-${app}`);
         await page.locator('.detail-layout').getByRole('button', {name: 'Deploy'}).click();
     }
 
-    await takeScreenshot(page, __filename, `form-filled-${app}`);
+    await takeScreenshot(page, __filename, `form-clicked-${app}`);
 
     await page.getByRole('listitem').filter({ hasText: 'Settings'}).click()
 
