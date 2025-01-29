@@ -39,6 +39,7 @@ setSuid() {
 
   sudo -n true >/dev/null 2>&1 || log "It's necessary to provide sudo password to run '$1' as root"
   sudo -B true || return 1
+  sudo rm -f /tmp/$1
 
   runCmd "$TEST" "Changing owner to root to: $R" "sudo chown root $R" \
     && runCmd "$TEST" "Changing set-uid to: $R" "sudo chmod u+s $R" && return 0
@@ -57,12 +58,13 @@ startPortForward() {
   H=`getPids "kubectl port-forward $2"`
   [ -n "$H" ] && log "Already running k8s port-forward $1 $2 $3 -> $4 with pid $H" && return 0
   [ -z "$TEST" ] && log "Starting k8s port-forward $1 $2 $3 -> $4"
-  [ "$4" -le 1024 ] && K=`setSuid kubectl` || return 1
+  [ "$4" -le 1024 ] && setSuid kubectl || return 1
   bgf="k8s-port-forward-$3-$4.log"
   rm -f "$bgf"
+  [ -x /tmp/kubectl ] && K=/tmp/kubectl || K=kubectl
   runInBackgroundToFile "$K port-forward $2 $4:$3 -n $1" "$bgf"
   sleep 2
-  cat "$bgf"
+  cat "$bgf" | egrep 'Forwarding from'
 }
 
 ##
