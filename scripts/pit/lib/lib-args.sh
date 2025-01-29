@@ -21,6 +21,7 @@ Use: $0 with the next options:
  --skip-prod       Skip production validations
  --skip-dev        Skip dev-mode validations
  --skip-clean      Do not clean maven cache
+ --skip-helm       Do not re-install control-center with helm and continue running tests
  --skip-pw         Do not run playwright tests
  --keep-cc         Keep control-center running after tests
  --pnpm            Use pnpm instead of npm to speed up frontend compilation (default npm)
@@ -73,6 +74,7 @@ checkArgs() {
       --skip-dev) NODEV=true;;
       --skip-prod) NOPROD=true;;
       --skip-pw) SKIPPW=true;;
+      --skip-helm) SKIPHELM=true;;
       --keep-cc) KEEPCC=true;;
       --pnpm) PNPM="-Dpnpm.enable=true";;
       --vite) VITE=true;;

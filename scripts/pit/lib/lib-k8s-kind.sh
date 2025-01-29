@@ -17,16 +17,35 @@ stopCloudProvider() {
   docker ps | grep envoyproxy/envoy | awk '{print $1}' | xargs docker kill 2>/dev/null
 }
 
-##
+## Check that the command has SUID bit set
+# $1: command
+hasSUID() {
+  [ ! -x "$1" ] && return 1
+  R=`realpath "$1"` || return 1
+  O=`ls -l "$R" | awk '{print $3}'`
+  P=`ls -l "$R" | awk '{print $1}'`
+  [ "$O" = "root" ] && expr "$P" : "^-..s" >/dev/null && return 0 || return 1
+}
+
+## Set SUID bit to the command
 # $1: command
 setSuid() {
   isWindows && return 0
-  W=`which $1` || return 1
+  for W in "/tmp/$1" `which "$1"`; do
+    hasSUID "$W" && echo "$W" && alias kubectl="$W" && return 0
+  done
   R=`realpath $W` || return 1
-  O=`ls -l "$R" | awk '{print $3}'`
-  P=`ls -l "$R" | awk '{print $1}'`
-  [ "$O" = "root" ] || runCmd "$TEST" "Changing owner to root to: $R" "sudo chown root $R" || return 1
-  expr "$P" : "^-..s" >/dev/null || runCmd "$TEST" "Setting sUI to $R" "sudo chmod u+s $R" || return 1
+  echo "$R"
+
+  sudo -n true >/dev/null 2>&1 || log "It's necessary to provide sudo password to run '$1' as root"
+  sudo -B true || return 1
+
+  runCmd "$TEST" "Changing owner to root to: $R" "sudo chown root $R" \
+    && runCmd "$TEST" "Changing set-uid to: $R" "sudo chmod u+s $R" && return 0
+
+  runCmd "$TEST" "Coping $R" "cp $R /tmp/$1" \
+    && runCmd "$TEST" "Changing owner to root to: /tmp/$1" "sudo chown root /tmp/$1" \
+    && runCmd "$TEST" "Changing set-uid to: $R" "sudo chmod u+s $R" && return 0
 }
 
 ##
@@ -38,8 +57,12 @@ startPortForward() {
   H=`getPids "kubectl port-forward $2"`
   [ -n "$H" ] && log "Already running k8s port-forward $1 $2 $3 -> $4 with pid $H" && return 0
   [ -z "$TEST" ] && log "Starting k8s port-forward $1 $2 $3 -> $4"
-  [ "$4" -le 1024 ] && setSuid kubectl || return 1
-  runInBackgroundToFile "kubectl port-forward $2 $4:$3 -n $1" "k8s-port-forward-$3-$4.log" || return 1
+  [ "$4" -le 1024 ] && K=`setSuid kubectl` || return 1
+  bgf="k8s-port-forward-$3-$4.log"
+  rm -f "$bgf"
+  runInBackgroundToFile "$K port-forward $2 $4:$3 -n $1" "$bgf"
+  sleep 2
+  cat "$bgf"
 }
 
 ##

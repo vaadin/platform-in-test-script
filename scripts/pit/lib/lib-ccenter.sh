@@ -30,6 +30,7 @@ checkDockerRunning() {
 
 ## Install Control Center with Helm
 installCC() {
+  [ -n "SKIPHELM" ] && H=`kubectl get pods 2>&1` && echo "$H" | egrep -q 'control-center-[0-9abcdef]+-..... ' && return 0
   [ -n "$VERBOSE" ] && D=--debug || D=""
   [ -n "$CC_KEY" -a -n "$CC_CERT" ] && args="--set app.tlsSecret=$CC_TLS_A --set keycloak.tlsSecret=$CC_TLS_K" || args=""
   runCmd "$TEST" "Installing Vaadin Control Center" \
@@ -120,7 +121,6 @@ installTls() {
 
   pod=`kubectl -n $CC_NS get pods | grep control-center-ingress-nginx-controller | awk '{print $1}'` || return 1
   [ -n "$pod" ] && runCmd "$TEST" "Reloading nginx in $pod" "kubectl exec $pod -n "$CC_NS" -- nginx -s reload" || return 1
-  runCmd "$TEST" "Waiting for reloading ingress" sleep 5
 }
 
 ## Show temporary user-email and password in the terminal
@@ -149,8 +149,7 @@ runControlCenter() {
   checkBusyPort "443" || return 1
   checkDockerRunning || return 1
   ## Clean up from a previous run
-  # stopCloudProvider
-  uninstallCC $CC_CLUSTER $CC_NS
+  [ -z "$SKIPHELM" ] && uninstallCC $CC_CLUSTER $CC_NS
   # deleteCluster $CC_CLUSTER
   ## Start a new cluster
   createCluster $CC_CLUSTER $CC_NS || return 1
