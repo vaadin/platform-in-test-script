@@ -77,7 +77,7 @@ uninstallCC() {
 }
 
 checkTls() {
-  [ -n "$TEST" ] && return 0
+  [ -n "$TEST" -o -n "$SKIPHELM" ] && return 0
   for i in `kubectl get ingresses -n $CC_NS | grep nginx | awk '{print $1}'`; do
     log "$i"
     H=`kubectl get ingress $i -n $CC_NS -o jsonpath='{.spec.rules[0].host}'`
@@ -90,6 +90,7 @@ checkTls() {
 
 ## Configure secrets for the control-center and the keycloak servers
 installTls() {
+  [ -n "$SKIPHELM" ] && return 0
   [ -z "$CC_KEY" -o -z "$CC_CERT" ] && log "No CC_KEY and CC_CERT provided, skiping TLS installation" && return 0
   [ -n "$CC_FULL" ] && CC_CERT=$CC_FULL
   [ -z "$TEST" ] && log "Installing TLS $CC_TLS for $CC_CONTROL and $CC_AUT" || cmd "## Creating TLS file '$CC_DOMAIN.pem' from envs"

@@ -31,22 +31,21 @@ hasSUID() {
 # $1: command
 setSuid() {
   isWindows && return 0
-  for W in "/tmp/$1" `which "$1"`; do
-    hasSUID "$W" && echo "$W" && alias kubectl="$W" && return 0
+  T=/tmp/$1
+  for W in "$T" `which "$1"`; do
+    hasSUID "$W" && echo "$W" && return 0
   done
   R=`realpath $W` || return 1
-  echo "$R"
 
   sudo -n true >/dev/null 2>&1 || log "It's necessary to provide sudo password to run '$1' as root"
   sudo -B true || return 1
-  sudo rm -f /tmp/$1
 
   runCmd "$TEST" "Changing owner to root to: $R" "sudo chown root $R" \
-    && runCmd "$TEST" "Changing set-uid to: $R" "sudo chmod u+s $R" && return 0
+    && runCmd "$TEST" "Changing set-uid to: $R" "sudo chmod u+s $R" && echo "kubectl" && return 0
 
-  runCmd "$TEST" "Coping $R" "sudo cp $R /tmp/$1" \
-    && runCmd "$TEST" "Changing owner to root to: /tmp/$1" "sudo chown root /tmp/$1" \
-    && runCmd "$TEST" "Changing set-uid to: $R" "sudo chmod u+s /tmp/$1" && return 0
+  runCmd "$TEST" "Coping $R" "sudo cp $R $T" \
+    && runCmd "$TEST" "Changing owner to root to: $T" "sudo chown root $T" \
+    && runCmd "$TEST" "Changing set-uid to: $R" "sudo chmod u+s $T" && echo "$T" && return 0
 }
 
 ##
@@ -58,13 +57,12 @@ startPortForward() {
   H=`getPids "kubectl port-forward $2"`
   [ -n "$H" ] && log "Already running k8s port-forward $1 $2 $3 -> $4 with pid $H" && return 0
   [ -z "$TEST" ] && log "Starting k8s port-forward $1 $2 $3 -> $4"
-  [ "$4" -le 1024 ] && setSuid kubectl || return 1
+  [ "$4" -le 1024 ] && K=`setSuid kubectl` || return 1
   bgf="k8s-port-forward-$3-$4.log"
   rm -f "$bgf"
-  [ -x /tmp/kubectl ] && K=/tmp/kubectl || K=kubectl
   runInBackgroundToFile "$K port-forward $2 $4:$3 -n $1" "$bgf"
   sleep 2
-  cat "$bgf" | egrep 'Forwarding from'
+  egrep 'Forwarding from' "$bgf"
 }
 
 ##

@@ -64,7 +64,7 @@ async function installApp(app, page) {
         await installApp(app, page);
     }
 
-    log(`Waiting for the applications to be available...\n`);
+    log(`Waiting for 2 applications to be available...\n`);
     const selector = 'vaadin-grid-cell-content span[theme="badge success"]';
     await expect(page.locator(selector).nth(0)).toBeVisible({ timeout: 180000 });
     await takeScreenshot(page, __filename, 'app-1-available');

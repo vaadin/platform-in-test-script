@@ -79,7 +79,7 @@ const { assert } = require('console');
     await run(`unzip -d ${downloadsDir} -o ${filePath}`);
     const str = await fs.readFileSync('./downloads/translations.properties', 'utf8');
     assert(str.includes('app.title=Panaderia'));
-    await fs.rmdirSync(downloadsDir, { recursive: true });
+    await fs.rmSync(downloadsDir, { recursive: true });
 
     log(`Testing that preview page: ${previewUrl} is up and running\n`);
     await page.getByRole('button', { name: 'Start preview' }).click();
