@@ -45,7 +45,7 @@ setSuid() {
 
   runCmd "$TEST" "Coping $R" "cp $R /tmp/$1" \
     && runCmd "$TEST" "Changing owner to root to: /tmp/$1" "sudo chown root /tmp/$1" \
-    && runCmd "$TEST" "Changing set-uid to: $R" "sudo chmod u+s $R" && return 0
+    && runCmd "$TEST" "Changing set-uid to: $R" "sudo chmod u+s /tmp/$1" && return 0
 }
 
 ##

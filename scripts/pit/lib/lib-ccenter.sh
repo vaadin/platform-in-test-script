@@ -19,7 +19,7 @@ CC_CLUSTER=cc-cluster
 CC_NS=control-center
 
 ## UI tests to run after the control-center is installed
-CC_TESTS="cc-setup.js cc-install-apps.js cc-identity-management.js cc-localization.js"
+CC_TESTS=${CC_TESTS:-cc-setup.js cc-install-apps.js cc-identity-management.js cc-localization.js}
 
 checkDockerRunning() {
   if ! docker ps > /dev/null 2>&1; then
