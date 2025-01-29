@@ -61,9 +61,9 @@ async function createPage(headless, ignoreHTTPSErrors) {
     const browser = await chromium.launch({
         headless: headless,
         chromiumSandbox: false,
-        slowMo: 500
+        slowMo: 500,
     });
-    const context = await browser.newContext({ignoreHTTPSErrors: ignoreHTTPSErrors });
+    const context = await browser.newContext({ignoreHTTPSErrors: ignoreHTTPSErrors, viewport: { width: 1920, height: 1080 } });
     const page = await context.newPage();
     page.on('console', msg => out("> CONSOLE:", (msg.text() + ' - ' + msg.location().url).replace(/\s+/g, ' '), '\n'));
     page.on('pageerror', e => warn("> JSERROR:", ('' + e).replace(/\s+/g, ' '), '\n'));
