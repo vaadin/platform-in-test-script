@@ -104,6 +104,10 @@ main() {
     if [ $i = control-center ]; then
       mkdir -p tmp/$i && cd tmp/$i
       run runControlCenter $i
+      if [ $? != 0 ]; then
+         kubectl get pods -n $CC_NS
+         ps -feaww | grep kubectl
+      fi
       cd "$pwd"
       continue
     elif expr "$i" : '.*_jdk' >/dev/null; then
