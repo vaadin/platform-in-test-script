@@ -1,143 +1,86 @@
-const { chromium } = require('playwright');
-const path = require('path');
-const { expect } = require('@playwright/test');
+const { expect} = require('@playwright/test');
 const fs = require('fs');
+const {log, args, createPage, closePage, takeScreenshot, waitForServerReady} = require('./test-utils');
 
-
-let headless = false, port = '8000', url, email, pass='Servantes', ignoreHTTPSErrors = false;
-process.argv.forEach(a => {
-    if (/^--headless/.test(a)) {
-        headless = true;
-    } else if (/^--port=/.test(a)) {
-        port = a.split('=')[1];
-    } else if (/^--url=/.test(a))  {
-        url = a.split('=')[1];
-    } else if (/^--email=/.test(a)) {
-        email = a.split('=')[1];
-    } else if (/^--pass=/.test(a)) {
-        pass = a.split('=')[1];
-    } else if (/^--notls/.test(a)) {
-        ignoreHTTPSErrors = true;
-    }
-});
-
-if (!email) {
-    log(`Skipping the setup of Control center because of missing --email= parameter\n`)
-    return;
-}
-
-const log = s => process.stderr.write(`   ${s}`);
-const screenshots = "screenshots.out"
-let sscount = 0;
-async function takeScreenshot(page, name) {
-  const scr = path.basename(__filename);
-  const file = `${screenshots}/${scr}-${++sscount}-${name}.png`;
-  await page.waitForTimeout(1000);
-  await page.screenshot({ path: file });
-  log(`Screenshot taken: ${file}\n`);
-}
 
 (async () => {
-    const browser = await chromium.launch({
-        headless: headless,
-        chromiumSandbox: false,
-        slowMo: 500
-    });
-    const context = await browser.newContext({ ignoreHTTPSErrors: ignoreHTTPSErrors });
+    const arg = args();
+    if (!arg.login) {
+        log(`Skipping the setup of Control center because of missing --email= parameter\n`)
+        process.exit(1);
+    }
+    const app = `bakery-cc`;
+    const role = 'admin';
+    const group = 'admin';
+    const user = 'admin@vaadin.com';
+    const checkboxSelectorRole = `//vaadin-grid-cell-content[.//text()="${role}"]/preceding-sibling::vaadin-grid-cell-content[1]//vaadin-checkbox//input`;
+    const checkboxSelectorGroup = `//vaadin-grid-cell-content[.//text()="${group}"]/preceding-sibling::vaadin-grid-cell-content[1]//vaadin-checkbox//input`;
+    const anchorSelectorURL = `//vaadin-grid-cell-content[.//span[normalize-space(text())="${app}"]]//a`;
 
-    // Open new page
-    const page = await context.newPage();
-    page.on('console', msg => console.log("> CONSOLE:", (msg.text() + ' - ' + msg.location().url).replace(/\s+/g, ' ')));
-    page.on('pageerror', err => console.log("> PAGEERROR:", ('' + err).replace(/\s+/g, ' ')));
-
-   await page.goto(`${url}`);
+    const page = await createPage(arg.headless, arg.ignoreHTTPSErrors);
+    await waitForServerReady(page, arg.url);
 
     await expect(page.getByLabel('Email')).toBeVisible();
-    await takeScreenshot(page, 'view-loaded');
+    await takeScreenshot(page, __filename, 'view-loaded');
 
-    await page.getByLabel('Email').fill(email);
-    await page.getByLabel('Password').fill(pass);
-    await page.waitForTimeout(500);
+    log(`Logging in as ${arg.login} ${arg.pass}...\n`);
+    await page.getByLabel('Email').fill(arg.login);
+    await page.getByLabel('Password').fill(arg.pass);
     await page.getByRole('button', {name: 'Sign In'}).click()
-    log(`Logging in as ${email} ${pass}...\n`);
-    await takeScreenshot(page, 'logged-in');
+    await takeScreenshot(page, __filename, 'logged-in');
 
-    await page.locator('vaadin-grid').getByText('App1', { exact: true }).click();
+    await page.getByRole('link', { name: 'Settings', }).click();
+    await takeScreenshot(page, __filename, 'settings');
+    const url = await page.locator(anchorSelectorURL).getAttribute('href');
+    log(`App: ${app} installed in: ${url}\n`);
+
+    await page.locator('vaadin-select vaadin-input-container div').click();
+    await page.getByRole('option', { name: 'bakery-cc' }).locator('div').nth(2).click();
+    await takeScreenshot(page, __filename, 'selected-app');
+    await page.getByRole('link', { name: 'Identity Management' }).click();
+    await page.getByRole('button', { name: 'Enable Identity Management' }).click();
+    await takeScreenshot(page, __filename, 'app-updated');
+    await takeScreenshot(page, __filename, 'enabled');
+
     await page.getByRole('link', { name: 'Roles' }).click();
     await page.getByRole('button', { name: 'Create' }).click();
-    await page.getByLabel('Name').fill('ADMIN');
+    await takeScreenshot(page, __filename, 'role-form');
+    await page.getByLabel('Name').fill(role);
+    await page.getByLabel('Description').fill(role);
+    await takeScreenshot(page, __filename, 'role-filled');
     await page.getByRole('contentinfo').getByRole('button', { name: 'Create' }).click();
+    await takeScreenshot(page, __filename, 'role-created');
 
     await page.getByRole('link', { name: 'Groups' }).click();
-    await page.getByLabel('Name').fill('ADMIN');
-    await page.locator('#input-vaadin-checkbox-118').check();
+    await page.getByRole('button', { name: 'Create' }).click();
+    await takeScreenshot(page, __filename, 'group-form');
+    await page.getByLabel('Name').fill(group);
+    await page.locator(checkboxSelectorRole).click();
+    await takeScreenshot(page, __filename, 'group-filled');
     await page.getByRole('contentinfo').getByRole('button', { name: 'Create' }).click();
+    await takeScreenshot(page, __filename, 'group-created');
 
     await page.getByRole('link', { name: 'Users' }).click();
     await page.getByRole('button', { name: 'Create' }).click();
-    await page.getByLabel('First Name').fill('admin@vaadin.com');
-    await page.getByLabel('First Name').fill('Admin');
-    await page.getByLabel('Last Name').fill('Vaadin');
-    await page.getByLabel('E-mail Address').fill('admin@vaadin.com');
-    await page.locator('#input-vaadin-checkbox-250').check();
-
-    await page.getByLabel('Password', { exact: true }).fill('admin');
+    await takeScreenshot(page, __filename, 'user-form');
+    await page.getByLabel('First Name').fill(role);
+    await page.getByLabel('Last Name').fill('user');
+    await page.getByLabel('E-mail Address').fill(user);
+    await page.getByLabel('Password', { exact: true }).fill(role);
+    await page.locator(checkboxSelectorGroup).click();
+    await takeScreenshot(page, __filename, 'user-filled');
     await page.getByRole('contentinfo').getByRole('button', { name: 'Create' }).click();
-  
-    
-    // await page.getByLabel('Identity Management').click()
-    // await page.locator('vaadin-grid').getByText('App1', { exact: true }).click();
-    // await page.getByLabel('Identity Management').check();
-    // await page.getByRole('button', { name: 'Update' }).click();
+    await takeScreenshot(page, __filename, 'user-created');
 
-    await page.getByRole('link', { name: 'Users' }).click();
-    await page.getByRole('button', { name: 'Create' }).click();
-    await page.getByLabel('First Name').fill('admin');
-    await page.getByLabel('Last Name').fill('vaadin');
-    await page.getByLabel('E-mail Address').fill('admin@vaadin.com');
-    await page.getByLabel('Password', { exact: true }).fill('1234....');
-    await page.getByRole('contentinfo').getByRole('button', { name: 'Create' })
+    await waitForServerReady(page, url);
+    await takeScreenshot(page, __filename, `app-${app}-loaded`);
 
+    log(`Logging in ${app} as ${user} ...\n`);
+    await page.getByLabel('Email').fill(user);
+    await page.getByLabel('Password').fill(role);
+    await page.getByRole('button', {name: 'Sign In'}).click()
+    await takeScreenshot(page, __filename, `logged-in-${app}`);
+    await expect(page.getByRole('button', { name: 'New order' })).toBeVisible();
 
-
-
-
-
-
-    // await page.getByRole('contentinfo').getByRole('button', { name: 'Create' }).click();
-
-    // await page.goto(`${url}/app/app1/idm/users`);
-    // await page.getByRole('button', {name: 'Create'}).click()
-
-    // await page.getByLabel('First Name').fill(USER_FIRST_NAME)
-    // await page.getByLabel('Last Name').fill(USER_LAST_NAME)
-    // await page.getByLabel('E-mail Address').fill(USER_EMAIL)
-    // await page.getByLabel('Password', { exact: true }).fill(USER_PASSWORD)
-
-    // await page.locator('.detail-layout').getByRole('button', {name: 'Create'}).click()
-
-    // await expect(await page.getByRole('listitem')
-    //     .filter({ hasText: 'Users'})
-    //     .textContent()).toEqual('Users1');
-
-    // await page.goto(`https://app1-local.alcala.org`);
-    // await page.getByLabel('Email').fill(USER_EMAIL)
-    // await page.getByLabel('Password', {exact: true}).fill(USER_PASSWORD)
-    // await page.getByRole('button', {name: 'Sign In'}).click()
-
-    // await expect(page).toHaveURL(new RegExp('^https://app1-local.alcala.org'));
-
-    // await page.goto(`http://${host}:${port}/app/app1/idm/users`);
-    // await page.getByText([USER_FIRST_NAME, USER_LAST_NAME].join(' ')).click()
-    // await page.getByRole('button', {name: 'Delete'}).click()
-    // await sleep(1000)
-    // await page.getByRole('button', {name: 'Delete'}).click()
-    // await sleep(1000)
-    // await expect(await page.getByRole('listitem')
-    //     .filter({ hasText: 'Users'})
-    //     .textContent()).toEqual('Users0');
-
-    // ---------------------
-    await context.close();
-    await browser.close();
+    await closePage(page);
 })();

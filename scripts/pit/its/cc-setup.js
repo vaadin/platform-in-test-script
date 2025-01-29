@@ -3,7 +3,7 @@ const {log, run, args, createPage, closePage, takeScreenshot, waitForServerReady
 
 (async () => {
     const arg = args();
-    if (!arg.email) {
+    if (!arg.login) {
         log(`Skipping the setup of Control center because of missing --email= parameter\n`)
         process.exit(1);
     }
@@ -20,8 +20,8 @@ const {log, run, args, createPage, closePage, takeScreenshot, waitForServerReady
     await expect(page.getByLabel('Email')).toBeVisible();
     await takeScreenshot(page, __filename, 'view-after-loaded');
 
-    log(`login with user ${arg.email} and password ${arg.tmppass}`);
-    await page.getByLabel('Email').fill(arg.email);
+    log(`login with user ${arg.login} and password ${arg.tmppass}`);
+    await page.getByLabel('Email').fill(arg.login);
     await page.getByLabel('Password').fill(arg.tmppass);
     await page.getByRole('button', {name: 'Sign In'}).click()
 
@@ -33,8 +33,8 @@ const {log, run, args, createPage, closePage, takeScreenshot, waitForServerReady
 
     await takeScreenshot(page, __filename, 'password-changed');
 
-    await page.getByLabel('First Name').fill(arg.email);
-    await page.getByLabel('Last Name').fill(arg.email);
+    await page.getByLabel('First Name').fill(arg.login);
+    await page.getByLabel('Last Name').fill(arg.login);
     await page.getByRole('button', { name: 'Submit' }).click();
     await takeScreenshot(page, __filename, 'user-configured');
 
