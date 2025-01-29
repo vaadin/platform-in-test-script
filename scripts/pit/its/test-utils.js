@@ -96,7 +96,7 @@ async function waitForServerReady(page, url, options = {}) {
   log(`Opening ${url}\n`);
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
-      const response = await page.goto(url, {timeou: 120000});
+      const response = await page.goto(url, {timeout: 120000});
       // Check if the response status is not 503
       if (response && response.status() < 400) {
         out(` ⏲ Attempt ${attempt} Server is ready and returned a valid response. ${response.status()}\n`);

@@ -37,7 +37,7 @@ const { assert } = require('console');
 
     log(`Checking that  ${app} installed in ${url} is running ...\n`);
     // When app is not running, localization cannot be enabled
-    const pageApp = await createPage(arg.headless, arg.ignoreHTTPSErrors);
+    const pageApp = await createPage(arg.headless, true);
     await waitForServerReady(pageApp, url);
     await closePage(pageApp);
     await takeScreenshot(page, __filename, 'app-running');

@@ -80,7 +80,7 @@ const {log, args, createPage, closePage, takeScreenshot, waitForServerReady} = r
     await takeScreenshot(page, __filename, 'user-created');
 
     log(`Logging in ${app} as ${user} ...\n`);
-    pageApp = await createPage(arg.headless, arg.ignoreHTTPSErrors);
+    pageApp = await createPage(arg.headless, true);
     await waitForServerReady(pageApp, url);
     await takeScreenshot(pageApp, __filename, `app-${app}-loaded`);
     await pageApp.getByLabel('Email').fill(user);
