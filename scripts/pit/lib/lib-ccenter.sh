@@ -76,15 +76,19 @@ uninstallCC() {
   runCmd "$TEST" "Removing namespace $CC_NS" kubectl delete ns $CC_NS $KD
 }
 
+getTLs() {
+  log "TLS config for ingress: $1"
+  H=`kubectl get ingress $1 -n $CC_NS -o jsonpath='{.spec.rules[0].host}'`
+  HS=`kubectl get ingress $1 -n $CC_NS -o jsonpath='{.spec.tls[*].hosts[*]}'`
+  S=`kubectl get ingress $1 -n $CC_NS -o jsonpath='{.spec.tls[*].secretName}'`
+  C=`kubectl get secret $S -n $CC_NS -o go-template='{{ index .data "tls.crt" | base64decode }}' | openssl x509 -noout -issuer -subject -enddate | tr '\n' ' '`
+  log "Host: $H is in ingress $1 with TLS config\n   hosts: $HS secret: $S cert: $C"
+}
+
 checkTls() {
   [ -n "$TEST" -o -n "$SKIPHELM" ] && return 0
   for i in `kubectl get ingresses -n $CC_NS | grep nginx | awk '{print $1}'`; do
-    log "$i"
-    H=`kubectl get ingress $i -n $CC_NS -o jsonpath='{.spec.rules[0].host}'`
-    HS=`kubectl get ingress $i -n $CC_NS -o jsonpath='{.spec.tls[*].hosts[*]}'`
-    S=`kubectl get ingress $i -n $CC_NS -o jsonpath='{.spec.tls[*].secretName}'`
-    C=`kubectl get secret $S -n $CC_NS -o go-template='{{ index .data "tls.crt" | base64decode }}' | openssl x509 -noout -issuer -subject -enddate | tr '\n' ' '`
-    log "Host: $H is in ingress $i with TLS config\n   hosts: $HS secret: $S cert: $C"
+    getTLs "$i"
   done
 }
 
@@ -140,6 +144,7 @@ runPwTests() {
   [ -z "$CC_CERT" -o -z "$CC_KEY" ] && NO_TLS=--notls || NO_TLS=""
   for f in $CC_TESTS; do
     runPlaywrightTests "$PIT_SCR_FOLDER/its/$f" "" "prod" "control-center" --url=https://$CC_CONTROL  --login=$CC_EMAIL $NO_TLS || return 1
+    [ "$f" = cc-install-apps.js ] && checkTls
     sleep 3
   done
 }
