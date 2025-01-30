@@ -101,7 +101,9 @@ const { assert } = require('console');
     try {
         await page.getByRole('button', { name: 'Stop preview' }).click();
         await page.getByRole('link', { name: 'Settings' }).click();
+        await page.waitForTimeout(2000);
         await page.locator('vaadin-grid').getByText('bakery-cc', { exact: true }).click();
+        await page.waitForTimeout(2000);
         await page.getByLabel('Localization').uncheck();
         await page.getByRole('button', { name: 'Disable' }).click();
         await page.getByRole('button', { name: 'Update' }).click();

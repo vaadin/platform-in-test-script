@@ -65,7 +65,10 @@ async function createPage(headless, ignoreHTTPSErrors) {
     });
     const context = await browser.newContext({ignoreHTTPSErrors: ignoreHTTPSErrors, viewport: { width: 1792, height: 970 } });
     const page = await context.newPage();
-    page.on('console', msg => /vaadinPush/.test(msg) || out("> CONSOLE:", (msg.text() + ' - ' + msg.location().url).replace(/\s+/g, ' '), '\n'));
+    page.on('console', msg => {
+      const text = `${msg.text()} - ${msg.location().url}`.replace(/\s+/g, ' ');
+      if (!/vaadinPush/.test(msg)) out("> CONSOLE:", text, '\n');
+    });
     page.on('pageerror', e => warn("> JSERROR:", ('' + e).replace(/\s+/g, ' '), '\n'));
     page.browser = browser;
     return page;
@@ -94,6 +97,7 @@ async function waitForServerReady(page, url, options = {}) {
   } = options;
 
   log(`Opening ${url}\n`);
+  page.waitForTimeout(1000);
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       const response = await page.goto(url, {timeout: 120000});
