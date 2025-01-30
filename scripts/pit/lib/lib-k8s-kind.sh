@@ -1,5 +1,8 @@
 . `dirname $0`/lib/lib-utils.sh
 
+## Kind cluster to use if not provided
+KIND_CLUSTER=cc-cluster
+
 ## Check that the command has SUID bit set
 # $1: command
 hasSUID() {
@@ -37,6 +40,7 @@ setSuid() {
 # $3: port in guest
 # $4: target port in host
 startPortForward() {
+  checkPort "$4" && err "Port $4 is already in use" && return 1
   H=`getPids "kubectl port-forward $2"`
   [ -n "$H" ] && log "Already running k8s port-forward $1 $2 $3 -> $4 with pid $H" && return 0
   [ -z "$TEST" ] && log "Starting k8s port-forward $1 $2 $3 -> $4"
@@ -45,7 +49,8 @@ startPortForward() {
   rm -f "$bgf"
   runInBackgroundToFile "$K port-forward $2 $4:$3 -n $1" "$bgf"
   sleep 2
-  egrep 'Forwarding from' "$bgf"
+  tail "$bgf"
+  egrep -q 'Forwarding from' "$bgf"
 }
 
 ##

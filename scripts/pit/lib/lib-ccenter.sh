@@ -14,8 +14,7 @@ CC_TLS_K=cc-control-login-tls
 ## Ingress names
 CC_ING_A=control-center
 CC_ING_K=control-center-keycloak-ingress
-## K8s cluster and namespace
-CC_CLUSTER=cc-cluster
+# Namespace used for CC
 CC_NS=control-center
 
 ## UI tests to run after the control-center is installed
@@ -73,7 +72,7 @@ uninstallCC() {
   [ $? = 0 ] && echo "$H" | egrep -q "^$CC_NS " || return 0
   [ -n "$VERBOSE" ] && HD=--debug && KD=--v=10
   runCmd "$TEST" "Uninstalling Control-Center" helm uninstall control-center --wait -n $CC_NS $HD
-  runCmd "$TEST" "Removing namespace $CC_NS" kubectl delete ns $CC_NS $KD
+  runCmd "$TEST" "Removing namespace $CC_NS" kubectl delete ns $CC_NS $KD $1
 }
 
 getTLs() {
@@ -86,6 +85,7 @@ getTLs() {
 }
 
 checkTls() {
+  [ -n "$TEST" ] && return 0
   log "Checking TLS certificates for all ingresses hosted in the cluster"
   [ -n "$TEST" -o -n "$SKIPHELM" ] && return 0
   for i in `kubectl get ingresses -n $CC_NS | grep nginx | awk '{print $1}'`; do
@@ -97,6 +97,7 @@ reloadIngress() {
   [ -n "$TEST" ] && return 0
   pod=`kubectl -n $CC_NS get pods | grep control-center-ingress-nginx-controller | awk '{print $1}'` || return 1
   [ -n "$pod" ] && runCmd "$TEST" "Reloading nginx in $pod" "kubectl exec $pod -n "$CC_NS" -- nginx -s reload" || return 1
+  [ -z "$TEST" ] && sleep 3
 }
 
 ## Configure secrets for the control-center and the keycloak servers
@@ -155,12 +156,11 @@ runPwTests() {
     if [ "$f" = cc-install-apps.js ]; then
       reloadIngress && checkTls || return 1
     fi
-    sleep 3
   done
 }
 
 setClusterContext() {
-  [ "$1" = "$CC_CLUSTER" ] && current=kind-$1 || current=$1
+  [ "$1" = "$KIND_CLUSTER" ] && current=kind-$1 || current=$1
   ns=$2
   H=`kubectl config get-contexts  | tr '*' ' ' | awk '{print $1}' | egrep "^$current$"`
   [ -z "$H" ] && log "Cluster $current not found in kubectl contexts" && return 1
@@ -173,19 +173,22 @@ setClusterContext() {
 
 ## Main method for running control center
 runControlCenter() {
-  CLUSTER=${CLUSTER:-$CC_CLUSTER}
+  CLUSTER=${CLUSTER:-$KIND_CLUSTER}
 
   checkCommands docker kubectl helm unzip || return 1
   checkDockerRunning || return 1
 
   ## Start a new kind cluster if needed
-  [ "$CLUSTER" != "$CC_CLUSTER" ] || createKindCluster $CC_CLUSTER $CC_NS || return 1
+  [ "$CLUSTER" != "$KIND_CLUSTER" ] || createKindCluster $CLUSTER $CC_NS || return 1
 
   ## Set the context to the cluster
   setClusterContext "$CLUSTER" "$CC_NS" || return 1
 
   ## Clean up CC from a previous run unless SKIPHELM is set
-  [ -z "$SKIPHELM" ] && uninstallCC $CLUSTER $CC_NS
+  [ -z "$SKIPHELM" ] && uninstallCC
+
+  ## Check if port 443 is busy
+  checkBusyPort "443" || return 1
 
   ## Install Control Center
   installCC || return 1
@@ -199,15 +202,18 @@ runControlCenter() {
   installTls && checkTls || return 1
 
   ## Forward the ingress (it needs root access since it uses port 443)
-  # checkBusyPort "443"
-  checkPort 443 || forwardIngress $CC_NS || return 1
+  # checkPort "443"
+  [ "$CLUSTER" != "$KIND_CLUSTER" ] || forwardIngress $CC_NS || return 1
 
   ## Run Playwright tests for the control-center
   runPwTests || return 1
-  if [ -z "$TEST" -a -z "$KEEPCC" ]; then
-    stopForwardIngress || return 1
-    [ "$CLUSTER" != "$CC_CLUSTER" ] || deleteKindCluster $CC_CLUSTER || return 1
-  fi
+  stopForwardIngress || return 1
+
+  ## Delete the KinD cluster if it was created in this test if --keep-cc is not set
+  [ -n "$TEST" -o -n "$KEEPCC" -o "$CLUSTER" != "$KIND_CLUSTER" ] || deleteKindCluster "$CLUSTER" || return 1
+  ## Otherwise, uninstall the control-center if --keep-cc is not set
+  [ -n "$TEST" -o -n "$KEEPCC" -o "$CLUSTER"  = "$KIND_CLUSTER" ] || uninstallCC --wait=false || return 1
+
   return 0
 }
 
