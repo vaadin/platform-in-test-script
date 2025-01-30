@@ -86,6 +86,7 @@ getTLs() {
 }
 
 checkTls() {
+  log "Checking TLS certificates for all ingresses hosted in the cluster"
   [ -n "$TEST" -o -n "$SKIPHELM" ] && return 0
   for i in `kubectl get ingresses -n $CC_NS | grep nginx | awk '{print $1}'`; do
     getTLs "$i"
@@ -151,9 +152,21 @@ runPwTests() {
   [ -z "$CC_CERT" -o -z "$CC_KEY" ] && NO_TLS=--notls || NO_TLS=""
   for f in $CC_TESTS; do
     runPlaywrightTests "$PIT_SCR_FOLDER/its/$f" "" "prod" "control-center" --url=https://$CC_CONTROL  --login=$CC_EMAIL $NO_TLS || return 1
-    [ "$f" = cc-install-apps.js ] && reloadIngress
+    [ "$f" = cc-install-apps.js ] && reloadIngress && checkTls || return 1
     sleep 3
   done
+}
+
+setClusterContext() {
+  [ "$1" = "$CC_CLUSTER" ] && current=kind-$1 || current=$1
+  ns=$2
+  H=`kubectl config get-contexts  | tr '*' ' ' | awk '{print $1}' | egrep "^$current$"`
+  [ -z "$H" ] && log "Cluster $current not found in kubectl contexts" && return 1
+  runCmd "$TEST" "Setting context to $current" "kubectl config use-context $current" || return 1
+  H=`kubectl config current-context`
+  [ "$H" != "$current" ] && log "Current context is not $current" && return 1
+  runCmd "$TEST" "Setting default namespace to $ns" "kubectl config set-context --current --namespace=$ns" || return 1
+  kubectl get ns >/dev/null 2>&1 || return 1
 }
 
 ## Main method for running control center
@@ -167,9 +180,7 @@ runControlCenter() {
   [ "$CLUSTER" != "$CC_CLUSTER" ] || createKindCluster $CC_CLUSTER $CC_NS || return 1
 
   ## Set the context to the cluster
-  kubectl config set-context $CLUSTER || return 1
-  kubectl config set-context --current --namespace=$CC_NS || return 1
-  kubectl get ns >/dev/null 2>&1 || return 1
+  setClusterContext "$CLUSTER" "$CC_NS" || return 1
 
   ## Clean up CC from a previous run unless SKIPHELM is set
   [ -z "$SKIPHELM" ] && uninstallCC $CLUSTER $CC_NS

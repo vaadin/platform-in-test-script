@@ -14,6 +14,10 @@ function log(...args) {
 function out(...args) {
   process.stderr.write(`\x1b[2m\x1b[196m${args}\x1b[0m`);
 }
+function green(...args) {
+  process.stderr.write(`\x1b[2m\x1b[0;32m${args}\x1b[0m`);
+}
+
 function warn(...args) {
   process.stderr.write(`\x1b[2m\x1b[91m${args}\x1b[0m`);
 }
@@ -67,7 +71,7 @@ async function createPage(headless, ignoreHTTPSErrors) {
     const page = await context.newPage();
     page.on('console', msg => {
       const text = `${msg.text()} - ${msg.location().url}`.replace(/\s+/g, ' ');
-      if (!/vaadinPush/.test(text)) out("> CONSOLE:", text, '\n');
+      if (!/vaadinPush|favicon.ico/.test(text)) out("> CONSOLE:", text, '\n');
     });
     page.on('pageerror', e => warn("> JSERROR:", ('' + e).replace(/\s+/g, ' '), '\n'));
     page.browser = browser;
@@ -92,7 +96,7 @@ async function takeScreenshot(page, name, descr) {
 // Wait for the server to be ready and to get a valid response
 async function waitForServerReady(page, url, options = {}) {
   const {
-    maxRetries = 20, // Max number of retries
+    maxRetries = 35, // Max number of retries
     retryInterval = 5000 // Interval between retries in milliseconds
   } = options;
 
@@ -103,8 +107,8 @@ async function waitForServerReady(page, url, options = {}) {
       const response = await page.goto(url, {timeout: 120000});
       // Check if the response status is not 503
       if (response && response.status() < 400) {
-        out(` ⏲ Attempt ${attempt} Server is ready and returned a valid response. ${response.status()}\n`);
-        page.waitForTimeout(1500);
+        green(` ✓ Attempt ${attempt} Server is ready and returned a valid response. ${response.status()}\n`);
+        await page.waitForTimeout(1500);
         return response;
       } else {
         out(` ⏲ Attempt ${attempt} Server is not ready yet. ${response.status()}\n`);

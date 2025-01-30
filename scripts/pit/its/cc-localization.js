@@ -36,7 +36,7 @@ const { assert } = require('console');
 
     log(`Checking that  ${app} installed in ${url} is running ...\n`);
     // When app is not running, localization cannot be enabled
-    const pageApp = await createPage(arg.headless, true);
+    const pageApp = await createPage(arg.headless, arg.ignoreHTTPSErrors);
     await waitForServerReady(pageApp, url);
     await takeScreenshot(pageApp, __filename, 'app-running');
     await closePage(pageApp);
@@ -82,7 +82,8 @@ const { assert } = require('console');
 
     log(`Testing that preview page: ${previewUrl} is up and running\n`);
     await page.getByRole('button', { name: 'Start preview' }).click();
-    const pagePrev = await createPage(arg.headless, true);
+    await page.waitForTimeout(5000);
+    const pagePrev = await createPage(arg.headless, true /* preview pages do not have a valid certificate */);
     await waitForServerReady(pagePrev, previewUrl);
     await takeScreenshot(pagePrev, __filename, 'preview-ready');
     const text = await pagePrev.getByText(/Password|Dashboard/).textContent();
@@ -94,7 +95,8 @@ const { assert } = require('console');
         await expect(pagePrev.getByRole('button', { name: 'New order' })).toBeVisible();
         await takeScreenshot(pagePrev, __filename, 'preview-loaded');
     }
-    // await expect(pagePrev.getByText('Panaderia', { exact: true })).toBeVisible();
+    //  TODO: bakery is not internationalized
+    //  await expect(pagePrev.getByText('Panaderia', { exact: true })).toBeVisible();
     await closePage(pagePrev);
 
     log('Cleaning up...\n');

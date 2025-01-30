@@ -34,7 +34,7 @@ const {log, err, args, createPage, closePage, takeScreenshot, waitForServerReady
 
     log(`Checking that  ${app} installed in ${url} is running ...\n`);
     // When app is not running, localization cannot be enabled
-    let pageApp = await createPage(arg.headless, true);
+    let pageApp = await createPage(arg.headless, arg.ignoreHTTPSErrors);
     await waitForServerReady(pageApp, url);
     await takeScreenshot(pageApp, __filename, 'app-running');
     await closePage(pageApp);
@@ -83,7 +83,7 @@ const {log, err, args, createPage, closePage, takeScreenshot, waitForServerReady
     await takeScreenshot(page, __filename, 'user-created');
 
     log(`Logging in ${app} as ${user} ...\n`);
-    pageApp = await createPage(arg.headless, true);
+    pageApp = await createPage(arg.headless, arg.ignoreHTTPSErrors);
     await waitForServerReady(pageApp, url);
     await takeScreenshot(pageApp, __filename, `app-${app}-loaded`);
     await pageApp.getByLabel('Email').fill(user);
