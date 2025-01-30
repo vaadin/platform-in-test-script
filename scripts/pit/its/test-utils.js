@@ -22,6 +22,7 @@ function warn(...args) {
 }
 function err(...args) {
   process.stderr.write(`\x1b[0;31m${args}\x1b[0m`.split('\n')[0] + '\n');
+  out(args);
 }
 
 const run = async (cmd) => (await promisify(exec)(cmd)).stdout;
@@ -70,7 +71,7 @@ async function createPage(headless, ignoreHTTPSErrors) {
     const page = await context.newPage();
     page.on('console', msg => {
       const text = `${msg.text()} - ${msg.location().url}`.replace(/\s+/g, ' ');
-      if (!/vaadinPush|favicon.ico/.test(text)) out("> CONSOLE:", text, '\n');
+      if (!/vaadinPush|favicon.ico|Autofocus/.test(text)) out("> CONSOLE:", text, '\n');
     });
     page.on('pageerror', e => warn("> JSERROR:", ('' + e).replace(/\s+/g, ' '), '\n'));
     page.browser = browser;

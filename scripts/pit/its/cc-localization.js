@@ -80,9 +80,11 @@ const { assert } = require('console');
     assert(str.includes('app.title=Panaderia'));
     await fs.rmSync(downloadsDir, { recursive: true });
 
-    log(`Testing that preview page: ${previewUrl} is up and running\n`);
+    log(`Starting preview server\n`);
     await page.getByRole('button', { name: 'Start preview' }).click();
     await page.waitForTimeout(5000);
+
+    log(`Testing that preview page: ${previewUrl} is up and running\n`);
     const pagePrev = await createPage(arg.headless, true /* preview pages do not have a valid certificate */);
     await waitForServerReady(pagePrev, previewUrl);
     await takeScreenshot(pagePrev, __filename, 'preview-ready');

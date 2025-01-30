@@ -175,7 +175,7 @@ setClusterContext() {
 runControlCenter() {
   CLUSTER=${CLUSTER:-$CC_CLUSTER}
 
-  checkCommands docker kubectl helm  || return 1
+  checkCommands docker kubectl helm unzip || return 1
   checkDockerRunning || return 1
 
   ## Start a new kind cluster if needed

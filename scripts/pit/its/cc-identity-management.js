@@ -41,33 +41,14 @@ const {log, err, args, createPage, closePage, takeScreenshot, waitForServerReady
     // When app is not running, localization button might not be enabled
     let pageApp = await createPage(arg.headless, arg.ignoreHTTPSErrors);
     await waitForServerReady(pageApp, url);
-    await takeScreenshot(pageApp, __filename, 'app-running');
+    await takeScreenshot(pageApp, __filename, `app-${app}-running`);
     await closePage(pageApp);
     // Button is enabled after app is running, let's see
     log(`Enabling identity Management ...\n`);
     await page.getByRole('link', { name: 'Identity Management' }).click();
     await takeScreenshot(page, __filename, 'identity-link-clicked');
-    try {
-        await page.waitForTimeout(2000);
-        await page.getByRole('button', { name: 'Enable Identity Management' }).click();
-    } catch (error) {
-        try {
-            await page.getByRole('link', { name: 'Settings' }).click();
-            await page.waitForTimeout(2000);
-            await page.locator('vaadin-grid').getByText('bakery-cc', { exact: true }).click();
-            await page.getByLabel('Identity Management').check();
-            await page.getByRole('button', { name: 'Update' }).click();
-            await page.locator('vaadin-select vaadin-input-container div').click();
-            await page.getByRole('option', { name: app }).locator('div').nth(2).click();
-            await page.getByRole('link', { name: 'Identity Management' }).click();
-        } catch (error) {
-            err(`Retrying in 60 secs looking for enabled button : ${error}\n`);
-            await page.waitForTimeout(60000);
-            await page.reload();
-            await page.getByRole('link', { name: 'Identity Management' }).click();
-            await page.getByRole('button', { name: 'Enable Identity Management' }).click();
-        }
-    }
+    await page.waitForTimeout(2000);
+    await page.getByRole('button', { name: 'Enable Identity Management' }).click();
     await takeScreenshot(page, __filename, 'identity-enabled');
 
     log(`Adding Role, Group and User ...\n`);

@@ -12,8 +12,6 @@ async function installApp(app, page) {
     const cert = [ domain, uri ].map(a => `${a}.pem`).filter( a => fs.existsSync(a))[0]
     console.log(`Installing App: ${app} URI: ${uri} Cert: ${cert}`);
 
-    await takeScreenshot(page, __filename, `page-loaded-${app}`);
-
     await page.getByRole('listitem').filter({ hasText: 'Settings'}).click()
     await page.getByRole('button', {name: 'Deploy'}).click()
     await takeScreenshot(page, __filename, `form-opened-${app}`);
@@ -40,11 +38,8 @@ async function installApp(app, page) {
         await page.locator('.detail-layout').getByRole('button', {name: 'Deploy'}).click();
     }
 
-    await takeScreenshot(page, __filename, `form-clicked-${app}`);
-
     await page.getByRole('listitem').filter({ hasText: 'Settings'}).click()
-
-    await takeScreenshot(page, __filename, `application-created-${app}`);
+    await takeScreenshot(page, __filename, `form-saved-${app}`);
 
     await expect(page.locator('vaadin-grid').getByText(app, { exact: true })).toBeVisible();
     await expect(await page.getByRole('listitem').filter({ hasText: 'Applications'})
