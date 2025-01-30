@@ -33,17 +33,18 @@ const {log, err, args, createPage, closePage, takeScreenshot, waitForServerReady
     const url = await page.locator(anchorSelectorURL).getAttribute('href');
 
     log(`Checking that  ${app} installed in ${url} is running ...\n`);
-    // When app is not running, localization cannot be enabled
-    let pageApp = await createPage(arg.headless, arg.ignoreHTTPSErrors);
-    await waitForServerReady(pageApp, url);
-    await takeScreenshot(pageApp, __filename, 'app-running');
-    await closePage(pageApp);
 
     log(`Enabling identity Management ...\n`);
     await page.locator('vaadin-select vaadin-input-container div').click();
     await page.getByRole('option', { name: app }).locator('div').nth(2).click();
     await takeScreenshot(page, __filename, 'selected-app');
 
+    // When app is not running, localization button might not be enabled
+    let pageApp = await createPage(arg.headless, arg.ignoreHTTPSErrors);
+    await waitForServerReady(pageApp, url);
+    await takeScreenshot(pageApp, __filename, 'app-running');
+    await closePage(pageApp);
+    // Button is enabled after app is running, let's see
     await page.getByRole('link', { name: 'Identity Management' }).click();
     await takeScreenshot(page, __filename, 'identity-link-clicked');
     await page.getByRole('button', { name: 'Enable Identity Management' }).click();
