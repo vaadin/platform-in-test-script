@@ -45,6 +45,7 @@ const {log, err, args, createPage, closePage, takeScreenshot, waitForServerReady
     await takeScreenshot(page, __filename, 'selected-app');
 
     await page.getByRole('link', { name: 'Identity Management' }).click();
+    await takeScreenshot(page, __filename, 'identity-link-clicked');
     await page.getByRole('button', { name: 'Enable Identity Management' }).click();
     await takeScreenshot(page, __filename, 'identity-enabled');
 
