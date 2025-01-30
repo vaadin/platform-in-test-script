@@ -96,18 +96,22 @@ const {log, err, args, createPage, closePage, takeScreenshot, waitForServerReady
     log('Cleaning up...\n');
     try {
         await page.getByRole('link', { name: 'Roles' }).click();
-        await page.getByText('admin').nth(1).click();
+        await page.waitForTimeout(2000);
+        await page.getByText(role, { exact: true }).nth(1).click();
         await page.getByRole('button', { name: 'Delete' }).click();
-        await page.getByRole('button', { name: 'Delete' }).nth(0).click();
+        await page.locator('vaadin-confirm-dialog-overlay').getByRole('button', { name: 'Delete' }).click();
         await page.getByRole('link', { name: 'Groups' }).click();
-        await page.getByText('admin', { exact: true }).click();
+        await page.waitForTimeout(2000);
+        await page.getByText(group, { exact: true }).click();
         await page.getByRole('button', { name: 'Delete' }).click();
-        await page.getByRole('button', { name: 'Delete' }).nth(0).click();
+        await page.locator('vaadin-confirm-dialog-overlay').getByRole('button', { name: 'Delete' }).click();
         await page.getByRole('link', { name: 'Users' }).click();
-        await page.getByText('admin user').click();
+        await page.waitForTimeout(2000);
+        await page.getByText(user, { exact: true }).click();
         await page.getByRole('button', { name: 'Delete' }).click();
-        await page.getByRole('button', { name: 'Delete' }).nth(0).click();
+        await page.locator('vaadin-confirm-dialog-overlay').getByRole('button', { name: 'Delete' }).click();
         await page.getByRole('link', { name: 'Settings' }).click();
+        await page.waitForTimeout(2000);
         await page.locator('vaadin-grid').getByText('bakery-cc', { exact: true }).click();
         await page.getByLabel('Identity Management').uncheck();
         await page.getByRole('button', { name: 'Disable' }).click();

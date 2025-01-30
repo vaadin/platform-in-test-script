@@ -61,12 +61,11 @@ async function createPage(headless, ignoreHTTPSErrors) {
     const browser = await chromium.launch({
         headless: headless,
         chromiumSandbox: false,
-        slowMo: headless ? -1: 500,
         args: ['--window-position=0,0']
     });
     const context = await browser.newContext({ignoreHTTPSErrors: ignoreHTTPSErrors, viewport: { width: 1792, height: 970 } });
     const page = await context.newPage();
-    page.on('console', msg => out("> CONSOLE:", (msg.text() + ' - ' + msg.location().url).replace(/\s+/g, ' '), '\n'));
+    page.on('console', msg => /vaadinPush/.test(msg) || out("> CONSOLE:", (msg.text() + ' - ' + msg.location().url).replace(/\s+/g, ' '), '\n'));
     page.on('pageerror', e => warn("> JSERROR:", ('' + e).replace(/\s+/g, ' '), '\n'));
     page.browser = browser;
     return page;
@@ -82,7 +81,7 @@ async function takeScreenshot(page, name, descr) {
   const scr = path.basename(name);
   const cnt = String(++sscount).padStart(2, "0");
   const file = `${screenshots}/${scr}-${cnt}-${descr}.png`;
-  await page.waitForTimeout(10000);
+  await page.waitForTimeout(/^win/.test(process.platform) ? 10000: 1500);
   await page.screenshot({ path: file });
   out(` 📸 Screenshot taken: ${file}\n`);
 }
@@ -101,6 +100,7 @@ async function waitForServerReady(page, url, options = {}) {
       // Check if the response status is not 503
       if (response && response.status() < 400) {
         out(` ⏲ Attempt ${attempt} Server is ready and returned a valid response. ${response.status()}\n`);
+        page.waitForTimeout(1500);
         return response;
       } else {
         out(` ⏲ Attempt ${attempt} Server is not ready yet. ${response.status()}\n`);

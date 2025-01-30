@@ -103,12 +103,13 @@ installTls() {
   [ -n "$SKIPHELM" ] && return 0
   [ -z "$CC_KEY" -o -z "$CC_CERT" ] && log "No CC_KEY and CC_CERT provided, skiping TLS installation" && return 0
   # [ -n "$CC_FULL" ] && CC_CERT="$CC_FULL"
-  [ -z "$TEST" ] && log "Installing TLS $CC_TLS for $CC_CONTROL and $CC_AUT" || cmd "## Creating TLS file '$CC_DOMAIN.pem' from envs"
+  [ -z "$TEST" ] && log "Installing TLS $CC_TLS for $CC_CONTROL and $CC_AUTH" || cmd "## Creating TLS file '$CC_DOMAIN.pem' from envs"
   f1=cc-tls.crt
   f2=cc-tls.key
+  f3=$CC_DOMAIN.pem
   echo -e "$CC_CERT" > $f1 || return 1
   echo -e "$CC_KEY" > $f2 || return 1
-  cat $f1 $f2 > $CC_DOMAIN.pem
+  cat $f1 $f2 > $f3
 
   # remove old secrets if they exist (only needed for testing purposes since secrets are deleted before running the helm chart)
   kubectl get secret $CC_TLS_A -n $CC_NS >/dev/null 2>&1 && kubectl delete secret $CC_TLS_A -n $CC_NS
