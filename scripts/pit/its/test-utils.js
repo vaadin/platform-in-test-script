@@ -14,10 +14,9 @@ function log(...args) {
 function out(...args) {
   process.stderr.write(`\x1b[2m\x1b[196m${args}\x1b[0m`);
 }
-function green(...args) {
-  process.stderr.write(`\x1b[2m\x1b[0;32m${args}\x1b[0m`);
+function ok(...args) {
+  process.stderr.write(`\x1b[2m\x1b[92m${args}\x1b[0m`);
 }
-
 function warn(...args) {
   process.stderr.write(`\x1b[2m\x1b[91m${args}\x1b[0m`);
 }
@@ -108,7 +107,7 @@ async function waitForServerReady(page, url, options = {}) {
       // Check if the response status is not 503
       if (response && response.status() < 400) {
         await page.waitForTimeout(1500);
-        green(` ✓ Attempt ${attempt} Server is ready and returned a valid response. ${response.status()}\n`);
+        ok(` ✓ Attempt ${attempt} Server is ready and returned a valid response. ${response.status()}\n`);
         return response;
       } else {
         out(` ⏲ Attempt ${attempt} Server is not ready yet. ${response.status()}\n`);
