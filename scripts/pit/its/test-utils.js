@@ -21,7 +21,7 @@ function warn(...args) {
   process.stderr.write(`\x1b[2m\x1b[91m${args}\x1b[0m`);
 }
 function err(...args) {
-  process.stderr.write(`\x1b[0;31m${args}\x1b[0m`);
+  process.stderr.write(`\x1b[0;31m${args}\x1b[0m`.split('\n')[0] + '\n');
 }
 
 const run = async (cmd) => (await promisify(exec)(cmd)).stdout;
@@ -87,7 +87,7 @@ async function takeScreenshot(page, name, descr) {
   const scr = path.basename(name);
   const cnt = String(++sscount).padStart(2, "0");
   const file = `${screenshots}/${scr}-${cnt}-${descr}.png`;
-  await page.waitForTimeout(/^win/.test(process.platform) ? 10000: 1500);
+  await page.waitForTimeout(/^win/.test(process.platform) ? 10000 : process.env.GITHUB_ACTIONS ? 5000 : 1500);
   await page.screenshot({ path: file });
   out(` 📸 Screenshot taken: ${file}\n`);
 }
