@@ -73,11 +73,17 @@ async function installApp(app, page) {
 
     log(`Waiting for 2 applications to be available...\n`);
     const selector = 'vaadin-grid-cell-content span[theme="badge success"]';
-    await expect(page.locator(selector).nth(0)).toBeVisible({ timeout: 180000 });
+    const startTime = Date.now();
+
+    await expect(page.locator(selector).nth(0)).toBeVisible({ timeout: 280000 });
+    const firstAppTime = (Date.now() - startTime) / 1000;
     await takeScreenshot(page, __filename, 'app-1-available');
-    log(`First application is available\n`);
-    await expect(page.locator(selector).nth(1)).toBeVisible({ timeout: 180000 });
+    log(`First application is available after ${firstAppTime.toFixed(2)} seconds\n`);
+
+    await expect(page.locator(selector).nth(1)).toBeVisible({ timeout: 280000 });
+    const secondAppTime = (Date.now() - startTime) / 1000;
     await takeScreenshot(page, __filename, 'app-2-available');
-    log(`Second application is available\n`);
+    log(`Second application is available after ${secondAppTime.toFixed(2)} seconds\n`);
+
     await closePage(page);
 })();

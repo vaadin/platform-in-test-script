@@ -149,7 +149,7 @@ runPwTests() {
   [ -z "$CC_CERT" -o -z "$CC_KEY" ] && NO_TLS=--notls || NO_TLS=""
   for f in $CC_TESTS; do
     runPlaywrightTests "$PIT_SCR_FOLDER/its/$f" "" "prod" "control-center" --url=https://$CC_CONTROL  --login=$CC_EMAIL $NO_TLS || return 1
-    [ "$f" = cc-install-apps.js ] && reloadIngress && checkTls
+    [ "$f" = cc-install-apps.js ] && reloadIngress && ls -l && cat *.pem && checkTls 
     sleep 3
   done
 }
