@@ -164,7 +164,7 @@ computeGradle() {
 computeNpm() {
   _VNODE=~/.vaadin/node
   _NPMJS=$_VNODE/lib/node_modules/npm/bin/npm-cli.js
-  NPM=`which npm`
+  NPM="'"`which npm`"'"
   NPX=`which npx`
   NODE=`which node`
   [ -x "$_VNODE/bin/node" -a -f "$_NPMJS" ] && export PATH="$_VNODE/bin:$PATH" && NODE="$_VNODE/bin/node" && NPM="'$NODE' '$_NPMJS'"
