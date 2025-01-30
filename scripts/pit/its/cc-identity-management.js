@@ -1,5 +1,5 @@
 const { expect} = require('@playwright/test');
-const {log, args, createPage, closePage, takeScreenshot, waitForServerReady, err} = require('./test-utils');
+const {log, err, args, createPage, closePage, takeScreenshot, waitForServerReady} = require('./test-utils');
 
 (async () => {
     const arg = args();

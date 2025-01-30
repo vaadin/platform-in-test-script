@@ -1,7 +1,6 @@
 const { expect} = require('@playwright/test');
 const fs = require('fs');
-const path = require('path');
-const {log, args, createPage, closePage, takeScreenshot, waitForServerReady, run} = require('./test-utils');
+const {log, err, args, run, createPage, closePage, takeScreenshot, waitForServerReady} = require('./test-utils');
 const { assert } = require('console');
 
 (async () => {
