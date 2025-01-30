@@ -13,7 +13,7 @@ hasSUID() {
 ## Set SUID bit to the command
 # $1: command
 setSuid() {
-  isWindows && return 0
+  isWindows && echo "$1" && return 0
   T=/tmp/$1
   for W in "$T" `which "$1"`; do
     hasSUID "$W" && echo "$W" && return 0
