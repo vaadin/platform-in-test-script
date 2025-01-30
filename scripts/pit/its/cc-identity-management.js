@@ -47,7 +47,14 @@ const {log, err, args, createPage, closePage, takeScreenshot, waitForServerReady
     // Button is enabled after app is running, let's see
     await page.getByRole('link', { name: 'Identity Management' }).click();
     await takeScreenshot(page, __filename, 'identity-link-clicked');
-    await page.getByRole('button', { name: 'Enable Identity Management' }).click();
+    try {
+        await page.getByRole('button', { name: 'Enable Identity Management' }).click();
+    } catch (error) {
+        err(`Retrying in 60 secs looking for enabled button : ${error}\n`);
+        await page.waitForTimeout(60000);
+        await page.reload();
+        await page.getByRole('button', { name: 'Enable Identity Management' }).click();
+    }
     await takeScreenshot(page, __filename, 'identity-enabled');
 
     log(`Adding Role, Group and User ...\n`);
