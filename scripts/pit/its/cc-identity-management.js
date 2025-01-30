@@ -36,8 +36,8 @@ const {log, args, createPage, closePage, takeScreenshot, waitForServerReady, err
     // When app is not running, localization cannot be enabled
     let pageApp = await createPage(arg.headless, true);
     await waitForServerReady(pageApp, url);
+    await takeScreenshot(pageApp, __filename, 'app-running');
     await closePage(pageApp);
-    await takeScreenshot(page, __filename, 'app-running');
 
     log(`Enabling identity Management ...\n`);
     await page.locator('vaadin-select vaadin-input-container div').click();
@@ -114,6 +114,7 @@ const {log, args, createPage, closePage, takeScreenshot, waitForServerReady, err
         await page.getByRole('button', { name: 'Update' }).click();
     } catch (error) {
         err(`Error cleaning up: ${error}\n`);
+        await takeScreenshot(page, __filename, 'error-cleaning');
     }
     await closePage(page);
 })();

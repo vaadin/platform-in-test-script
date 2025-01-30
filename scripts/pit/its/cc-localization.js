@@ -39,8 +39,8 @@ const { assert } = require('console');
     // When app is not running, localization cannot be enabled
     const pageApp = await createPage(arg.headless, true);
     await waitForServerReady(pageApp, url);
+    await takeScreenshot(pageApp, __filename, 'app-running');
     await closePage(pageApp);
-    await takeScreenshot(page, __filename, 'app-running');
 
     log(`Uploading and updating localization keys ...\n`);
     await page.locator('vaadin-select vaadin-input-container div').click();
@@ -85,7 +85,7 @@ const { assert } = require('console');
     await page.getByRole('button', { name: 'Start preview' }).click();
     const pagePrev = await createPage(arg.headless, true);
     await waitForServerReady(pagePrev, previewUrl);
-    await takeScreenshot(page, __filename, 'preview-ready');
+    await takeScreenshot(pagePrev, __filename, 'preview-ready');
     const text = await pagePrev.getByText(/Password|Dashboard/).textContent();
     if (text.includes('Password')) {
         await pagePrev.getByLabel('Email').fill(user);
@@ -93,7 +93,7 @@ const { assert } = require('console');
         await pagePrev.getByRole('button', {name: 'Sign In'}).click()
         await takeScreenshot(pagePrev, __filename, 'preview-logged-in');
         await expect(pagePrev.getByRole('button', { name: 'New order' })).toBeVisible();
-        await takeScreenshot(page, __filename, 'preview-loaded');
+        await takeScreenshot(pagePrev, __filename, 'preview-loaded');
     }
     // await expect(pagePrev.getByText('Panaderia', { exact: true })).toBeVisible();
     await closePage(pagePrev);
@@ -108,6 +108,7 @@ const { assert } = require('console');
         await page.getByRole('button', { name: 'Update' }).click();
     } catch (error) {
         err(`Error cleaning up: ${error}\n`);
+        await takeScreenshot(page, __filename, 'error-cleaning');
     }
     await closePage(page);
 })();

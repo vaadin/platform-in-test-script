@@ -74,7 +74,7 @@ createKindCluster() {
    "kind create cluster --name $1" || return 1
   runCmd "$TEST" "Setting default namespace $2" \
    "kubectl config set-context --current --namespace=$2"
-}
+  }
 
 ##
 # $1: cluster name
