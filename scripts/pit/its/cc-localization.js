@@ -99,12 +99,15 @@ const { assert } = require('console');
     await closePage(pagePrev);
 
     log('Cleaning up...\n');
-    await page.getByRole('button', { name: 'Stop preview' }).click();
-    await page.getByRole('link', { name: 'Settings' }).click();
-    await page.locator('vaadin-grid').getByText('bakery-cc', { exact: true }).click();
-    await page.getByLabel('Localization').uncheck();
-    await page.getByRole('button', { name: 'Disable' }).click();
-    await page.getByRole('button', { name: 'Update' }).click();
-
+    try {
+        await page.getByRole('button', { name: 'Stop preview' }).click();
+        await page.getByRole('link', { name: 'Settings' }).click();
+        await page.locator('vaadin-grid').getByText('bakery-cc', { exact: true }).click();
+        await page.getByLabel('Localization').uncheck();
+        await page.getByRole('button', { name: 'Disable' }).click();
+        await page.getByRole('button', { name: 'Update' }).click();
+    } catch (error) {
+        err(`Error cleaning up: ${error}\n`);
+    }
     await closePage(page);
 })();

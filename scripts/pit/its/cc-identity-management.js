@@ -1,5 +1,5 @@
 const { expect} = require('@playwright/test');
-const {log, args, createPage, closePage, takeScreenshot, waitForServerReady} = require('./test-utils');
+const {log, args, createPage, closePage, takeScreenshot, waitForServerReady, err} = require('./test-utils');
 
 (async () => {
     const arg = args();
@@ -94,23 +94,26 @@ const {log, args, createPage, closePage, takeScreenshot, waitForServerReady} = r
     await closePage(pageApp);
 
     log('Cleaning up...\n');
-    await page.getByRole('link', { name: 'Roles' }).click();
-    await page.getByText('admin').nth(1).click();
-    await page.getByRole('button', { name: 'Delete' }).click();
-    await page.getByRole('button', { name: 'Delete' }).nth(0).click();
-    await page.getByRole('link', { name: 'Groups' }).click();
-    await page.getByText('admin', { exact: true }).click();
-    await page.getByRole('button', { name: 'Delete' }).click();
-    await page.getByRole('button', { name: 'Delete' }).nth(0).click();
-    await page.getByRole('link', { name: 'Users' }).click();
-    await page.getByText('admin user').click();
-    await page.getByRole('button', { name: 'Delete' }).click();
-    await page.getByRole('button', { name: 'Delete' }).nth(0).click();
-    await page.getByRole('link', { name: 'Settings' }).click();
-    await page.locator('vaadin-grid').getByText('bakery-cc', { exact: true }).click();
-    await page.getByLabel('Identity Management').uncheck();
-    await page.getByRole('button', { name: 'Disable' }).click();
-    await page.getByRole('button', { name: 'Update' }).click();
-
+    try {
+        await page.getByRole('link', { name: 'Roles' }).click();
+        await page.getByText('admin').nth(1).click();
+        await page.getByRole('button', { name: 'Delete' }).click();
+        await page.getByRole('button', { name: 'Delete' }).nth(0).click();
+        await page.getByRole('link', { name: 'Groups' }).click();
+        await page.getByText('admin', { exact: true }).click();
+        await page.getByRole('button', { name: 'Delete' }).click();
+        await page.getByRole('button', { name: 'Delete' }).nth(0).click();
+        await page.getByRole('link', { name: 'Users' }).click();
+        await page.getByText('admin user').click();
+        await page.getByRole('button', { name: 'Delete' }).click();
+        await page.getByRole('button', { name: 'Delete' }).nth(0).click();
+        await page.getByRole('link', { name: 'Settings' }).click();
+        await page.locator('vaadin-grid').getByText('bakery-cc', { exact: true }).click();
+        await page.getByLabel('Identity Management').uncheck();
+        await page.getByRole('button', { name: 'Disable' }).click();
+        await page.getByRole('button', { name: 'Update' }).click();
+    } catch (error) {
+        err(`Error cleaning up: ${error}\n`);
+    }
     await closePage(page);
 })();
