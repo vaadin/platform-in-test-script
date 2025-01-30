@@ -67,7 +67,7 @@ async function createPage(headless, ignoreHTTPSErrors) {
     const page = await context.newPage();
     page.on('console', msg => {
       const text = `${msg.text()} - ${msg.location().url}`.replace(/\s+/g, ' ');
-      if (!/vaadinPush/.test(msg)) out("> CONSOLE:", text, '\n');
+      if (!/vaadinPush/.test(text)) out("> CONSOLE:", text, '\n');
     });
     page.on('pageerror', e => warn("> JSERROR:", ('' + e).replace(/\s+/g, ' '), '\n'));
     page.browser = browser;

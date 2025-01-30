@@ -146,11 +146,12 @@ showTemporaryPassword() {
 ## Run Playwright tests for the control-center
 runPwTests() {
   computeNpm
+  [ -d screenshots.out ] && runCmd "$TEST" "Removing old screenshots" "rm -rf screenshots.out"
   [ -n "$SKIPPW" ] && return 0
   [ -z "$CC_CERT" -o -z "$CC_KEY" ] && NO_TLS=--notls || NO_TLS=""
   for f in $CC_TESTS; do
     runPlaywrightTests "$PIT_SCR_FOLDER/its/$f" "" "prod" "control-center" --url=https://$CC_CONTROL  --login=$CC_EMAIL $NO_TLS || return 1
-    [ "$f" = cc-install-apps.js ] && reloadIngress && ls -l && cat *.pem && checkTls 
+    [ "$f" = cc-install-apps.js ] && reloadIngress
     sleep 3
   done
 }
