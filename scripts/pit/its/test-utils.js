@@ -82,7 +82,7 @@ async function takeScreenshot(page, name, descr) {
   const scr = path.basename(name);
   const cnt = String(++sscount).padStart(2, "0");
   const file = `${screenshots}/${scr}-${cnt}-${descr}.png`;
-  await page.waitForTimeout(1000);
+  await page.waitForTimeout(10000);
   await page.screenshot({ path: file });
   out(` 📸 Screenshot taken: ${file}\n`);
 }
