@@ -21,7 +21,9 @@ Use: $0 with the next options:
  --skip-prod       Skip production validations
  --skip-dev        Skip dev-mode validations
  --skip-clean      Do not clean maven cache
+ --skip-helm       Do not re-install control-center with helm and continue running tests
  --skip-pw         Do not run playwright tests
+ --cluster=name    Run tests in an existing k8s cluster
  --keep-cc         Keep control-center running after tests
  --pnpm            Use pnpm instead of npm to speed up frontend compilation (default npm)
  --vite            Use vite inetad of webpack to speed up frontend compilation (default webpack)
@@ -36,7 +38,7 @@ Use: $0 with the next options:
                    everything after this argument is the function name and arguments passed to the function.
                    you should take care with arguments that contain spaces, they should be quoted twice.
  --help            Show this message
- --starters=list   List of demos or presets separated by comma to run (default: all) valid options:`echo ,$DEFAULT_STARTERS | sed -e 's/,/\n                   · /g'`
+ --starters=list   List of demos or presets separated by comma to run (default: all) valid options:`echo ,$DEFAULT_STARTERS | tr ' ' , | sed -e 's/,/\n                   · /g'`
 EOF
   exit 1
 }
@@ -73,6 +75,8 @@ checkArgs() {
       --skip-dev) NODEV=true;;
       --skip-prod) NOPROD=true;;
       --skip-pw) SKIPPW=true;;
+      --cluster=*) CLUSTER="$arg";;
+      --skip-helm) SKIPHELM=true;;
       --keep-cc) KEEPCC=true;;
       --pnpm) PNPM="-Dpnpm.enable=true";;
       --vite) VITE=true;;

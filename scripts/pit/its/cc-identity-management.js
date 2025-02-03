@@ -1,7 +1,5 @@
 const { expect} = require('@playwright/test');
-const fs = require('fs');
-const {log, args, createPage, closePage, takeScreenshot, waitForServerReady} = require('./test-utils');
-
+const {log, err, args, createPage, closePage, takeScreenshot, waitForServerReady} = require('./test-utils');
 
 (async () => {
     const arg = args();
@@ -23,26 +21,39 @@ const {log, args, createPage, closePage, takeScreenshot, waitForServerReady} = r
     await expect(page.getByLabel('Email')).toBeVisible();
     await takeScreenshot(page, __filename, 'view-loaded');
 
-    log(`Logging in as ${arg.login} ${arg.pass}...\n`);
+    log(`Logging in CC as ${arg.login} ${arg.pass}...\n`);
     await page.getByLabel('Email').fill(arg.login);
     await page.getByLabel('Password').fill(arg.pass);
     await page.getByRole('button', {name: 'Sign In'}).click()
     await takeScreenshot(page, __filename, 'logged-in');
 
+    log(`Changing Settings for ${app}...\n`);
     await page.getByRole('link', { name: 'Settings', }).click();
     await takeScreenshot(page, __filename, 'settings');
     const url = await page.locator(anchorSelectorURL).getAttribute('href');
-    log(`App: ${app} installed in: ${url}\n`);
+
+    log(`Checking that  ${app} installed in ${url} is running ...\n`);
 
     await page.locator('vaadin-select vaadin-input-container div').click();
-    await page.getByRole('option', { name: 'bakery-cc' }).locator('div').nth(2).click();
+    await page.getByRole('option', { name: app }).locator('div').nth(2).click();
     await takeScreenshot(page, __filename, 'selected-app');
-    await page.getByRole('link', { name: 'Identity Management' }).click();
-    await page.getByRole('button', { name: 'Enable Identity Management' }).click();
-    await takeScreenshot(page, __filename, 'app-updated');
-    await takeScreenshot(page, __filename, 'enabled');
 
+    // When app is not running, localization button might not be enabled
+    let pageApp = await createPage(arg.headless, arg.ignoreHTTPSErrors);
+    await waitForServerReady(pageApp, url);
+    await takeScreenshot(pageApp, __filename, `app-${app}-running`);
+    await closePage(pageApp);
+    // Button is enabled after app is running, let's see
+    log(`Enabling identity Management ...\n`);
+    await page.getByRole('link', { name: 'Identity Management' }).click();
+    await takeScreenshot(page, __filename, 'identity-link-clicked');
+    await page.waitForTimeout(2000);
+    await page.getByRole('button', { name: 'Enable Identity Management' }).click();
+    await takeScreenshot(page, __filename, 'identity-enabled');
+
+    log(`Adding Role, Group and User ...\n`);
     await page.getByRole('link', { name: 'Roles' }).click();
+    await page.waitForTimeout(2000);
     await page.getByRole('button', { name: 'Create' }).click();
     await takeScreenshot(page, __filename, 'role-form');
     await page.getByLabel('Name').fill(role);
@@ -52,6 +63,7 @@ const {log, args, createPage, closePage, takeScreenshot, waitForServerReady} = r
     await takeScreenshot(page, __filename, 'role-created');
 
     await page.getByRole('link', { name: 'Groups' }).click();
+    await page.waitForTimeout(2000);
     await page.getByRole('button', { name: 'Create' }).click();
     await takeScreenshot(page, __filename, 'group-form');
     await page.getByLabel('Name').fill(group);
@@ -61,6 +73,7 @@ const {log, args, createPage, closePage, takeScreenshot, waitForServerReady} = r
     await takeScreenshot(page, __filename, 'group-created');
 
     await page.getByRole('link', { name: 'Users' }).click();
+    await page.waitForTimeout(2000);
     await page.getByRole('button', { name: 'Create' }).click();
     await takeScreenshot(page, __filename, 'user-form');
     await page.getByLabel('First Name').fill(role);
@@ -72,15 +85,43 @@ const {log, args, createPage, closePage, takeScreenshot, waitForServerReady} = r
     await page.getByRole('contentinfo').getByRole('button', { name: 'Create' }).click();
     await takeScreenshot(page, __filename, 'user-created');
 
-    await waitForServerReady(page, url);
-    await takeScreenshot(page, __filename, `app-${app}-loaded`);
-
     log(`Logging in ${app} as ${user} ...\n`);
-    await page.getByLabel('Email').fill(user);
-    await page.getByLabel('Password').fill(role);
-    await page.getByRole('button', {name: 'Sign In'}).click()
-    await takeScreenshot(page, __filename, `logged-in-${app}`);
-    await expect(page.getByRole('button', { name: 'New order' })).toBeVisible();
+    pageApp = await createPage(arg.headless, arg.ignoreHTTPSErrors);
+    await waitForServerReady(pageApp, url);
+    await takeScreenshot(pageApp, __filename, `app-${app}-loaded`);
+    await pageApp.getByLabel('Email').fill(user);
+    await pageApp.getByLabel('Password').fill(role);
+    await pageApp.getByRole('button', {name: 'Sign In'}).click()
+    await takeScreenshot(pageApp, __filename, `logged-in-${app}`);
+    await expect(pageApp.getByRole('button', { name: 'New order' })).toBeVisible();
+    await closePage(pageApp);
 
+    log('Cleaning up...\n');
+    try {
+        await page.getByRole('link', { name: 'Roles' }).click();
+        await page.waitForTimeout(2000);
+        await page.getByText(role, { exact: true }).nth(1).click();
+        await page.getByRole('button', { name: 'Delete' }).click();
+        await page.locator('vaadin-confirm-dialog-overlay').getByRole('button', { name: 'Delete' }).click();
+        await page.getByRole('link', { name: 'Groups' }).click();
+        await page.waitForTimeout(2000);
+        await page.getByText(group, { exact: true }).click();
+        await page.getByRole('button', { name: 'Delete' }).click();
+        await page.locator('vaadin-confirm-dialog-overlay').getByRole('button', { name: 'Delete' }).click();
+        await page.getByRole('link', { name: 'Users' }).click();
+        await page.waitForTimeout(2000);
+        await page.getByText(user, { exact: true }).click();
+        await page.getByRole('button', { name: 'Delete' }).click();
+        await page.locator('vaadin-confirm-dialog-overlay').getByRole('button', { name: 'Delete' }).click();
+        await page.getByRole('link', { name: 'Settings' }).click();
+        await page.waitForTimeout(2000);
+        await page.locator('vaadin-grid').getByText('bakery-cc', { exact: true }).click();
+        await page.getByLabel('Identity Management').uncheck();
+        await page.getByRole('button', { name: 'Disable' }).click();
+        await page.getByRole('button', { name: 'Update' }).click();
+    } catch (error) {
+        err(`Error cleaning up: ${error}\n`);
+        await takeScreenshot(page, __filename, 'error-cleaning');
+    }
     await closePage(page);
 })();

@@ -8,8 +8,25 @@ defineConfig({
   expect: {timeout: 30 * 1000},
 });
 
-const log = (s) => process.stderr.write(`   ${s}`);
+function log(...args) {
+  process.stderr.write(`\x1b[0m> \x1b[0;32m${args}\x1b[0m`);
+}
+function out(...args) {
+  process.stderr.write(`\x1b[2m\x1b[196m${args}\x1b[0m`);
+}
+function ok(...args) {
+  process.stderr.write(`\x1b[2m\x1b[92m${args}\x1b[0m`);
+}
+function warn(...args) {
+  process.stderr.write(`\x1b[2m\x1b[91m${args}\x1b[0m`);
+}
+function err(...args) {
+  process.stderr.write(`\x1b[0;31m${args}\x1b[0m`.split('\n')[0] + '\n');
+  out(args);
+}
+
 const run = async (cmd) => (await promisify(exec)(cmd)).stdout;
+
 
 const args = () => {
   const ret = {
@@ -48,12 +65,16 @@ async function createPage(headless, ignoreHTTPSErrors) {
     const browser = await chromium.launch({
         headless: headless,
         chromiumSandbox: false,
-        slowMo: 500
+        slowMo: 500,
+        args: ['--window-position=0,0']
     });
-    const context = await browser.newContext({ignoreHTTPSErrors: ignoreHTTPSErrors });
+    const context = await browser.newContext({ignoreHTTPSErrors: ignoreHTTPSErrors, viewport: { width: 1792, height: 970 } });
     const page = await context.newPage();
-    page.on('console', msg => console.log("> CONSOLE:", (msg.text() + ' - ' + msg.location().url).replace(/\s+/g, ' ')));
-    page.on('pageerror', err => console.log("> PAGEERROR:", ('' + err).replace(/\s+/g, ' ')));
+    page.on('console', msg => {
+      const text = `${msg.text()} - ${msg.location().url}`.replace(/\s+/g, ' ');
+      if (!/vaadinPush|favicon.ico|Autofocus/.test(text)) out("> CONSOLE:", text, '\n');
+    });
+    page.on('pageerror', e => warn("> JSERROR:", ('' + e).replace(/\s+/g, ' '), '\n'));
     page.browser = browser;
     return page;
 }
@@ -68,34 +89,39 @@ async function takeScreenshot(page, name, descr) {
   const scr = path.basename(name);
   const cnt = String(++sscount).padStart(2, "0");
   const file = `${screenshots}/${scr}-${cnt}-${descr}.png`;
-  await page.waitForTimeout(1000);
+  await page.waitForTimeout(/^win/.test(process.platform) ? 10000 : process.env.GITHUB_ACTIONS ? 5000 : 1500);
   await page.screenshot({ path: file });
-  log(`Screenshot taken: ${file}\n`);
+  out(` 📸 Screenshot taken: ${file}\n`);
 }
 
 // Wait for the server to be ready and to get a valid response
 async function waitForServerReady(page, url, options = {}) {
   const {
-    maxRetries = 20, // Max number of retries
+    maxRetries = 35, // Max number of retries
     retryInterval = 5000 // Interval between retries in milliseconds
   } = options;
 
   log(`Opening ${url}\n`);
+  page.waitForTimeout(1000);
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
-      const response = await page.goto(url);
+      const response = await page.goto(url, {timeout: 120000});
       // Check if the response status is not 503
-      if (response && response.status() !== 503) {
-        log(`Attempt ${attempt} Server is ready and returned a valid response. ${response.status()}\n`);
+      if (response && response.status() < 400) {
+        await page.waitForTimeout(1500);
+        ok(` ✓ Attempt ${attempt} Server is ready and returned a valid response. ${response.status()}\n`);
         return response;
       } else {
-        log(`Attempt ${attempt} Server is not ready yet. ${response.status()}\n`);
+        out(` ⏲ Attempt ${attempt} Server is not ready yet. ${response.status()}\n`);
       }
     } catch (error) {
       if (error.message.includes('net::ERR_CERT_AUTHORITY_INVALID')) {
-        log(`Attempt ${attempt} Server has not a valid certificate, install it for ${url} or use --notls flag\n`);
+        err(` ⏲ Attempt ${attempt} Server has not a valid certificate, install it for ${url} or use --notls flag\n`);
       } else {
-        log(`Attempt ${attempt} Server failed with error: ${error.message}\n`);
+        err(` ⏲ Attempt ${attempt} Server failed with error: ${error.message}\n`);
+      }
+      if (attempt >= 10) {
+        throw new Error(`Server Error ${error}.\n`);
       }
     }
     await page.waitForTimeout(retryInterval);
@@ -104,7 +130,7 @@ async function waitForServerReady(page, url, options = {}) {
 }
 
 module.exports = {
-  log,
+  log, out, err, warn,
   run,
   args,
   createPage,

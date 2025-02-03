@@ -33,8 +33,8 @@ const {log, run, args, createPage, closePage, takeScreenshot, waitForServerReady
 
     await takeScreenshot(page, __filename, 'password-changed');
 
-    await page.getByLabel('First Name').fill(arg.login);
-    await page.getByLabel('Last Name').fill(arg.login);
+    await page.getByLabel('First Name').fill(arg.login.split('@')[0]);
+    await page.getByLabel('Last Name').fill(arg.login.split('@')[1]);
     await page.getByRole('button', { name: 'Submit' }).click();
     await takeScreenshot(page, __filename, 'user-configured');
 

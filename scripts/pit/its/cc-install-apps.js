@@ -1,6 +1,6 @@
 const { expect} = require('@playwright/test');
 const fs = require('fs');
-const {log, args, createPage, closePage, takeScreenshot, waitForServerReady} = require('./test-utils');
+const {log, args, run, createPage, closePage, takeScreenshot, waitForServerReady} = require('./test-utils');
 
 const arg = args();
 let count = 0;
@@ -12,8 +12,6 @@ async function installApp(app, page) {
     const cert = [ domain, uri ].map(a => `${a}.pem`).filter( a => fs.existsSync(a))[0]
     console.log(`Installing App: ${app} URI: ${uri} Cert: ${cert}`);
 
-    await takeScreenshot(page, __filename, `page-loaded-${app}`);
-
     await page.getByRole('listitem').filter({ hasText: 'Settings'}).click()
     await page.getByRole('button', {name: 'Deploy'}).click()
     await takeScreenshot(page, __filename, `form-opened-${app}`);
@@ -22,22 +20,26 @@ async function installApp(app, page) {
     await page.getByLabel('Image', {exact: true}).fill(`k8sdemos/${app}:latest`)
     await page.getByLabel('Application URI', {exact: true}).locator('input[type="text"]').fill(uri)
     if (cert) {
+        log(`Uploading certificate ${cert} for ${app}...\n`);
         await page.getByLabel('Upload').click();
         const fileChooserPromise = page.waitForEvent('filechooser');
         await page.getByText('Browse').click();
         const fileChooser = await fileChooserPromise;
         await fileChooser.setFiles(cert);
-        fileChooserPromise.then(await page.locator('.detail-layout').getByRole('button', {name: 'Deploy'}).click())
+        await takeScreenshot(page, __filename, `form-filled-${app}`);
+        await page.locator('.detail-layout').getByRole('button', {name: 'Deploy'}).click();
     } else {
+        log(`No certificate found for ${app}...\n`);
+        log(`No certificate found for ${app}\n`);
+        run(`pwd`);
+        run(`ls -l`);
         await page.getByLabel('Generate').click();
+        await takeScreenshot(page, __filename, `form-filled-${app}`);
         await page.locator('.detail-layout').getByRole('button', {name: 'Deploy'}).click();
     }
 
-    await takeScreenshot(page, __filename, `form-filled-${app}`);
-
     await page.getByRole('listitem').filter({ hasText: 'Settings'}).click()
-
-    await takeScreenshot(page, __filename, `application-created-${app}`);
+    await takeScreenshot(page, __filename, `form-saved-${app}`);
 
     await expect(page.locator('vaadin-grid').getByText(app, { exact: true })).toBeVisible();
     await expect(await page.getByRole('listitem').filter({ hasText: 'Applications'})
@@ -64,13 +66,19 @@ async function installApp(app, page) {
         await installApp(app, page);
     }
 
-    log(`Waiting for the applications to be available...\n`);
+    log(`Waiting for 2 applications to be available...\n`);
     const selector = 'vaadin-grid-cell-content span[theme="badge success"]';
-    await expect(page.locator(selector).nth(0)).toBeVisible({ timeout: 180000 });
+    const startTime = Date.now();
+
+    await expect(page.locator(selector).nth(0)).toBeVisible({ timeout: 280000 });
+    const firstAppTime = (Date.now() - startTime) / 1000;
     await takeScreenshot(page, __filename, 'app-1-available');
-    log(`First application is available\n`);
-    await expect(page.locator(selector).nth(1)).toBeVisible({ timeout: 180000 });
+    log(`First application is available after ${firstAppTime.toFixed(2)} seconds\n`);
+
+    await expect(page.locator(selector).nth(1)).toBeVisible({ timeout: 280000 });
+    const secondAppTime = (Date.now() - startTime) / 1000;
     await takeScreenshot(page, __filename, 'app-2-available');
-    log(`Second application is available\n`);
+    log(`Second application is available after ${secondAppTime.toFixed(2)} seconds\n`);
+
     await closePage(page);
 })();
