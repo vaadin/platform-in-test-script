@@ -11,7 +11,6 @@
 
 set -o pipefail
 
-
 ## Default configuration
 DEFAULT_PORT=8080
 DEFAULT_TIMEOUT=300
@@ -102,8 +101,9 @@ main() {
   ## Run demos (proper starters in github)
   for i in $demos; do
     if [ $i = control-center ]; then
-      mkdir -p tmp/$i && cd tmp/$i
-      run runControlCenter $i
+      cd "$tmp"
+      checkoutDemo $i || return 1
+      run validateControlCenter $i
       cd "$pwd"
       continue
     elif expr "$i" : '.*_jdk' >/dev/null; then

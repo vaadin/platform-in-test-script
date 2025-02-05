@@ -147,6 +147,7 @@ computeAbsolutePath() {
 }
 ## Compute the maven command to use for the project and stores in MVN env variable
 computeMvn() {
+  MVN=${MVN:-mvn}
   [ -x ./mvnw ] && MVN=./mvnw
   isWindows && [ -x ./mvnw.bat ] && MVN=./mvnw.bat
   isWindows && [ -x ./mvnw.cmd ] && MVN=./mvnw.cmd

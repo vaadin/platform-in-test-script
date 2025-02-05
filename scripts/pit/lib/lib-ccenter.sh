@@ -32,12 +32,14 @@ installCC() {
   [ -n "SKIPHELM" ] && H=`kubectl get pods 2>&1` && echo "$H" | egrep -q 'control-center-[0-9abcdef]+-..... ' && return 0
   [ -n "$VERBOSE" ] && D=--debug || D=""
   [ -n "$CC_KEY" -a -n "$CC_CERT" ] && args="--set app.tlsSecret=$CC_TLS_A --set keycloak.tlsSecret=$CC_TLS_K" || args=""
+  [ "$1" = "next" ] && args="$args charts/control-center --set app.image.tag=local" || args="$args oci://docker.io/vaadin/control-center"
+
   runCmd "$TEST" "Installing Vaadin Control Center" \
-   "time helm install control-center oci://docker.io/vaadin/control-center \
+   "time helm install control-center $args \
     -n $CC_NS --create-namespace --set livenessProbe.failureThreshold=20 \
     --set domain=$CC_DOMAIN \
     --set user.email=$CC_EMAIL \
-    --set app.host=$CC_CONTROL --set keycloak.host=$CC_AUTH $D $args"
+    --set app.host=$CC_CONTROL --set keycloak.host=$CC_AUTH $D" || return 1
 }
 
 ## a loop for waiting to the control-center to be ready
@@ -171,12 +173,21 @@ setClusterContext() {
   kubectl get ns >/dev/null 2>&1 || return 1
 }
 
+buildCC() {
+  computeMvn
+  [ -z "$VERBOSE" ] && D=-q || D=""
+  runCmd "$TEST" "Compiling CC" "'$MVN' $D -ntp -B -pl :control-center-app -Pproduction -DskipTests -am install" || return 1
+  runCmd "$TEST" "Creating CC application docker image" "'$MVN' $D -ntp -B -pl :control-center-app -Pproduction -Ddocker.tag=local docker:build" || return 1
+  runCmd "$TEST" "Creating CC keycloack docker image" "'$MVN' $D -ntp -B -pl :control-center-keycloak package -Ddocker.tag=local docker:build" || return 1
+  runCmd "$TEST" "Update helm dependencies" helm dependency build charts/control-center
+}
+
 ## Main method for running control center
 runControlCenter() {
-  CLUSTER=${CLUSTER:-$KIND_CLUSTER}
+  [ -z "$TEST" ] && bold "----> Running builds and tests on app control-center version=$1"
+  [ -n "$TEST" ] && cmd "### Run PiT for: app=contro-center version=$1"
 
-  checkCommands docker kubectl helm unzip || return 1
-  checkDockerRunning || return 1
+  CLUSTER=${CLUSTER:-$KIND_CLUSTER}
 
   ## Start a new kind cluster if needed
   [ "$CLUSTER" != "$KIND_CLUSTER" ] || createKindCluster $CLUSTER $CC_NS || return 1
@@ -188,10 +199,10 @@ runControlCenter() {
   [ -z "$SKIPHELM" ] && uninstallCC
 
   ## Check if port 443 is busy
-  checkBusyPort "443" || return 1
+  [ -z "$TEST" ] && checkBusyPort "443" || return 1
 
   ## Install Control Center
-  installCC || return 1
+  installCC $1 || return 1
   ## Control center takes a long time to start
   waitForCC 900 || return 1
 
@@ -214,9 +225,20 @@ runControlCenter() {
   ## Otherwise, uninstall the control-center if --keep-cc is not set
   [ -n "$TEST" -o -n "$KEEPCC" -o "$CLUSTER"  = "$KIND_CLUSTER" ] || uninstallCC --wait=false || return 1
 
+  [ -z "$TEST" ] && bold "----> The version $1 of 'control-center' app was successfully built and tested.\n"
+
   return 0
 }
 
+validateControlCenter() {
+  checkCommands docker kubectl helm unzip || return 1
+  checkDockerRunning || return 1
+  if [ -z "$NOCURRENT" ]; then
+    runControlCenter current
+  fi
+  buildCC || return 1
+  runControlCenter next
+}
 
 
 

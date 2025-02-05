@@ -63,6 +63,7 @@ jobs:
         env:
           CC_KEY: ${{ secrets.CC_KEY }}
           CC_CERT: ${{ secrets.CC_CERT }}
+          GHTK: ${{ secrets.GHTK }}
         run: |
           [ -n "${{ inputs.skipcurrent }}" ] && A="$A --skip-current"
           [ -n "${{ inputs.skipdev }}" ] && A="$A --skip-dev"
