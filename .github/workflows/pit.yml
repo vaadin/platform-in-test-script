@@ -37,12 +37,6 @@ jobs:
     steps:
       - name: Check out branch
         uses: actions/checkout@v4
-      - if: ${{ env.ACT }}
-        name: ACT - install dependencies
-        run: |
-          echo "export PATH='$PATH'" > path.sh
-          apt-get update
-          apt-get install -y vim iputils-ping sudo unzip wget jq curl
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
@@ -58,13 +52,24 @@ jobs:
       - name: Create k8s Kind Cluster
         uses: helm/kind-action@v1
         with:
-          install_only: false
+          cluster_name: cc-cluster
+      - if: ${{ env.ACT }}
+        name: ACT - install dependencies
+        run: |
+          for i in PATH CC_KEY CC_CERT GHTK
+          do
+             H=`eval 'echo $'$i`
+             echo "export $i='"$H"'" >> vars.sh
+          done
+          apt-get update
+          apt-get install -y vim iputils-ping sudo unzip wget jq curl
       - name: Run PiT
         env:
           CC_KEY: ${{ secrets.CC_KEY }}
           CC_CERT: ${{ secrets.CC_CERT }}
           GHTK: ${{ secrets.GHTK }}
         run: |
+          # Run PiT script with parameters given in inputs
           [ -n "${{ inputs.skipcurrent }}" ] && A="$A --skip-current"
           [ -n "${{ inputs.skipdev }}" ] && A="$A --skip-dev"
           [ -n "${{ inputs.debug }}" ] && A="$A --debug"

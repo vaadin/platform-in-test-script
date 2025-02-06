@@ -14,7 +14,7 @@ set -o pipefail
 ## Default configuration
 DEFAULT_PORT=8080
 DEFAULT_TIMEOUT=300
-
+START=`date +%s`
 ## starters and demos list is maintained in the repos.sh file
 DEFAULT_STARTERS=`echo "$PRESETS$DEMOS" | grep ...`
 
@@ -56,8 +56,7 @@ computeStarters() {
 
 ### MAIN
 main() {
-
-  _start=`date +%s`
+  _start=$START
 
   [ -z "$TEST" ] && log "===================== Running PiT Tests ============================================" \
 

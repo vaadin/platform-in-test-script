@@ -83,7 +83,8 @@ print() {
 
 ## log with some nice color
 log() {
-  print '> ' 0 32 "$*"
+  _p='> '`computeTime`' '
+  print "$_p" 0 32 "$*"
 }
 bold() {
   print '> ' 1 32 "$*"
@@ -866,16 +867,23 @@ enableJBRAutoreload() {
   changeMavenProperty scan -1
 }
 
-## prints ellapsed time
-## $1: if not empty it stablishes the start time and returns, if empty it logs the ellapsed time
-printTime() {
-  [ -n "$1" ] && _start=$1 || return
+## computes elapsed time
+## $1: the starttime in `date +%s`, otherwise the time since the script was run
+computeTime() {
+  __start=${1:-$START}
   __end=`date +%s`
-  __time=`expr $__end - $_start`
+  __time=`expr $__end - $__start`
   __mins=`expr $__time / 60`
   __secs=`expr $__time % 60`
+  printf "%.2d':%.2d\"" $__mins $__secs
+}
+
+## prints elapsed time
+## $1: the starttime in `date +%s`, otherwise the time since the script was run
+printTime() {
+  H=`computeTime $1`
   echo ""
-  log "Total time: $__mins' $__secs\""
+  log "Total time: $H\""
 }
 
 ## update Gradle to the version provided in $1

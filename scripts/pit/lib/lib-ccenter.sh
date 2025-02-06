@@ -179,6 +179,10 @@ buildCC() {
   runCmd "$TEST" "Compiling CC" "'$MVN' $D -ntp -B -pl :control-center-app -Pproduction -DskipTests -am install" || return 1
   runCmd "$TEST" "Creating CC application docker image" "'$MVN' $D -ntp -B -pl :control-center-app -Pproduction -Ddocker.tag=local docker:build" || return 1
   runCmd "$TEST" "Creating CC keycloack docker image" "'$MVN' $D -ntp -B -pl :control-center-keycloak package -Ddocker.tag=local docker:build" || return 1
+  if [ "$CLUSTER" = "$KIND_CLUSTER" ]; then
+      runCmd "$TEST" "Load docker image control-center-app for Kind" kind load docker-image vaadin/control-center-app:local --name "$CLUSTER" || return 1
+      runCmd "$TEST" "Load docker image control-center-keycloak for Kind " kind load docker-image vaadin/control-center-keycloak:local --name "$CLUSTER" || return 1
+  fi
   runCmd "$TEST" "Update helm dependencies" helm dependency build charts/control-center
 }
 
@@ -186,14 +190,6 @@ buildCC() {
 runControlCenter() {
   [ -z "$TEST" ] && bold "----> Running builds and tests on app control-center version=$1"
   [ -n "$TEST" ] && cmd "### Run PiT for: app=contro-center version=$1"
-
-  CLUSTER=${CLUSTER:-$KIND_CLUSTER}
-
-  ## Start a new kind cluster if needed
-  [ "$CLUSTER" != "$KIND_CLUSTER" ] || createKindCluster $CLUSTER $CC_NS || return 1
-
-  ## Set the context to the cluster
-  setClusterContext "$CLUSTER" "$CC_NS" || return 1
 
   ## Clean up CC from a previous run unless SKIPHELM is set
   [ -z "$SKIPHELM" ] && uninstallCC
@@ -233,11 +229,19 @@ runControlCenter() {
 validateControlCenter() {
   checkCommands docker kubectl helm unzip || return 1
   checkDockerRunning || return 1
-  if [ -z "$NOCURRENT" ]; then
-    runControlCenter current
-  fi
+
+  ## Start a new kind cluster if needed
+  CLUSTER=${CLUSTER:-$KIND_CLUSTER}
+  [ "$CLUSTER" != "$KIND_CLUSTER" ] || createKindCluster $CLUSTER $CC_NS || return 1
+
+  ## Set the context to the cluster
+  setClusterContext "$CLUSTER" "$CC_NS" || return 1
+
   buildCC || return 1
   runControlCenter next
+  # if [ -z "$NOCURRENT" ]; then
+  #   runControlCenter current
+  # fi
 }
 
 
