@@ -24,7 +24,7 @@ DEFAULT_STARTERS=`echo "$PRESETS$DEMOS" | grep ...`
 ## $3: folder where the demo will be downloaded
 run() {
   [ -n "$TEST" ] && W=Testing || W=Executing
-  log "================= $W $1 '$2' $OFFLINE =================="
+  [ -z "$TEST" ] && log "================= $W $1 '$2' $OFFLINE =================="
   $1 "$2" "$3" "$PORT" "$VERSION" "$OFFLINE"
   _err=$?
   [ -n "$TEST" ] && echo "" && return 0

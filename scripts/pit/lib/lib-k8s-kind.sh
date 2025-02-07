@@ -75,7 +75,7 @@ stopForwardIngress() {
 createKindCluster() {
   checkCommands kind || return 1
   kind get clusters | grep -q "^$1$" && return 0
-  runCmd "$TEST" "Creating KinD cluster: $1" \
+  runCmd false "Creating KinD cluster: $1" \
    "kind create cluster --name $1" || return 1
   runCmd "$TEST" "Setting default namespace $2" \
    "kubectl config set-context --current --namespace=$2"

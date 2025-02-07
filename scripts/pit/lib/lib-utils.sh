@@ -78,29 +78,34 @@ doExit() {
 
 ## print wrapper for coloring outputs
 print() {
-  printf "\033[0m$1\033[$2;$3m$4\033[0m\n" >&2
+  printf "\033[0m$1\033[$2;$3m$4\033[0m" >&2
+}
+
+printnl() {
+  print "$1" "$2" "$3" "$4\n"
 }
 
 ## log with some nice color
 log() {
-  _p='> '`computeTime`' '
-  print "$_p" 0 32 "$*"
+  _p=`computeTime`
+  print ' > ' 0 32 "$*"
+  printnl '' 2 36 " - "`computeTime`""
 }
 bold() {
-  print '> ' 1 32 "$*"
+  printnl '> ' 1 32 "$*"
 }
 err() {
-  print '> ' 0 31 "$*"
+  printnl '> ' 0 31 "$*"
 }
 warn() {
-  print '> ' 0 33 "$*"
+  printnl '> ' 0 33 "$*"
 }
 cmd() {
   cmd_=`printf "$*" | tr -s " " | perl -pe 's|\n|\\\\\\\n|g'`
-  print '  ' 1 34 " $cmd_"
+  printnl '  ' 1 34 " $cmd_"
 }
 dim() {
-  print '' 0 36 "$*"
+  printnl '' 0 36 "$*"
 }
 
 ## Reports an error to the GHA step-summary section

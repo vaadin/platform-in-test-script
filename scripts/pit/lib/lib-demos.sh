@@ -17,6 +17,7 @@ checkoutDemo() {
   [ -n "$_tk" ] && _base=`echo "$_base" | sed -e 's|\(https://\)|\\1'$_tk'@|'`
   _gitUrl="${_base}${_repo}.git"
   [ -z "$TEST" ] && log "Checking out $1"
+  [ -n "$TEST" ] && cmd "## Checking out $_repo"
   cmd "git clone $GITBASE$_repo.git"
   [ -z "$VERBOSE" ] && _quiet="-q"
   if [ -z "$_offline" -o ! -d "$_workdir" ]
