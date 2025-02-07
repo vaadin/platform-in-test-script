@@ -34,6 +34,8 @@ installCC() {
   [ -n "$CC_KEY" -a -n "$CC_CERT" ] && args="--set app.tlsSecret=$CC_TLS_A --set keycloak.tlsSecret=$CC_TLS_K" || args=""
   [ "$1" = "next" ] && args="$args charts/control-center --set app.image.tag=local --set keycloak.image.tag=local" || args="$args oci://docker.io/vaadin/control-center"
 
+
+
   runCmd "$TEST" "Installing Vaadin Control Center" \
    "time helm install control-center $args \
     -n $CC_NS --create-namespace \
@@ -151,11 +153,10 @@ showTemporaryPassword() {
 ## Run Playwright tests for the control-center
 runPwTests() {
   computeNpm
-  [ -d screenshots.out ] && runCmd "$TEST" "Removing old screenshots" "rm -rf screenshots.out"
   [ -n "$SKIPPW" ] && return 0
   [ -z "$CC_CERT" -o -z "$CC_KEY" ] && NO_TLS=--notls || NO_TLS=""
   for f in $CC_TESTS; do
-    runPlaywrightTests "$PIT_SCR_FOLDER/its/$f" "" "prod" "control-center" --url=https://$CC_CONTROL  --login=$CC_EMAIL $NO_TLS || return 1
+    runPlaywrightTests "$PIT_SCR_FOLDER/its/$f" "" "$1" "control-center" --url=https://$CC_CONTROL  --login=$CC_EMAIL $NO_TLS || return 1
     if [ "$f" = cc-install-apps.js ]; then
       reloadIngress && checkTls || return 1
     fi
@@ -190,7 +191,7 @@ buildCC() {
 ## Main method for running control center
 runControlCenter() {
   [ -z "$TEST" ] && bold "----> Running builds and tests on app control-center version=$1"
-  [ -n "$TEST" ] && cmd "### Run PiT for: app=contro-center version=$1"
+  [ -n "$TEST" ] && cmd "### Run PiT for: app=control-center version=$1"
 
   ## Clean up CC from a previous run unless SKIPHELM is set
   [ -z "$SKIPHELM" ] && uninstallCC
@@ -214,12 +215,10 @@ runControlCenter() {
   [ "$CLUSTER" != "$KIND_CLUSTER" ] || forwardIngress $CC_NS || return 1
 
   ## Run Playwright tests for the control-center
-  runPwTests || return 1
+  runPwTests "$1" || return 1
   stopForwardIngress || return 1
 
-  ## Delete the KinD cluster if it was created in this test if --keep-cc is not set
-  [ -n "$TEST" -o -n "$KEEPCC" -o "$CLUSTER" != "$KIND_CLUSTER" ] || deleteKindCluster "$CLUSTER" || return 1
-  ## Otherwise, uninstall the control-center if --keep-cc is not set
+  ## Uninstall the control-center if --keep-cc is not set
   [ -n "$TEST" -o -n "$KEEPCC" -o "$CLUSTER"  = "$KIND_CLUSTER" ] || uninstallCC --wait=false || return 1
 
   [ -z "$TEST" ] && bold "----> The version $1 of 'control-center' app was successfully built and tested.\n"
@@ -230,6 +229,7 @@ runControlCenter() {
 validateControlCenter() {
   checkCommands docker kubectl helm unzip || return 1
   checkDockerRunning || return 1
+  rm -rf screenshots.out
 
   ## Start a new kind cluster if needed
   CLUSTER=${CLUSTER:-$KIND_CLUSTER}
@@ -238,11 +238,19 @@ validateControlCenter() {
   ## Set the context to the cluster
   setClusterContext "$CLUSTER" "$CC_NS" || return 1
 
-  buildCC || return 1
-  runControlCenter next
-  # if [ -z "$NOCURRENT" ]; then
-  #   runControlCenter current
-  # fi
+  ## Run control center in current version (stable)
+  if [ -z "$NOCURRENT" ]; then
+    runControlCenter current || return 1
+  fi
+  ## Run
+  if expr "$VERSION" : ".*SNAPSHOT" >/dev/null ; then
+    uninstallCC --wait=false
+    buildCC || return 1
+    runControlCenter next || return 1
+  fi
+
+  ## Delete the KinD cluster if it was created in this test if --keep-cc is not set
+  [ -n "$TEST" -o -n "$KEEPCC" -o "$CLUSTER" != "$KIND_CLUSTER" ] || deleteKindCluster "$CLUSTER" || return 1
 }
 
 

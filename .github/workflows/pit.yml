@@ -5,6 +5,7 @@ on:
       version:
         description: 'Version'
         required: false
+        default: 'SNAPSHOT'
         type: string
       starters:
         description: 'Starters to run, separated by comma'
@@ -73,7 +74,7 @@ jobs:
           [ -n "${{ inputs.skipcurrent }}" ] && A="$A --skip-current"
           [ -n "${{ inputs.skipdev }}" ] && A="$A --skip-dev"
           [ -n "${{ inputs.debug }}" ] && A="$A --debug"
-          [ -n "${{ inputs.version }}" ] && A="$A --version=${{ inputs.version }}"
+          [ -n "${{ inputs.version }}" ] && A="$A --version=${{ inputs.version }}" || A="$A --version=SNAPSHOT"
           [ -n "${{ inputs.starters }}" ] && A="$A --starters=${{ inputs.starters }}" || A="$A --starters=control-center"
           echo ./scripts/pit/run.sh $A
           ./scripts/pit/run.sh $A
