@@ -32,11 +32,12 @@ installCC() {
   [ -n "SKIPHELM" ] && H=`kubectl get pods 2>&1` && echo "$H" | egrep -q 'control-center-[0-9abcdef]+-..... ' && return 0
   [ -n "$VERBOSE" ] && D=--debug || D=""
   [ -n "$CC_KEY" -a -n "$CC_CERT" ] && args="--set app.tlsSecret=$CC_TLS_A --set keycloak.tlsSecret=$CC_TLS_K" || args=""
-  [ "$1" = "next" ] && args="$args charts/control-center --set app.image.tag=local" || args="$args oci://docker.io/vaadin/control-center"
+  [ "$1" = "next" ] && args="$args charts/control-center --set app.image.tag=local --set keycloak.image.tag=local" || args="$args oci://docker.io/vaadin/control-center"
 
   runCmd "$TEST" "Installing Vaadin Control Center" \
    "time helm install control-center $args \
-    -n $CC_NS --create-namespace --set livenessProbe.failureThreshold=20 \
+    -n $CC_NS --create-namespace \
+    --set startupProbe.initialDelaySeconds=200 \
     --set domain=$CC_DOMAIN \
     --set user.email=$CC_EMAIL \
     --set app.host=$CC_CONTROL --set keycloak.host=$CC_AUTH $D" || return 1
