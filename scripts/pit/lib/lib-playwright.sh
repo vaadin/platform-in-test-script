@@ -40,7 +40,7 @@ runPlaywrightTests() {
   isHeadless && _args="$_args --headless"
   [ -z "$TEST" ] && log "Running Visual-Test: $_test_file $_args"
   [ -n "$TEST" ] && cmd "## Running Visual-Test: $_test_file $_args"
-  PATH=$PATH runToFile "'$NODE' '$_test_file' $_args" "$_pfile" "$VERBOSE" true
+  PATH=$PATH START=$START runToFile "'$NODE' '$_test_file' $_args" "$_pfile" "$VERBOSE" true
   err=$?
   [ -n "$TEST" ] && return 0
   H=`grep ' > CONSOLE:' "$_pfile" | perl -pe 's/(> CONSOLE: Received xhr.*?feat":).*/$1 .../g'`

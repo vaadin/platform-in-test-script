@@ -8,8 +8,18 @@ defineConfig({
   expect: {timeout: 30 * 1000},
 });
 
+function computeTime() {
+  if (!process.env.START) return "";
+  const timeElapsed =  Math.floor(Date.now() / 1000) - process.env.START;
+  const mins = Math.floor(timeElapsed / 60);
+  const secs = timeElapsed % 60;
+  const str = `${String(mins).padStart(2, '0')}':${String(secs).padStart(2, '0')}"`
+  return `\x1b[2;36m - ${str}\x1b[0m`
+}
+
 function log(...args) {
-  process.stderr.write(`\x1b[0m> \x1b[0;32m${args}\x1b[0m`);
+  const str = `${args}`.replace(/\n$/, '');
+  process.stderr.write(`\x1b[0m> \x1b[0;32m${str}\x1b[0m${computeTime()}\n`);
 }
 function out(...args) {
   process.stderr.write(`\x1b[2m\x1b[196m${args}\x1b[0m`);
