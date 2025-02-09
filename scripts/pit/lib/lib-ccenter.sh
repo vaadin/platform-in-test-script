@@ -61,10 +61,11 @@ waitForCC() {
           echo "" && log "Control Center up and running - Status: $H"
           return 0 ;;
         *)
-          [ "$H" != "$last" ] && ([ -n "$last" ] && echo "" || true) && log "Control center initializing - Status: $H" || ([ -n "$VERBOSE" ] && printf .)
+          [ "$H" != "$last" ] && ([ -n "$VERBOSE" -a -n "$last" ] && echo "" || true) \
+                              && log "Control center initializing - Status: $H" \
+                              || ([ -n "$VERBOSE" ] && printf .)
           last="$H"
-          sleep 1
-          ;;
+          sleep 1 ;;
       esac
   done
 }
@@ -192,6 +193,19 @@ runControlCenter() {
   ## Check if port 443 is busy
   [ -n "$TEST" ] || checkBusyPort "443" || return 1
 
+  ## Start a new kind cluster if needed
+  CLUSTER=${CLUSTER:-$KIND_CLUSTER}
+  [ "$CLUSTER" != "$KIND_CLUSTER" ] || createKindCluster $CLUSTER $CC_NS || return 1
+
+  ## Set the context to the cluster
+  setClusterContext "$CLUSTER" "$CC_NS" || return 1
+
+  ## Clean up CC from a previous run unless SKIPHELM is set
+  [ -z "$SKIPHELM" ] && uninstallCC
+
+  ## Build CC if version is snapshot
+  [ "$1" = current ] || buildCC || return 1
+
   ## Install Control Center
   installCC $1 || return 1
   ## Control center takes a long time to start
@@ -211,9 +225,12 @@ runControlCenter() {
   runPwTests "$1" || return 1
   stopForwardIngress || return 1
 
+  ## Delete the KinD cluster if it was created in this test if --keep-cc is not set
+  [ -n "$KEEPCC" -o "$CLUSTER" != "$KIND_CLUSTER" ] || deleteKindCluster "$CLUSTER" || return 1
+
   ## Uninstall the control-center if --keep-cc is not set
-  [ -n "$TEST" -o -n "$KEEPCC" -o "$CLUSTER"  = "$KIND_CLUSTER" ] || uninstallCC --wait=false || return 1
-  [ -z "$TEST" ] && bold "\n----> The version '$1' of 'control-center' app was successfully built and tested.\n\n"
+  [ -n "$KEEPCC" -o "$CLUSTER"  = "$KIND_CLUSTER" ] || uninstallCC --wait=false || return 1
+  [ -z "$TEST" ] && bold "----> The version '$1' of 'control-center' app was successfully built and tested."
 
   return 0
 }
@@ -222,30 +239,14 @@ validateControlCenter() {
   checkCommands docker kubectl helm unzip || return 1
   checkDockerRunning || return 1
   rm -rf screenshots.out
-
-  ## Start a new kind cluster if needed
-  CLUSTER=${CLUSTER:-$KIND_CLUSTER}
-  [ "$CLUSTER" != "$KIND_CLUSTER" ] || createKindCluster $CLUSTER $CC_NS || return 1
-
-  ## Set the context to the cluster
-  setClusterContext "$CLUSTER" "$CC_NS" || return 1
-
-  ## Clean up CC from a previous run unless SKIPHELM is set
-  [ -z "$SKIPHELM" ] && uninstallCC
-
   ## Run control center in current version (stable)
   if [ -z "$NOCURRENT" ]; then
     runControlCenter current || return 1
   fi
   ## Run
   if expr "$VERSION" : ".*SNAPSHOT" >/dev/null ; then
-    uninstallCC
-    buildCC || return 1
     runControlCenter next || return 1
   fi
-
-  ## Delete the KinD cluster if it was created in this test if --keep-cc is not set
-  [ -n "$TEST" -o -n "$KEEPCC" -o "$CLUSTER" != "$KIND_CLUSTER" ] || deleteKindCluster "$CLUSTER" || return 1
 }
 
 

@@ -205,15 +205,15 @@ runCmd() {
     _cmd=`echo "$_cmd" | sed -e 's/&$//'`
     eval "$_cmd" &
     _pid=$!
+    _err=$?
     sleep 2
     kill -0 $_pid 2>/dev/null || return 1
   else
-    if [ -n "$_silent" ]; then
-      eval "$_cmd" >/dev/null 2>&1
-    else
-      eval "$_cmd"
-    fi
+    eval "$_cmd" > runCmd.out 2>&1
+    _err=$?
+    [ $_err != 0 -o -z "$_silent" ] && cat runCmd.out >&2 || rm -f runCmd.out
   fi
+  return $_err
 }
 
 ##
