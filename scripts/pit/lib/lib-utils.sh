@@ -88,11 +88,12 @@ printnl() {
 ## log with some nice color
 log() {
   _p=`computeTime`
-  print ' > ' 0 32 "$*"
+  print '> ' 0 32 "$*"
   printnl '' 2 36 " - "`computeTime`""
 }
 bold() {
-  printnl '> ' 1 32 "$*"
+  print '\n> ' 1 32 "$*"
+  printnl '' 2 36 " - "`computeTime`"\n"
 }
 err() {
   printnl '> ' 0 31 "$*"
@@ -178,19 +179,27 @@ computeNpm() {
 }
 
 ## Run a command, and shows a message explaining it
-## $1: whether run or not the command, used for testing
+## $1: it's optional and it could be -q (quiet sending output to dev/null) -f (force execution even when $TEST is set)
 ## $2: message to show
 ## $*: command line order and arguments
 runCmd() {
-  _skip=$1
-  shift
-  [ -z "$2" ] && echo "bad arguments to runCmd" && return 1
-  [ -n "$1" -a -z "$TEST" ] && log "$1"
-  [ -n "$1" -a -n "$TEST" ] && cmd "## $1"
+  expr "$1" : "\-" > /dev/null && _opt=${1#-} && shift || _opt=""
+  expr "$_opt" : ".*q" >/dev/null && _silent=true || _silent=""
+  expr "$_opt" : ".*f" >/dev/null && _force=true || _force=""
+
+  ## TODO fix this removing runCmd "$TEST"
+  [ "$1" = false ] && _force=true && shift
+  [ "$1" = true ] && shift
+  ## TODO fix this removing runCmd ""
+  [ -z "$1" ] && shift
+
+  [ -z "$1" ] && echo "bad arguments call: runCmd <true|false|-q> <message> command args" && return 1
+
+  [ -z "$TEST" ] && log "$1" || cmd "## $1"
   shift
   _cmd="${*}"
   cmd "$_cmd"
-  [ true = "$_skip" -o test = "$_skip" ] && return 0
+  [ -z "$_force" -a -n "$TEST" ] && return 0
   if expr "$_cmd" : ".*&$" >/dev/null
   then
     _cmd=`echo "$_cmd" | sed -e 's/&$//'`
@@ -199,8 +208,17 @@ runCmd() {
     sleep 2
     kill -0 $_pid 2>/dev/null || return 1
   else
-    eval "$_cmd"
+    if [ -n "$_silent" ]; then
+      eval "$_cmd" >/dev/null 2>&1
+    else
+      eval "$_cmd"
+    fi
   fi
+}
+
+##
+runCmdQuiet() {
+  :
 }
 
 ## Run a command and outputs its stdout/stderr to a file
@@ -872,15 +890,20 @@ enableJBRAutoreload() {
   changeMavenProperty scan -1
 }
 
+## displays secs in mins:secs
+## $1: seconds
+secsToString() {
+  __mins=`expr $1 / 60`
+  __secs=`expr $1 % 60`
+  printf "%.2d':%.2d\"" $__mins $__secs
+}
+
 ## computes elapsed time
 ## $1: the starttime in `date +%s`, otherwise the time since the script was run
 computeTime() {
   __start=${1:-$START}
   __end=`date +%s`
-  __time=`expr $__end - $__start`
-  __mins=`expr $__time / 60`
-  __secs=`expr $__time % 60`
-  printf "%.2d':%.2d\"" $__mins $__secs
+  secsToString `expr $__end - $__start`
 }
 
 ## prints elapsed time
@@ -888,7 +911,7 @@ computeTime() {
 printTime() {
   H=`computeTime $1`
   echo ""
-  log "Total time: $H\""
+  log "Elapsed Time: $H\""
 }
 
 ## update Gradle to the version provided in $1

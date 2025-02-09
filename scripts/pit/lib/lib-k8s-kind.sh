@@ -27,11 +27,11 @@ setSuid() {
   sudo -B true || return 1
 
   runCmd "$TEST" "Changing owner to root to: $R" "sudo chown root $R" \
-    && runCmd "$TEST" "Changing set-uid to: $R" "sudo chmod u+s $R" && echo "kubectl" && return 0
+    && runCmd "Changing set-uid to: $R" "sudo chmod u+s $R" && echo "kubectl" && return 0
 
   runCmd "$TEST" "Coping $R" "sudo cp $R $T" \
-    && runCmd "$TEST" "Changing owner to root to: $T" "sudo chown root $T" \
-    && runCmd "$TEST" "Changing set-uid to: $R" "sudo chmod u+s $T" && echo "$T" && return 0
+    && runCmd "Changing owner to root to: $T" "sudo chown root $T" \
+    && runCmd "Changing set-uid to: $R" "sudo chmod u+s $T" && echo "$T" && return 0
 }
 
 ##
@@ -40,7 +40,7 @@ setSuid() {
 # $3: port in guest
 # $4: target port in host
 startPortForward() {
-  checkPort "$4" && err "Port $4 is already in use" && return 1
+  [ -z "$TEST" ] && checkPort "$4" && err "Port $4 is already in use" && return 1
   H=`getPids "kubectl port-forward $2"`
   [ -n "$H" ] && log "Already running k8s port-forward $1 $2 $3 -> $4 with pid $H" && return 0
   [ -z "$TEST" ] && log "Starting k8s port-forward $1 $2 $3 -> $4"
@@ -48,8 +48,9 @@ startPortForward() {
   bgf="k8s-port-forward-$3-$4.log"
   rm -f "$bgf"
   runInBackgroundToFile "$K port-forward $2 $4:$3 -n $1" "$bgf"
+  [ -n "$TEST" ] && return 0
   sleep 2
-  tail "$bgf"
+  [ -n "$VERBOSE" ] && tail "$bgf"
   egrep -q 'Forwarding from' "$bgf"
 }
 
@@ -58,7 +59,7 @@ startPortForward() {
 stopPortForward() {
   H=`getPids kubectl "port-forward service/$1"`
   [ -z "$H" ] && return 0
-  runCmd "$TEST" "Stoping k8s port-forward $1" "kill -TERM $H" || return 1
+  runCmd -q "Stoping k8s port-forward $1" "kill -TERM $H" || return 1
 }
 
 forwardIngress() {
@@ -74,10 +75,10 @@ stopForwardIngress() {
 # $2: namespace
 createKindCluster() {
   checkCommands kind || return 1
-  kind get clusters | grep -q "^$1$" && return 0
-  runCmd false "Creating KinD cluster: $1" \
+  kind get clusters 2>/dev/null | grep -q "^$1$" && return 0
+  runCmd -f "Creating KinD cluster: $1" \
    "kind create cluster --name $1" || return 1
-  runCmd "$TEST" "Setting default namespace $2" \
+  runCmd -q "Setting default namespace $2" \
    "kubectl config set-context --current --namespace=$2"
   }
 
@@ -85,7 +86,7 @@ createKindCluster() {
 # $1: cluster name
 deleteKindCluster() {
   kind get clusters | grep -q "^$1$" || return 0
-  runCmd "$TEST" "Deleting Cluster $1" \
+  runCmd -q "Deleting Cluster $1" \
    "kind delete cluster --name $1" || return 1
 }
 

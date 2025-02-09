@@ -28,6 +28,7 @@ checkPlaywrightInstallation() {
 ## Run playwright tests
 runPlaywrightTests() {
   _test_file="$1"
+  _base_name=`basename "$1"`
   _ofile="$2"
   _mode="$3"
   _name="$4"
@@ -38,8 +39,8 @@ runPlaywrightTests() {
 
   _args="$* --name=$_name --mode=$_mode"
   isHeadless && _args="$_args --headless"
-  [ -z "$TEST" ] && log "Running Visual-Test: $_test_file $_args"
-  [ -n "$TEST" ] && cmd "## Running Visual-Test: $_test_file $_args"
+  [ -z "$TEST" ] && log "Running Visual-Test: $_base_name"
+  [ -n "$TEST" ] && cmd "## Running Visual-Test: $_base_name"
   PATH=$PATH START=$START runToFile "'$NODE' '$_test_file' $_args" "$_pfile" "$VERBOSE" true
   err=$?
   [ -n "$TEST" ] && return 0

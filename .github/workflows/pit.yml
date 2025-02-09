@@ -77,6 +77,7 @@ jobs:
           [ -n "${{ inputs.version }}" ] && A="$A --version=${{ inputs.version }}" || A="$A --version=SNAPSHOT"
           [ -n "${{ inputs.starters }}" ] && A="$A --starters=${{ inputs.starters }}" || A="$A --starters=control-center"
           echo ./scripts/pit/run.sh $A
+          ./scripts/pit/run.sh $A --test
           ./scripts/pit/run.sh $A
       - if: ${{ always()}}
         uses: actions/upload-artifact@v4
