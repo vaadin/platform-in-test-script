@@ -8,8 +8,18 @@ defineConfig({
   expect: {timeout: 30 * 1000},
 });
 
+function computeTime() {
+  if (!process.env.START) return "";
+  const timeElapsed =  Math.floor(Date.now() / 1000) - process.env.START;
+  const mins = Math.floor(timeElapsed / 60);
+  const secs = timeElapsed % 60;
+  const str = `${String(mins).padStart(2, '0')}':${String(secs).padStart(2, '0')}"`
+  return `\x1b[2;36m - ${str}\x1b[0m`
+}
+
 function log(...args) {
-  process.stderr.write(`\x1b[0m> \x1b[0;32m${args}\x1b[0m`);
+  const str = `${args}`.replace(/\n$/, '');
+  process.stderr.write(`\x1b[0m> \x1b[0;32m${str}\x1b[0m${computeTime()}\n`);
 }
 function out(...args) {
   process.stderr.write(`\x1b[2m\x1b[196m${args}\x1b[0m`);
@@ -26,7 +36,7 @@ function err(...args) {
 }
 
 const run = async (cmd) => (await promisify(exec)(cmd)).stdout;
-
+let mode;
 
 const args = () => {
   const ret = {
@@ -53,6 +63,8 @@ const args = () => {
       ret.tmppass = a.split('=')[1];
     } else if (/^--notls/.test(a)) {
       ret.ignoreHTTPSErrors = true;
+    } else if (/^--mode/.test(a)) {
+      mode = ret.mode = a.split('=')[1];
     }
   });
   if (!ret.url) {
@@ -88,7 +100,7 @@ let sscount = 0;
 async function takeScreenshot(page, name, descr) {
   const scr = path.basename(name);
   const cnt = String(++sscount).padStart(2, "0");
-  const file = `${screenshots}/${scr}-${cnt}-${descr}.png`;
+  const file = `${screenshots}/${mode ? mode + '-': '' }${scr}-${cnt}-${descr}.png`;
   await page.waitForTimeout(/^win/.test(process.platform) ? 10000 : process.env.GITHUB_ACTIONS ? 5000 : 1500);
   await page.screenshot({ path: file });
   out(` 📸 Screenshot taken: ${file}\n`);

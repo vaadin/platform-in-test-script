@@ -32,12 +32,15 @@ installCC() {
   [ -n "SKIPHELM" ] && H=`kubectl get pods 2>&1` && echo "$H" | egrep -q 'control-center-[0-9abcdef]+-..... ' && return 0
   [ -n "$VERBOSE" ] && D=--debug || D=""
   [ -n "$CC_KEY" -a -n "$CC_CERT" ] && args="--set app.tlsSecret=$CC_TLS_A --set keycloak.tlsSecret=$CC_TLS_K" || args=""
-  runCmd "$TEST" "Installing Vaadin Control Center" \
-   "time helm install control-center oci://docker.io/vaadin/control-center \
-    -n $CC_NS --create-namespace --set livenessProbe.failureThreshold=20 \
+  [ "$1" = "next" ] && args="$args charts/control-center --set app.image.tag=local --set keycloak.image.tag=local" || args="$args oci://docker.io/vaadin/control-center"
+
+  runToFile "helm install control-center $args \
+    -n $CC_NS --create-namespace \
+    --set startupProbe.initialDelaySeconds=200 \
     --set domain=$CC_DOMAIN \
     --set user.email=$CC_EMAIL \
-    --set app.host=$CC_CONTROL --set keycloak.host=$CC_AUTH $D $args"
+    --set app.host=$CC_CONTROL --set keycloak.host=$CC_AUTH $D" "helm-install-$1.out" "$VERBOSE" || return 1
+  return 0
 }
 
 ## a loop for waiting to the control-center to be ready
@@ -55,13 +58,14 @@ waitForCC() {
         "")
           log "Control center not installed in k8s" && return 1 ;;
         1/1*Running*)
-          echo "" && log "Done ($elapsed secs.) - Status: $H"
+          echo "" && log "Control Center up and running - Status: $H"
           return 0 ;;
         *)
-          [ "$H" != "$last" ] && ([ -n "$last" ] && echo "" || true) && log "Control center initializing - Status: $H" || printf .
+          [ "$H" != "$last" ] && ([ -n "$VERBOSE" -a -n "$last" ] && echo "" || true) \
+                              && log "Control center initializing - Status: $H" \
+                              || ([ -n "$VERBOSE" ] && printf .)
           last="$H"
-          sleep 1
-          ;;
+          sleep 1 ;;
       esac
   done
 }
@@ -71,23 +75,22 @@ uninstallCC() {
   H=`kubectl get ns 2>&1`
   [ $? = 0 ] && echo "$H" | egrep -q "^$CC_NS " || return 0
   [ -n "$VERBOSE" ] && HD=--debug && KD=--v=10
-  runCmd "$TEST" "Uninstalling Control-Center" helm uninstall control-center --wait -n $CC_NS $HD
-  runCmd "$TEST" "Removing namespace $CC_NS" kubectl delete ns $CC_NS $KD $1
+  runCmd -q "Uninstalling Control-Center" helm uninstall control-center --wait -n $CC_NS $HD
+  runCmd -q "Removing namespace $CC_NS" kubectl delete ns $CC_NS $KD $1
 }
 
 getTLs() {
-  log "TLS config for ingress: $1"
   H=`kubectl get ingress $1 -n $CC_NS -o jsonpath='{.spec.rules[0].host}'`
   HS=`kubectl get ingress $1 -n $CC_NS -o jsonpath='{.spec.tls[*].hosts[*]}'`
   S=`kubectl get ingress $1 -n $CC_NS -o jsonpath='{.spec.tls[*].secretName}'`
   C=`kubectl get secret $S -n $CC_NS -o go-template='{{ index .data "tls.crt" | base64decode }}' | openssl x509 -noout -issuer -subject -enddate | tr '\n' ' '`
-  log "Host: $H is in ingress $1 with TLS config\n   hosts: $HS secret: $S cert: $C"
+  log "TLS config for ingress: $1, secret: $S"
+  dim " hosts: $HS cert: $C"
 }
 
 checkTls() {
   [ -n "$TEST" ] && return 0
   log "Checking TLS certificates for all ingresses hosted in the cluster"
-  [ -n "$TEST" -o -n "$SKIPHELM" ] && return 0
   for i in `kubectl get ingresses -n $CC_NS | grep nginx | awk '{print $1}'`; do
     getTLs "$i"
   done
@@ -96,13 +99,13 @@ checkTls() {
 reloadIngress() {
   [ -n "$TEST" ] && return 0
   pod=`kubectl -n $CC_NS get pods | grep control-center-ingress-nginx-controller | awk '{print $1}'` || return 1
-  [ -n "$pod" ] && runCmd "$TEST" "Reloading nginx in $pod" "kubectl exec $pod -n "$CC_NS" -- nginx -s reload" || return 1
+  [ -n "$pod" ] && runCmd -q "Reloading nginx in $pod" "kubectl exec $pod -n "$CC_NS" -- nginx -s reload" || return 1
   [ -z "$TEST" ] && sleep 3
 }
 
 ## Configure secrets for the control-center and the keycloak servers
 installTls() {
-  [ -n "$SKIPHELM" ] && return 0
+  [ -n "$TEST" ] && return 0
   [ -z "$CC_KEY" -o -z "$CC_CERT" ] && log "No CC_KEY and CC_CERT provided, skiping TLS installation" && return 0
   # [ -n "$CC_FULL" ] && CC_CERT="$CC_FULL"
   [ -z "$TEST" ] && log "Installing TLS $CC_TLS for $CC_CONTROL and $CC_AUTH" || cmd "## Creating TLS file '$CC_DOMAIN.pem' from envs"
@@ -114,23 +117,22 @@ installTls() {
   cat $f1 $f2 > $f3
 
   # remove old secrets if they exist (only needed for testing purposes since secrets are deleted before running the helm chart)
-  kubectl get secret $CC_TLS_A -n $CC_NS >/dev/null 2>&1 && kubectl delete secret $CC_TLS_A -n $CC_NS
-  kubectl get secret $CC_TLS_K -n $CC_NS >/dev/null 2>&1 && kubectl delete secret $CC_TLS_K -n $CC_NS
+  kubectl get secret $CC_TLS_A -n $CC_NS >/dev/null 2>&1 && kubectl delete secret $CC_TLS_A -n $CC_NS >/dev/null 2>&1
+  kubectl get secret $CC_TLS_K -n $CC_NS >/dev/null 2>&1 && kubectl delete secret $CC_TLS_K -n $CC_NS >/dev/null 2>&1
 
   # generate new secrets
-  runCmd "$TEST" "Creating TLS secret $CC_TLS_A in cluster" \
+  runCmd -q "Creating TLS secret $CC_TLS_A in cluster" \
     "kubectl -n $CC_NS create secret tls $CC_TLS_A --key '$f2' --cert '$f1'" || return 1
-  runCmd "$TEST" "Creating TLS secret $CC_TLS_K in cluster" \
+  runCmd -q "Creating TLS secret $CC_TLS_K in cluster" \
     "kubectl -n $CC_NS create secret tls $CC_TLS_K --key '$f2' --cert '$f1'" || return 1
   # not needed anymore
   rm -f $f1 $f2
 
   # patch the ingress with the new secrets (only needed for testing purposes since secrets are set with the helm chart args)
-  runCmd "$TEST" "patching $CC_TLS_A" kubectl patch ingress $CC_ING_A -n $CC_NS --type=merge --patch \
+  runCmd -q "patching $CC_TLS_A" kubectl patch ingress $CC_ING_A -n $CC_NS --type=merge --patch \
     "'"'{"spec": {"tls": [{"hosts": ["'$CC_CONTROL'"],"secretName": "'$CC_TLS_A'"}]}}'"'"
-  runCmd "$TEST" "patching $CC_TLS_K" kubectl patch ingress $CC_ING_K -n $CC_NS --type=merge --patch \
+  runCmd -q "patching $CC_TLS_K" kubectl patch ingress $CC_ING_K -n $CC_NS --type=merge --patch \
     "'"'{"spec": {"tls": [{"hosts": ["'$CC_AUTH'"],"secretName": "'$CC_TLS_K'"}]}}'"'"
-
   [ -n "$TEST" ] && return 0
 
   reloadIngress || return 1
@@ -148,11 +150,10 @@ showTemporaryPassword() {
 ## Run Playwright tests for the control-center
 runPwTests() {
   computeNpm
-  [ -d screenshots.out ] && runCmd "$TEST" "Removing old screenshots" "rm -rf screenshots.out"
   [ -n "$SKIPPW" ] && return 0
   [ -z "$CC_CERT" -o -z "$CC_KEY" ] && NO_TLS=--notls || NO_TLS=""
   for f in $CC_TESTS; do
-    runPlaywrightTests "$PIT_SCR_FOLDER/its/$f" "" "prod" "control-center" --url=https://$CC_CONTROL  --login=$CC_EMAIL $NO_TLS || return 1
+    runPlaywrightTests "$PIT_SCR_FOLDER/its/$f" "" "$1" "control-center" --url=https://$CC_CONTROL  --login=$CC_EMAIL $NO_TLS || return 1
     if [ "$f" = cc-install-apps.js ]; then
       reloadIngress && checkTls || return 1
     fi
@@ -164,21 +165,36 @@ setClusterContext() {
   ns=$2
   H=`kubectl config get-contexts  | tr '*' ' ' | awk '{print $1}' | egrep "^$current$"`
   [ -z "$H" ] && log "Cluster $current not found in kubectl contexts" && return 1
-  runCmd "$TEST" "Setting context to $current" "kubectl config use-context $current" || return 1
+  runCmd -q "Setting context to $current" "kubectl config use-context $current" || return 1
   H=`kubectl config current-context`
   [ "$H" != "$current" ] && log "Current context is not $current" && return 1
-  runCmd "$TEST" "Setting default namespace to $ns" "kubectl config set-context --current --namespace=$ns" || return 1
+  runCmd -q "Setting default namespace to $ns" "kubectl config set-context --current --namespace=$ns" || return 1
   kubectl get ns >/dev/null 2>&1 || return 1
+}
+
+buildCC() {
+  computeMvn
+  [ -z "$VERBOSE" ] && D=-q || D=""
+  runCmd "$TEST" "Compiling CC" "'$MVN' $D -ntp -B -pl :control-center-app -Pproduction -DskipTests -am install" || return 1
+  runCmd "$TEST" "Creating CC application docker image" "'$MVN' $D -ntp -B -pl :control-center-app -Pproduction -Ddocker.tag=local docker:build" || return 1
+  runCmd "$TEST" "Creating CC keycloack docker image" "'$MVN' $D -ntp -B -pl :control-center-keycloak package -Ddocker.tag=local docker:build" || return 1
+  if [ "$CLUSTER" = "$KIND_CLUSTER" ]; then
+      runCmd -q "Load docker image control-center-app for Kind" kind load docker-image vaadin/control-center-app:local --name "$CLUSTER" || return 1
+      runCmd -q "Load docker image control-center-keycloak for Kind " kind load docker-image vaadin/control-center-keycloak:local --name "$CLUSTER" || return 1
+  fi
+  runCmd -q "Update helm dependencies" helm dependency build charts/control-center
 }
 
 ## Main method for running control center
 runControlCenter() {
-  CLUSTER=${CLUSTER:-$KIND_CLUSTER}
+  [ -z "$TEST" ] && bold "----> Running builds and tests on app control-center version: '$1'"
+  [ -n "$TEST" ] && cmd "\n### Run PiT for: app=control-center version '$1'"
 
-  checkCommands docker kubectl helm unzip || return 1
-  checkDockerRunning || return 1
+  ## Check if port 443 is busy
+  [ -n "$TEST" ] || checkBusyPort "443" || return 1
 
   ## Start a new kind cluster if needed
+  CLUSTER=${CLUSTER:-$KIND_CLUSTER}
   [ "$CLUSTER" != "$KIND_CLUSTER" ] || createKindCluster $CLUSTER $CC_NS || return 1
 
   ## Set the context to the cluster
@@ -187,11 +203,11 @@ runControlCenter() {
   ## Clean up CC from a previous run unless SKIPHELM is set
   [ -z "$SKIPHELM" ] && uninstallCC
 
-  ## Check if port 443 is busy
-  checkBusyPort "443" || return 1
+  ## Build CC if version is snapshot
+  [ "$1" = current ] || buildCC || return 1
 
   ## Install Control Center
-  installCC || return 1
+  installCC $1 || return 1
   ## Control center takes a long time to start
   waitForCC 900 || return 1
 
@@ -206,17 +222,32 @@ runControlCenter() {
   [ "$CLUSTER" != "$KIND_CLUSTER" ] || forwardIngress $CC_NS || return 1
 
   ## Run Playwright tests for the control-center
-  runPwTests || return 1
+  runPwTests "$1" || return 1
   stopForwardIngress || return 1
 
   ## Delete the KinD cluster if it was created in this test if --keep-cc is not set
-  [ -n "$TEST" -o -n "$KEEPCC" -o "$CLUSTER" != "$KIND_CLUSTER" ] || deleteKindCluster "$CLUSTER" || return 1
-  ## Otherwise, uninstall the control-center if --keep-cc is not set
-  [ -n "$TEST" -o -n "$KEEPCC" -o "$CLUSTER"  = "$KIND_CLUSTER" ] || uninstallCC --wait=false || return 1
+  [ -n "$KEEPCC" -o "$CLUSTER" != "$KIND_CLUSTER" ] || deleteKindCluster "$CLUSTER" || return 1
+
+  ## Uninstall the control-center if --keep-cc is not set
+  [ -n "$KEEPCC" -o "$CLUSTER"  = "$KIND_CLUSTER" ] || uninstallCC --wait=false || return 1
+  [ -z "$TEST" ] && bold "----> The version '$1' of 'control-center' app was successfully built and tested."
 
   return 0
 }
 
+validateControlCenter() {
+  checkCommands docker kubectl helm unzip || return 1
+  checkDockerRunning || return 1
+  rm -rf screenshots.out
+  ## Run control center in current version (stable)
+  if [ -z "$NOCURRENT" ]; then
+    runControlCenter current || return 1
+  fi
+  ## Run
+  if expr "$VERSION" : ".*SNAPSHOT" >/dev/null ; then
+    runControlCenter next || return 1
+  fi
+}
 
 
 

@@ -16,13 +16,11 @@ checkoutDemo() {
   _base=${GITBASE:-https://gitub.com/}
   [ -n "$_tk" ] && _base=`echo "$_base" | sed -e 's|\(https://\)|\\1'$_tk'@|'`
   _gitUrl="${_base}${_repo}.git"
-  [ -z "$TEST" ] && log "Checking out $1"
-  cmd "git clone $GITBASE$_repo.git"
   [ -z "$VERBOSE" ] && _quiet="-q"
   if [ -z "$_offline" -o ! -d "$_workdir" ]
   then
-    [ -d "$_demo" ] && ([ -n "$TEST" ] || log "Removing project folder $_demo") && rm -rf $_demo
-    git clone $_quiet "$_gitUrl" || return 1
+    [ ! -d "$_demo" ] || runCmd -qf "Removing preexisting folder $_demo" "rm -rf $_demo" || return 1
+    runCmd -f "Cloning repository $_repo" "git clone $_quiet $_gitUrl" || return 1
   else
     : ## TODO reset git
   fi

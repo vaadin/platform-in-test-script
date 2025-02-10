@@ -11,11 +11,10 @@
 
 set -o pipefail
 
-
 ## Default configuration
 DEFAULT_PORT=8080
 DEFAULT_TIMEOUT=300
-
+START=`date +%s`
 ## starters and demos list is maintained in the repos.sh file
 DEFAULT_STARTERS=`echo "$PRESETS$DEMOS" | grep ...`
 
@@ -25,7 +24,7 @@ DEFAULT_STARTERS=`echo "$PRESETS$DEMOS" | grep ...`
 ## $3: folder where the demo will be downloaded
 run() {
   [ -n "$TEST" ] && W=Testing || W=Executing
-  log "================= $W $1 '$2' $OFFLINE =================="
+  [ -z "$TEST" ] && log "================= $W $1 '$2' $OFFLINE =================="
   $1 "$2" "$3" "$PORT" "$VERSION" "$OFFLINE"
   _err=$?
   [ -n "$TEST" ] && echo "" && return 0
@@ -57,8 +56,7 @@ computeStarters() {
 
 ### MAIN
 main() {
-
-  _start=`date +%s`
+  _start=$START
 
   [ -z "$TEST" ] && log "===================== Running PiT Tests ============================================" \
 
@@ -102,8 +100,9 @@ main() {
   ## Run demos (proper starters in github)
   for i in $demos; do
     if [ $i = control-center ]; then
-      mkdir -p tmp/$i && cd tmp/$i
-      run runControlCenter $i
+      cd "$tmp"
+      checkoutDemo $i || return 1
+      run validateControlCenter $i
       cd "$pwd"
       continue
     elif expr "$i" : '.*_jdk' >/dev/null; then

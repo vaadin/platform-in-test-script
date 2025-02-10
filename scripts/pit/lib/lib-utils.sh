@@ -78,28 +78,35 @@ doExit() {
 
 ## print wrapper for coloring outputs
 print() {
-  printf "\033[0m$1\033[$2;$3m$4\033[0m\n" >&2
+  printf "\033[0m$1\033[$2;$3m$4\033[0m" >&2
+}
+
+printnl() {
+  print "$1" "$2" "$3" "$4\n"
 }
 
 ## log with some nice color
 log() {
+  _p=`computeTime`
   print '> ' 0 32 "$*"
+  printnl '' 2 36 " - "`computeTime`""
 }
 bold() {
-  print '> ' 1 32 "$*"
+  print '\n> ' 1 32 "$*"
+  printnl '' 2 36 " - "`computeTime`"\n"
 }
 err() {
-  print '> ' 0 31 "$*"
+  printnl '> ' 0 31 "$*"
 }
 warn() {
-  print '> ' 0 33 "$*"
+  printnl '> ' 0 33 "$*"
 }
 cmd() {
   cmd_=`printf "$*" | tr -s " " | perl -pe 's|\n|\\\\\\\n|g'`
-  print '  ' 1 34 " $cmd_"
+  printnl '  ' 1 34 " $cmd_"
 }
 dim() {
-  print '' 0 36 "$*"
+  printnl '' 0 36 "$*"
 }
 
 ## Reports an error to the GHA step-summary section
@@ -147,6 +154,7 @@ computeAbsolutePath() {
 }
 ## Compute the maven command to use for the project and stores in MVN env variable
 computeMvn() {
+  MVN=${MVN:-mvn}
   [ -x ./mvnw ] && MVN=./mvnw
   isWindows && [ -x ./mvnw.bat ] && MVN=./mvnw.bat
   isWindows && [ -x ./mvnw.cmd ] && MVN=./mvnw.cmd
@@ -171,29 +179,53 @@ computeNpm() {
 }
 
 ## Run a command, and shows a message explaining it
-## $1: whether run or not the command, used for testing
+## $1: it's optional and it could be -q (quiet sending output to dev/null) -f (force execution even when $TEST is set)
 ## $2: message to show
 ## $*: command line order and arguments
 runCmd() {
-  _skip=$1
-  shift
-  [ -z "$2" ] && echo "bad arguments to runCmd" && return 1
-  [ -n "$1" -a -z "$TEST" ] && log "$1"
-  [ -n "$1" -a -n "$TEST" ] && cmd "## $1"
+  __=$-
+  set +x
+  expr $__ : .*x >/dev/null && __set="set -x" || __set=true
+  expr "$1" : "\-" > /dev/null && _opt=${1#-} && shift || _opt=""
+  expr "$_opt" : ".*q" >/dev/null && _silent=true || _silent=""
+  expr "$_opt" : ".*f" >/dev/null && _force=true || _force=""
+  ## TODO fix this removing runCmd "$TEST" and runCmd ""
+  [ "$1" = false ] && _force=true && shift
+  [ "$1" = true ] && shift
+  [ -z "$1" ] && shift
+
+  [ -z "$1" ] && echo "bad arguments call: runCmd <true|false|-q> <message> command args" && eval "$__set" && return 1
+  [ -z "$TEST" ] && log "$1" || cmd "## $1"
   shift
   _cmd="${*}"
   cmd "$_cmd"
-  [ true = "$_skip" -o test = "$_skip" ] && return 0
+  [ -z "$_force" -a -n "$TEST" ] && eval "$__set" && return 0
   if expr "$_cmd" : ".*&$" >/dev/null
   then
     _cmd=`echo "$_cmd" | sed -e 's/&$//'`
     eval "$_cmd" &
     _pid=$!
+    _err=$?
     sleep 2
     kill -0 $_pid 2>/dev/null || return 1
   else
-    eval "$_cmd"
+    if [ -n "$VERBOSE" ]; then
+      eval "$_cmd" | tee -a runCmd.out
+      _err=$?
+    else
+      eval "$_cmd" > runCmd.out 2>&1
+      _err=$?
+    fi
+    [ $_err != 0 -a -z "$VERBOSE" -a -n "$_silent" ] && cat runCmd.out >&2
+    rm -f runCmd.out
   fi
+  eval "$__set"
+  return $_err
+}
+
+##
+runCmdQuiet() {
+  :
 }
 
 ## Run a command and outputs its stdout/stderr to a file
@@ -865,16 +897,28 @@ enableJBRAutoreload() {
   changeMavenProperty scan -1
 }
 
-## prints ellapsed time
-## $1: if not empty it stablishes the start time and returns, if empty it logs the ellapsed time
-printTime() {
-  [ -n "$1" ] && _start=$1 || return
+## displays secs in mins:secs
+## $1: seconds
+secsToString() {
+  __mins=`expr $1 / 60`
+  __secs=`expr $1 % 60`
+  printf "%.2d':%.2d\"" $__mins $__secs
+}
+
+## computes elapsed time
+## $1: the starttime in `date +%s`, otherwise the time since the script was run
+computeTime() {
+  __start=${1:-$START}
   __end=`date +%s`
-  __time=`expr $__end - $_start`
-  __mins=`expr $__time / 60`
-  __secs=`expr $__time % 60`
+  secsToString `expr $__end - $__start`
+}
+
+## prints elapsed time
+## $1: the starttime in `date +%s`, otherwise the time since the script was run
+printTime() {
+  H=`computeTime $1`
   echo ""
-  log "Total time: $__mins' $__secs\""
+  log "Elapsed Time: $H\""
 }
 
 ## update Gradle to the version provided in $1
