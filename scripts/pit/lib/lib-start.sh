@@ -31,9 +31,9 @@ downloadStarter() {
   _zip="$_preset.zip"
 
   [ -z "$VERBOSE" ] && _silent="-s"
-  runCmd false "Downloading $1" "curl $_silent -f '$_url' -o '$_zip'" || return 1
-  runCmd false "Unzipping $_name" "unzip -q '$_zip'" && rm -f "$_zip" || return 1
-  runCmd false "Changing to $_dir dir" "cd '$_dir'" || return 1
+  runCmd -f "Downloading $1" "curl $_silent -f '$_url' -o '$_zip'" || return 1
+  runCmd -f "Unzipping $_name" "unzip -q '$_zip'" && rm -f "$_zip" || return 1
+  runCmd -f "Changing to $_dir dir" "cd '$_dir'" || return 1
 }
 
 ## Generates a starter by using archetype, or hilla/cli
@@ -46,8 +46,8 @@ generateStarter() {
     vaadin-quarkus) cmd="$MVN -ntp -q -B io.quarkus.platform:quarkus-maven-plugin:create -Dextensions=vaadin -DwithCodestart -DprojectGroupId=com.vaadin.starter -DprojectArtifactId=$_name" ;;
     hilla-*-cli)    cmd="npx @hilla/cli init --react $_name" ;;
   esac
-  runCmd false "Generating $1" "$cmd" || return 1
-  runCmd false "Changing to $_name dir" "cd '$_name'" || return 1
+  runCmd -f "Generating $1" "$cmd" || return 1
+  runCmd -f "Changing to $_name dir" "cd '$_name'" || return 1
   initGit
 }
 
@@ -62,9 +62,9 @@ downloadInitializer() {
   _type=$2
   _deps=$3
   _url="https://start.spring.io/starter.zip?type=$_type&language=java&bootVersion=$_boot&baseDir=$_name&groupId=$_group&artifactId=$_name&name=$_name&description=$_name&packageName=$_group&packaging=jar&javaVersion=$_java&dependencies=$_deps"
-  runCmd false "Downloading $_name" "curl -s '$_url' --output $_name.zip" || return 1
-  runCmd false "Unzipping $_name" "unzip -q '$_name.zip'" && rm -f "$_name.zip" || return 1
-  runCmd false "Changing to $_name dir" "cd '$_name'" || return 1
+  runCmd -f "Downloading $_name" "curl -s '$_url' --output $_name.zip" || return 1
+  runCmd -f "Unzipping $_name" "unzip -q '$_name.zip'" && rm -f "$_name.zip" || return 1
+  runCmd -f "Changing to $_name dir" "cd '$_name'" || return 1
   initGit
 }
 
@@ -181,7 +181,7 @@ runStarter() {
   if [ -z "$_offline" -o ! -d "$_dir" ]
   then
      if [ -d "$_dir" ]; then
-       runCmd false "Cleaning project folder $_dir" "rm -rf '$_dir'" || return 1
+       runCmd -f "Cleaning project folder $_dir" "rm -rf '$_dir'" || return 1
      fi
     case "$_preset" in
       archetype*|vaadin-quarkus|hilla-*-cli) generateStarter "$_preset" || return 1 ;;

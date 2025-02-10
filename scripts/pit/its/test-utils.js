@@ -77,7 +77,7 @@ async function createPage(headless, ignoreHTTPSErrors) {
     const browser = await chromium.launch({
         headless: headless,
         chromiumSandbox: false,
-        slowMo: 500,
+        slowMo: headless ? 500: 0,
         args: ['--window-position=0,0']
     });
     const context = await browser.newContext({ignoreHTTPSErrors: ignoreHTTPSErrors, viewport: { width: 1792, height: 970 } });
@@ -101,7 +101,7 @@ async function takeScreenshot(page, name, descr) {
   const scr = path.basename(name);
   const cnt = String(++sscount).padStart(2, "0");
   const file = `${screenshots}/${mode ? mode + '-': '' }${scr}-${cnt}-${descr}.png`;
-  await page.waitForTimeout(/^win/.test(process.platform) ? 10000 : process.env.GITHUB_ACTIONS ? 5000 : 1500);
+  await page.waitForTimeout(/^win/.test(process.platform) ? 10000 : process.env.GITHUB_ACTIONS ? 800 : 200);
   await page.screenshot({ path: file });
   out(` 📸 Screenshot taken: ${file}\n`);
 }

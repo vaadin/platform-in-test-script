@@ -26,10 +26,10 @@ setSuid() {
   sudo -n true >/dev/null 2>&1 || log "It's necessary to provide sudo password to run '$1' as root"
   sudo -B true || return 1
 
-  runCmd "$TEST" "Changing owner to root to: $R" "sudo chown root $R" \
+  runCmd "Changing owner to root to: $R" "sudo chown root $R" \
     && runCmd "Changing set-uid to: $R" "sudo chmod u+s $R" && echo "kubectl" && return 0
 
-  runCmd "$TEST" "Coping $R" "sudo cp $R $T" \
+  runCmd "Coping $R" "sudo cp $R $T" \
     && runCmd "Changing owner to root to: $T" "sudo chown root $T" \
     && runCmd "Changing set-uid to: $R" "sudo chmod u+s $T" && echo "$T" && return 0
 }

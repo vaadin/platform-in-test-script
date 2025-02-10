@@ -23,11 +23,9 @@ DEFAULT_STARTERS=`echo "$PRESETS$DEMOS" | grep ...`
 ## $2: starter or demo name
 ## $3: folder where the demo will be downloaded
 run() {
-  [ -n "$TEST" ] && W=Testing || W=Executing
-  [ -z "$TEST" ] && log "================= $W $1 '$2' $OFFLINE =================="
   $1 "$2" "$3" "$PORT" "$VERSION" "$OFFLINE"
   _err=$?
-  [ -n "$TEST" ] && echo "" && return 0
+  [ -n "$TEST" ] && cleanAll && echo ""  && return 0
   if [ $_err = 0 ]; then
     log "==== '$2' was build and tested successfuly ===="
     success="$success $2"
@@ -88,6 +86,8 @@ main() {
 
   ## Run presets (star.vaadin.com) or archetypes
   for i in $presets; do
+    [ -z "$TEST" ] && log "================= Executing PiT Tests '$i' $OFFLINE =================="
+    [ -n "$TEST" ] && echo "" && cmd "# ================= Showing PiT commands for '$i' $OFFLINE =================="
     if expr "$i" : '.*-hotswap' >/dev/null; then
       installJBRRuntime || continue
     elif [ -n "$JDK" ]; then
@@ -99,7 +99,9 @@ main() {
 
   ## Run demos (proper starters in github)
   for i in $demos; do
-    if [ $i = control-center ]; then
+    [ -z "$TEST" ] && log "================= Executing PiT Tests '$i' $OFFLINE =================="
+    [ -n "$TEST" ] && echo "" && cmd "# ================= Showing PiT commands for '$i' $OFFLINE =================="
+    if expr $i : control-center >/dev/null; then
       cd "$tmp"
       checkoutDemo $i || return 1
       run validateControlCenter $i
