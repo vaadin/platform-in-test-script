@@ -183,23 +183,23 @@ computeNpm() {
 ## $2: message to show
 ## $*: command line order and arguments
 runCmd() {
+  __=$-
+  set +x
+  expr $__ : .*x >/dev/null && __set="set -x" || __set=true
   expr "$1" : "\-" > /dev/null && _opt=${1#-} && shift || _opt=""
   expr "$_opt" : ".*q" >/dev/null && _silent=true || _silent=""
   expr "$_opt" : ".*f" >/dev/null && _force=true || _force=""
-
-  ## TODO fix this removing runCmd "$TEST"
+  ## TODO fix this removing runCmd "$TEST" and runCmd ""
   [ "$1" = false ] && _force=true && shift
   [ "$1" = true ] && shift
-  ## TODO fix this removing runCmd ""
   [ -z "$1" ] && shift
 
-  [ -z "$1" ] && echo "bad arguments call: runCmd <true|false|-q> <message> command args" && return 1
-
+  [ -z "$1" ] && echo "bad arguments call: runCmd <true|false|-q> <message> command args" && eval "$__set" && return 1
   [ -z "$TEST" ] && log "$1" || cmd "## $1"
   shift
   _cmd="${*}"
   cmd "$_cmd"
-  [ -z "$_force" -a -n "$TEST" ] && return 0
+  [ -z "$_force" -a -n "$TEST" ] && eval "$__set" && return 0
   if expr "$_cmd" : ".*&$" >/dev/null
   then
     _cmd=`echo "$_cmd" | sed -e 's/&$//'`
@@ -209,10 +209,17 @@ runCmd() {
     sleep 2
     kill -0 $_pid 2>/dev/null || return 1
   else
-    eval "$_cmd" > runCmd.out 2>&1
-    _err=$?
-    [ $_err != 0 -o -z "$_silent" ] && cat runCmd.out >&2 || rm -f runCmd.out
+    if [ -n "$VERBOSE" ]; then
+      eval "$_cmd" | tee -a runCmd.out
+      _err=$?
+    else
+      eval "$_cmd" > runCmd.out 2>&1
+      _err=$?
+    fi
+    [ $_err != 0 -a -z "$VERBOSE" -a -n "$_silent" ] && cat runCmd.out >&2
+    rm -f runCmd.out
   fi
+  eval "$__set"
   return $_err
 }
 

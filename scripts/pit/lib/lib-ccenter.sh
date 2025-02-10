@@ -188,7 +188,7 @@ buildCC() {
 ## Main method for running control center
 runControlCenter() {
   [ -z "$TEST" ] && bold "----> Running builds and tests on app control-center version: '$1'"
-  [ -n "$TEST" ] && cmd "### Run PiT for: app=control-center version '$1'"
+  [ -n "$TEST" ] && cmd "\n### Run PiT for: app=control-center version '$1'"
 
   ## Check if port 443 is busy
   [ -n "$TEST" ] || checkBusyPort "443" || return 1
