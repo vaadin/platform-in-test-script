@@ -23,7 +23,7 @@ checkCommands() {
 removeProKey() {
   if [ -f ~/.vaadin/proKey ]; then
     _cmd="mv ~/.vaadin/proKey ~/.vaadin/proKey-$$"
-    runCmd "$TEST" "Removing proKey license" "mv ~/.vaadin/proKey ~/.vaadin/proKey-$$"
+    runCmd "Removing proKey license" "mv ~/.vaadin/proKey ~/.vaadin/proKey-$$"
   fi
 }
 ## Restore pro-key removed in previous function
@@ -31,7 +31,7 @@ restoreProKey() {
   [ ! -f ~/.vaadin/proKey-$$ ] && return
   H=`cat ~/.vaadin/proKey 2>/dev/null`
   _cmd="mv ~/.vaadin/proKey-$$ ~/.vaadin/proKey"
-  runCmd "$TEST" "Restoring proKey license" "mv ~/.vaadin/proKey-$$ ~/.vaadin/proKey"
+  runCmd "Restoring proKey license" "mv ~/.vaadin/proKey-$$ ~/.vaadin/proKey"
   [ -z "$TEST" -a -n "$H" ] && reportError "A proKey was generated while running validation" "$H" && return 1
 }
 
@@ -189,11 +189,6 @@ runCmd() {
   expr "$1" : "\-" > /dev/null && _opt=${1#-} && shift || _opt=""
   expr "$_opt" : ".*q" >/dev/null && _silent=true || _silent=""
   expr "$_opt" : ".*f" >/dev/null && _force=true || _force=""
-  ## TODO fix this removing runCmd "$TEST" and runCmd ""
-  [ "$1" = false ] && _force=true && shift
-  [ "$1" = true ] && shift
-  [ -z "$1" ] && shift
-
   [ -z "$1" ] && echo "bad arguments call: runCmd <true|false|-q> <message> command args" && eval "$__set" && return 1
   [ -z "$TEST" ] && log "$1" || cmd "## $1"
   shift
@@ -481,8 +476,8 @@ setGradleVersion() {
   if [ -f "gradle.properties" ]; then
     setPropertyInFile gradle.properties $__gradleProperty $__nversion
   elif [ -f "build.gradle" ]; then
-    runCmd false "Changing $__gradleProperty to $__nversion in build.gradle" "perl -pi -e 's/^(.*set.*$__gradleProperty.*?)(\\d[^\"]+)(.*)\$/\${1}${__nversion}\${3}/g' build.gradle"
-    runCmd false "Changing vaadin plugin to $__nversion in build.gradle" "perl -pi -e \"s/(id +'com\\.vaadin' +version +')[\\d\\.]+(')/\\\${1}${__nversion}\\\${2}/\" build.gradle"
+    runCmd -f "Changing $__gradleProperty to $__nversion in build.gradle" "perl -pi -e 's/^(.*set.*$__gradleProperty.*?)(\\d[^\"]+)(.*)\$/\${1}${__nversion}\${3}/g' build.gradle"
+    runCmd -f "Changing vaadin plugin to $__nversion in build.gradle" "perl -pi -e \"s/(id +'com\\.vaadin' +version +')[\\d\\.]+(')/\\\${1}${__nversion}\\\${2}/\" build.gradle"
   fi
 }
 
@@ -638,11 +633,11 @@ changeMavenProperty() {
   do
     __cur=`getCurrProperty $__prop $__propfile`
     if [ "$__val" != remove -a "$__val" != "$__cur" ]; then
-      runCmd false "Changing Maven property $__prop from $__cur -> $__val in $__propfile" \
+      runCmd -f "Changing Maven property $__prop from $__cur -> $__val in $__propfile" \
         "perl -pi -e 's|(\s*<'$__prop'>)[^\s]+(</'$__prop'>)|\${1}${__val}\${2}|g' $__propfile"
       __ret=$?
     elif [ "$__val" = remove -a -n "$__cur" ]; then
-      runCmd false "Removing Maven property $__prop from $__propfile" \
+      runCmd -f "Removing Maven property $__prop from $__propfile" \
         "perl -pi -e 's|(\s*<'$__prop'>)[^\s]+(</'$__prop'>)||g' $__propfile"
       __ret=$?
     else
@@ -661,7 +656,7 @@ renameMavenProperty() {
   do
     __cur=`getCurrProperty $__prop1 $__file`
     [ -z "$__cur" ] && continue
-    runCmd false "Rename Maven property $__prop1 -> $__prop2" \
+    runCmd -f "Rename Maven property $__prop1 -> $__prop2" \
       "perl -0777 -pi -e 's|(<$__prop1>[^\s]+)(/$__prop1>)|<$__prop2>$__cur</$__prop2>|g' $__file"
     [ $? = 0 -a $__ret = 1 ] && __ret=0
   done
@@ -764,7 +759,7 @@ addRepoToPom() {
     else
       __cmd="perl -pi -e 's|(\s*)(<${R}ies>)|\$1\$2\n\$1\$1<${R}y><id>v</id><url>${U}</url></${R}y>|' pom.xml"
     fi
-    runCmd false "Adding $U repository to pom.xml" "$__cmd"
+    runCmd -f "Adding $U repository to pom.xml" "$__cmd"
   done
 }
 
@@ -774,11 +769,11 @@ addRepoToGradle() {
   U="$1"
   H=`[ -f settings.gradle ] && grep "$U" settings.gradle`
   if [ -z "$H" ]; then
-    runCmd false "Adding $U repository to settings.gradle" \
+    runCmd -f "Adding $U repository to settings.gradle" \
       "perl -0777 -pi -e 's|^|pluginManagement {\n  repositories {\n    maven { url = \"$U\" }\n    gradlePluginPortal()\n  }\n}\n|' settings.gradle"
   fi
   grep -q "$U" build.gradle && return 0
-  runCmd false "Adding $U repository to build.gradle" \
+  runCmd -f "Adding $U repository to build.gradle" \
     "perl -pi -e 's|(repositories\s*{)|\$1\n    maven { url \"$U\" }|' build.gradle"
 }
 
@@ -807,7 +802,7 @@ enableSnapshots() {
 download() {
   [ -z "$VERBOSE" ] && __S="-s"
   [ -n "$2" -a "$2" != '-' ] && __O="-o $2"
-  runCmd false "Downloading $1" "curl $__S -L $__O $1"
+  runCmd -f "Downloading $1" "curl $__S -L $__O $1"
 }
 
 ## Installs jet brains java runtime, used for testing the hotswap agent
@@ -822,7 +817,7 @@ installJBRRuntime() {
   __hsau="https://github.com/HotswapProjects/HotswapAgent/releases/download/RELEASE-${__hvers}/hotswap-agent-${__hvers}.jar"
   __jurl="https://cache-redirector.jetbrains.com/intellij-jbr"
 
-  warn "Installing JBR for hotswap testing"
+  [ -z "$TEST" ] && warn "Installing JBR for hotswap testing"
 
   isLinux   && __jurl="$__jurl/jbr-${__jvers}-linux-x64-${__vers}.tar.gz"
   isMac     && __jurl="$__jurl/jbr-${__jvers}-osx-x64-${__vers}.tar.gz"
@@ -832,13 +827,13 @@ installJBRRuntime() {
   fi
   if [ ! -d /tmp/jbr ]; then
     mkdir -p /tmp/jbr
-    runCmd false "Extracting JBR" "tar -xf /tmp/JBR.tgz -C /tmp/jbr --strip-components 1" || return 1
+    runCmd -f "Extracting JBR" "tar -xf /tmp/JBR.tgz -C /tmp/jbr --strip-components 1" || return 1
   fi
   setJavaPath "/tmp/jbr" || return 1
   if [ ! -f $JAVA_HOME/lib/hotswap/hotswap-agent.jar ] ; then
     mkdir -p $JAVA_HOME/lib/hotswap
     download "$__hsau" "$H/lib/hotswap/hotswap-agent.jar" || return 1
-    log "Installed "`ls -1 $H/lib/hotswap/hotswap-agent.jar`
+    [ -z "$TEST" ] && log "Installed "`ls -1 $H/lib/hotswap/hotswap-agent.jar`
   fi
   export HOT="-XX:+AllowEnhancedClassRedefinition -XX:HotswapAgent=fatjar"
 }
@@ -864,7 +859,7 @@ installJDKRuntime() {
   fi
   [ -d "$tmp_dir" ] && rm -rf "$tmp_dir"
   mkdir -p "$tmp_dir"
-  runCmd false "Extracting JDK-$__version" "tar -xf "/tmp/$tar_file" -C "$tmp_dir" --strip-components 1" || return 1
+  runCmd -f "Extracting JDK-$__version" "tar -xf "/tmp/$tar_file" -C "$tmp_dir" --strip-components 1" || return 1
 
   setJavaPath "$tmp_dir" || return 1
 }
@@ -872,7 +867,8 @@ installJDKRuntime() {
 setJavaPath() {
   H=`find "$1" -name Home -type d`
   [ -z "$H" ] && H="$1"
-  [ -z "$TEST" ] && log "Setting JAVA_HOME=$H PATH=$H/bin:\$PATH"
+  [ -z "$TEST" ] && log "Setting JAVA_HOME=$H PATH=$H/bin:\$PATH" 
+  [ -n "$TEST" ] && cmd "## Setting JAVA_HOME=$H PATH=$H/bin:\$PATH"
   [ ! -d "$H/bin" ] && return 1
   cmd "export PATH=$H/bin:\$PATH JAVA_HOME=$H"
   __PATH=$PATH
@@ -882,10 +878,12 @@ setJavaPath() {
 
 ## Unsets the jet brains java runtime used for testing the hotswap agent
 unsetJavaPath() {
-  [ -n "$__HOME" ] && warn "Un-setting PATH and JAVA_HOME ($JAVA_HOME)"
+  [ -n "$__HOME" -a -z "$TEST" ] && warn "Un-setting PATH and JAVA_HOME ($JAVA_HOME)"
+  [ -n "$__HOME" -a -n "$TEST" ] && cmd "## Un-setting PATH and JAVA_HOME ($JAVA_HOME)"
   [ -n "$__PATH" ] && export PATH=$__PATH && unset __PATH
   [ -n "$__HOME" ] && export JAVA_HOME=$__HOME && unset __HOME || unset JAVA_HOME
   [ -n "$HOT" ]    && unset HOT
+  return 0
 }
 
 ## enables autoreload for preparing jet brains java runtime
@@ -926,7 +924,7 @@ upgradeGradle() {
   [ -z "$1" ] && return
   V=`$GRADLE --version | grep '^Gradle' | awk '{print $2}'`
   expr "$V" : "$1" >/dev/null && return
-  runCmd false "Upgrading Gradle from $V to $1" "$GRADLE wrapper -q --gradle-version $1"
+  runCmd -f "Upgrading Gradle from $V to $1" "$GRADLE wrapper -q --gradle-version $1"
 }
 
 ## list all demos that are available in the vaadin website (examples and starters)

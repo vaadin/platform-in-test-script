@@ -140,9 +140,9 @@ installTls() {
 
 ## Show temporary user-email and password in the terminal
 showTemporaryPassword() {
-  email=`runCmd "$TEST" "Getting temporary admin email for Control Center" \
+  email=`runCmd "Getting temporary admin email for Control Center" \
     "kubectl -n $CC_NS get secret control-center-user -o go-template=\"{{ .data.email | base64decode | println }}\""`
-  passw=`runCmd "$TEST" "Getting temporary admin password for Control Center" \
+  passw=`runCmd "Getting temporary admin password for Control Center" \
     "kubectl -n $CC_NS get secret control-center-user -o go-template=\"{{ .data.password | base64decode | println }}\""`
   [ -n "$email" -a -n "$passw" ] && warn "Temporary credentials for Control Center: $email / $passw"
 }
@@ -174,10 +174,10 @@ setClusterContext() {
 
 buildCC() {
   computeMvn
-  [ -z "$VERBOSE" ] && D=-q || D=""
-  runCmd "$TEST" "Compiling CC" "'$MVN' $D -ntp -B -pl :control-center-app -Pproduction -DskipTests -am install" || return 1
-  runCmd "$TEST" "Creating CC application docker image" "'$MVN' $D -ntp -B -pl :control-center-app -Pproduction -Ddocker.tag=local docker:build" || return 1
-  runCmd "$TEST" "Creating CC keycloack docker image" "'$MVN' $D -ntp -B -pl :control-center-keycloak package -Ddocker.tag=local docker:build" || return 1
+  [ -z "$VERBOSE" ] && D="-q -ntp" || D="-Dorg.slf4j.simpleLogger.showDateTime -Dorg.slf4j.simpleLogger.dateTimeFormat=HH:mm:ss.SSS"
+  runCmd "Compiling CC" "'$MVN' $D -B -pl :control-center-app -Pproduction -DskipTests -am install" || return 1
+  runCmd "Creating CC application docker image" "'$MVN' $D -B -pl :control-center-app -Pproduction -Ddocker.tag=local docker:build" || return 1
+  runCmd "Creating CC keycloack docker image" "'$MVN' $D -B -pl :control-center-keycloak package -Ddocker.tag=local docker:build" || return 1
   if [ "$CLUSTER" = "$KIND_CLUSTER" ]; then
       runCmd -q "Load docker image control-center-app for Kind" kind load docker-image vaadin/control-center-app:local --name "$CLUSTER" || return 1
       runCmd -q "Load docker image control-center-keycloak for Kind " kind load docker-image vaadin/control-center-keycloak:local --name "$CLUSTER" || return 1
@@ -187,8 +187,8 @@ buildCC() {
 
 ## Main method for running control center
 runControlCenter() {
-  [ -z "$TEST" ] && bold "----> Running builds and tests on app control-center version: '$1'"
-  [ -n "$TEST" ] && cmd "\n### Run PiT for: app=control-center version '$1'"
+  [ -z "$TEST" ] && echo "" && bold "----> Running builds and tests on app control-center version: '$1'"
+  [ -n "$TEST" ] && echo "" && cmd "### ------> Run PiT for: app=control-center version '$1' <------"
 
   ## Check if port 443 is busy
   [ -n "$TEST" ] || checkBusyPort "443" || return 1
