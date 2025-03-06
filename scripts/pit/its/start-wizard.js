@@ -33,7 +33,6 @@ process.argv.forEach(a => {
 
   // Start a new project
   log(`Starting new project\n`);
-  await page.getByRole('button', { name: 'Get Started' }).click();
   await page.getByText('Start a Project').click();
   await page.locator('body').click();
 
