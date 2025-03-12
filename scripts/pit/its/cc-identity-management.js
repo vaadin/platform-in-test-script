@@ -101,6 +101,13 @@ const {log, err, args, createPage, closePage, takeScreenshot, waitForServerReady
     await waitForServerReady(pageApp, url);
     await takeScreenshot(pageApp, __filename, `app-${app}-loaded`);
     await pageApp.getByLabel('Email').fill(user);
+    try {
+        await pageApp.getByLabel('Password').fill(role, { timeout: 1000 });
+    } catch (error) {
+        log('Password not found in the first dialog, trying the second one (cc vers 1.2+)...\n');
+        await pageApp.getByRole('button', {name: 'Sign In'}).click()
+        await takeScreenshot(pageApp, __filename, `app-${app}-password-dialog`);
+    }
     await pageApp.getByLabel('Password').fill(role);
     await pageApp.getByRole('button', {name: 'Sign In'}).click()
     await takeScreenshot(pageApp, __filename, `logged-in-${app}`);

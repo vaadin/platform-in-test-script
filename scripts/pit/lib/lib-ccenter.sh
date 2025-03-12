@@ -27,12 +27,32 @@ checkDockerRunning() {
   fi
 }
 
+computeCCVersion() {
+  [ -z "$1" ] && return
+  git fetch --tags -q
+  for i in `git tag | sort -r`; do
+    local vVersion=`git show $i:pom.xml | grep '<vaadin.components.version>' | cut -d '>' -f2 | cut -d '<' -f1`
+    # echo "$1 - $vVersion" >&2
+    [ "$vVersion" = "$1" ] && echo $i && return 0
+  done
+  mvn help:evaluate -Dexpression=project.version -q -DforceStdout
+}
+
 ## Install Control Center with Helm
 installCC() {
   [ -n "SKIPHELM" ] && H=`kubectl get pods 2>&1` && echo "$H" | egrep -q 'control-center-[0-9abcdef]+-..... ' && return 0
   [ -n "$VERBOSE" ] && D=--debug || D=""
   [ -n "$CC_KEY" -a -n "$CC_CERT" ] && args="--set app.tlsSecret=$CC_TLS_A --set keycloak.tlsSecret=$CC_TLS_K" || args=""
-  [ "$1" = "next" ] && args="$args charts/control-center --set app.image.tag=local --set keycloak.image.tag=local" || args="$args oci://docker.io/vaadin/control-center"
+  log "Installing Control Center with version: $1"
+  case "$1" in
+    *SNAPSHOT)
+       buildCC || return 1
+       args="$args charts/control-center --set app.image.tag=local --set keycloak.image.tag=local"
+       ;;
+    current)  args="$args oci://docker.io/vaadin/control-center" ;;
+    "")       err "Unable to compute CC version for platform version '$1'" && return 1 ;;
+    *)   args="$args oci://docker.io/vaadin/control-center --version $1" ;;
+  esac
 
   runToFile "helm install control-center $args \
     -n $CC_NS --create-namespace \
@@ -174,7 +194,8 @@ setClusterContext() {
 
 buildCC() {
   computeMvn
-  [ -z "$VERBOSE" ] && D="-q -ntp" || D="-Dorg.slf4j.simpleLogger.showDateTime -Dorg.slf4j.simpleLogger.dateTimeFormat=HH:mm:ss.SSS"
+  local D="-q -ntp"
+  [ -z "$VERBOSE" ] && D="-Dorg.slf4j.simpleLogger.showDateTime -Dorg.slf4j.simpleLogger.dateTimeFormat=HH:mm:ss.SSS"
   runCmd "Compiling CC" "'$MVN' $D -B -pl :control-center-app -Pproduction -DskipTests -am install" || return 1
   runCmd "Creating CC application docker image" "'$MVN' $D -B -pl :control-center-app -Pproduction -Ddocker.tag=local docker:build" || return 1
   runCmd "Creating CC keycloack docker image" "'$MVN' $D -B -pl :control-center-keycloak package -Ddocker.tag=local docker:build" || return 1
@@ -202,9 +223,6 @@ runControlCenter() {
 
   ## Clean up CC from a previous run unless SKIPHELM is set
   [ -z "$SKIPHELM" ] && uninstallCC
-
-  ## Build CC if version is snapshot
-  [ "$1" = current ] || buildCC || return 1
 
   ## Install Control Center
   installCC $1 || return 1
@@ -243,9 +261,9 @@ validateControlCenter() {
   if [ -z "$NOCURRENT" ]; then
     runControlCenter current || return 1
   fi
-  ## Run
-  if expr "$VERSION" : ".*SNAPSHOT" >/dev/null ; then
-    runControlCenter next || return 1
+  ## Run control center for provided version
+  if [ -n "$VERSION" ]; then
+    runControlCenter `computeCCVersion $VERSION` || return 1
   fi
 }
 
