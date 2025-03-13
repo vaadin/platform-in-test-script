@@ -73,15 +73,17 @@ jobs:
           [ -n "${{ inputs.version }}" ] && A="$A --version=${{ inputs.version }}" || A="$A --version=SNAPSHOT"
           [ -n "${{ inputs.starters }}" ] && A="$A --starters=${{ inputs.starters }}" || A="$A --starters=control-center"
           echo "A=$A" >> $GITHUB_ENV
+          K=`echo "$A" | perl -pe 's/[^\d\w]/-/g' | tr -s '-'`
+          echo "K=$K" >> $GITHUB_ENV
         shell: bash
       - uses: actions/cache@v4
         with:
           path: |
             ~/.m2/repository
             ~/.npm
-          key: pit-${{ env.A }}
+          key: pit-${{ env.K }}
           restore-keys: |
-            pit-${{ env.A }}
+            pit-${{ env.K }}
             pit-
       - uses: helm/kind-action@v1
         with:
@@ -108,8 +110,7 @@ jobs:
         run: |
           gh extension install actions/gh-actions-cache
           gh actions-cache list
-          gh actions-cache delete "pit-${{ env.A }}" --confirm
-          exit 0
+          gh actions-cache delete "pit-${{ env.K }}" --confirm || true
         env:
           GH_TOKEN: ${{ secrets.GHTK }}
           shell: bash
