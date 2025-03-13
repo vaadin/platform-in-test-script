@@ -43,7 +43,7 @@ installCC() {
   [ -n "SKIPHELM" ] && H=`kubectl get pods 2>&1` && echo "$H" | egrep -q 'control-center-[0-9abcdef]+-..... ' && return 0
   [ -n "$VERBOSE" ] && D=--debug || D=""
   [ -n "$CC_KEY" -a -n "$CC_CERT" ] && args="--set app.tlsSecret=$CC_TLS_A --set keycloak.tlsSecret=$CC_TLS_K" || args=""
-  log "Installing Control Center with version: $1"
+  [ -z "$TEST" ] && log "Installing Control Center with version: $1"
   case "$1" in
     *SNAPSHOT)
        buildCC || return 1
@@ -196,9 +196,9 @@ buildCC() {
   computeMvn
   local D="-q -ntp"
   [ -z "$VERBOSE" ] && D="-Dorg.slf4j.simpleLogger.showDateTime -Dorg.slf4j.simpleLogger.dateTimeFormat=HH:mm:ss.SSS"
-  runCmd "Compiling CC" "'$MVN' $D -B -pl :control-center-app -Pproduction -DskipTests -am install" || return 1
-  runCmd "Creating CC application docker image" "'$MVN' $D -B -pl :control-center-app -Pproduction -Ddocker.tag=local docker:build" || return 1
-  runCmd "Creating CC keycloack docker image" "'$MVN' $D -B -pl :control-center-keycloak package -Ddocker.tag=local docker:build" || return 1
+  runToFile "'$MVN' $D -B -pl :control-center-app -Pproduction -DskipTests -am install" "compile-cc-${1}.out" "$VERBOSE" || return 1
+  runToFile "'$MVN' $D -B -pl :control-center-app -Pproduction -Ddocker.tag=local docker:build" "build-ccapp-docker-${1}.out" "$VERBOSE"|| return 1
+  runToFile "'$MVN' $D -B -pl :control-center-keycloak package -Ddocker.tag=local docker:build" "build-ccapp-docker-${1}.out" "$VERBOSE" || return 1
   if [ "$CLUSTER" = "$KIND_CLUSTER" ]; then
       runCmd -q "Load docker image control-center-app for Kind" kind load docker-image vaadin/control-center-app:local --name "$CLUSTER" || return 1
       runCmd -q "Load docker image control-center-keycloak for Kind " kind load docker-image vaadin/control-center-keycloak:local --name "$CLUSTER" || return 1
