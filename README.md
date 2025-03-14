@@ -7,32 +7,61 @@
 ```
 
 ```
-Use: ./scripts/pit/run.sh [version=] [starters=] [port=] [timeout=] [verbose] [offline] [interactive] [skiptests] [pnpm] [vite] [help]
+Use: ./scripts/pit/run.sh with the next options:
 
  --version=string  Vaadin version to test, if not given it only tests current stable, otherwise it runs tests against current stable and then against given version.
+ --demos           Run all demo projects
+ --generated       Run all generated projects (start and archetypes)
+ --port=number     HTTP port for thee servlet container (default: 8080)
+ --timeout=number  Time in secs to wait for server to start (default 300)
+ --jdk=NN          Use a specific JDK version to run the tests
+ --verbose         Show server output (default silent)
+ --offline         Do not remove already downloaded projects, and do not use network for mvn (default online)
+ --interactive     Play a bell and ask user to manually test the application (default non interactive)
+ --skip-tests      Skip UI Tests (default run tests). Note: selenium-ide does not work in gitpod
+ --skip-current    Skip running build in current version
+ --skip-prod       Skip production validations
+ --skip-dev        Skip dev-mode validations
+ --skip-clean      Do not clean maven cache
+ --skip-helm       Do not re-install control-center with helm and continue running tests
+ --skip-pw         Do not run playwright tests
+ --cluster=name    Run tests in an existing k8s cluster
+ --keep-cc         Keep control-center running after tests
+ --pnpm            Use pnpm instead of npm to speed up frontend compilation (default npm)
+ --vite            Use vite inetad of webpack to speed up frontend compilation (default webpack)
+ --list            Show the list of available starters
+ --hub             Use selenium hub instead of local chrome, it assumes that selenium docker is running as service in localhost
+ --commit          Commit changes to the base branch
+ --test            Checkout starters, and show steps and commands to execute, but don't run them
+ --git-ssh         Use git-ssh instead of https to checkout projects (you need a valid ssh key)
+ --headless        Run the browser in headless mode even if interactive mode is enabled
+ --headed          Run the browser in headed mode even if interactive mode is disabled
+ --function        run only one function of the libs in current folder.
+                   everything after this argument is the function name and arguments passed to the function.
+                   you should take care with arguments that contain spaces, they should be quoted twice.
+ --help            Show this message
  --starters=list   List of demos or presets separated by comma to run (default: all) valid options:
                    · latest-java
                    · latest-java-top
-                   · latest-javahtml
-                   · latest-lit
-                   · latest-lit-top
                    · latest-java_partial-auth
-                   · latest-lit_partial-auth
                    · flow-crm-tutorial
                    · react
                    · react-crm-tutorial
                    · react-tutorial
-                   · test-hybrid
                    · test-hybrid-react
                    · default
-                   · latest-lit_partial-nextprerelease
-                   · latest-lit_partial-prerelease
                    · latest-java_partial-auth_partial-prerelease
                    · archetype-hotswap
                    · archetype-jetty
                    · archetype-spring
                    · vaadin-quarkus
                    · hilla-react-cli
+                   · initializer-vaadin-maven-react
+                   · initializer-vaadin-maven-flow
+                   · initializer-vaadin-gradle-react
+                   · initializer-vaadin-gradle-flow
+                   · collaboration
+                   · control-center
                    · skeleton-starter-flow
                    · skeleton-starter-flow-spring
                    · skeleton-starter-hilla-react
@@ -51,7 +80,6 @@ Use: ./scripts/pit/run.sh [version=] [starters=] [port=] [timeout=] [verbose] [o
                    · hilla-basics-tutorial
                    · flow-quickstart-tutorial
                    · addon-template
-                   · addon-starter-flow
                    · npm-addon-template
                    · client-server-addon-template
                    · spreadsheet-demo
@@ -68,6 +96,7 @@ Use: ./scripts/pit/run.sh [version=] [starters=] [port=] [timeout=] [verbose] [o
                    · bakery-app-starter-flow-spring
                    · k8s-demo-app
                    · mpr-demo
+                   · mpr-demo_jdk17
                    · testbench-demo
                    · ce-demo
                    · start
@@ -76,29 +105,7 @@ Use: ./scripts/pit/run.sh [version=] [starters=] [port=] [timeout=] [verbose] [o
                    · form-filler-demo
                    · flow-hilla-hybrid-example
                    · designer-tutorial
-                   ·
- --demos           Run all demo projects
- --generated       Run all generated projects (start and archetypes)
- --port=number     HTTP port for thee servlet container (default: 8080)
- --timeout=number  Time in secs to wait for server to start (default 300)
- --verbose         Show server output (default silent)
- --offline         Do not remove already downloaded projects, and do not use network for mvn (default online)
- --interactive     Play a bell and ask user to manually test the application (default non interactive)
- --skip-tests      Skip UI Tests (default run tests). Note: selenium-ide does not work in gitpod
- --skip-current    Skip running build in current version
- --skip-prod       Skip production validations
- --skip-dev        Skip dev-mode validations
- --pnpm            Use pnpm instead of npm to speed up frontend compilation (default npm)
- --vite            Use vite inetad of webpack to speed up frontend compilation (default webpack)
- --list            Show the list of available starters
- --hub             Use selenium hub instead of local chrome, it assumes that selenium docker is running as service in localhost
- --help            Show this message
- --commit          Commit changes to the base branch
- --test            Checkout starters, and show steps and commands to execute, but don't run them
- --skip-clean      Do not clean maven cache
- --function        run only one function of the libs in current folder.
-                   everything after this argument is the function name and arguments passed to the function.
-                   you should take care with arguments that contain spaces, they should be quoted twice.
 ```
+
 
 
