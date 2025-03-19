@@ -13,7 +13,7 @@ async function installApp(app, page) {
     console.log(`Installing App: ${app} URI: ${uri} Cert: ${cert}`);
 
     await page.getByRole('listitem').filter({ hasText: 'Settings'}).click()
-    await page.getByRole('button', {name: 'Deploy'}).click()
+    await page.getByRole('button', {name: /Create|New/}).click()
     await takeScreenshot(page, __filename, `form-opened-${app}`);
 
     await page.getByLabel('Application Name', {exact: true}).fill(app)
