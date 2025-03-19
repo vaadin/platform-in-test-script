@@ -14,7 +14,6 @@ applyPatches() {
   esac
   expr "$vers_" : ".*SNAPSHOT" >/dev/null && enableSnapshots
   expr "$vers_" : "24.3.0.alpha.*" >/dev/null && addSpringReleaseRepo
-  expr "$vers_" : "24.7.*" >/dev/null && patchReactRouterDom && patchFutureRouter
   checkProjectUsingOldVaadin "$type_" "$vers_"
   downgradeJava
 
@@ -54,27 +53,11 @@ applyPatches() {
   return 0
 }
 
-## REPORTED in: https://github.com/vaadin/hilla/issues/3082
-patchReactRouterDom() {
-  F=src/main/frontend
-  [ ! -d "$F" ] && return
-  find $F '(' -name '*.ts' -o -name '*.tsx' ')' -exec perl -pi -e "s| +from +.react-router-dom.| from 'react-router'|g" '{}' ';'
-  git diff --quiet -- "$F" || warn "Patched $F because it has 'from 'react-router-dom' occurrences"
-}
-
-## TODO: report this in https://github.com/vaadin/flow-hilla-hybrid-example/blob/v24/src/main/frontend/index.tsx#L13
-patchFutureRouter() {
-  if [ -f src/main/frontend/index.ts* ] && grep -q "RouterProvider" src/main/frontend/index.ts*; then
-    warn "Patching src/main/frontend/index.ts* because it has 'RouterProvider'"
-    perl -pi -e "s|(<RouterProvider.*)future=.*?( */>)|\$1\$2|g" src/main/frontend/index.ts*
-  fi
-}
-
 ## We use this function to check if the project in its reporitory has not been updated to latest stable vaadin version
 checkProjectUsingOldVaadin() {
   [ "$1" != 'current' ] && return
   case $vers_ in
-    24.7.*|24.6.*|current) : ;;
+    24.8.*|24.7.*|current) : ;;
     *) reportError "Using old version $vers_" "Please upgrade $app_ to latest stable" ;;
   esac
 }
