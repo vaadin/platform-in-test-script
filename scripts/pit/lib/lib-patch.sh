@@ -42,6 +42,12 @@ applyPatches() {
       [ -n "$TEST" ] || log "Fixing quarkus dependencyManagement https://vaadin.com/docs/latest/flow/integrations/quarkus#quarkus.vaadin.knownissues"
       moveQuarkusBomToBottom
       ;;
+    initializer-vaadin-*-react)
+      # Remove when this is fixed https://github.com/vaadin/flow/issues/21144
+      frouter="./src/main/frontend/generated/file-routes.ts"
+      [ -f "$frouter" ] && runCmd "Remove $frouter" "rm -f $frouter"
+      moveQuarkusBomToBottom
+      ;;
   esac
 
   # always successful
