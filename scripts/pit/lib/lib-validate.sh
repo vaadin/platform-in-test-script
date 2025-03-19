@@ -120,7 +120,7 @@ runValidations() {
   [ -n "$TEST" ] || (killAll && sleep 5)
 
   # 13
-  if [ -z "$TEST" ]; then
+  if [ -n "$VERBOSE" -a -z "$TEST" ]; then
     H=`grep 12b7fc85f50e8c82cb6f4b03e12f2335 ~/.vaadin/usage-statistics.json`
     [ -n "$H" ] && reportError "Using a default ID for Statistics" "$H"
   fi
