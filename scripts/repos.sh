@@ -67,8 +67,7 @@ spring-guides/gs-crud-with-vaadin/complete
 spring-petclinic/spring-petclinic-vaadin-flow
 form-filler-demo
 flow-hilla-hybrid-example
-designer-tutorial
-vaadin/walking-skeleton/walking-skeleton"
+designer-tutorial"
 
 TODO="
 appsec-kit-demo:appsec-kit
@@ -78,6 +77,7 @@ observability-kit/observability-kit-demo
 sso-kit/sso-kit-demo
 appsec-kit/appsec-kit-demo
 vaadin-sso-kit-keycloak-demo
+vaadin/walking-skeleton/walking-skeleton
 "
 # The following are disabled until karaf and osgi are supported in 24.x
 # and when we know how to PiT the others
