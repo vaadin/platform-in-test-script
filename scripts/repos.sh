@@ -67,7 +67,8 @@ spring-guides/gs-crud-with-vaadin/complete
 spring-petclinic/spring-petclinic-vaadin-flow
 form-filler-demo
 flow-hilla-hybrid-example
-designer-tutorial"
+designer-tutorial
+vaadin/walking-skeleton/walking-skeleton"
 
 TODO="
 appsec-kit-demo:appsec-kit

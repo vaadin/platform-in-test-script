@@ -147,24 +147,25 @@ getInstallCmdDev() {
 }
 ## Get install command for prod-mode
 getInstallCmdPrd() {
-  H="-Dcom.vaadin.testbench.Parameters.testsInParallel=2"
-  [ -z "$MAVEN_ARGS" ] &&  H="$H -Dmaven.test.redirectTestOutputToFile=true"
-  isHeadless && H="$H -Dcom.vaadin.testbench.Parameters.headless=true -Dheadless" || H="$H -Dtest.headless=false" #for addon-template
+  H="$MVN -ntp -B clean install -Pproduction"
+  if find src/test -name "*IT.java" -o -name "*spec.ts" 2>/dev/null | grep -q .
+  then
+    H="$H -Pit -Dcom.vaadin.testbench.Parameters.testsInParallel=2"
+    isHeadless && H="$H -Dcom.vaadin.testbench.Parameters.headless=true -Dheadless" || H="$H -Dtest.headless=false" #for addon-template flow-hilla-hybrid-example
+  fi
   [ -n "$SKIPTESTS" ] && H="$H -DskipTests"
+  [ -z "$MAVEN_ARGS" ] &&  H="$H -Dmaven.test.redirectTestOutputToFile=true"
+
   case $1 in
     *-gradle)
       expr "$_version" : '2\.' >/dev/null && H="-hilla.productionMode" || H="-Pvaadin.productionMode"
       echo "$GRADLE clean build $H $PNPM";;
     *-quarkus) echo "$MVN -ntp -B clean package -Pproduction $H $PNPM -Dquarkus.analytics.disabled=true";;
-    *hilla*|vaadin-form-example|flow-spring-examples|vaadin-oauth-example|layout-examples) echo "$MVN -ntp -B package -Pproduction $PNPM";;
-    bakery-app-starter-flow-spring|skeleton-starter-flow-spring) echo "$MVN -ntp -B install -Pproduction,it $H $PNPM";;
-    skeleton-starter-flow-cdi|k8s-demo-app) echo "$MVN -ntp -B verify -Pproduction $H $PNPM";;
     mpr-demo|spreadsheet-demo) echo "$MVN -ntp -B clean";;
     start) echo "$MVN -ntp -B install -Dmaven.test.skip -Pcircleci" ;;
-    spring-petclinic-vaadin-flow) echo "$MVN -ntp -B install -Pproduction,it -DskipTests";;
-    form-filler-demo) echo "$MVN -ntp -B clean install -Pproduction,it $H $PNPM -DOPENAI_TOKEN=$OPENAI_TOKEN";;
-    testbench-demo) echo "$MVN -ntp -B clean install -Pproduction,it $H $PNPM -Dselenium.version=4.19.1";;
-    *) echo "$MVN -ntp -B clean install -Pproduction,it $H $PNPM";;
+    form-filler-demo) echo "$H $PNPM -DOPENAI_TOKEN=$OPENAI_TOKEN";;
+    testbench-demo) echo "$H $PNPM -Dselenium.version=4.19.1";;
+    *) echo "$H $PNPM";;
   esac
 }
 ## Get command for running the project dev-mode after install was run
