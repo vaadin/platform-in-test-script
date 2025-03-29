@@ -496,7 +496,7 @@ checkBundleNotCreated() {
 checkNoSpringDependencies() {
   T=`mvn -ntp -B dependency:tree`
   H=`echo "$T" | egrep -i "spring|hilla"`
-  [ -n "$H" ] && error "There are spring/hilla dependencies" "$T\n------\n$H" && return 1
+  [ -n "$H" ] && err "There are spring/hilla dependencies" "$T\n------\n$H" && return 1
   log "No Spring/Hilla dependencies found"
 }
 
