@@ -496,10 +496,10 @@ checkBundleNotCreated() {
 checkNoSpringDependencies() {
   T=`mvn -ntp -B dependency:tree`
   # https://github.com/vaadin/flow-components/issues/7213
-  H=`echo "$T" | egrep -i "spring|hilla" | egrep -v "spring-data-commons|hilla-dev`
-  [ -n "$H" ] && err "There are spring/hilla dependencies" "$T\n------\n$H" && return 1
-  H=`echo "$T" | egrep "spring-data-commons|hilla-dev`
-  [ -n "$H" ] && warn "There is spring-data-commons|hilla-dev dependency" "$H" && return 0
+  H=`echo "$T" | egrep -i "spring|hilla" | egrep -v "spring-data-commons|hilla-dev"`
+  [ -n "$H" ] && reportError "There are spring/hilla dependencies" "$H" && echo "$H" && return 1
+  H=`echo "$T" | egrep "spring-data-commons|hilla-dev"`
+  [ -n "$H" ] && reportError "There is spring-data-commons|hilla-dev dependency" "$H" && echo "$H" && return 0
   log "No Spring/Hilla dependencies found"
 }
 
