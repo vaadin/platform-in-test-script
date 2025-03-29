@@ -153,18 +153,19 @@ getInstallCmdPrd() {
     H="$H -Pit -Dcom.vaadin.testbench.Parameters.testsInParallel=2"
     isHeadless && H="$H -Dcom.vaadin.testbench.Parameters.headless=true -Dheadless" || H="$H -Dtest.headless=false" #for addon-template flow-hilla-hybrid-example
   fi
-  [ -n "$SKIPTESTS" ] && H="$H -DskipTests"
-  [ -z "$MAVEN_ARGS" ] &&  H="$H -Dmaven.test.redirectTestOutputToFile=true"
+
+  [ -n "$SKIPTESTS" ] && E="-DskipTests"
+  [ -z "$MAVEN_ARGS" ] &&  E="$E -Dmaven.test.redirectTestOutputToFile=true"
 
   case $1 in
     *-gradle)
       expr "$_version" : '2\.' >/dev/null && H="-hilla.productionMode" || H="-Pvaadin.productionMode"
       echo "$GRADLE clean build $H $PNPM";;
-    *-quarkus) echo "$MVN -ntp -B clean package -Pproduction $H $PNPM -Dquarkus.analytics.disabled=true";;
+    *-quarkus) echo "$MVN -ntp -B clean package -Pproduction $E $PNPM -Dquarkus.analytics.disabled=true";;
     mpr-demo|spreadsheet-demo) echo "$MVN -ntp -B clean";;
     start) echo "$MVN -ntp -B install -Dmaven.test.skip -Pcircleci" ;;
-    form-filler-demo) echo "$H $PNPM -DOPENAI_TOKEN=$OPENAI_TOKEN";;
-    testbench-demo) echo "$H $PNPM -Dselenium.version=4.19.1";;
+    form-filler-demo) echo "$H $E $PNPM -DOPENAI_TOKEN=$OPENAI_TOKEN";;
+    testbench-demo) echo "$H $E $PNPM -Dselenium.version=4.19.1";;
     *) echo "$H $PNPM";;
   esac
 }
