@@ -26,6 +26,10 @@ on:
         type: boolean
         default: false
   push:
+env:
+  CC_KEY: ${{secrets.CC_KEY}}
+  CC_CERT: ${{secrets.CC_CERT}}
+  GHTK: ${{secrets.GHTK}}
 jobs:
   run:
     runs-on: ubuntu-latest
@@ -35,6 +39,7 @@ jobs:
         options: --privileged --shm-size=2g
     steps:
       - uses: actions/checkout@v4
+      - uses: dev-hanz-ops/install-gh-cli-action@v0.2.1
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -46,16 +51,17 @@ jobs:
         with:
           maven-version: '3.9.0'
       - uses: azure/setup-helm@v3.5
-      - if: ${{ env.ACT }}
+      - if: ${{env.ACT}}
         name: Run install dependencies (only in ACT)
         run: |
           for i in PATH CC_KEY CC_CERT GHTK
           do
-             H=`eval 'echo $'$i`
-             echo "export $i='"$H"'" >> vars.sh
+             V="${!i}"
+             [ -n "$V" ] && echo "export $i='"$V"'" >> vars.sh
           done
-          apt-get update -qq
-          apt-get install -qq -y vim iputils-ping curl
+          sudo apt-get update -qq
+          sudo apt-get install -qq -y vim iputils-ping curl >/dev/null
+          sudo chmod u+s /usr/bin/docker
         shell: bash
       - name: Run Install licenses
         run: |
@@ -66,38 +72,34 @@ jobs:
         shell: bash
       - name: Run Compute Arguments
         run: |
-          [ true = "${{ inputs.skipcurrent }}" ] && A="$A --skip-current"
-          [ true =  "${{ inputs.skipdev }}" ] && A="$A --skip-dev"
-          [ true =  "${{ inputs.debug }}" ] && A="$A --debug"
-          [ -n "${{ inputs.version }}" ] && A="$A --version=${{ inputs.version }}" || A="$A --version=24.7-SNAPSHOT"
-          [ -n "${{ inputs.starters }}" ] && A="$A --starters=${{ inputs.starters }}" || A="$A --starters=control-center,react,latest-java_partial-auth,vaadin-quarkus"
-          echo "A=$A" >> $GITHUB_ENV
+          [ true = "${{inputs.skipcurrent}}" ] && A="$A --skip-current"
+          [ true =  "${{inputs.skipdev}}" ] && A="$A --skip-dev"
+          [ true =  "${{inputs.debug}}" ] && A="$A --debug"
+          [ -n "${{inputs.version}}" ] && A="$A --version=${{inputs.version}}" || A="$A --version=24.7-SNAPSHOT"
+          [ -n "${{inputs.starters}}" ] && A="$A --starters=${{inputs.starters}}" || A="$A --starters=control-center"
+          echo "PIT_ARGS=$A" >> $GITHUB_ENV
           K=`echo "$A" | perl -pe 's/[^\d\w]/-/g' | tr -s '-'`
-          echo "K=$K" >> $GITHUB_ENV
+          echo "CACHE_KEY=$K" >> $GITHUB_ENV
         shell: bash
       - uses: actions/cache@v4
         with:
           path: |
             ~/.m2/repository
             ~/.npm
-          key: pit-${{ env.K }}
+          key: pit-${{env.CACHE_KEY}}
           restore-keys: |
-            pit-${{ env.K }}
+            pit-${{env.CACHE_KEY}}
             pit-
       - uses: helm/kind-action@v1
         with:
           cluster_name: cc-cluster
       - name: Run PiT
-        env:
-          CC_KEY: ${{ secrets.CC_KEY }}
-          CC_CERT: ${{ secrets.CC_CERT }}
-          GHTK: ${{ secrets.GHTK }}
         run: |
-          echo ./scripts/pit/run.sh ${{env.A}}
-          ./scripts/pit/run.sh ${{env.A}} --test
-          ./scripts/pit/run.sh ${{env.A}}
+          echo ./scripts/pit/run.sh ${{env.PIT_ARGS}}
+          ./scripts/pit/run.sh ${{env.PIT_ARGS}} --test
+          ./scripts/pit/run.sh ${{env.PIT_ARGS}}
         shell: bash
-      - if: ${{ always()}}
+      - if: ${{always()}}
         uses: actions/upload-artifact@v4
         with:
           name: outputs
@@ -109,10 +111,10 @@ jobs:
         run: |
           gh extension install actions/gh-actions-cache
           gh actions-cache list
-          gh actions-cache delete "pit-${{ env.K }}" --confirm || true
+          gh actions-cache delete "pit-${{env.CACHE_KEY}}" --confirm || true
         env:
-          GH_TOKEN: ${{ secrets.GHTK }}
-          shell: bash
+          GH_TOKEN: ${{secrets.GHTK}}
+        shell: bash
   
 
 
