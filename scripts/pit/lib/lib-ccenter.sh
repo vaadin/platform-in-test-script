@@ -38,6 +38,17 @@ computeCCVersion() {
   mvn help:evaluate -Dexpression=project.version -q -DforceStdout
 }
 
+saveCerts() {
+  f1=cc-tls.crt
+  f2=cc-tls.key
+  f3=$CC_DOMAIN.pem
+  echo -e "$CC_CERT" > $f1 || return 1
+  echo -e "$CC_KEY" > $f2 || return 1
+  cat $f1 $f2 > $f3
+  mkdir -p certs.out
+  cp $f1 $f2 $f3 certs.out/
+}
+
 ## Install Control Center with Helm
 installCC() {
   [ -n "SKIPHELM" ] && H=`kubectl get pods 2>&1` && echo "$H" | egrep -q 'control-center-[0-9abcdef]+-..... ' && return 0
