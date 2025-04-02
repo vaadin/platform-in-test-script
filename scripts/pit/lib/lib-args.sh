@@ -25,6 +25,7 @@ Use: $0 with the next options:
  --skip-pw         Do not run playwright tests
  --cluster=name    Run tests in an existing k8s cluster
  --keep-cc         Keep control-center running after tests
+ --proxy-cc        Forward port 443 from k8s cluster to localhost
  --pnpm            Use pnpm instead of npm to speed up frontend compilation (default npm)
  --vite            Use vite inetad of webpack to speed up frontend compilation (default webpack)
  --list            Show the list of available starters
@@ -111,6 +112,9 @@ checkArgs() {
         shift
         RUN_FUCTION=${*}
         break ;;
+      --proxy*)
+        VERBOSE=true runCmd "Running CC proxy" kubectl port-forward service/control-center-ingress-nginx-controller 443:443 -n control-center
+        exit ;;
       --git-ssh) GITBASE="git@github.com:" ;;
       --headless) HEADLESS=true ;;
       --headed)   HEADLESS=false ;;
