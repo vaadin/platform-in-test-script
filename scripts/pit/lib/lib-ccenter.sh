@@ -67,7 +67,14 @@ installCC() {
 
   runToFile "helm install control-center $args \
     -n $CC_NS --create-namespace \
-    --set startupProbe.initialDelaySeconds=200 \
+    --set app.startupProbe.initialDelaySeconds=30 \
+    --set app.readinessProbe.initialDelaySeconds=10 \
+    --set app.resources.limits.memory=1Gi \
+    --set app.resources.requests.memory=256Mi \
+    --set keycloak.startupProbe.initialDelaySeconds=30 \
+    --set keycloak.readinessProbe.initialDelaySeconds=10 \
+    --set keycloak.resources.limits.memory=1Gi \
+    --set keycloak.resources.requests.memory=256Mi \
     --set domain=$CC_DOMAIN \
     --set user.email=$CC_EMAIL \
     --set app.host=$CC_CONTROL --set keycloak.host=$CC_AUTH $D" "helm-install-$1.out" "$VERBOSE" || return 1
@@ -248,7 +255,7 @@ runControlCenter() {
 
   ## Forward the ingress (it needs root access since it uses port 443)
   # checkPort "443"
-  [ "$CLUSTER" != "$KIND_CLUSTER" ] || forwardIngress $CC_NS || return 1
+  [ "$CLUSTER" == "docker-desktop" ] || forwardIngress $CC_NS || return 1
 
   ## Run Playwright tests for the control-center
   runPwTests "$1" || return 1
