@@ -18,6 +18,7 @@ async function installApp(app, page) {
 
     await page.getByLabel('Application Name', {exact: true}).fill(app)
     await page.getByLabel('Image', {exact: true}).fill(`k8sdemos/${app}:latest`)
+    await page.getByLabel('Startup Delay (secs)').fill('90');
     await page.getByLabel('Application URI', {exact: true}).locator('input[type="text"]').fill(uri)
     if (cert) {
         log(`Uploading certificate ${cert} for ${app}...\n`);
