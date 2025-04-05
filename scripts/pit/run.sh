@@ -7,7 +7,8 @@
 . `dirname $0`/lib/lib-args.sh
 . `dirname $0`/lib/lib-start.sh
 . `dirname $0`/lib/lib-demos.sh
-. `dirname $0`/lib/lib-ccenter.sh
+. `dirname $0`/lib/lib-k8s-cc.sh
+. `dirname $0`/lib/lib-k8s-dashboard.sh
 
 set -o pipefail
 

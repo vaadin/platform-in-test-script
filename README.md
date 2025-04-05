@@ -26,7 +26,12 @@ Use: ./scripts/pit/run.sh with the next options:
  --skip-helm       Do not re-install control-center with helm and continue running tests
  --skip-pw         Do not run playwright tests
  --cluster=name    Run tests in an existing k8s cluster
+ --vendor=name     Use a specific cluster vendor to run control-center tests options: [dd, kind, do] (default: kind)
  --keep-cc         Keep control-center running after tests
+ --proxy-cc        Forward port 443 from k8s cluster to localhost
+ --events-cc       Display events from control-center
+ --delete-cluster  Delete the cluster/s
+ --dashboard=*     Install kubernetes dashboard, options [install, uninstall] (default: install)
  --pnpm            Use pnpm instead of npm to speed up frontend compilation (default npm)
  --vite            Use vite inetad of webpack to speed up frontend compilation (default webpack)
  --list            Show the list of available starters

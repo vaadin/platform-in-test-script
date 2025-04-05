@@ -24,8 +24,12 @@ Use: $0 with the next options:
  --skip-helm       Do not re-install control-center with helm and continue running tests
  --skip-pw         Do not run playwright tests
  --cluster=name    Run tests in an existing k8s cluster
+ --vendor=name     Use a specific cluster vendor to run control-center tests options: [dd, kind, do] (default: kind)
  --keep-cc         Keep control-center running after tests
  --proxy-cc        Forward port 443 from k8s cluster to localhost
+ --events-cc       Display events from control-center
+ --delete-cluster  Delete the cluster/s
+ --dashboard=*     Install kubernetes dashboard, options [install, uninstall] (default: install)
  --pnpm            Use pnpm instead of npm to speed up frontend compilation (default npm)
  --vite            Use vite inetad of webpack to speed up frontend compilation (default webpack)
  --list            Show the list of available starters
@@ -46,7 +50,7 @@ EOF
 
 ## check arguments passed to `run.sh` script and set global variables
 checkArgs() {
-  VERSION=current; GITBASE="https://github.com/"; PORT=$DEFAULT_PORT; TIMEOUT=$DEFAULT_TIMEOUT
+  VERSION=current; GITBASE="https://github.com/"; PORT=$DEFAULT_PORT; TIMEOUT=$DEFAULT_TIMEOUT; VENDOR=kind
   while [ -n "$1" ]
   do
     arg=`echo "$1" | grep = | cut -d= -f2`
@@ -77,6 +81,7 @@ checkArgs() {
       --skip-prod) NOPROD=true;;
       --skip-pw) SKIPPW=true;;
       --cluster=*) CLUSTER="$arg";;
+      --vendor=*) VENDOR="$arg";;
       --skip-helm) SKIPHELM=true;;
       --keep-cc) KEEPCC=true;;
       --pnpm) PNPM="-Dpnpm.enable=true";;
@@ -95,7 +100,8 @@ checkArgs() {
       --hub) USEHUB="true";;
       --pre)
         PRESETS=`echo "$PRESETS" | sed -e 's,^latest-,pre-,g'`
-        DEFAULT_STARTERS=`echo "$PRESETS" | tr "\n" "," | sed -e 's/^,//' | sed -e 's/,$//'` ;;
+        DEFAULT_STARTERS=`echo "$PRESETS" | tr "\n" "," | sed -e 's/^,//' | sed -e 's/,$//'`
+        ;;
       --commit) COMMIT=true ;;
       --check)
         for i in `getReposFromWebsite` ;
@@ -113,8 +119,28 @@ checkArgs() {
         RUN_FUCTION=${*}
         break ;;
       --proxy*)
-        VERBOSE=true runCmd "Running CC proxy" kubectl port-forward service/control-center-ingress-nginx-controller 443:443 -n control-center
+        VERBOSE=true runCmd "Running CC proxy" kubectl port-forward service/control-center-ingress-nginx-controller 443:443 -n $CC_NS
         exit ;;
+      --events*)
+        VERBOSE=true runCmd "Showing CC events" kubectl get events --watch -n $CC_NS -o 'custom-columns="LAST SEEN:.lastTimestamp,TYPE:.type,REASON:.reason,NAME:.metadata.name,MESSAGE:.message"'
+        exit ;;
+      --dash*)
+        if [ "$arg" = uninstall ]; then
+          uninstallDashBoard
+        else
+          installDashBoard
+          VERBOSE=true runCmd "Running CC proxy" kubectl -n kubernetes-dashboard port-forward svc/kubernetes-dashboard-kong-proxy 8443:443
+        fi
+        exit
+        ;;
+      --delete*)
+          H=`kubectl config get-contexts  | grep -v CURRENT | tr '*' ' ' | awk '{print $1}'`
+          echo "$H"
+          echo -ne "\nWhat cluster do you want to delete? "
+          read cluster
+          deleteCluster $cluster
+          exit
+        ;;
       --git-ssh) GITBASE="git@github.com:" ;;
       --headless) HEADLESS=true ;;
       --headed)   HEADLESS=false ;;
@@ -122,4 +148,8 @@ checkArgs() {
     esac
     shift
   done
+
+  [ -z "$VENDOR" ] && VENDOR=kind
+  [ -z "$CLUSTER" -a "$VENDOR" = dd ] && CLUSTER="docker-desktop"
+  [ -z "$CLUSTER" ] && CLUSTER="pit"
 }
