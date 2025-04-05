@@ -65,7 +65,7 @@ const {log, err, args, createPage, closePage, takeScreenshot, waitForServerReady
     log(`Adding Role, Group and User ...\n`);
     await page.getByRole('link', { name: 'Roles' }).click();
     await page.waitForTimeout(2000);
-    await page.getByRole('button', { name: /Create|New/ }).click();
+    await page.getByRole('button', { name: /New/ }).click();
     await takeScreenshot(page, __filename, 'role-form');
     await page.getByLabel('Name').fill(role);
     await page.getByLabel('Description').fill(role);
@@ -75,7 +75,7 @@ const {log, err, args, createPage, closePage, takeScreenshot, waitForServerReady
 
     await page.getByRole('link', { name: 'Groups' }).click();
     await page.waitForTimeout(2000);
-    await page.getByRole('button', { name: /Create|New/ }).click();
+    await page.getByRole('button', { name: /New/ }).click();
     await takeScreenshot(page, __filename, 'group-form');
     await page.getByLabel('Name').fill(group);
     await page.locator(checkboxSelectorRole).click();
@@ -85,7 +85,7 @@ const {log, err, args, createPage, closePage, takeScreenshot, waitForServerReady
 
     await page.getByRole('link', { name: 'Users' }).click();
     await page.waitForTimeout(2000);
-    await page.getByRole('button', { name: /Create|New/ }).click();
+    await page.getByRole('button', { name: /New/ }).click();
     await takeScreenshot(page, __filename, 'user-form');
     await page.getByLabel('First Name').fill(role);
     await page.getByLabel('Last Name').fill('user');

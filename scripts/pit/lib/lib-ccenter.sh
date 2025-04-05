@@ -280,7 +280,7 @@ validateControlCenter() {
     runControlCenter current || return 1
   fi
   ## Run control center for provided version
-  if [ -n "$VERSION" ]; then
+  if [ "$VERSION" != "current" ]; then
     runControlCenter `computeCCVersion $VERSION` || return 1
   fi
 }
