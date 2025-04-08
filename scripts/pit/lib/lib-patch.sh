@@ -1,3 +1,7 @@
+. `dirname $0`/lib/lib-patch-v24.sh
+. `dirname $0`/lib/lib-patch-v24.4.sh
+
+
 ## LIBRARY for patching Vaadin starters or demos
 ##   It has especial workarounds for specific apps.
 ##   There could be especial patches for specific versions of Apps, Vaadin or Hilla
@@ -42,6 +46,9 @@ applyPatches() {
       moveQuarkusBomToBottom
       ;;
   esac
+
+  applyv24Patches
+  applyv244Patches
 
   # always successful
   return 0
