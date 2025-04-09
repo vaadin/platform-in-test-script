@@ -208,11 +208,15 @@ buildCC() {
       runCmd -q "Load docker image control-center-app for Kind" kind load docker-image vaadin/control-center-app:local --name "$CLUSTER" || return 1
       runCmd -q "Load docker image control-center-keycloak for Kind " kind load docker-image vaadin/control-center-keycloak:local --name "$CLUSTER" || return 1
   elif [ "$VENDOR" = "do" ]; then
-    runCmd -q "Creating registry in DigitalOcean" doctl registry create control-center-registry || return 1
+      if [ -z "$KEEPCC" ]; then
+          runCmd -q "Creating registry in DigitalOcean" "doctl registry create control-center-registry --region fra1" || return 1
+      else
+          runCmd -q "Registry already exists. Skipping creation."
+      fi
     runCmd -q "Login and switching default registry to DigitalOcean" doctl registry login || return 1
     runCmd -q "Tagging control-center image and preparing for upload" docker tag vaadin/control-center-app:local registry.digitalocean.com/control-center-registry/control-center-app:next || return 1
     runCmd -q "Upload control-center image" docker push registry.digitalocean.com/control-center-registry/control-center-app:next || return 1
-    runCmd -q "Tagging control-center-keycloak image and preparing for upload" vaadin/control-center-keycloak:local registry.digitalocean.com/control-center-registry/control-center-keycloak:next || return 1
+    runCmd -q "Tagging control-center-keycloak image and preparing for upload" docker tag vaadin/control-center-keycloak:local registry.digitalocean.com/control-center-registry/control-center-keycloak:next || return 1
     runCmd -q "Upload control-center-keycloak image" docker push registry.digitalocean.com/control-center-registry/control-center-keycloak:next || return 1
   fi
   runCmd -q "Update helm dependencies" helm dependency build charts/control-center
