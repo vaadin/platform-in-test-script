@@ -99,6 +99,7 @@ createDOCluster() {
 deleteDOCluster() {
   checkCommands doctl || return 1
   runCmd -q "Delete Cluster in DO $name" "doctl kubernetes cluster delete $1 --force --dangerous" 
+  runCmd -q "Deleting Registry in DO" "doctl registry delete --force"
 }
 
 createCluster() {
