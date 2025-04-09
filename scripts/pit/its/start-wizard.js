@@ -33,7 +33,7 @@ process.argv.forEach(a => {
 
   // Start a new project
   log(`Starting new project\n`);
-  await page.getByText('Start a Project').click();
+  await page.getByText(/Start (a Project|Playing)/).click();
   await page.locator('body').click();
 
   // No demo view anymore
