@@ -30,7 +30,7 @@ computeCCVersion() {
   [ -z "$1" ] && return
   git fetch --tags -q
   for i in `git tag | sort -r`; do
-    local vVersion=`git show $i:pom.xml | grep '<vaadin.components.version>' | cut -d '>' -f2 | cut -d '<' -f1`
+    local vVersion=`git show $i:pom.xml 2>/dev/null | grep '<vaadin.components.version>' | cut -d '>' -f2 | cut -d '<' -f1`
     # echo "$1 - $vVersion" >&2
     [ "$vVersion" = "$1" ] && echo $i && return 0
   done
@@ -204,7 +204,7 @@ buildCC() {
   runToFile "'$MVN' $D -B -pl :control-center-app -Pproduction -DskipTests -am install" "compile-cc-${1}.out" "$VERBOSE" || return 1
   runToFile "'$MVN' $D -B -pl :control-center-app -Pproduction -Ddocker.tag=local docker:build" "build-ccapp-docker-${1}.out" "$VERBOSE"|| return 1
   runToFile "'$MVN' $D -B -pl :control-center-keycloak package -Ddocker.tag=local docker:build" "build-ccapp-docker-${1}.out" "$VERBOSE" || return 1
-  if [ "$VENDOR" = "$kind" ]; then
+  if [ "$VENDOR" = "kind" ]; then
       runCmd -q "Load docker image control-center-app for Kind" kind load docker-image vaadin/control-center-app:local --name "$CLUSTER" || return 1
       runCmd -q "Load docker image control-center-keycloak for Kind " kind load docker-image vaadin/control-center-keycloak:local --name "$CLUSTER" || return 1
   fi
