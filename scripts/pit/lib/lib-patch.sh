@@ -47,9 +47,6 @@ applyPatches() {
       ;;
   esac
 
-  applyv24Patches
-  applyv244Patches
-
   # always successful
   return 0
 }
