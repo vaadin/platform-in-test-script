@@ -77,6 +77,11 @@ installCC() {
     --set domain=$CC_DOMAIN \
     --set user.email=$CC_EMAIL \
     --set app.host=$CC_CONTROL --set keycloak.host=$CC_AUTH $D" "helm-install-$1.out" "$VERBOSE" || return 1
+
+  if [ "$VENDOR" = "do" ]; then
+    kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "control-center-registry"}]}'
+    # runCmd -q "Configure kubernetes to know the secret to pull from the new registry." "kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "control-center-registry"}]}'" || return 1
+  fi
   return 0
 }
 
@@ -197,6 +202,18 @@ runPwTests() {
   done
 }
 
+downloadAndCompileBakery() {
+  mkdir tmp
+  cd tmp
+  git clone git@github.com:vaadin/bakery-app-starter-flow-spring.git || return 1
+  cd bakery-app-starter-flow-spring
+  git checkout cc-24.7
+  mvn clean package -Pproduction,control-center -DskipTests || return 1
+  docker build -t registry.digitalocean.com/control-center-registry/bakery-cc:next . || return 1
+  docker push registry.digitalocean.com/control-center-registry/bakery-cc:next || return 1
+  cd ..
+}
+
 buildCC() {
   computeMvn
   local D="-q -ntp"
@@ -208,14 +225,13 @@ buildCC() {
       runCmd -q "Load docker image control-center-app for Kind" kind load docker-image vaadin/control-center-app:local --name "$CLUSTER" || return 1
       runCmd -q "Load docker image control-center-keycloak for Kind " kind load docker-image vaadin/control-center-keycloak:local --name "$CLUSTER" || return 1
   elif [ "$VENDOR" = "do" ]; then
-      if [ -z "$KEEPCC" ]; then
-          runCmd -q "Creating registry in DigitalOcean" "doctl registry create control-center-registry --region fra1" || return 1
-      else
+      if doctl registry get >/dev/null 2>&1; then
           runCmd -q "Registry already exists. Skipping creation."
+      else
+          runCmd -q "Creating registry in DigitalOcean" "doctl registry create control-center-registry --region fra1" || return 1
       fi
     runCmd -q "Login and switching default registry to DigitalOcean" doctl registry login || return 1
     runCmd -q "Authorize cluster to use the registry." "doctl registry kubernetes-manifest | kubectl apply -f -" || return 1
-    runCmd -q "Configure kubernetes to know the secret to pull from the new registry." "kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "control-center-registry"}]}'" || return 1
     runCmd -q "Tagging control-center image and preparing for upload" docker tag vaadin/control-center-app:local registry.digitalocean.com/control-center-registry/control-center-app:next || return 1
     runCmd -q "Upload control-center image" docker push registry.digitalocean.com/control-center-registry/control-center-app:next || return 1
     runCmd -q "Tagging control-center-keycloak image and preparing for upload" docker tag vaadin/control-center-keycloak:local registry.digitalocean.com/control-center-registry/control-center-keycloak:next || return 1
