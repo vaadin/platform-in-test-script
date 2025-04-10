@@ -1,6 +1,6 @@
-const { expect} = require('@playwright/test');
+const { expect } = require('@playwright/test');
 const fs = require('fs');
-const {log, err, args, run, createPage, closePage, takeScreenshot, waitForServerReady} = require('./test-utils');
+const { log, err, args, run, createPage, closePage, takeScreenshot, waitForServerReady } = require('./test-utils');
 const { assert } = require('console');
 
 (async () => {
@@ -24,7 +24,7 @@ const { assert } = require('console');
     log(`Logging in CC as ${arg.login} ${arg.pass}...\n`);
     await page.getByLabel('Email').fill(arg.login);
     await page.getByLabel('Password').fill(arg.pass);
-    await page.getByRole('button', {name: 'Sign In'}).click()
+    await page.getByRole('button', { name: 'Sign In' }).click()
     await takeScreenshot(page, __filename, 'logged-in');
 
     log(`Changing Settings for ${app}...\n`);
@@ -32,7 +32,7 @@ const { assert } = require('console');
     await takeScreenshot(page, __filename, 'settings');
     const anchorSelectorURL = `//vaadin-grid-cell-content[.//span[normalize-space(text())="${app}"]]//a`;
     const url = await page.locator(anchorSelectorURL).getAttribute('href');
-    const previewUrl = url.replace(/:\/\//, '://preview.');
+    let previewUrl = url + '?i18n-preview=enable';
 
     log(`Checking that  ${app} installed in ${url} is running ...\n`);
     // When app is not running, localization cannot be enabled
@@ -60,7 +60,7 @@ const { assert } = require('console');
     await fileChooser.setFiles(propsFile);
     await page.getByRole('button', { name: 'Replace data' }).click();
     fs.unlinkSync(propsFile);
-    
+
     await takeScreenshot(page, __filename, 'localization-loaded');
     await page.getByText('Bakery', { exact: true }).click();
     await page.locator('vaadin-text-area.inline textarea').fill('Panaderia');
@@ -79,31 +79,36 @@ const { assert } = require('console');
     const str = await fs.readFileSync('./downloads/translations.properties', 'utf8');
     assert(str.includes('app.title=Panaderia'));
     await fs.rmSync(downloadsDir, { recursive: true });
+    await takeScreenshot(page, __filename, 'title-translagted');
 
-    log(`Starting preview server\n`);
-    await page.getByRole('button', { name: 'Start preview' }).click();
-    await page.waitForTimeout(5000);
+    try {
+        // old versions of cc
+        await page.getByRole('button', { name: 'Start preview' }).click({ timeout: 500 });
+        log(`Started preview server\n`);
+        await page.waitForTimeout(5000);
+        previewUrl = url.replace(/:\/\//, '://preview.');
+    } catch (error) {
+    }
 
     log(`Testing that preview page: ${previewUrl} is up and running\n`);
     const pagePrev = await createPage(arg.headless, true /* preview pages do not have a valid certificate */);
     await waitForServerReady(pagePrev, previewUrl);
     await takeScreenshot(pagePrev, __filename, 'preview-ready');
-    const text = await pagePrev.getByText(/Password|Dashboard/).textContent();
-    if (text.includes('Password')) {
-        await pagePrev.getByLabel('Email').fill(user);
-        await pagePrev.getByLabel('Password').fill(password);
-        await pagePrev.getByRole('button', {name: 'Sign In'}).click()
-        await takeScreenshot(pagePrev, __filename, 'preview-logged-in');
-        await expect(pagePrev.getByRole('button', { name: 'New order' })).toBeVisible();
-        await takeScreenshot(pagePrev, __filename, 'preview-loaded');
-    }
-    //  TODO: bakery is not internationalized
+
+    //  TODO: bakery is not internationalized yet
     //  await expect(pagePrev.getByText('Panaderia', { exact: true })).toBeVisible();
+    await expect(pagePrev.getByRole('button', { name: 'New order' })).toBeVisible();
+    await takeScreenshot(pagePrev, __filename, 'preview-loaded');
     await closePage(pagePrev);
 
     log('Cleaning up...\n');
     try {
-        await page.getByRole('button', { name: 'Stop preview' }).click();
+        // old versions of cc
+        await page.getByRole('button', { name: 'Stop preview' }).click({ timeout: 500 });
+    } catch (error) {
+    }
+
+    try {
         await page.getByRole('link', { name: 'Settings' }).click();
         await page.waitForTimeout(2000);
         await page.locator('vaadin-grid').getByText('bakery-cc', { exact: true }).click();

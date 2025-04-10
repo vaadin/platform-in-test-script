@@ -134,8 +134,12 @@ const {log, err, args, createPage, closePage, takeScreenshot, waitForServerReady
         await page.getByRole('link', { name: 'Settings' }).click();
         await page.waitForTimeout(2000);
         await page.locator('vaadin-grid').getByText('bakery-cc', { exact: true }).click();
+        await page.getByLabel('Replicas').fill('0');
         await page.getByLabel('Identity Management').uncheck();
         await page.getByRole('button', { name: 'Disable' }).click();
+        await page.getByRole('button', { name: 'Update' }).click();
+        await page.waitForTimeout(500);
+        await page.getByLabel('Replicas').fill('1');
         await page.getByRole('button', { name: 'Update' }).click();
     } catch (error) {
         err(`Error cleaning up: ${error}\n`);
