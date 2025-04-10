@@ -214,6 +214,8 @@ buildCC() {
           runCmd -q "Registry already exists. Skipping creation."
       fi
     runCmd -q "Login and switching default registry to DigitalOcean" doctl registry login || return 1
+    runCmd -q "Authorize cluster to use the registry." "doctl registry kubernetes-manifest | kubectl apply -f -" || return 1
+    runCmd -q "Configure kubernetes to know the secret to pull from the new registry." "kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "control-center-registry"}]}'" || return 1
     runCmd -q "Tagging control-center image and preparing for upload" docker tag vaadin/control-center-app:local registry.digitalocean.com/control-center-registry/control-center-app:next || return 1
     runCmd -q "Upload control-center image" docker push registry.digitalocean.com/control-center-registry/control-center-app:next || return 1
     runCmd -q "Tagging control-center-keycloak image and preparing for upload" docker tag vaadin/control-center-keycloak:local registry.digitalocean.com/control-center-registry/control-center-keycloak:next || return 1
