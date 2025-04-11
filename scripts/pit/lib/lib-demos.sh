@@ -17,7 +17,7 @@ checkoutDemo() {
   [ -n "$_tk" ] && _base=`echo "$_base" | sed -e 's|\(https://\)|\\1'$_tk'@|'`
   _gitUrl="${_base}${_repo}.git"
   [ -z "$VERBOSE" ] && _quiet="-q"
-  if [ -z "$_offline" -o ! -d "$_workdir" ]
+  if [ -z "$OFFLINE" -o ! -d "$_workdir" ]
   then
     [ ! -d "$_demo" ] || runCmd -qf "Removing preexisting folder $_demo" "rm -rf $_demo" || return 1
     runCmd -f "Cloning repository $_repo" "git clone $_quiet $_gitUrl" || return 1
@@ -316,7 +316,6 @@ runDemo() {
   _tmp="$2"
   _port="$3"
   _version="$4"
-  _offline="$5"
 
   cd "$_tmp" || return 1
 
