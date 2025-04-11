@@ -65,6 +65,10 @@ const args = () => {
       ret.ignoreHTTPSErrors = true;
     } else if (/^--mode/.test(a)) {
       mode = ret.mode = a.split('=')[1];
+    } else if (/^--registry/.test(a)) {
+      ret.registry = a.split('=')[1];
+    } else if (/^--tag/.test(a)) {
+      ret.tag = a.split('=')[1];
     }
   });
   if (!ret.url) {

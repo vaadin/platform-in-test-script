@@ -10,6 +10,8 @@ async function installApp(app, page) {
     const domain = host.replace(/[^.]+\./, '');
     const uri = `${app}.${domain}`;
     const cert = [ domain, uri ].map(a => `${a}.pem`).filter( a => fs.existsSync(a))[0]
+    const tag = arg.tag || 'latest';
+    const registry = arg.registry || 'k8sdemos';
     console.log(`Installing App: ${app} URI: ${uri} Cert: ${cert}`);
 
     await page.getByRole('listitem').filter({ hasText: 'Settings'}).click()
@@ -17,8 +19,8 @@ async function installApp(app, page) {
     await takeScreenshot(page, __filename, `form-opened-${app}`);
 
     await page.getByLabel('Application Name', {exact: true}).fill(app)
-    await page.getByLabel('Image', {exact: true}).fill(`k8sdemos/${app}:latest`)
-    await page.getByLabel('Startup Delay (secs)').fill('30');
+    await page.getByLabel('Image', {exact: true}).fill(`${registry}/${app}:${tag}`)
+    await page.getByLabel('Startup Delay (secs)').fill('90');
     await page.getByLabel('Application URI', {exact: true}).locator('input[type="text"]').fill(uri)
     if (cert) {
         log(`Uploading certificate ${cert} for ${app}...\n`);

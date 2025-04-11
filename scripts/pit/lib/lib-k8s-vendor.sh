@@ -98,8 +98,8 @@ createDOCluster() {
 
 deleteDOCluster() {
   checkCommands doctl || return 1
-  runCmd -q "Delete Cluster in DO $name" "doctl kubernetes cluster delete $1 --force --dangerous" 
-  runCmd -q "Deleting Registry in DO" "doctl registry delete --force"
+  runCmd -q "Delete Cluster in DO $name" "doctl kubernetes cluster delete $1 --force --dangerous"
+     runCmd -q "Deleting Registry in DO" "doctl registry delete --force"
 }
 
 createCluster() {
@@ -149,3 +149,52 @@ setClusterContext() {
   kubectl get ns >/dev/null 2>&1 || return 1
 }
 
+computeDORegistry() {
+  H=`doctl registry get --no-header --format Name 2>/dev/null`
+  [ -n "$H" ] && echo "$H" && return
+  U=`doctl account get --format Email --no-header | tr '[@.]' '-'`
+  echo "$U"
+}
+
+loginDORegistry() {
+  doctl registry get --no-header 2>/dev/null
+  if [ $? != 0 ]; then
+    log "No DO registry found, creating a new one $1 ..."
+    runCmd -q "Creating registry in DigitalOcean" "doctl registry create $1 --region fra1" || return 1
+  fi
+  runCmd -qf "Login to DO registry" "doctl registry login" || return 1
+}
+
+prepareRegistry() {
+  [ "$VENDOR" != "do" ] && return 0
+  checkCommands doctl || return 1
+  REG=`computeDORegistry`
+  loginDORegistry "$REG" || return 1
+  DO_REGISTRY="registry.digitalocean.com/$REG"
+}
+
+uploadLocalImages() {
+  case "$VENDOR" in
+    kind)
+      runCmd -q "Load docker image control-center-app for Kind" \
+        kind load docker-image vaadin/control-center-app:local --name "$CLUSTER" || return 1
+      runCmd -q "Load docker image control-center-keycloak for Kind" \
+        kind load docker-image vaadin/control-center-keycloak:local --name "$CLUSTER" || return 1
+      runCmd -q "Load docker image bakery for Kind" \
+        kind load docker-image vaadin/bakery:local --name "$CLUSTER" || return 1
+      runCmd -q "Load docker image bakery-cc for Kind" \
+        kind load docker-image vaadin/bakery-cc:local --name "$CLUSTER" || return 1
+      ;;
+    do)
+      docker tag vaadin/control-center-app:local $DO_REGISTRY/control-center-app:local || return 1
+      docker tag vaadin/control-center-keycloak:local $DO_REGISTRY/control-center-keycloak:local || return 1  
+      docker tag vaadin/bakery:local $DO_REGISTRY/bakery:local || return 1
+      docker tag vaadin/bakery-cc:local $DO_REGISTRY/bakery-cc:local || return 1
+      docker push $DO_REGISTRY/control-center-app:local || return 1
+      docker push $DO_REGISTRY/control-center-keycloak:local || return 1
+      docker push $DO_REGISTRY/bakery:local || return 1
+      docker push $DO_REGISTRY/bakery-cc:local || return 1
+      ;;
+    *) :;;
+  esac
+}
