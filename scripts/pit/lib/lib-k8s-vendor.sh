@@ -112,10 +112,17 @@ createCluster() {
 
 deleteCluster() {
   name=${1:-$CLUSTER}
-  type=$2
+  if [ -z "$name" ]; then
+    H=`kubectl config get-contexts  | grep -v CURRENT | tr '*' ' ' | awk '{print $1}'`
+    [ -z "$H" ] && log "No clusters found in kubectl contexts" && return 1
+    echo "$H"
+    echo -ne "\nWhat cluster do you want to delete? "
+    read name
+  fi
   case "$name" in
     $C_KIND_PREFIX*) type=kind ;;
     $C_DO_PREFIX*) type=do ;;
+    *) log "Incorrect cluster name provided: '$name'" && return 1
   esac
   name=`echo "$name" | sed -e "s|^$C_KIND_PREFIX||" -e "s|^$C_DO_PREFIX||"`
   case "$type" in

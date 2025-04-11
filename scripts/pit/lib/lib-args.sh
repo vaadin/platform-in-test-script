@@ -131,16 +131,10 @@ checkArgs() {
           installDashBoard
           VERBOSE=true runCmd "Running CC proxy" kubectl -n kubernetes-dashboard port-forward svc/kubernetes-dashboard-kong-proxy 8443:443
         fi
-        exit
-        ;;
+        exit ;;
       --delete*)
-          H=`kubectl config get-contexts  | grep -v CURRENT | tr '*' ' ' | awk '{print $1}'`
-          echo "$H"
-          echo -ne "\nWhat cluster do you want to delete? "
-          read cluster
-          deleteCluster $cluster
-          exit
-        ;;
+        deleteCluster
+        exit ;;
       --git-ssh) GITBASE="git@github.com:" ;;
       --headless) HEADLESS=true ;;
       --headed)   HEADLESS=false ;;
