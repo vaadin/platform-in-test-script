@@ -68,11 +68,11 @@ spring-petclinic/spring-petclinic-vaadin-flow
 form-filler-demo
 flow-hilla-hybrid-example
 designer-tutorial
-cookbook
 walking-skeleton:v24.7-hybrid
 "
 
 ## Not needed so far since the hybrid should cover all the views
+# cookbook
 # walking-skeleton:v24.7-empty
 # walking-skeleton:v24.7-flow
 # walking-skeleton:v24.7-hilla
