@@ -83,10 +83,10 @@ installCC() {
     --set user.email=$CC_EMAIL \
     --set app.host=$CC_CONTROL --set keycloak.host=$CC_AUTH $D" "helm-install-$1.out" "$VERBOSE" || return 1
 
-  # if [ "$VENDOR" = "do" ]; then
-  #   kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "control-center-registry"}]}'
-  #   # runCmd -q "Configure kubernetes to know the secret to pull from the new registry." "kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "control-center-registry"}]}'" || return 1
-  # fi
+  if [ "$VENDOR" = do ]; then
+    cmd kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "'$REG'"}]}'
+    kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "'$REG'"}]}'
+  fi
   return 0
 }
 
