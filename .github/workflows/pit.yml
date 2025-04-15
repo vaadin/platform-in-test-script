@@ -76,7 +76,7 @@ jobs:
           [ true =  "${{inputs.skipdev}}" ] && A="$A --skip-dev"
           [ true =  "${{inputs.debug}}" ] && A="$A --debug"
           [ -n "${{inputs.version}}" ] && A="$A --version=${{inputs.version}}"
-          [ -n "${{inputs.starters}}" ] && A="$A --starters=${{inputs.starters}}" || A="$A --starters=control-center"
+          [ -n "${{inputs.starters}}" ] && A="$A --starters=${{inputs.starters}}" || A="$A --starters=control-center --version=24.8.0.alpha4 --skip-current"
           echo "PIT_ARGS=$A" >> $GITHUB_ENV
           K=`echo "$A" | perl -pe 's/[^\d\w]/-/g' | tr -s '-'`
           echo "CACHE_KEY=$K" >> $GITHUB_ENV
