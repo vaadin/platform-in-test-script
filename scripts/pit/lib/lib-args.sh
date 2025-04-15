@@ -28,6 +28,7 @@ Use: $0 with the next options:
  --keep-cc         Keep control-center running after tests
  --proxy-cc        Forward port 443 from k8s cluster to localhost
  --events-cc       Display events from control-center
+ --skip-build      Skip building the docker images for control-center
  --delete-cluster  Delete the cluster/s
  --dashboard=*     Install kubernetes dashboard, options [install, uninstall] (default: install)
  --pnpm            Use pnpm instead of npm to speed up frontend compilation (default npm)
@@ -83,6 +84,7 @@ checkArgs() {
       --cluster=*) CLUSTER="$arg";;
       --vendor=*) VENDOR="$arg";;
       --skip-helm) SKIPHELM=true;;
+      --skip-build) SKIPBUILD=true;;
       --keep-cc) KEEPCC=true;;
       --pnpm) PNPM="-Dpnpm.enable=true";;
       --vite) VITE=true;;

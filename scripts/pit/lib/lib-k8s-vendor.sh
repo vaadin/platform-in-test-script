@@ -1,8 +1,8 @@
 . `dirname $0`/lib/lib-utils.sh
 
 C_KIND_PREFIX=kind-
-C_DO_REG=fra1
-C_DO_PREFIX=do-${C_DO_REG}-
+C_DO_REGION=fra1
+C_DO_PREFIX=do-${C_DO_REGION}-
 
 ## Check that the command has SUID bit set
 # $1: command
@@ -92,7 +92,7 @@ createDOCluster() {
   size=${2:-s-4vcpu-8gb}
   nodes=1
   checkCommands doctl || return 1
-  doctl kubernetes cluster get "$1" >/dev/null 2>&1 && log "Reusing DO cluster: '$1'" && return 0
+  doctl kubernetes cluster get "$1" >/dev/null 2>&1 && log "Reusing DO cluster: '$1'" && doctl kubernetes cluster kubeconfig save "$1" && return 0
   runCmd -qf "Create Cluster in DO $1" doctl kubernetes cluster create $1 --region fra1 --node-pool "'name=$1;size=$size;count=$nodes'"
 }
 
@@ -151,27 +151,41 @@ setClusterContext() {
 
 computeDORegistry() {
   H=`doctl registry get --no-header --format Name 2>/dev/null`
-  [ -n "$H" ] && echo "$H" && return
+  [ $? = 0 ] && echo "$H" && return
   U=`doctl account get --format Email --no-header | tr '[@.]' '-'`
   echo "$U"
 }
 
 loginDORegistry() {
-  doctl registry get --no-header 2>/dev/null
+  doctl registry get --no-header >/dev/null 2>&1
   if [ $? != 0 ]; then
-    log "No DO registry found, creating a new one $1 ..."
     runCmd -q "Creating registry in DigitalOcean" "doctl registry create $1 --region fra1" || return 1
   fi
-  runCmd -qf "Login to DO registry" "doctl registry login" || return 1
+  runCmd -qf "Login to DigitalOcean registry $1" "doctl registry login" || return 1
   runCmd -qf "Adding Registry to Cluster: $CLUSTER" "doctl kubernetes cluster registry add $CLUSTER" || return 1
 }
 
 prepareRegistry() {
   [ "$VENDOR" != "do" ] && return 0
   checkCommands doctl || return 1
-  REG=`computeDORegistry`
-  loginDORegistry "$REG" || return 1
-  DO_REGISTRY="registry.digitalocean.com/$REG"
+  DO_REGST=`computeDORegistry`
+  loginDORegistry "$DO_REGST" || return 1
+  DO_REG_URL="registry.digitalocean.com/$DO_REGST"
+}
+
+patchDeployment() {
+  [ "$VENDOR" != "do" ] && return 0
+  checkCommands doctl || return 1
+  DO_REGST=`computeDORegistry`
+  if [ "$VENDOR" = do ]; then
+    log "Patching imagePullSecrets for DO registry $DO_REGST"
+    cmd kubectl patch serviceaccount -n $1 default -p '{"imagePullSecrets": [{"name": "'$DO_REGST'"}]}'
+    kubectl patch serviceaccount -n $1 default -p '{"imagePullSecrets": [{"name": "'$DO_REGST'"}]}'
+    cmd kubectl patch deployment control-center -n $1 --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value":[{"name":"'$DO_REGST'"}]}]'
+    kubectl patch deployment control-center -n $1 --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value":[{"name":"'$DO_REGST'"}]}]'
+    cmd kubectl patch StatefulSet control-center-keycloak -n $1 --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value":[{"name":"'$DO_REGST'"}]}]'
+    kubectl patch StatefulSet control-center-keycloak -n $1 --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value":[{"name":"'$DO_REGST'"}]}]'
+  fi
 }
 
 uploadLocalImages() {
@@ -184,8 +198,8 @@ uploadLocalImages() {
       ;;
     do)
       for i in control-center-app control-center-keycloak bakery bakery-cc; do
-        runCmd -q "Tag image $i" docker tag vaadin/$i:local $DO_REGISTRY/$i:local || return 1
-        runCmd -q "PUSH image $i" docker push $DO_REGISTRY/$i:local || return 1
+        runCmd -q "Tag image $i" docker tag vaadin/$i:local $DO_REG_URL/$i:local || return 1
+        runCmd -q "PUSH image $i" docker push $DO_REG_URL/$i:local || return 1
       done
       ;;
     *) :;;

@@ -67,7 +67,14 @@ installCC() {
     *)   args="$args oci://docker.io/vaadin/control-center --version $1" ;;
   esac
 
-  [ -n "$DO_REGISTRY" ] && args="$args --set app.image.repository=$DO_REGISTRY/control-center-app --set keycloak.image.repository=$DO_REGISTRY/control-center-keycloak"
+  [ -n "$DO_REG_URL" ] && args="$args \
+    --set app.image.repository=$DO_REG_URL/control-center-app \
+    --set keycloak.image.repository=$DO_REG_URL/control-center-keycloak"
+
+  # TODO: this does not work and it's necessary the patchDeployment below
+  # [ -n "$DO_REG_URL" ] && args="$args \
+  #   --set app.imagePullSecrets=$DO_REGST \
+  #   --set keycloak.imagePullSecrets=$DO_REGST"
 
   runToFile "helm install control-center $args \
     -n $CC_NS --create-namespace \
@@ -83,11 +90,7 @@ installCC() {
     --set user.email=$CC_EMAIL \
     --set app.host=$CC_CONTROL --set keycloak.host=$CC_AUTH $D" "helm-install-$1.out" "$VERBOSE" || return 1
 
-  if [ "$VENDOR" = do ]; then
-    cmd kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "'$REG'"}]}'
-    kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "'$REG'"}]}'
-  fi
-  return 0
+  patchDeployment $CC_NS || return 1
 }
 
 ## a loop for waiting to the control-center to be ready
@@ -199,12 +202,12 @@ runPwTests() {
   computeNpm
   [ -n "$SKIPPW" ] && return 0
   [ -z "$CC_CERT" -o -z "$CC_KEY" ] && NO_TLS=--notls || NO_TLS=""
-  [ "$VERSION" = current ] && TAG=latest   || TAG=local
-  [ "$VERSION" = current ] && REG=k8sdemos || REG=vaadin
-  [ "$VENDOR" = do ] && REG=registry.digitalocean.com/`getDORegistry`
+  [ "$VERSION" = current ] && T=latest   || T=local
+  [ "$VERSION" = current ] && R=k8sdemos || R=vaadin
+  [ "$VENDOR" = do ] && R=$DO_REG_URL && S="--secret=$DO_REGST" || S=""
 
   for f in $CC_TESTS; do
-    runPlaywrightTests "$PIT_SCR_FOLDER/its/$f" "" "$1" "control-center" --url=https://$CC_CONTROL  --login=$CC_EMAIL --tag=$TAG --registry=$REG $NO_TLS || return 1
+    runPlaywrightTests "$PIT_SCR_FOLDER/its/$f" "" "$1" "control-center" --url=https://$CC_CONTROL  --login=$CC_EMAIL --tag=$T --registry=$R $S $NO_TLS || return 1
     if [ "$f" = cc-install-apps.js ]; then
       reloadIngress && checkTls || return 1
     fi
@@ -244,8 +247,10 @@ compileCC() {
 }
 
 buildCC() {
-  compileBakery || return 1
-  compileCC || return 1
+  if [ -z "$SKIPBUILD" ]; then
+    compileBakery || return 1
+    compileCC || return 1
+  fi
   prepareRegistry || return 1
   uploadLocalImages || return 1
   runCmd -q "Update helm dependencies" helm dependency build charts/control-center

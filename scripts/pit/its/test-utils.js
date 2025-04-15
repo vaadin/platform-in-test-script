@@ -69,6 +69,8 @@ const args = () => {
       ret.registry = a.split('=')[1];
     } else if (/^--tag/.test(a)) {
       ret.tag = a.split('=')[1];
+    } else if (/^--secret/.test(a)) {
+      ret.secret = a.split('=')[1];
     }
   });
   if (!ret.url) {
