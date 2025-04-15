@@ -242,8 +242,8 @@ compileCC() {
 }
 
 buildCC() {
-  # compileBakery || return 1
-  # compileCC || return 1
+  compileBakery || return 1
+  compileCC || return 1
   prepareRegistry || return 1
   uploadLocalImages || return 1
   runCmd -q "Update helm dependencies" helm dependency build charts/control-center
