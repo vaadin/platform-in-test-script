@@ -92,7 +92,7 @@ jobs:
             pit-
       - uses: helm/kind-action@v1
         with:
-          cluster_name: cc-cluster
+          cluster_name: pit
       - name: Run PiT
         run: |
           echo ./scripts/pit/run.sh ${{env.PIT_ARGS}}
@@ -113,6 +113,6 @@ jobs:
           gh actions-cache list
           gh actions-cache delete "pit-${{env.CACHE_KEY}}" --confirm || true
         shell: bash
-  
+
 
 

@@ -67,6 +67,8 @@ installCC() {
     *)   args="$args oci://docker.io/vaadin/control-center --version $1" ;;
   esac
 
+  [ -n "$DO_REGISTRY" ] && args="$args --set app.image.repository=$DO_REGISTRY/control-center-app --set keycloak.image.repository=$DO_REGISTRY/control-center-keycloak"
+
   runToFile "helm install control-center $args \
     -n $CC_NS --create-namespace \
     --set app.startupProbe.initialDelaySeconds=30 \
@@ -81,10 +83,10 @@ installCC() {
     --set user.email=$CC_EMAIL \
     --set app.host=$CC_CONTROL --set keycloak.host=$CC_AUTH $D" "helm-install-$1.out" "$VERBOSE" || return 1
 
-  if [ "$VENDOR" = "do" ]; then
-    kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "control-center-registry"}]}'
-    # runCmd -q "Configure kubernetes to know the secret to pull from the new registry." "kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "control-center-registry"}]}'" || return 1
-  fi
+  # if [ "$VENDOR" = "do" ]; then
+  #   kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "control-center-registry"}]}'
+  #   # runCmd -q "Configure kubernetes to know the secret to pull from the new registry." "kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "control-center-registry"}]}'" || return 1
+  # fi
   return 0
 }
 

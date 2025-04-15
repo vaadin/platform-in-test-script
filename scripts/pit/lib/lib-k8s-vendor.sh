@@ -120,10 +120,10 @@ deleteCluster() {
     echo -ne "\nWhat cluster do you want to delete? "
     read name
   fi
+  type="$VENDOR"
   case "$name" in
     $C_KIND_PREFIX*) type=kind ;;
     $C_DO_PREFIX*) type=do ;;
-    *) log "Incorrect cluster name provided: '$name'" && return 1
   esac
   name=`echo "$name" | sed -e "s|^$C_KIND_PREFIX||" -e "s|^$C_DO_PREFIX||"`
   case "$type" in
@@ -163,6 +163,7 @@ loginDORegistry() {
     runCmd -q "Creating registry in DigitalOcean" "doctl registry create $1 --region fra1" || return 1
   fi
   runCmd -qf "Login to DO registry" "doctl registry login" || return 1
+  runCmd -qf "Adding Registry to Cluster: $CLUSTER" "doctl kubernetes cluster registry add $CLUSTER" || return 1
 }
 
 prepareRegistry() {
@@ -176,24 +177,16 @@ prepareRegistry() {
 uploadLocalImages() {
   case "$VENDOR" in
     kind)
-      runCmd -q "Load docker image control-center-app for Kind" \
-        kind load docker-image vaadin/control-center-app:local --name "$CLUSTER" || return 1
-      runCmd -q "Load docker image control-center-keycloak for Kind" \
-        kind load docker-image vaadin/control-center-keycloak:local --name "$CLUSTER" || return 1
-      runCmd -q "Load docker image bakery for Kind" \
-        kind load docker-image vaadin/bakery:local --name "$CLUSTER" || return 1
-      runCmd -q "Load docker image bakery-cc for Kind" \
-        kind load docker-image vaadin/bakery-cc:local --name "$CLUSTER" || return 1
+      for i in control-center-app control-center-keycloak bakery bakery-cc; do
+        runCmd -q "Load docker image $i for Kind" \
+          kind load docker-image vaadin/$i:local --name "$CLUSTER" || return 1
+      done
       ;;
     do)
-      docker tag vaadin/control-center-app:local $DO_REGISTRY/control-center-app:local || return 1
-      docker tag vaadin/control-center-keycloak:local $DO_REGISTRY/control-center-keycloak:local || return 1  
-      docker tag vaadin/bakery:local $DO_REGISTRY/bakery:local || return 1
-      docker tag vaadin/bakery-cc:local $DO_REGISTRY/bakery-cc:local || return 1
-      docker push $DO_REGISTRY/control-center-app:local || return 1
-      docker push $DO_REGISTRY/control-center-keycloak:local || return 1
-      docker push $DO_REGISTRY/bakery:local || return 1
-      docker push $DO_REGISTRY/bakery-cc:local || return 1
+      for i in control-center-app control-center-keycloak bakery bakery-cc; do
+        runCmd -q "Tag image $i" docker tag vaadin/$i:local $DO_REGISTRY/$i:local || return 1
+        runCmd -q "PUSH image $i" docker push $DO_REGISTRY/$i:local || return 1
+      done
       ;;
     *) :;;
   esac
