@@ -203,6 +203,7 @@ runPwTests() {
   [ -n "$SKIPPW" ] && return 0
   [ -z "$CC_CERT" -o -z "$CC_KEY" ] && NO_TLS=--notls || NO_TLS=""
   [ "$VERSION" = current ] && T=latest   || T=local
+  ## TODO: ask IT for access to vaadin docker registry for deploying bakery and bakery-cc
   [ "$VERSION" = current ] && R=k8sdemos || R=vaadin
   [ "$VENDOR" = do ] && R=$DO_REG_URL && S="--secret=$DO_REGST" || S=""
 

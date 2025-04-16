@@ -153,7 +153,7 @@ setClusterContext() {
 computeDORegistry() {
   H=`doctl registry get --no-header --format Name 2>/dev/null`
   [ $? = 0 ] && echo "$H" && return
-  U=`doctl account get --format Email --no-header | tr '[@.]' '-'`
+  U="$CLUSTER-$RANDOM"
   echo "$U"
 }
 

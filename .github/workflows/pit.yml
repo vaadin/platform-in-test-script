@@ -96,7 +96,7 @@ jobs:
           restore-keys: |
             pit-${{env.CACHE_KEY}}
             pit-
-      - if: ${{inputs.vendor != 'do'}}
+      - if: ${{!inputs.vendor || inputs.vendor == 'kind'}}
         uses: helm/kind-action@v1
         with:
           cluster_name: pit
