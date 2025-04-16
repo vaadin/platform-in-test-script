@@ -214,18 +214,6 @@ runPwTests() {
   done
 }
 
-downloadAndCompileBakery() {
-  mkdir tmp
-  cd tmp
-  git clone git@github.com:vaadin/bakery-app-starter-flow-spring.git || return 1
-  cd bakery-app-starter-flow-spring
-  git checkout cc-24.7
-  mvn clean package -Pproduction,control-center -DskipTests || return 1
-  docker build -t registry.digitalocean.com/control-center-registry/bakery-cc:next . || return 1
-  docker push registry.digitalocean.com/control-center-registry/bakery-cc:next || return 1
-  cd ..
-}
-
 compileBakery() {
   computeMvn
   checkoutDemo $CC_APP_REPO:cc-24.7 || return 1
@@ -234,7 +222,7 @@ compileBakery() {
   runCmd "Building Docker image for Bakery" docker build -t vaadin/bakery:local .  || return 1
   runCmd "Compiling Bakery with CC" $MVN -ntp -B clean install -Pproduction,control-center -DskipTests || return 1
   runCmd "Building Docker image for Bakery-CC" docker build -t vaadin/bakery-cc:local .  || return 1
-  cd ..
+  cmd "cd .." ; cd ..
 }
 
 compileCC() {
