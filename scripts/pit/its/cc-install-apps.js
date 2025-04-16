@@ -25,7 +25,7 @@ async function installApp(app, page) {
         await page.getByPlaceholder('Image Pull Secret').locator('input').fill(arg.secret);
         await takeScreenshot(page, __filename, `form-with-secret-${app}`);
     }
-    await page.getByLabel('Startup Delay (secs)').fill('90');
+    await page.getByLabel('Startup Delay (secs)').fill(process.env.GITHUB_ACTIONS ? '45' : '90');
     await page.getByLabel('Application URI', {exact: true}).locator('input[type="text"]').fill(uri)
     if (cert) {
         log(`Uploading certificate ${cert} for ${app}...\n`);
