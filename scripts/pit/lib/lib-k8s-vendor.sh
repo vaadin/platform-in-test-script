@@ -93,7 +93,7 @@ createDOCluster() {
   nodes=1
   checkCommands doctl || return 1
   doctl kubernetes cluster get "$1" >/dev/null 2>&1 && log "Reusing DO cluster: '$1'" && doctl kubernetes cluster kubeconfig save "$1" && return 0
-  runCmd -qf "Create Cluster in DO $1" doctl kubernetes cluster create $1 --region fra1 --node-pool "'name=$1;size=$size;count=$nodes'"
+  runCmd -q "Create Cluster in DO $1" doctl kubernetes cluster create $1 --region fra1 --node-pool "'name=$1;size=$size;count=$nodes'"
 }
 
 deleteDOCluster() {
@@ -107,7 +107,8 @@ createCluster() {
   case "$2" in
     kind) createKindCluster $name ;;
     do)   createDOCluster $name ;;
-    *)    :;;
+    *)    warn "Unsupported vendor: '$2'"
+          return 1;;
   esac
 }
 
@@ -178,13 +179,14 @@ patchDeployment() {
   checkCommands doctl || return 1
   DO_REGST=`computeDORegistry`
   if [ "$VENDOR" = do ]; then
-    log "Patching imagePullSecrets for DO registry $DO_REGST"
+    # Not using runCmd because of issues with quotes in JSON argument
+    [ -n "$TEST" ] || log "Patching imagePullSecrets for DO registry $DO_REGST"
     cmd kubectl patch serviceaccount -n $1 default -p '{"imagePullSecrets": [{"name": "'$DO_REGST'"}]}'
-    kubectl patch serviceaccount -n $1 default -p '{"imagePullSecrets": [{"name": "'$DO_REGST'"}]}'
+    [ -n "$TEST" ] || kubectl patch serviceaccount -n $1 default -p '{"imagePullSecrets": [{"name": "'$DO_REGST'"}]}' || return 1
     cmd kubectl patch deployment control-center -n $1 --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value":[{"name":"'$DO_REGST'"}]}]'
-    kubectl patch deployment control-center -n $1 --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value":[{"name":"'$DO_REGST'"}]}]'
+    [ -n "$TEST" ] || kubectl patch deployment control-center -n $1 --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value":[{"name":"'$DO_REGST'"}]}]' || return 1
     cmd kubectl patch StatefulSet control-center-keycloak -n $1 --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value":[{"name":"'$DO_REGST'"}]}]'
-    kubectl patch StatefulSet control-center-keycloak -n $1 --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value":[{"name":"'$DO_REGST'"}]}]'
+    [ -n "$TEST" ] || kubectl patch StatefulSet control-center-keycloak -n $1 --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value":[{"name":"'$DO_REGST'"}]}]' || return 1
   fi
 }
 
