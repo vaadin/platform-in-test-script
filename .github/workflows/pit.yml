@@ -1,4 +1,5 @@
 name: Run PiT
+run-name: PiT ${{ inputs.version }} ${{ inputs.vendor }} ${{inputs.skipcurrent}} ${{inputs.starters}} ${{github.event_path}} ${{ github.event.head_commit.message }}
 on:
   workflow_dispatch:
    inputs:
@@ -9,6 +10,10 @@ on:
       starters:
         description: 'Starters to run, separated by comma'
         required: true
+        type: string
+      vendor:
+        description: 'Kubernetes vendor to use with CC'
+        required: false
         type: string
       skipcurrent:
         description: 'Skip running tests in current version'
@@ -73,10 +78,11 @@ jobs:
       - name: Run Compute Arguments
         run: |
           [ true = "${{inputs.skipcurrent}}" ] && A="$A --skip-current"
-          [ true =  "${{inputs.skipdev}}" ] && A="$A --skip-dev"
-          [ true =  "${{inputs.debug}}" ] && A="$A --debug"
-          [ -n "${{inputs.version}}" ] && A="$A --version=${{inputs.version}}"
+          [ true = "${{inputs.skipdev}}" ] && A="$A --skip-dev"
+          [ true = "${{inputs.debug}}" ] && A="$A --debug"
+          [ -n "${{inputs.version}}" ] && A="$A --version=${{inputs.version}}" || A="$A --version=24.8-SNAPSHOT"
           [ -n "${{inputs.starters}}" ] && A="$A --starters=${{inputs.starters}}" || A="$A --starters=control-center"
+          [ -n "${{inputs.vendor}}" ] && A="$A --vendor=${{inputs.vendor}}"
           echo "PIT_ARGS=$A" >> $GITHUB_ENV
           K=`echo "$A" | perl -pe 's/[^\d\w]/-/g' | tr -s '-'`
           echo "CACHE_KEY=$K" >> $GITHUB_ENV
@@ -90,9 +96,16 @@ jobs:
           restore-keys: |
             pit-${{env.CACHE_KEY}}
             pit-
-      - uses: helm/kind-action@v1
+      - if: ${{!inputs.vendor || inputs.vendor == 'kind'}}
+        uses: helm/kind-action@v1
         with:
-          cluster_name: cc-cluster
+          cluster_name: pit
+      - if: ${{inputs.vendor == 'do'}}
+        uses: azure/setup-kubectl@v4
+      - if: ${{inputs.vendor == 'do'}}
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DOTK }}
       - name: Run PiT
         run: |
           echo ./scripts/pit/run.sh ${{env.PIT_ARGS}}
@@ -113,6 +126,6 @@ jobs:
           gh actions-cache list
           gh actions-cache delete "pit-${{env.CACHE_KEY}}" --confirm || true
         shell: bash
-  
+
 
 

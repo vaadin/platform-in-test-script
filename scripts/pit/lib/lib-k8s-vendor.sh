@@ -1,8 +1,8 @@
 . `dirname $0`/lib/lib-utils.sh
 
 C_KIND_PREFIX=kind-
-C_DO_REG=fra1
-C_DO_PREFIX=do-${C_DO_REG}-
+C_DO_REGION=fra1
+C_DO_PREFIX=do-${C_DO_REGION}-
 
 ## Check that the command has SUID bit set
 # $1: command
@@ -92,13 +92,14 @@ createDOCluster() {
   size=${2:-s-4vcpu-8gb}
   nodes=1
   checkCommands doctl || return 1
-  doctl kubernetes cluster get "$1" >/dev/null 2>&1 && log "Reusing DO cluster: '$1'" && return 0
-  runCmd -qf "Create Cluster in DO $1" doctl kubernetes cluster create $1 --region fra1 --node-pool "'name=$1;size=$size;count=$nodes'"
+  doctl kubernetes cluster get "$1" >/dev/null 2>&1 && log "Reusing DO cluster: '$1'" && doctl kubernetes cluster kubeconfig save "$1" && return 0
+  runCmd -q "Create Cluster in DO $1" doctl kubernetes cluster create $1 --region fra1 --node-pool "'name=$1;size=$size;count=$nodes'"
 }
 
 deleteDOCluster() {
   checkCommands doctl || return 1
-  runCmd -q "Delete Cluster in DO $name" "doctl kubernetes cluster delete $1 --force --dangerous" 
+  runCmd -q "Delete Cluster in DO $name" "doctl kubernetes cluster delete $1 --force --dangerous"
+     runCmd -q "Deleting Registry in DO" "doctl registry delete --force"
 }
 
 createCluster() {
@@ -106,7 +107,8 @@ createCluster() {
   case "$2" in
     kind) createKindCluster $name ;;
     do)   createDOCluster $name ;;
-    *)    :;;
+    *)    warn "Unsupported vendor: '$2'"
+          return 1;;
   esac
 }
 
@@ -119,10 +121,10 @@ deleteCluster() {
     echo -ne "\nWhat cluster do you want to delete? "
     read name
   fi
+  type="$VENDOR"
   case "$name" in
     $C_KIND_PREFIX*) type=kind ;;
     $C_DO_PREFIX*) type=do ;;
-    *) log "Incorrect cluster name provided: '$name'" && return 1
   esac
   name=`echo "$name" | sed -e "s|^$C_KIND_PREFIX||" -e "s|^$C_DO_PREFIX||"`
   case "$type" in
@@ -148,3 +150,60 @@ setClusterContext() {
   kubectl get ns >/dev/null 2>&1 || return 1
 }
 
+computeDORegistry() {
+  H=`doctl registry get --no-header --format Name 2>/dev/null`
+  [ $? = 0 ] && echo "$H" && return
+  U="$CLUSTER-$RANDOM"
+  echo "$U"
+}
+
+loginDORegistry() {
+  doctl registry get --no-header >/dev/null 2>&1
+  if [ $? != 0 ]; then
+    runCmd -q "Creating registry in DigitalOcean" "doctl registry create $1 --region fra1" || return 1
+  fi
+  runCmd -qf "Login to DigitalOcean registry $1" "doctl registry login" || return 1
+  runCmd -qf "Adding Registry to Cluster: $CLUSTER" "doctl kubernetes cluster registry add $CLUSTER" || return 1
+}
+
+prepareRegistry() {
+  [ "$VENDOR" != "do" ] && return 0
+  checkCommands doctl || return 1
+  DO_REGST=`computeDORegistry`
+  loginDORegistry "$DO_REGST" || return 1
+  DO_REG_URL="registry.digitalocean.com/$DO_REGST"
+}
+
+patchDeployment() {
+  [ "$VENDOR" != "do" ] && return 0
+  checkCommands doctl || return 1
+  DO_REGST=`computeDORegistry`
+  if [ "$VENDOR" = do ]; then
+    # Not using runCmd because of issues with quotes in JSON argument
+    [ -n "$TEST" ] || log "Patching imagePullSecrets for DO registry $DO_REGST"
+    cmd kubectl patch serviceaccount -n $1 default -p '{"imagePullSecrets": [{"name": "'$DO_REGST'"}]}'
+    [ -n "$TEST" ] || kubectl patch serviceaccount -n $1 default -p '{"imagePullSecrets": [{"name": "'$DO_REGST'"}]}' || return 1
+    cmd kubectl patch deployment control-center -n $1 --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value":[{"name":"'$DO_REGST'"}]}]'
+    [ -n "$TEST" ] || kubectl patch deployment control-center -n $1 --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value":[{"name":"'$DO_REGST'"}]}]' || return 1
+    cmd kubectl patch StatefulSet control-center-keycloak -n $1 --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value":[{"name":"'$DO_REGST'"}]}]'
+    [ -n "$TEST" ] || kubectl patch StatefulSet control-center-keycloak -n $1 --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value":[{"name":"'$DO_REGST'"}]}]' || return 1
+  fi
+}
+
+uploadLocalImages() {
+  case "$VENDOR" in
+    kind)
+      for i in control-center-app control-center-keycloak bakery bakery-cc; do
+        runCmd -q "Load docker image $i for Kind" \
+          kind load docker-image vaadin/$i:local --name "$CLUSTER" || return 1
+      done
+      ;;
+    do)
+      for i in control-center-app control-center-keycloak bakery bakery-cc; do
+        runCmd -q "Tag image $i" docker tag vaadin/$i:local $DO_REG_URL/$i:local || return 1
+        runCmd -q "PUSH image $i" docker push $DO_REG_URL/$i:local || return 1
+      done
+      ;;
+    *) :;;
+  esac
+}

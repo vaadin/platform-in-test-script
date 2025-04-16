@@ -19,6 +19,9 @@ CC_NS=control-center
 ## UI tests to run after the control-center is installed
 CC_TESTS=${CC_TESTS:-cc-setup.js cc-install-apps.js cc-identity-management.js cc-localization.js}
 
+CC_APP_REPO=bakery-app-starter-flow-spring:cc-24.7
+CC_APP_NAME=bakery-cc
+
 checkDockerRunning() {
   if ! docker ps > /dev/null 2>&1; then
     err "!! Docker is not running. Please start Docker and try again. !!"
@@ -50,7 +53,7 @@ saveCerts() {
 
 ## Install Control Center with Helm
 installCC() {
-  [ -n "SKIPHELM" ] && H=`kubectl get pods 2>&1` && echo "$H" | egrep -q 'control-center-[0-9abcdef]+-..... ' && return 0
+  [ -n "$SKIPHELM" ] && H=`kubectl get pods 2>&1` && echo "$H" | egrep -q 'control-center-[0-9abcdef]+-..... ' && return 0
   [ -n "$VERBOSE" ] && D=--debug || D=""
   [ -n "$CC_KEY" -a -n "$CC_CERT" ] && args="--set app.tlsSecret=$CC_TLS_A --set keycloak.tlsSecret=$CC_TLS_K" || args=""
   [ -z "$TEST" ] && log "Installing Control Center with version: $1"
@@ -63,6 +66,15 @@ installCC() {
     "")       err "Unable to compute CC version for platform version '$1'" && return 1 ;;
     *)   args="$args oci://docker.io/vaadin/control-center --version $1" ;;
   esac
+
+  [ -n "$DO_REG_URL" ] && args="$args \
+    --set app.image.repository=$DO_REG_URL/control-center-app \
+    --set keycloak.image.repository=$DO_REG_URL/control-center-keycloak"
+
+  # TODO: this does not work and it's necessary the patchDeployment below
+  # [ -n "$DO_REG_URL" ] && args="$args \
+  #   --set app.imagePullSecrets=$DO_REGST \
+  #   --set keycloak.imagePullSecrets=$DO_REGST"
 
   runToFile "helm install control-center $args \
     -n $CC_NS --create-namespace \
@@ -77,7 +89,8 @@ installCC() {
     --set domain=$CC_DOMAIN \
     --set user.email=$CC_EMAIL \
     --set app.host=$CC_CONTROL --set keycloak.host=$CC_AUTH $D" "helm-install-$1.out" "$VERBOSE" || return 1
-  return 0
+
+  patchDeployment $CC_NS || return 1
 }
 
 ## a loop for waiting to the control-center to be ready
@@ -189,25 +202,46 @@ runPwTests() {
   computeNpm
   [ -n "$SKIPPW" ] && return 0
   [ -z "$CC_CERT" -o -z "$CC_KEY" ] && NO_TLS=--notls || NO_TLS=""
+  [ "$VERSION" = current ] && T=latest   || T=local
+  ## TODO: ask IT for access to vaadin docker registry for deploying bakery and bakery-cc
+  [ "$VERSION" = current ] && R=k8sdemos || R=vaadin
+  [ "$VENDOR" = do ] && R=$DO_REG_URL && S="--secret=$DO_REGST" || S=""
+
   for f in $CC_TESTS; do
-    runPlaywrightTests "$PIT_SCR_FOLDER/its/$f" "" "$1" "control-center" --url=https://$CC_CONTROL  --login=$CC_EMAIL $NO_TLS || return 1
+    runPlaywrightTests "$PIT_SCR_FOLDER/its/$f" "" "$1" "control-center" --url=https://$CC_CONTROL  --login=$CC_EMAIL --tag=$T --registry=$R $S $NO_TLS || return 1
     if [ "$f" = cc-install-apps.js ]; then
       reloadIngress && checkTls || return 1
     fi
   done
 }
 
-buildCC() {
+compileBakery() {
+  computeMvn
+  checkoutDemo $CC_APP_REPO:cc-24.7 || return 1
+  setDemoVersion $CC_APP_REPO $VERSION >/dev/null || return 1
+  runCmd "Compiling Bakery without CC" $MVN -ntp -B clean install -Pproduction -DskipTests || return 1
+  runCmd "Building Docker image for Bakery" docker build -t vaadin/bakery:local .  || return 1
+  runCmd "Compiling Bakery with CC" $MVN -ntp -B clean install -Pproduction,control-center -DskipTests || return 1
+  runCmd "Building Docker image for Bakery-CC" docker build -t vaadin/bakery-cc:local .  || return 1
+  cmd "cd .." ; cd ..
+}
+
+compileCC() {
   computeMvn
   local D="-q -ntp"
   [ -z "$VERBOSE" ] && D="-Dorg.slf4j.simpleLogger.showDateTime -Dorg.slf4j.simpleLogger.dateTimeFormat=HH:mm:ss.SSS"
-  runToFile "'$MVN' $D -B -pl :control-center-app -Pproduction -DskipTests -am install" "compile-cc-${1}.out" "$VERBOSE" || return 1
-  runToFile "'$MVN' $D -B -pl :control-center-app -Pproduction -Ddocker.tag=local docker:build" "build-ccapp-docker-${1}.out" "$VERBOSE"|| return 1
-  runToFile "'$MVN' $D -B -pl :control-center-keycloak package -Ddocker.tag=local docker:build" "build-ccapp-docker-${1}.out" "$VERBOSE" || return 1
-  if [ "$VENDOR" = "kind" ]; then
-      runCmd -q "Load docker image control-center-app for Kind" kind load docker-image vaadin/control-center-app:local --name "$CLUSTER" || return 1
-      runCmd -q "Load docker image control-center-keycloak for Kind " kind load docker-image vaadin/control-center-keycloak:local --name "$CLUSTER" || return 1
+  runToFile "'$MVN' $D -B -pl :control-center-app -Pproduction -DskipTests -am install" "compile-ccapp.out" "$VERBOSE" || return 1
+  runToFile "'$MVN' $D -B -pl :control-center-app -Pproduction -Ddocker.tag=local docker:build" "build-ccapp-docker.out" "$VERBOSE" || return 1
+  runToFile "'$MVN' $D -B -pl :control-center-keycloak package -Ddocker.tag=local docker:build" "build-cckeycloak-docker.out" "$VERBOSE" || return 1
+}
+
+buildCC() {
+  if [ -z "$SKIPBUILD" ]; then
+    compileBakery || return 1
+    compileCC || return 1
   fi
+  prepareRegistry || return 1
+  uploadLocalImages || return 1
   runCmd -q "Update helm dependencies" helm dependency build charts/control-center
 }
 
@@ -230,6 +264,7 @@ runControlCenter() {
 
   ## Install Control Center
   installCC $1 || return 1
+
   ## Control center takes a long time to start
   waitForCC 900 || return 1
 
