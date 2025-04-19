@@ -112,6 +112,13 @@ jobs:
           ./scripts/pit/run.sh ${{env.PIT_ARGS}} --test
           ./scripts/pit/run.sh ${{env.PIT_ARGS}}
         shell: bash
+      # - if: ${{failure()}}
+      #   name: Setup upterm session
+      #   uses: lhotari/action-upterm@v1
+      #   with:
+      #     limit-access-to-actor: true
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GHTK }}
       - if: ${{always()}}
         uses: actions/upload-artifact@v4
         with:
