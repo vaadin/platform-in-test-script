@@ -78,6 +78,7 @@ createKindCluster() {
   kind get clusters 2>/dev/null | grep -q "^$1$" && log "Reusing Kind cluster: '$1'" && return 0
   runCmd -qf "Creating KinD cluster: $1" \
    "kind create cluster --name $1" || return 1
+  [ -n "$KEEPCC" ] || onExit deleteKindCluster "$1"
 }
 
 ##
@@ -93,7 +94,8 @@ createDOCluster() {
   nodes=1
   checkCommands doctl || return 1
   doctl kubernetes cluster get "$1" >/dev/null 2>&1 && log "Reusing DO cluster: '$1'" && doctl kubernetes cluster kubeconfig save "$1" && return 0
-  runCmd -q "Create Cluster in DO $1" doctl kubernetes cluster create $1 --region fra1 --node-pool "'name=$1;size=$size;count=$nodes'"
+  runCmd -q "Create Cluster in DO $1" doctl kubernetes cluster create $1 --region fra1 --node-pool "'name=$1;size=$size;count=$nodes'" || return 1
+  [ -n "$KEEPCC" ] || onExit deleteDOCluster "$1"
 }
 
 deleteDOCluster() {
