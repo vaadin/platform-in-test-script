@@ -90,7 +90,7 @@ installCC() {
     --set user.email=$CC_EMAIL \
     --set app.host=$CC_CONTROL --set keycloak.host=$CC_AUTH $D" "helm-install-$1.out" "$VERBOSE" || return 1
 
-  patchDeployment $CC_NS || return 1
+  [ "$1" = current ] || patchDeployment $CC_NS || return 1
 }
 
 ## a loop for waiting to the control-center to be ready
@@ -202,10 +202,10 @@ runPwTests() {
   computeNpm
   [ -n "$SKIPPW" ] && return 0
   [ -z "$CC_CERT" -o -z "$CC_KEY" ] && NO_TLS=--notls || NO_TLS=""
-  [ "$VERSION" = current ] && T=latest   || T=local
+  [ "$1" = current ] && T=latest   || T=local
   ## TODO: ask IT for access to vaadin docker registry for deploying bakery and bakery-cc
-  [ "$VERSION" = current ] && R=k8sdemos || R=vaadin
-  [ "$VENDOR" = do ] && R=$DO_REG_URL && S="--secret=$DO_REGST" || S=""
+  [ "$1" = current ] && R=k8sdemos || R=vaadin
+  [ "$1" != current -a "$VENDOR" = do ] && R=$DO_REG_URL && S="--secret=$DO_REGST" || S=""
 
   for f in $CC_TESTS; do
     runPlaywrightTests "$PIT_SCR_FOLDER/its/$f" "" "$1" "control-center" --url=https://$CC_CONTROL  --login=$CC_EMAIL --tag=$T --registry=$R $S $NO_TLS || return 1
@@ -219,9 +219,9 @@ compileBakery() {
   computeMvn
   checkoutDemo $CC_APP_REPO:cc-24.7 || return 1
   setDemoVersion $CC_APP_REPO $VERSION >/dev/null || return 1
-  runCmd "Compiling Bakery without CC" $MVN -ntp -B clean install -Pproduction -DskipTests || return 1
+  runToFile "'$MVN' -ntp -B clean install -Pproduction -DskipTests" "compile-bakery-no-cc.out" "$VERBOSE" || return 1
   runCmd "Building Docker image for Bakery" docker build -t vaadin/bakery:local .  || return 1
-  runCmd "Compiling Bakery with CC" $MVN -ntp -B clean install -Pproduction,control-center -DskipTests || return 1
+  runToFile "'$MVN' -ntp -B clean install -Pproduction,control-center -DskipTests" "compile-bakery-cc.out" "$VERBOSE" || return 1
   runCmd "Building Docker image for Bakery-CC" docker build -t vaadin/bakery-cc:local .  || return 1
   cmd "cd .." ; cd ..
 }
@@ -249,6 +249,7 @@ buildCC() {
 runControlCenter() {
   [ -z "$TEST" ] && echo "" && bold "----> Running builds and tests on app control-center version: '$1'"
   [ -n "$TEST" ] && echo "" && cmd "### ------> Run PiT for: app=control-center version '$1' <------"
+
 
   ## Check if port 443 is busy
   [ -n "$TEST" ] || checkBusyPort "443" || return 1
@@ -282,8 +283,6 @@ runControlCenter() {
   runPwTests "$1" || return 1
   stopForwardIngress || return 1
 
-  ## Delete the cluster if it was created in this test if --keep-cc is not set
-  [ -n "$KEEPCC" ] || deleteCluster "$CLUSTER" "$VENDOR" || return 1
   ## Uninstall the control-center if --keep-cc is not set
   [ -n "$KEEPCC" ] || uninstallCC --wait=false || return 1
 

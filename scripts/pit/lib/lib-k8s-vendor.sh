@@ -78,6 +78,7 @@ createKindCluster() {
   kind get clusters 2>/dev/null | grep -q "^$1$" && log "Reusing Kind cluster: '$1'" && return 0
   runCmd -qf "Creating KinD cluster: $1" \
    "kind create cluster --name $1" || return 1
+  [ -n "$KEEPCC" ] || onExit deleteKindCluster "$1"
 }
 
 ##
@@ -93,7 +94,8 @@ createDOCluster() {
   nodes=1
   checkCommands doctl || return 1
   doctl kubernetes cluster get "$1" >/dev/null 2>&1 && log "Reusing DO cluster: '$1'" && doctl kubernetes cluster kubeconfig save "$1" && return 0
-  runCmd -q "Create Cluster in DO $1" doctl kubernetes cluster create $1 --region fra1 --node-pool "'name=$1;size=$size;count=$nodes'"
+  runCmd -q "Create Cluster in DO $1" doctl kubernetes cluster create $1 --region fra1 --node-pool "'name=$1;size=$size;count=$nodes'" || return 1
+  [ -n "$KEEPCC" ] || onExit deleteDOCluster "$1"
 }
 
 deleteDOCluster() {
@@ -162,8 +164,8 @@ loginDORegistry() {
   if [ $? != 0 ]; then
     runCmd -q "Creating registry in DigitalOcean" "doctl registry create $1 --region fra1" || return 1
   fi
-  runCmd -qf "Login to DigitalOcean registry $1" "doctl registry login" || return 1
-  runCmd -qf "Adding Registry to Cluster: $CLUSTER" "doctl kubernetes cluster registry add $CLUSTER" || return 1
+  runCmd -q "Login to DigitalOcean registry $1" "doctl registry login" || return 1
+  runCmd -q "Adding Registry to Cluster: $CLUSTER" "doctl kubernetes cluster registry add $CLUSTER" || return 1
 }
 
 prepareRegistry() {

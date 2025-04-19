@@ -10,8 +10,6 @@ const { assert } = require('console');
         process.exit(1);
     }
     const app = `bakery-cc`;
-    const user = 'admin@vaadin.com';
-    const password = 'admin';
     const downloadsDir = './downloads';
     const propsFile = 'translations.properties';
 
@@ -110,9 +108,7 @@ const { assert } = require('console');
 
     try {
         await page.getByRole('link', { name: 'Settings' }).click();
-        await page.waitForTimeout(2000);
         await page.locator('vaadin-grid').getByText('bakery-cc', { exact: true }).click();
-        await page.waitForTimeout(2000);
         await page.getByLabel('Localization').uncheck();
         await page.getByRole('button', { name: 'Disable' }).click();
         await page.getByRole('button', { name: 'Update' }).click();

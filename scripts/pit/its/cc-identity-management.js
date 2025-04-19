@@ -30,7 +30,7 @@ const {log, err, args, createPage, closePage, takeScreenshot, waitForServerReady
     log(`Changing Settings for ${app}...\n`);
     await page.getByRole('link', { name: 'Settings', }).click();
     await takeScreenshot(page, __filename, 'settings');
-    const url = await page.locator(anchorSelectorURL).getAttribute('href');
+    const appUrl = await page.locator(anchorSelectorURL).getAttribute('href');
 
     await page.locator('vaadin-select vaadin-input-container div').click();
     await page.getByRole('option', { name: app }).locator('div').nth(2).click();
@@ -48,9 +48,9 @@ const {log, err, args, createPage, closePage, takeScreenshot, waitForServerReady
             if (attempt > 3) throw(error);
             log(`Attempt ${attempt}: Identity Management button not enabled yet.\n`);
             await takeScreenshot(page, __filename, `identity-link-not-enabled-${attempt}`);
-            log(`Checking that  ${app} installed in ${url} is running ${attempt} ...\n`);
+            log(`Checking that  ${app} installed in ${appUrl} is running ${attempt} ...\n`);
             pageApp = await createPage(arg.headless, arg.ignoreHTTPSErrors);
-            await waitForServerReady(pageApp, url);
+            await waitForServerReady(pageApp, appUrl);
             await takeScreenshot(pageApp, __filename, `app-${app}-running-${attempt}`);
             await closePage(pageApp);
             await page.reload();
@@ -98,7 +98,7 @@ const {log, err, args, createPage, closePage, takeScreenshot, waitForServerReady
 
     log(`Logging in ${app} as ${user} ...\n`);
     pageApp = await createPage(arg.headless, arg.ignoreHTTPSErrors);
-    await waitForServerReady(pageApp, url);
+    await waitForServerReady(pageApp, appUrl);
     await takeScreenshot(pageApp, __filename, `app-${app}-loaded`);
     await pageApp.getByLabel('Email').fill(user);
     try {
@@ -112,7 +112,6 @@ const {log, err, args, createPage, closePage, takeScreenshot, waitForServerReady
     await pageApp.getByRole('button', {name: 'Sign In'}).click()
     await takeScreenshot(pageApp, __filename, `logged-in-${app}`);
     await expect(pageApp.getByRole('button', { name: 'New order' })).toBeVisible();
-    await closePage(pageApp);
 
     log('Cleaning up...\n');
     try {
@@ -142,9 +141,14 @@ const {log, err, args, createPage, closePage, takeScreenshot, waitForServerReady
         await page.getByLabel('Startup Delay (secs)').fill('30');
         await page.getByLabel('Replicas').fill('1');
         await page.getByRole('button', { name: 'Update' }).click();
+
+        await pageApp.waitForTimeout(30000);
+        await waitForServerReady(pageApp, appUrl);
+        await takeScreenshot(pageApp, __filename, 'app-after-cleanup');
     } catch (error) {
         err(`Error cleaning up: ${error}\n`);
         await takeScreenshot(page, __filename, 'error-cleaning');
     }
+    await closePage(pageApp);
     await closePage(page);
 })();
