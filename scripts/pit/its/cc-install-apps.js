@@ -25,7 +25,7 @@ async function installApp(app, page) {
         await page.getByPlaceholder('Image Pull Secret').locator('input').fill(arg.secret);
         await takeScreenshot(page, __filename, `form-with-secret-${app}`);
     }
-    await page.getByLabel('Startup Delay (secs)').fill(process.env.GITHUB_ACTIONS ? '45' : '90');
+    await page.getByLabel('Startup Delay (secs)').fill(process.env.GITHUB_ACTIONS ? '90' : '90');
     await page.getByLabel('Application URI', {exact: true}).locator('input[type="text"]').fill(uri)
     if (cert) {
         log(`Uploading certificate ${cert} for ${app}...\n`);
@@ -74,7 +74,11 @@ async function installApp(app, page) {
         await installApp(app, page);
     }
 
+    await takeScreenshot(page, __filename, 'installed-apps');
     log(`Waiting for 2 applications to be available...\n`);
+    await page.waitForTimeout(80000);
+    await page.reload();
+    await takeScreenshot(page, __filename, 'waiting for apps');
     const selector = 'vaadin-grid-cell-content span[theme="badge success"]';
     const startTime = Date.now();
 

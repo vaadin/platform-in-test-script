@@ -282,8 +282,6 @@ runControlCenter() {
   runPwTests "$1" || return 1
   stopForwardIngress || return 1
 
-  ## Delete the cluster if it was created in this test if --keep-cc is not set
-  [ -n "$KEEPCC" ] || deleteCluster "$CLUSTER" "$VENDOR" || return 1
   ## Uninstall the control-center if --keep-cc is not set
   [ -n "$KEEPCC" ] || uninstallCC --wait=false || return 1
 
