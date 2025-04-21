@@ -73,7 +73,7 @@ onExit() {
 
 ## Exit the script after some process cleanup
 doExit() {
-  set +x
+  echo -e "►\c"
   $exitCmds
   killAll
   cleanAll
@@ -212,7 +212,7 @@ runCmd() {
       eval "$_cmd" | tee -a runCmd.out
       _err=$?
     else
-      eval "trap 'kill -INT $$' INT; $_cmd" > runCmd.out 2>&1
+      eval "trap 'trap - INT; kill -INT '$$'' INT; $_cmd" > runCmd.out 2>&1
       _err=$?
     fi
     [ $_err != 0 -a -z "$VERBOSE" -a -n "$_silent" ] && cat runCmd.out >&2

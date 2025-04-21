@@ -108,7 +108,8 @@ deleteDOCluster() {
 
 createCluster() {
   name=${1:-$CLUSTER}
-  case "$2" in
+  type=${2:-$VENDOR}
+  case "$type" in
     kind) createKindCluster $name ;;
     do)   createDOCluster $name ;;
     *)    warn "Unsupported vendor: '$2'"
