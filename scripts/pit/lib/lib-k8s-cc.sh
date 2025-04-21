@@ -76,19 +76,26 @@ installCC() {
   #   --set app.imagePullSecrets=$DO_REGST \
   #   --set keycloak.imagePullSecrets=$DO_REGST"
 
-  runToFile "helm install control-center $args \
+  helmCmd="helm install control-center $args \
     -n $CC_NS --create-namespace \
     --set app.startupProbe.initialDelaySeconds=90 \
     --set app.readinessProbe.initialDelaySeconds=10 \
     --set app.resources.limits.memory=1Gi \
     --set app.resources.requests.memory=256Mi \
-    --set keycloak.startupProbe.initialDelaySeconds=60 \
+    --set keycloak.startupProbe.initialDelaySeconds=70 \
     --set keycloak.readinessProbe.initialDelaySeconds=10 \
     --set keycloak.resources.limits.memory=1Gi \
     --set keycloak.resources.requests.memory=256Mi \
     --set domain=$CC_DOMAIN \
     --set user.email=$CC_EMAIL \
-    --set app.host=$CC_CONTROL --set keycloak.host=$CC_AUTH $D" "helm-install-$1.out" "$VERBOSE" || return 1
+    --set app.host=$CC_CONTROL --set keycloak.host=$CC_AUTH $D"
+
+  runToFile "$helmCmd" "helm-install-$1-1.out" "$VERBOSE"
+  if [ $? != 0 ]; then
+    err "!! Error installing control-center with helm, trying a second time !!"
+    uninstallCC
+    runToFile "$helmCmd" "helm-install-$1-2.out" "$VERBOSE" || return 1
+  fi
 
   [ "$1" = current ] || patchDeployment $CC_NS || return 1
 }
