@@ -107,6 +107,7 @@ const { assert } = require('console');
     }
 
     try {
+        await waitForServerReady(page, arg.url);
         await page.getByRole('link', { name: 'Settings' }).click();
         await page.locator('vaadin-grid').getByText('bakery-cc', { exact: true }).click();
         await page.getByLabel('Localization').uncheck();

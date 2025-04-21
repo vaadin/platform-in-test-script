@@ -75,13 +75,14 @@ async function installApp(app, page) {
     }
 
     await takeScreenshot(page, __filename, 'installed-apps');
-    log(`Waiting for 2 applications to be available...\n`);
-    await page.waitForTimeout(60000);
-    await page.reload();
-    await takeScreenshot(page, __filename, 'waiting for apps');
-    const selector = 'vaadin-grid-cell-content span[theme="badge success"]';
     const startTime = Date.now();
+    log(`Giving a grace period of 40 secs to wait for 2 apps to be avalable ...\n`);
+    await page.waitForTimeout(40000);
+    await page.reload();
+    log(`Waiting for 2 applications to be available in dashboard ...\n`);
+    await takeScreenshot(page, __filename, 'waiting for apps');
 
+    const selector = 'vaadin-grid-cell-content span[theme="badge success"]';
     await expect(page.locator(selector).nth(0)).toBeVisible({ timeout: 280000 });
     const firstAppTime = (Date.now() - startTime) / 1000;
     await takeScreenshot(page, __filename, 'app-1-available');

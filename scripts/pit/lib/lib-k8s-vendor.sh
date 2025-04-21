@@ -85,8 +85,9 @@ createKindCluster() {
 # $1: cluster name
 deleteKindCluster() {
   checkCommands kind || return 1
-  kind get clusters | grep -q "^$1$" || return 0
-  runCmd -q "Deleting Cluster $1" "kind delete cluster --name $1" || return 1
+  name=${1:-$CLUSTER}
+  kind get clusters | grep -q "^$name$" || return 0
+  runCmd -q "Deleting Cluster $name" "kind delete cluster --name $name" || return 1
 }
 
 createDOCluster() {
@@ -100,8 +101,9 @@ createDOCluster() {
 
 deleteDOCluster() {
   checkCommands doctl || return 1
-  runCmd -q "Delete Cluster in DO $name" "doctl kubernetes cluster delete $1 --force --dangerous"
-     runCmd -q "Deleting Registry in DO" "doctl registry delete --force"
+  name=${1:-$CLUSTER}
+  runCmd -q "Delete Cluster in DO $name" "doctl kubernetes cluster delete $name --force --dangerous"
+  runCmd -q "Deleting Registry in DO" "doctl registry delete --force"
 }
 
 createCluster() {

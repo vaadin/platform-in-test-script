@@ -32,7 +32,7 @@ function warn(...args) {
 }
 function err(...args) {
   process.stderr.write(`\x1b[0;31m${args}\x1b[0m`.split('\n')[0] + '\n');
-  out(args);
+  // out(args);
 }
 
 const run = async (cmd) => (await promisify(exec)(cmd)).stdout;
@@ -120,13 +120,13 @@ async function waitForServerReady(page, url, options = {}) {
   } = options;
 
   log(`Opening ${url}\n`);
-  page.waitForTimeout(1000);
   for (let attempt = 0; attempt < maxRetries; attempt++) {
+    await page.goto('about:blank');
     try {
-      const response = await page.goto(url, {timeout: 120000});
+      const response = await page.goto(url, {timeout: 5000});
       // Check if the response status is not 503
       if (response && response.status() < 400) {
-        await page.waitForTimeout(1500);
+        await page.waitForTimeout(1000);
         ok(` ✓ Attempt ${attempt} Server is ready and returned a valid response. ${response.status()}\n`);
         return response;
       } else {
@@ -137,9 +137,6 @@ async function waitForServerReady(page, url, options = {}) {
         err(` ⏲ Attempt ${attempt} Server has not a valid certificate, install it for ${url} or use --notls flag\n`);
       } else {
         err(` ⏲ Attempt ${attempt} Server failed with error: ${error.message}\n`);
-      }
-      if (attempt >= 10) {
-        throw new Error(`Server Error ${error}.\n`);
       }
     }
     await page.waitForTimeout(retryInterval);

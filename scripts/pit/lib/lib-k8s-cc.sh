@@ -78,11 +78,11 @@ installCC() {
 
   runToFile "helm install control-center $args \
     -n $CC_NS --create-namespace \
-    --set app.startupProbe.initialDelaySeconds=30 \
+    --set app.startupProbe.initialDelaySeconds=90 \
     --set app.readinessProbe.initialDelaySeconds=10 \
     --set app.resources.limits.memory=1Gi \
     --set app.resources.requests.memory=256Mi \
-    --set keycloak.startupProbe.initialDelaySeconds=30 \
+    --set keycloak.startupProbe.initialDelaySeconds=60 \
     --set keycloak.readinessProbe.initialDelaySeconds=10 \
     --set keycloak.resources.limits.memory=1Gi \
     --set keycloak.resources.requests.memory=256Mi \
@@ -208,6 +208,7 @@ runPwTests() {
   [ "$1" != current -a "$VENDOR" = do ] && R=$DO_REG_URL && S="--secret=$DO_REGST" || S=""
 
   for f in $CC_TESTS; do
+    [ "$CLUSTER" == "docker-desktop" ] || stopForwardIngress && forwardIngress $CC_NS || return 1
     runPlaywrightTests "$PIT_SCR_FOLDER/its/$f" "" "$1" "control-center" --url=https://$CC_CONTROL  --login=$CC_EMAIL --tag=$T --registry=$R $S $NO_TLS || return 1
     if [ "$f" = cc-install-apps.js ]; then
       reloadIngress && checkTls || return 1
@@ -275,13 +276,8 @@ runControlCenter() {
   ## Install TLS certificates for the control-center and keycloak
   installTls && checkTls || return 1
 
-  ## Forward the ingress (it needs root access since it uses port 443)
-  # checkPort "443"
-  [ "$CLUSTER" == "docker-desktop" ] || forwardIngress $CC_NS || return 1
-
   ## Run Playwright tests for the control-center
   runPwTests "$1" || return 1
-  stopForwardIngress || return 1
 
   ## Uninstall the control-center if --keep-cc is not set
   [ -n "$KEEPCC" ] || uninstallCC --wait=false || return 1
