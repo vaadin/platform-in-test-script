@@ -21,7 +21,7 @@ Use: $0 with the next options:
  --skip-prod       Skip production validations
  --skip-dev        Skip dev-mode validations
  --skip-clean      Do not clean maven cache
- --skip-helm       Do not re-install control-center with helm and continue running tests
+ --skip-helm       Do not re-install control-center with helm and continue running tests, implies (--offline, --skip-build, --keep-cc)
  --skip-pw         Do not run playwright tests
  --cluster=name    Run tests in an existing k8s cluster
  --vendor=name     Use a specific cluster vendor to run control-center tests options: [dd, kind, do] (default: kind)
@@ -83,7 +83,7 @@ checkArgs() {
       --skip-pw) SKIPPW=true;;
       --cluster=*) CLUSTER="$arg";;
       --vendor=*) VENDOR="$arg";;
-      --skip-helm) SKIPHELM=true;;
+      --skip-helm) SKIPHELM=true; SKIPBUILD=true; OFFLINE=true; KEEPCC=true ;;
       --skip-build) SKIPBUILD=true;;
       --keep-cc) KEEPCC=true;;
       --pnpm) PNPM="-Dpnpm.enable=true";;

@@ -265,6 +265,7 @@ getTest() {
     mpr-demo) echo "mpr-demo.js";;
     spreadsheet-demo) echo "spreadsheet-demo.js";;
     k8s-demo-app) echo "k8s-demo.js";;
+    releases-graph) echo "releases.js";;
     cookbook|walking-skeleton*|business-app-starter-flow|*hilla*|spring-petclinic-vaadin-flow|gs-crud-with-vaadin|vaadin-form-example|vaadin-rest-example|vaadin-localization-example|vaadin-database-example|layout-examples|flow-quickstart-tutorial|flow-spring-examples|flow-crm-tutorial|layout-examples|flow-quickstart-tutorial|vaadin-oauth-example|designer-tutorial|*addon-template|addon-starter-flow|testbench-demo) echo "noop.js";;
     start) echo "start-wizard.js";;
     vaadin-oauth-example) echo "oauth.js";;
