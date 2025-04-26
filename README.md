@@ -23,13 +23,14 @@ Use: ./scripts/pit/run.sh with the next options:
  --skip-prod       Skip production validations
  --skip-dev        Skip dev-mode validations
  --skip-clean      Do not clean maven cache
- --skip-helm       Do not re-install control-center with helm and continue running tests
+ --skip-helm       Do not re-install control-center with helm and continue running tests, implies (--offline, --skip-build, --keep-cc)
  --skip-pw         Do not run playwright tests
  --cluster=name    Run tests in an existing k8s cluster
  --vendor=name     Use a specific cluster vendor to run control-center tests options: [dd, kind, do] (default: kind)
  --keep-cc         Keep control-center running after tests
  --proxy-cc        Forward port 443 from k8s cluster to localhost
  --events-cc       Display events from control-center
+ --skip-build      Skip building the docker images for control-center
  --delete-cluster  Delete the cluster/s
  --dashboard=*     Install kubernetes dashboard, options [install, uninstall] (default: install)
  --pnpm            Use pnpm instead of npm to speed up frontend compilation (default npm)
@@ -110,6 +111,8 @@ Use: ./scripts/pit/run.sh with the next options:
                    · form-filler-demo
                    · flow-hilla-hybrid-example
                    · designer-tutorial
+                   · walking-skeleton:v24.7-hybrid
+                   · releases-graph
 ```
 
 

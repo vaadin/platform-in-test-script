@@ -30,9 +30,14 @@ function ok(...args) {
 function warn(...args) {
   process.stderr.write(`\x1b[2m\x1b[91m${args}\x1b[0m`);
 }
+let lastErr;
 function err(...args) {
   process.stderr.write(`\x1b[0;31m${args}\x1b[0m`.split('\n')[0] + '\n');
-  // out(args);
+  const str = `${args.toString().split('\n').slice(1).join('\n')}`;
+  if (str !== lastErr) {
+    out(str);
+    lastErr = str;
+  }
 }
 
 const run = async (cmd) => (await promisify(exec)(cmd)).stdout;
@@ -71,6 +76,8 @@ const args = () => {
       ret.tag = a.split('=')[1];
     } else if (/^--secret/.test(a)) {
       ret.secret = a.split('=')[1];
+    } else if (/^--version/.test(a)) {
+      ret.version = a.split('=')[1];
     }
   });
   if (!ret.url) {
