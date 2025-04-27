@@ -21,10 +21,14 @@ const {log, args, createPage, closePage, takeScreenshot, waitForServerReady} = r
         const [major, minor] = arg.version.split('.');
         const labelRegex = new RegExp(`${major}\\.${minor}, `);
         await page.getByLabel(labelRegex).click();
+
+        await takeScreenshot(page, __filename, `element-${labelRegex}-clicked`);
         await expect(page.getByLabel('Interactive chart').locator('text').getByText(arg.version)).toBeVisible();
+        await takeScreenshot(page, __filename, `interactive-chart-${arg.version}-loaded`);
 
         await page.getByText(arg.version).first().click();
         await expect(page.getByRole('heading', { name: `Release Notes for ${arg.version}` })).toBeVisible();
+        await takeScreenshot(page, __filename, `release-notes-${arg.version}-loaded`);
     }
 
     log(JSON.stringify(arg));
