@@ -51,12 +51,12 @@ EOF
 
 ## check arguments passed to `run.sh` script and set global variables
 checkArgs() {
-  VERSION=current; GITBASE="https://github.com/"; PORT=$DEFAULT_PORT; TIMEOUT=$DEFAULT_TIMEOUT; VENDOR=kind
+  VERSION=current; GITBASE="https://github.com/"; export PORT=$DEFAULT_PORT; TIMEOUT=$DEFAULT_TIMEOUT; VENDOR=kind
   while [ -n "$1" ]
   do
     arg=`echo "$1" | grep = | cut -d= -f2`
     case "$1" in
-      --port=*) PORT="$arg";;
+      --port=*) export PORT="$arg";;
       --generated) STARTERS=`echo "$PRESETS" | tr "\n" "," | sed -e 's/^,//' | sed -e 's/,$//'`;;
       --demos) STARTERS=`echo "$DEMOS" | tr "\n" "," | sed -e 's/^,//' | sed -e 's/,$//'`;;
       --start*=*)

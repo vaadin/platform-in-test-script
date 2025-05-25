@@ -271,6 +271,7 @@ getTest() {
     vaadin-oauth-example) echo "oauth.js";;
     bookstore-example) echo "bookstore.js";;
     form-filler-demo) echo "ai.js";;
+    expo-flow) echo "expo-flow.js";;
     *) echo "hello.js";;
   esac
 }
