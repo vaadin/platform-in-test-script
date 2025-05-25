@@ -70,6 +70,7 @@ flow-hilla-hybrid-example
 designer-tutorial
 walking-skeleton:v24.7-hybrid
 releases-graph
+expo-flow
 "
 
 ## Not needed so far since the hybrid should cover all the views
