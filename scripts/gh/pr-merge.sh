@@ -27,8 +27,11 @@ V=vaadin
 checkout() {
     mkdir -p tmp
     cd tmp || exit 1
-    rm -rf $1
-    git clone git@github.com:$V/$1.git || exit 1
+    [ -d "$1" ] && rm -rf $1
+    gh auth status
+    gh config set git_protocol https
+    gh repo clone $V/$1
+    # git clone git@github.com:$V/$1.git || exit 1
     cd $1 || exit 1
     [ -z "$2" ] || git checkout $2 || exit 1
 }
@@ -81,6 +84,7 @@ while [ -n "$1" ]; do
         [ -z "$N" ] && echo usage && exit 1
         shift
         echo "https://github.com/$V/$arg/pull/$N"
+
         checkout $arg
 
         gh pr checkout $N || exit 1
