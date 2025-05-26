@@ -56,6 +56,8 @@ jobs:
         with:
           maven-version: '3.9.0'
       - uses: azure/setup-helm@v3.5
+        with:
+          version: 3.17.3
       - if: ${{env.ACT}}
         name: Run install dependencies (only in ACT)
         run: |
