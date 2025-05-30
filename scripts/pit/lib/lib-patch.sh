@@ -46,6 +46,9 @@ applyPatches() {
       moveQuarkusBomToBottom
       ;;
   esac
+  case "$vers_" in
+    24.8.0.beta1) runCmd "Installing magic-string for $vers_" "npm i -S magic-string";;
+  esac
 
   # always successful
   return 0
