@@ -22,7 +22,7 @@ function log(...args) {
   process.stderr.write(`\x1b[0m> \x1b[0;32m${str}\x1b[0m${computeTime()}\n`);
 }
 function out(...args) {
-  process.stderr.write(`\x1b[2m\x1b[196m${args}\x1b[0m`);
+  process.stdout.write(`\x1b[2m\x1b[196m${args}\x1b[0m`);
 }
 function ok(...args) {
   process.stderr.write(`\x1b[2m\x1b[92m${args}\x1b[0m`);
@@ -41,7 +41,7 @@ function err(...args) {
 }
 
 const run = async (cmd) => (await promisify(exec)(cmd)).stdout;
-let mode;
+let mode, version;
 
 const args = () => {
   const ret = {
@@ -77,7 +77,7 @@ const args = () => {
     } else if (/^--secret/.test(a)) {
       ret.secret = a.split('=')[1];
     } else if (/^--version/.test(a)) {
-      ret.version = a.split('=')[1];
+      version = ret.version = a.split('=')[1];
     }
   });
   if (!ret.url) {
@@ -97,7 +97,8 @@ async function createPage(headless, ignoreHTTPSErrors) {
     const page = await context.newPage();
     page.on('console', msg => {
       const text = `${msg.text()} - ${msg.location().url}`.replace(/\s+/g, ' ');
-      if (!/vaadinPush|favicon.ico|Autofocus/.test(text)) out("> CONSOLE:", text, '\n');
+      if (!/vaadinPush|favicon.ico|Autofocus/.test(text))
+        out("> CONSOLE:", text, '\n');
     });
     page.on('pageerror', e => warn("> JSERROR:", ('' + e).replace(/\s+/g, ' '), '\n'));
     page.browser = browser;
@@ -113,7 +114,7 @@ let sscount = 0;
 async function takeScreenshot(page, name, descr) {
   const scr = path.basename(name);
   const cnt = String(++sscount).padStart(2, "0");
-  const file = `${screenshots}/${mode ? mode + '-': '' }${scr}-${cnt}-${descr}.png`;
+  const file = `${screenshots}/${mode ? mode + '-': '' }${version ? version + '-': '' }${scr}-${cnt}-${descr}.png`;
   await page.waitForTimeout(/^win/.test(process.platform) ? 10000 : process.env.GITHUB_ACTIONS ? 800 : 200);
   await page.screenshot({ path: file });
   out(` 📸 Screenshot taken: ${file}\n`);
@@ -151,6 +152,16 @@ async function waitForServerReady(page, url, options = {}) {
   throw new Error(`Server did not become ready after ${maxRetries} attempts.\n`);
 }
 
+async function dismissDevmode(page) {
+  let dismiss = page.getByTestId('message').getByText('Dismiss');
+  if (!await dismiss.count()) {
+    dismiss = page.locator('copilot-notifications-container').getByLabel('Close')
+  }
+  if (await dismiss.count()) {
+    dismiss.click()
+  }
+}
+
 module.exports = {
   log, out, err, warn,
   run,
@@ -159,4 +170,5 @@ module.exports = {
   closePage,
   takeScreenshot,
   waitForServerReady,
+  dismissDevmode,
 };
