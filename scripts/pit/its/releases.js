@@ -24,7 +24,8 @@ const {log, args, createPage, closePage, takeScreenshot, waitForServerReady} = r
         await page.getByLabel(labelRegex).click();
 
         await takeScreenshot(page, __filename, `element-${labelRegex}-clicked`);
-        await expect(page.getByLabel('Interactive chart').locator('text').getByText(arg.version)).toBeVisible();
+        const selector = `path.highcharts-point[aria-label*="${arg.version}"]`
+        await expect(page.getByLabel('Interactive chart').locator(selector)).toBeVisible();
         await takeScreenshot(page, __filename, `interactive-chart-${arg.version}-loaded`);
 
         if (arg.mode == 'dev') {
@@ -36,7 +37,7 @@ const {log, args, createPage, closePage, takeScreenshot, waitForServerReady} = r
             }
         }
 
-        await page.getByText(arg.version).first().click();
+        await page.locator(selector).first().click();
         await expect(page.getByRole('heading', { name: `Release Notes for ${arg.version}` })).toBeVisible();
         await takeScreenshot(page, __filename, `release-notes-${arg.version}-loaded`);
     }
