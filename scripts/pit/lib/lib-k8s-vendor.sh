@@ -4,6 +4,9 @@ C_KIND_PREFIX=kind-
 C_DO_REGION=fra1
 C_DO_PREFIX=do-${C_DO_REGION}-
 
+## TODO: ask IT for access to vaadin docker registry for deploying bakery and bakery-cc
+REGISTRY=k8sdemos
+
 ## Check that the command has SUID bit set
 # $1: command
 hasSUID() {
@@ -35,7 +38,7 @@ setSuid() {
     && runCmd "Changing set-uid to: $R" "sudo chmod u+s $T" && echo "$T" && return 0
 }
 
-##
+## Start k8s portforward to CC ingress
 # $1: namespace
 # $2: service
 # $3: port in guest
@@ -55,7 +58,7 @@ startPortForward() {
   egrep -q 'Forwarding from' "$bgf"
 }
 
-##
+## Stop k8s portforward
 # $1: service
 stopPortForward() {
   H=`getPids kubectl "port-forward service/$1"`
@@ -71,17 +74,17 @@ stopForwardIngress() {
   stopPortForward control-center-ingress-nginx-controller
 }
 
-##
+## Create a new cluster in KinD
 # $1: cluster name
 createKindCluster() {
   checkCommands kind || return 1
-  kind get clusters 2>/dev/null | grep -q "^$1$" && log "Reusing Kind cluster: '$1'" && return 0
+  kind get clusters 2>/dev/null | grep -q "^$1$" && ([ -n "$TEST" ] || log "Reusing Kind cluster: '$1'") && return 0
   runCmd -qf "Creating KinD cluster: $1" \
    "kind create cluster --name $1" || return 1
   [ -n "$KEEPCC" ] || onExit deleteKindCluster "$1"
 }
 
-##
+## Delete a cluster in KinD
 # $1: cluster name
 deleteKindCluster() {
   checkCommands kind || return 1
@@ -90,6 +93,8 @@ deleteKindCluster() {
   runCmd -q "Deleting Cluster $name" "kind delete cluster --name $name" || return 1
 }
 
+## Create a new cluster in DO
+# $1: cluster name
 createDOCluster() {
   size=${2:-s-4vcpu-8gb}
   nodes=1
@@ -99,6 +104,8 @@ createDOCluster() {
   [ -n "$KEEPCC" ] || onExit deleteDOCluster "$1"
 }
 
+## Delete a cluster in DO
+# $1: cluster name
 deleteDOCluster() {
   checkCommands doctl || return 1
   name=${1:-$CLUSTER}
@@ -106,6 +113,9 @@ deleteDOCluster() {
   runCmd -q "Deleting Registry in DO" "doctl registry delete --force"
 }
 
+## Create a Cluster
+# $1 cluster name
+# $2 vemdor type (kind, do)
 createCluster() {
   name=${1:-$CLUSTER}
   type=${2:-$VENDOR}
@@ -117,6 +127,8 @@ createCluster() {
   esac
 }
 
+## Delete a cluster
+# $1 cluster name, if not provided it ask in stdin
 deleteCluster() {
   name=${1:-$CLUSTER}
   if [ -z "$name" ]; then
@@ -139,6 +151,10 @@ deleteCluster() {
   esac
 }
 
+## Set both current cluster context and default namespace for kubectl
+# $1 cluster name
+# $2 namespace
+# $3 cluster vendor (kind, do)
 setClusterContext() {
   ns=$2
   case $3 in
@@ -148,13 +164,14 @@ setClusterContext() {
   esac
   H=`kubectl config get-contexts  | tr '*' ' ' | awk '{print $1}' `
   [ -z "$H" ] && log "Cluster $current not found in kubectl contexts" && return 1
-  runCmd -q "Setting context to $current" "kubectl config use-context $current" || return 1
+  runCmd -qf "Setting context to $current" "kubectl config use-context $current" || return 1
   H=`kubectl config current-context`
   [ "$H" != "$current" ] && log "Current context is not $current" && return 1
-  runCmd -q "Setting default namespace to $ns" "kubectl config set-context --current --namespace=$ns" || return 1
+  runCmd -qf "Setting default namespace to $ns" "kubectl config set-context --current --namespace=$ns" || return 1
   kubectl get ns >/dev/null 2>&1 || return 1
 }
 
+## Compute a unique name for the registry to create in DO
 computeDORegistry() {
   H=`doctl registry get --no-header --format Name 2>/dev/null`
   [ $? = 0 ] && echo "$H" && return
@@ -162,6 +179,7 @@ computeDORegistry() {
   echo "$U"
 }
 
+## Login to the private registry in DO
 loginDORegistry() {
   doctl registry get --no-header >/dev/null 2>&1
   if [ $? != 0 ]; then
@@ -171,21 +189,24 @@ loginDORegistry() {
   runCmd -q "Adding Registry to Cluster: $CLUSTER" "doctl kubernetes cluster registry add $CLUSTER" || return 1
 }
 
+## Prepare a private registry in DO for local images
 prepareRegistry() {
   [ "$VENDOR" != "do" ] && return 0
+  log "Prepare registry for Vendor DO"
   checkCommands doctl || return 1
   DO_REGST=`computeDORegistry`
   loginDORegistry "$DO_REGST" || return 1
   DO_REG_URL="registry.digitalocean.com/$DO_REGST"
 }
 
+## Patch cluster so as it can access to private DO registry for local images
 patchDeployment() {
   [ "$VENDOR" != "do" ] && return 0
   checkCommands doctl || return 1
   DO_REGST=`computeDORegistry`
   if [ "$VENDOR" = do ]; then
     # Not using runCmd because of issues with quotes in JSON argument
-    [ -n "$TEST" ] || log "Patching imagePullSecrets for DO registry $DO_REGST"
+    log "Patching imagePullSecrets for DO registry $DO_REGST"
     cmd kubectl patch serviceaccount -n $1 default -p '{"imagePullSecrets": [{"name": "'$DO_REGST'"}]}'
     [ -n "$TEST" ] || kubectl patch serviceaccount -n $1 default -p '{"imagePullSecrets": [{"name": "'$DO_REGST'"}]}' || return 1
     cmd kubectl patch deployment control-center -n $1 --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value":[{"name":"'$DO_REGST'"}]}]'
@@ -195,20 +216,58 @@ patchDeployment() {
   fi
 }
 
+## Upload generated local images to the vendor cluster
+# $1 whether it should upload cc images as well.
 uploadLocalImages() {
   case "$VENDOR" in
     kind)
-      for i in control-center-app control-center-keycloak bakery bakery-cc; do
+      echo "" && log "** Loading images for vendor KinD **"
+      for i in bakery bakery-cc cc-starter; do
+        runCmd -q "Load docker image $i for Kind" \
+          kind load docker-image $REGISTRY/$i:local --name "$CLUSTER" || return 1
+      done
+      [ "$1" != true ] && return
+      for i in control-center-app control-center-keycloak; do
         runCmd -q "Load docker image $i for Kind" \
           kind load docker-image vaadin/$i:local --name "$CLUSTER" || return 1
       done
       ;;
     do)
-      for i in control-center-app control-center-keycloak bakery bakery-cc; do
-        runCmd -q "Tag image $i" docker tag vaadin/$i:local $DO_REG_URL/$i:local || return 1
+      echo "" && log "** Loading images for vendor DO **"
+      for i in cbakery bakery-cc cc-starter; do
+        runCmd -q "Tag image $i" docker tag $REGISTRY/$i:local $DO_REG_URL/$i:local || return 1
+        runCmd -q "PUSH image $i" docker push $DO_REG_URL/$i:local || return 1
+      done
+      [ "$1" != true ] && return
+      for i in control-center-app control-center-keycloak; do
+        expr "$i" : "^control-center" >/dev/null && R=vaadin || R=$REGISTRY
+        runCmd -q "Tag image $i" docker tag $vaadin/$i:local $DO_REG_URL/$i:local || return 1
         runCmd -q "PUSH image $i" docker push $DO_REG_URL/$i:local || return 1
       done
       ;;
     *) :;;
   esac
+}
+
+## check if the current user has push rights in docker.io for $REPOSITORY
+checkDockerPushPermissions() {
+  iName=$REGISTRY/foobar:latest
+  docker pull busybox > /dev/null 2>&1 || return 1
+  docker tag busybox $iName > /dev/null 2>&1
+  docker push $iName > /dev/null 2>&1 || return 1
+  docker image rm $iName > /dev/null 2>&1
+}
+
+## push local images to central registry
+## it is enabled by setting the env PUSH=true
+# $1 tag (default next)
+pushLocalToDockerhub() {
+  _tag=${1-next}
+  checkDockerPushPermissions || {
+    err "You dont have permissions to push to docker.io/$REGISTRY "; return 1
+  }
+  for i in bakery bakery-cc cc-starter; do
+    runCmd -q "TAG local image as $1" docker taga $REGISTRY/i:local $REGISTRY/$i:$_tag || return 1
+    runCmd -q "PUSH image $i to docker.io" docker push $REGISTRY/$i:$_tag || return 1
+  done
 }

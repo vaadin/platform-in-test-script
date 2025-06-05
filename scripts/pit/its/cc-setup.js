@@ -27,22 +27,29 @@ const {log, run, args, createPage, closePage, takeScreenshot, waitForServerReady
 
     await takeScreenshot(page, __filename, 'logged-in');
 
-    await page.getByLabel('New Password').fill(arg.pass);
-    await page.getByLabel('Confirm Password').fill(arg.pass);
-    await page.getByRole('button', { name: 'Submit' }).click();
+    const newsPass = page.getByLabel('New Password');
+    if (await newsPass.count() == 0) {
+        log("Seems that CC was already setup trying to login")
+        await page.getByLabel('Email').fill(arg.login);
+        await page.getByLabel('Password').fill(arg.pass);
+        await page.getByRole('button', {name: 'Sign In'}).click()
+        await takeScreenshot(page, __filename, 'logged-in');
+    } else {
+        await newsPass.fill(arg.pass);
+        await page.getByLabel('Confirm Password').fill(arg.pass);
+        await page.getByRole('button', { name: 'Submit' }).click();
 
-    await takeScreenshot(page, __filename, 'password-changed');
+        await takeScreenshot(page, __filename, 'password-changed');
 
-    await page.getByLabel('First Name').fill(arg.login.split('@')[0]);
-    await page.getByLabel('Last Name').fill(arg.login.split('@')[1]);
-    await page.getByRole('button', { name: 'Submit' }).click();
-    await takeScreenshot(page, __filename, 'user-configured');
+        await page.getByLabel('First Name').fill(arg.login.split('@')[0]);
+        await page.getByLabel('Last Name').fill(arg.login.split('@')[1]);
+        await page.getByRole('button', { name: 'Submit' }).click();
+        await takeScreenshot(page, __filename, 'user-configured');
+        await waitForServerReady(page, arg.url);
+        await page.getByRole('button', { name: 'Manage applications' }).click();
+    }
 
-    await waitForServerReady(page, arg.url);
-
-    await page.getByRole('button', { name: 'Manage applications' }).click();
+    await page.getByRole('listitem').filter({ hasText: 'Settings'}).click()
     await expect(page.getByRole('heading', { name: 'Applications' })).toBeVisible();
-    await page.waitForTimeout(5000);
-
     await closePage(page);
     })();

@@ -39,8 +39,7 @@ runPlaywrightTests() {
 
   _args="$* --name=$_name --mode=$_mode"
   isHeadless && _args="$_args --headless"
-  [ -z "$TEST" ] && log "Running Visual-Test: $_base_name"
-  [ -n "$TEST" ] && cmd "## Running Visual-Test: $_base_name"
+  log "Running visual test: $_base_name"
   PATH=$PATH START=$START runToFile "'$NODE' '$_test_file' $_args" "$_pfile" "$VERBOSE" true
   err=$?
   [ -n "$TEST" ] && return 0
