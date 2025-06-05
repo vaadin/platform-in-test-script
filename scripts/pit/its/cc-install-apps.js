@@ -83,7 +83,7 @@ async function installApp(app, page) {
     await page.getByRole('button', {name: 'Sign In'}).click()
     await takeScreenshot(page, __filename, 'logged-in');
 
-    const apps = ['bakery-cc', 'bakery', 'cc-starter'];
+    const apps = ['cc-starter', 'bakery-cc', 'bakery'];
     for (const app of apps) {
         await installApp(app, page);
     }

@@ -26,7 +26,9 @@ compileCCStarter() {
   log -n "* Building $APP app *"
   computeMvn
   PRESETS=""
-  for i in latest-java partial-auth partial-controlcenter partial-kubernetes partial-prerelease partial-flow-example-auth-views partial-hilla-example-views partial-hilla-example-auth-views
+  APPS="latest-java partial-auth partial-controlcenter partial-kubernetes partial-prerelease partial-hilla-example-views partial-flow-example-auth-views partial-hilla-example-auth-views"
+  APPS="latest-java partial-auth partial-controlcenter partial-kubernetes partial-prerelease partial-hilla-example-views"
+  for i in $APPS
   do
     PRESETS="$PRESETS&preset=$i"
   done  
@@ -66,15 +68,12 @@ compileCC() {
 ## Build Apps used in CC and CC itself if testing the snapshot
 # $1 whether CC version is snapshot or not
 buildCC() {
-  log -n "** Building Control Center and APPS **"
+  log -n "** Building Control Center and APPS - $VERSION $CCVERSION $1 **"
   local D=$PWD
   if [ -z "$SKIPBUILD" ]; then
-    [ "$1" != true ] || compileCC || return 1
-    cd $D
-    compileCCStarter || return 1
-    cd $D
-    compileBakery || return 1
-    cd $D
+    [ "$1" != true ] || compileCC || return 1 ; cd $D
+    compileCCStarter || return 1 ; cd $D
+    compileBakery || return 1 ; cd $D
   fi
   [ -n "$SKIPHELM" ] || runCmd -q "Update helm dependencies" helm dependency build charts/control-center
   prepareRegistry || return 1
