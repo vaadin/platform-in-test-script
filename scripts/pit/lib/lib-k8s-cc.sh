@@ -28,8 +28,8 @@ checkDockerRunning() {
   fi
 }
 
-## Check the version of the installed CC helm chart
-# $1 CC version
+## Check the appVersion of the CC helm chart in docker.io
+# $1 CC tag in docker.io
 checkCurrentVersion() {
   [ -z "$1" -o "$1" = current ] || ARG="--version $1"
   V=`helm show all oci://docker.io/vaadin/control-center $ARG 2>&1 | grep "^appVersion" | cut -d " " -f2`
@@ -37,6 +37,8 @@ checkCurrentVersion() {
   [ -n "$1" -a "$1" != current -a "$1" != "$V" ] && err "Bad version found for $1 != $V" && return 1
   echo $V
 }
+
+
 
 ## Given a platform version check what is the corresponding CC version
 # $1 platform version
@@ -49,6 +51,11 @@ computeCCVersion() {
     [ "$vVersion" = "$1" ] && echo $i && ([ -n "$TEST" ] || log "Platform $VERSION has control-center CC $i") && return 0
   done
   mvn help:evaluate -Dexpression=project.version -q -DforceStdout
+}
+
+## Check whether the control-center chart is installed and display info
+isCCInstalled() {
+  helm list -n control-center | grep -v "^NAME" |  awk '{print " · "$9" · "$10" · "$4}'
 }
 
 ## If the process fails, download the logs of the apps running for inclussion in the CI artifact
@@ -157,7 +164,7 @@ hasCCNs() {
 uninstallCC() {
   hasCCNs || return 0
   [ -n "$VERBOSE" ] && HD=--debug && KD=--v=10
-  runCmd -q "Uninstalling Control-Center" helm uninstall control-center --wait -n $CC_NS $HD
+  H=`isCCInstalled` && runCmd -q "Uninstalling $H" helm uninstall control-center --wait -n $CC_NS $HD
   runCmd -q "Removing namespace $CC_NS" kubectl delete ns $CC_NS $KD $1
 }
 
@@ -292,10 +299,7 @@ runControlCenter() {
   ## Install Control Center
   installCC $1 || return 1
 
-  if [ -z "$TEST" ]; then
-    H=`helm list -n control-center` || return 1
-    log "Installed Control-Center is:\n$H"
-  fi
+  [ -z "$TEST" ] && H=`isCCInstalled` && log "Installed Control-Center is: $H"
 
   ## Control center takes a long time to start
   waitForCC 900 || return 1
