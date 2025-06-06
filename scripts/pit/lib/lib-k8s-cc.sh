@@ -1,6 +1,7 @@
 . `dirname $0`/lib/lib-utils.sh
 . `dirname $0`/lib/lib-playwright.sh
 . `dirname $0`/lib/lib-k8s-vendor.sh
+. `dirname $0`/lib/lib-k8s-apps.sh
 
 ## Domain and Host Configuration
 CC_DOMAIN=local.alcala.org
@@ -19,9 +20,7 @@ CC_NS=control-center
 ## UI tests to run after the control-center is installed
 CC_TESTS=${CC_TESTS:-cc-setup.js cc-install-apps.js cc-identity-management.js cc-localization.js}
 
-CC_APP_REPO=bakery-app-starter-flow-spring:cc-24.7
-CC_APP_NAME=bakery-cc
-
+## check if docker is working
 checkDockerRunning() {
   if ! docker ps > /dev/null 2>&1; then
     err "!! Docker is not running. Please start Docker and try again. !!"
@@ -29,43 +28,71 @@ checkDockerRunning() {
   fi
 }
 
+## Check the appVersion of the CC helm chart in docker.io
+# $1 CC tag in docker.io
+checkCurrentVersion() {
+  [ -z "$1" -o "$1" = current ] || ARG="--version $1"
+  V=`helm show all oci://docker.io/vaadin/control-center $ARG 2>&1 | grep "^appVersion" | cut -d " " -f2`
+  [ -z "$V" ] && err "No CC version found for $1" && return 1
+  [ -n "$1" -a "$1" != current -a "$1" != "$V" ] && err "Bad version found for $1 != $V" && return 1
+  echo $V
+}
+
+
+
+## Given a platform version check what is the corresponding CC version
+# $1 platform version
 computeCCVersion() {
   [ -z "$1" ] && return
   git fetch --tags -q
   for i in `git tag | sort -r`; do
     local vVersion=`git show $i:pom.xml 2>/dev/null | grep '<vaadin.components.version>' | cut -d '>' -f2 | cut -d '<' -f1`
     # echo "$1 - $vVersion" >&2
-    [ "$vVersion" = "$1" ] && echo $i && return 0
+    [ "$vVersion" = "$1" ] && echo $i && ([ -n "$TEST" ] || log "Platform $VERSION has control-center CC $i") && return 0
   done
   mvn help:evaluate -Dexpression=project.version -q -DforceStdout
 }
 
-saveCerts() {
-  f1=cc-tls.crt
-  f2=cc-tls.key
-  f3=$CC_DOMAIN.pem
-  echo -e "$CC_CERT" > $f1 || return 1
-  echo -e "$CC_KEY" > $f2 || return 1
-  cat $f1 $f2 > $f3
-  mkdir -p certs.out
-  cp $f1 $f2 $f3 certs.out/
+## Check whether the control-center chart is installed and display info
+isCCInstalled() {
+  helm list -n control-center | grep -v "^NAME" |  awk '{print " · "$9" · "$10" · "$4}'
 }
 
+## If the process fails, download the logs of the apps running for inclussion in the CI artifact
+downloadLogs() {
+  # this is run after a failure, thus always fail
+  hasCCNs || return 1
+  H=""
+  for i in `kubectl get pods -n control-center | egrep -v '^NAME|^control-center' | awk '{print $1}'`
+  do
+     [ -z "$H" ] && log -n "Saving deployment and pod logs" && H=done
+     runToFile "kubectl logs $i -n $CC_NS" "pod-$i.out" "$VERBOSE"
+  done
+  for i in `kubectl get deployments -n control-center | egrep -v '^NAME|^control-center' | awk '{print $1}'`
+  do
+     runToFile "kubectl describe deployment $i -n $CC_NS" "deployment-$i.out" "$VERBOSE"
+  done
+  return 1
+}
+
+
 ## Install Control Center with Helm
+# $1 control center version
 installCC() {
+  log -n "** Installing Control Center $1 with Helm **"
+
+  [ -n "$CC_KEY" -a -n "$CC_CERT" ] && args="--set app.tlsSecret=$CC_TLS_A --set keycloak.tlsSecret=$CC_TLS_K" || args=""
+
+  case "$1" in
+    *SNAPSHOT) args="$args charts/control-center --set app.image.tag=local --set keycloak.image.tag=local" ;;
+    current)   args="$args oci://docker.io/vaadin/control-center" ;;
+    "")        err "Unable to compute CC version for platform version '$VERSION'" && return 1 ;;
+    *)         args="$args oci://docker.io/vaadin/control-center --version $1" ;;
+  esac
+
+  [ -z "$TEST" ] && log "Installing Control Center with version: $1"
   [ -n "$SKIPHELM" ] && H=`kubectl get pods 2>&1` && echo "$H" | egrep -q 'control-center-[0-9abcdef]+-..... ' && return 0
   [ -n "$VERBOSE" ] && D=--debug || D=""
-  [ -n "$CC_KEY" -a -n "$CC_CERT" ] && args="--set app.tlsSecret=$CC_TLS_A --set keycloak.tlsSecret=$CC_TLS_K" || args=""
-  [ -z "$TEST" ] && log "Installing Control Center with version: $1"
-  case "$1" in
-    *SNAPSHOT)
-       buildCC || return 1
-       args="$args charts/control-center --set app.image.tag=local --set keycloak.image.tag=local"
-       ;;
-    current)  args="$args oci://docker.io/vaadin/control-center" ;;
-    "")       err "Unable to compute CC version for platform version '$1'" && return 1 ;;
-    *)   args="$args oci://docker.io/vaadin/control-center --version $1" ;;
-  esac
 
   [ -n "$DO_REG_URL" ] && args="$args \
     --set app.image.repository=$DO_REG_URL/control-center-app \
@@ -115,7 +142,7 @@ waitForCC() {
         "")
           log "Control center not installed in k8s" && return 1 ;;
         1/1*Running*)
-          echo "" && log "Control Center up and running - Status: $H"
+          log -n "Control Center up and running - Status: $H"
           return 0 ;;
         *)
           [ "$H" != "$last" ] && ([ -n "$VERBOSE" -a -n "$last" ] && echo "" || true) \
@@ -127,15 +154,22 @@ waitForCC() {
   done
 }
 
+## check if the cluster has already the CC namespace
+hasCCNs() {
+  H=`kubectl get ns 2>&1`
+  [ $? = 0 ] && echo "$H" | egrep -q "^$CC_NS " || return 1
+}
+
 ## Uninstall control-center
 uninstallCC() {
-  H=`kubectl get ns 2>&1`
-  [ $? = 0 ] && echo "$H" | egrep -q "^$CC_NS " || return 0
+  hasCCNs || return 0
   [ -n "$VERBOSE" ] && HD=--debug && KD=--v=10
-  runCmd -q "Uninstalling Control-Center" helm uninstall control-center --wait -n $CC_NS $HD
+  H=`isCCInstalled` && runCmd -q "Uninstalling $H" helm uninstall control-center --wait -n $CC_NS $HD
   runCmd -q "Removing namespace $CC_NS" kubectl delete ns $CC_NS $KD $1
 }
 
+## Display configuration and certificate for a certain ingress
+# $1 ingress name
 getTLs() {
   H=`kubectl get ingress $1 -n $CC_NS -o jsonpath='{.spec.rules[0].host}'`
   HS=`kubectl get ingress $1 -n $CC_NS -o jsonpath='{.spec.tls[*].hosts[*]}'`
@@ -145,14 +179,16 @@ getTLs() {
   dim " hosts: $HS cert: $C"
 }
 
+## Display configuration and certificate of all ingresses
 checkTls() {
-  [ -n "$TEST" ] && return 0
+  [ -n "$SKIPSETUP" -o -n "$TEST" ] && return 0
   log "Checking TLS certificates for all ingresses hosted in the cluster"
   for i in `kubectl get ingresses -n $CC_NS | grep nginx | awk '{print $1}'`; do
     getTLs "$i"
   done
 }
 
+## Reload ingress process (useful after changing a certificate)
 reloadIngress() {
   [ -n "$TEST" ] && return 0
   pod=`kubectl -n $CC_NS get pods | grep control-center-ingress-nginx-controller | awk '{print $1}'` || return 1
@@ -162,15 +198,18 @@ reloadIngress() {
 
 ## Configure secrets for the control-center and the keycloak servers
 installTls() {
-  [ -n "$TEST" ] && return 0
+  [ -n "$SKIPSETUP" ] && return 0
   [ -z "$CC_KEY" -o -z "$CC_CERT" ] && log "No CC_KEY and CC_CERT provided, skiping TLS installation" && return 0
   # [ -n "$CC_FULL" ] && CC_CERT="$CC_FULL"
   [ -z "$TEST" ] && log "Installing TLS $CC_TLS for $CC_CONTROL and $CC_AUTH" || cmd "## Creating TLS file '$CC_DOMAIN.pem' from envs"
   f1=cc-tls.crt
   f2=cc-tls.key
   f3=$CC_DOMAIN.pem
+  cmd 'echo -e "$CC_CERT" > '$f1
   echo -e "$CC_CERT" > $f1 || return 1
+  cmd 'echo -e "$CC_KEY" > '$f2
   echo -e "$CC_KEY" > $f2 || return 1
+  cmd "cat $f1 $f2 > $f3"
   cat $f1 $f2 > $f3
 
   # remove old secrets if they exist (only needed for testing purposes since secrets are deleted before running the helm chart)
@@ -197,6 +236,7 @@ installTls() {
 
 ## Show temporary user-email and password in the terminal
 showTemporaryPassword() {
+  [ -n "$SKIPSETUP" -o -n "$TEST" ] && return 0
   email=`runCmd "Getting temporary admin email for Control Center" \
     "kubectl -n $CC_NS get secret control-center-user -o go-template=\"{{ .data.email | base64decode | println }}\""`
   passw=`runCmd "Getting temporary admin password for Control Center" \
@@ -205,59 +245,38 @@ showTemporaryPassword() {
 }
 
 ## Run Playwright tests for the control-center
+# $1 Version of CC to test
+# $2 tag to use for application images
+# $3 whether it is CC snapshot
 runPwTests() {
-  computeNpm
   [ -n "$SKIPPW" ] && return 0
+  log -n "** Running tests for Apps with tag '$2' in Control Center '$1' **"
+  computeNpm
   [ -z "$CC_CERT" -o -z "$CC_KEY" ] && NO_TLS=--notls || NO_TLS=""
-  [ "$1" = current ] && T=latest   || T=local
+
+  [ "$3" = true ] && T=local || T="${APPVERSION:-$2}"
+
   ## TODO: ask IT for access to vaadin docker registry for deploying bakery and bakery-cc
-  [ "$1" = current ] && R=k8sdemos || R=vaadin
-  [ "$1" != current -a "$VENDOR" = do ] && R=$DO_REG_URL && S="--secret=$DO_REGST" || S=""
+  S="" ; R=$REGISTRY
+  [ "$2" = local -a "$VENDOR" = do ] && R=$DO_REG_URL && S="--secret=$DO_REGST"
 
   for f in $CC_TESTS; do
     [ "$CLUSTER" == "docker-desktop" ] || stopForwardIngress && forwardIngress $CC_NS || return 1
-    runPlaywrightTests "$PIT_SCR_FOLDER/its/$f" "" "$1" "control-center" --url=https://$CC_CONTROL  --login=$CC_EMAIL --tag=$T --registry=$R $S $NO_TLS || return 1
+    runPlaywrightTests "$PIT_SCR_FOLDER/its/$f" "" "$T" "control-center" \
+      --url=https://$CC_CONTROL --login=$CC_EMAIL --version=$CCVERSION \
+      --tag=$T --registry=$REGISTRY $S $NO_TLS || return 1
     if [ "$f" = cc-install-apps.js ]; then
       reloadIngress && checkTls || return 1
     fi
   done
 }
 
-compileBakery() {
-  computeMvn
-  checkoutDemo $CC_APP_REPO:cc-24.7 || return 1
-  setDemoVersion $CC_APP_REPO $VERSION >/dev/null || return 1
-  runToFile "'$MVN' -ntp -B clean install -Pproduction -DskipTests" "compile-bakery-no-cc.out" "$VERBOSE" || return 1
-  runCmd "Building Docker image for Bakery" docker build -t vaadin/bakery:local .  || return 1
-  runToFile "'$MVN' -ntp -B clean install -Pproduction,control-center -DskipTests" "compile-bakery-cc.out" "$VERBOSE" || return 1
-  runCmd "Building Docker image for Bakery-CC" docker build -t vaadin/bakery-cc:local .  || return 1
-  cmd "cd .." ; cd ..
-}
-
-compileCC() {
-  computeMvn
-  local D="-q -ntp"
-  [ -z "$VERBOSE" ] && D="-Dorg.slf4j.simpleLogger.showDateTime -Dorg.slf4j.simpleLogger.dateTimeFormat=HH:mm:ss.SSS"
-  runToFile "'$MVN' $D -B -pl :control-center-app -Pproduction -DskipTests -am install" "compile-ccapp.out" "$VERBOSE" || return 1
-  runToFile "'$MVN' $D -B -pl :control-center-app -Pproduction -Ddocker.tag=local docker:build" "build-ccapp-docker.out" "$VERBOSE" || return 1
-  runToFile "'$MVN' $D -B -pl :control-center-keycloak package -Ddocker.tag=local docker:build" "build-cckeycloak-docker.out" "$VERBOSE" || return 1
-}
-
-buildCC() {
-  if [ -z "$SKIPBUILD" ]; then
-    compileBakery || return 1
-    compileCC || return 1
-  fi
-  prepareRegistry || return 1
-  uploadLocalImages || return 1
-  runCmd -q "Update helm dependencies" helm dependency build charts/control-center
-}
-
 ## Main method for running control center
+# $1 Version of CC to test
+# $2 tag to use for application images
+# $3 whether it is CC snapshot
 runControlCenter() {
-  [ -z "$TEST" ] && echo "" && bold "----> Running builds and tests on app control-center version: '$1'"
-  [ -n "$TEST" ] && echo "" && cmd "### ------> Run PiT for: app=control-center version '$1' <------"
-
+  log -n "----> Running PiT for app: control-center version: '$1' tag: '$2' "
 
   ## Check if port 443 is busy
   [ -n "$TEST" ] || checkBusyPort "443" || return 1
@@ -271,8 +290,13 @@ runControlCenter() {
   ## Clean up CC from a previous run unless SKIPHELM is set
   [ -z "$SKIPHELM" ] && uninstallCC
 
+  ## Build CC and apps
+  [ "$2" != local ] || buildCC "$3" || return 1
+
   ## Install Control Center
   installCC $1 || return 1
+
+  [ -z "$TEST" ] && H=`isCCInstalled` && log "Installed Control-Center is: $H"
 
   ## Control center takes a long time to start
   waitForCC 900 || return 1
@@ -284,33 +308,30 @@ runControlCenter() {
   installTls && checkTls || return 1
 
   ## Run Playwright tests for the control-center
-  runPwTests "$1" || return 1
+  runPwTests "$1" "$2" "$3" || return 1
 
   ## Uninstall the control-center if --keep-cc is not set
   [ -n "$KEEPCC" ] || uninstallCC --wait=false || return 1
 
-  [ -z "$TEST" ] && bold "----> The version '$1' of 'control-center' app was successfully built and tested."
+  log "----> Tested version '$1' of 'control-center'"
 
   return 0
 }
 
+## Run PiT for Control Center
 validateControlCenter() {
   checkCommands docker kubectl helm unzip || return 1
   checkDockerRunning || return 1
   rm -rf screenshots.out
   ## Run control center in current version (stable)
   if [ -z "$NOCURRENT" ]; then
-    runControlCenter current || return 1
+    CCVERSION=`checkCurrentVersion $CCVERSION` || return 1
+    runControlCenter $CCVERSION latest || downloadLogs || return 1
   fi
   ## Run control center for provided version
   if [ "$VERSION" != "current" ]; then
-    runControlCenter `computeCCVersion $VERSION` || return 1
+    CCVERSION=`computeCCVersion $VERSION` || return 1
+    expr "$CCVERSION" : ".*SNAPSHOT" >/dev/null && H=true || H=""
+    runControlCenter $CCVERSION local $H || downloadLogs || return 1
   fi
 }
-
-
-
-
-
-
-

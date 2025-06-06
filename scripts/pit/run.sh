@@ -56,8 +56,8 @@ computeStarters() {
 ### MAIN
 main() {
   _start=$START
-
-  [ -z "$TEST" ] && log "===================== Running PiT Tests ============================================" \
+  [ -n "$TEST" ] && HEAD="Showing PiT Commands" || HEAD="Executing PiT Tests"
+  log "===================== $HEAD ====================================="
 
   ## Install playwright in the background (not used since there were some issues)
   # checkPlaywrightInstallation `computeAbsolutePath`/its/foo &
@@ -87,8 +87,7 @@ main() {
 
   ## Run presets (star.vaadin.com) or archetypes
   for i in $presets; do
-    [ -z "$TEST" ] && log "================= Executing PiT Tests '$i' $OFFLINE =================="
-    [ -n "$TEST" ] && echo "" && cmd "# ================= Showing PiT commands for '$i' $OFFLINE =================="
+    log -n "================= $HEAD for '$i' =================="
     if expr "$i" : '.*-hotswap' >/dev/null; then
       installJBRRuntime || continue
     elif [ -n "$JDK" ]; then
@@ -100,8 +99,7 @@ main() {
 
   ## Run demos (proper starters in github)
   for i in $demos; do
-    [ -z "$TEST" ] && log "================= Executing PiT Tests '$i' $OFFLINE =================="
-    [ -n "$TEST" ] && echo "" && cmd "# ================= Showing PiT commands for '$i' $OFFLINE =================="
+    log -n "================= $HEAD for '$i' =================="
     if expr $i : control-center >/dev/null; then
       cd "$tmp"
       checkoutDemo $i || return 1

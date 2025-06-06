@@ -27,6 +27,8 @@ checkoutDemo() {
     cmd "cd $_workdir"
     cd "$_workdir"
     runCmd -f "Reseting local changes in $_repo" "git reset --hard HEAD" || return 1
+    runCmd -f "Deleting preexisting .out files" "rm -rf *.out"
+
   fi
   [ -z "$_branch" ] || (cmd "git checkout $_branch" && git checkout $_quiet "$_branch")
 }

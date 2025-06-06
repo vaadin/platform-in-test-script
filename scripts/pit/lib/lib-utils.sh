@@ -91,6 +91,9 @@ printnl() {
 
 ## log with some nice color
 log() {
+  expr "$1" : "\-" > /dev/null && _opt=${1#-} && shift || _opt=""
+  [ "$_opt" = n ] && echo ""
+  [ -n "$TEST" ] && cmd "## $*" && return 0
   _p=`computeTime`
   print '> ' 0 32 "$*"
   printnl '' 2 36 " - "`computeTime`""
@@ -626,7 +629,7 @@ changeBlock() {
   rm -f $$-1
   [ -n "$__diff" ] && cmd "$_cmd" && __err=0 || __err=1
   [ -z "$TEST" -a -n "$__diff" -a "$__val" =  remove ] && warn "Remove $__left in $__bfile"
-  [ -z "$TEST" -a -n "$__diff" -a "$__val" != remove ] && warn "Changed '$__left' to '$__val' in $__bfile"
+  [ -z "$TEST" -a -n "$__diff" -a "$__val" != remove ] && warn "Changed '($__left)($__right)' to '$__val' in $__bfile"
   return $__err
 }
 
@@ -874,7 +877,7 @@ installJDKRuntime() {
 setJavaPath() {
   H=`find "$1" -name Home -type d`
   [ -z "$H" ] && H="$1"
-  [ -z "$TEST" ] && log "Setting JAVA_HOME=$H PATH=$H/bin:\$PATH" 
+  [ -z "$TEST" ] && log "Setting JAVA_HOME=$H PATH=$H/bin:\$PATH"
   [ -n "$TEST" ] && cmd "## Setting JAVA_HOME=$H PATH=$H/bin:\$PATH"
   [ ! -d "$H/bin" ] && return 1
   cmd "export PATH=$H/bin:\$PATH JAVA_HOME=$H"
@@ -995,4 +998,31 @@ computePropAfterPatch() {
     *typescript*|*hilla*|*react*|*-lit*) echo "hilla.version";;
     *) echo "vaadin.version";;
   esac
+}
+
+## return the version of one dependency in a maven project
+# $1 groupId
+# $2 artifactId
+# $3 extra arguments to pass to mvn
+getMvnDependencyVersion() {
+  [ ! -f pom.xml ] && warn "Not a maven project" && return 1
+  [ -z "$MVN" ] && computeMvn
+  "$MVN" dependency:tree $3 | grep "$1:$2" | grep INFO | sed -e 's|.*.INFO. ||g' | cut -d : -f4
+}
+
+## set dependency of one specific package in pom.xml
+# $1 groupId
+# $2 artifactId
+# $3 version
+# $4 extra arguments to pass to mvn
+setMvnDependencyVersion() {
+  expr "$3" : ".*SNAPSHOT" >/dev/null && _newVers=$3 || _newVers=`echo "$3" | tr - .`
+  _curVers=`getMvnDependencyVersion "$1" "$2" "$4"` || return 1
+  if [ "$_curVers" != "$_newVers" ]; then
+    changeBlock '<artifactId>'$2'</artifactId>' '\s+</dependency>' '${1}<version>'$_newVers'</version>${3}' pom.xml
+    _curVers=`getMvnDependencyVersion "$1" "$2" "$4"` || return 1
+    [ "$_curVers" != "$_newVers" ] && err "CC version mismatch $_curVers != $_newVers" && return 1
+  fi
+  log "App is using $1:$2:$_curVers"
+  return 0
 }

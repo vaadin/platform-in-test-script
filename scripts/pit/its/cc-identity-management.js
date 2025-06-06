@@ -112,6 +112,7 @@ const {log, err, args, createPage, closePage, takeScreenshot, waitForServerReady
     await pageApp.getByRole('button', {name: 'Sign In'}).click()
     await takeScreenshot(pageApp, __filename, `logged-in-${app}`);
     await expect(pageApp.getByRole('button', { name: 'New order' })).toBeVisible();
+    await closePage(pageApp);
 
     log('Cleaning up...\n');
     try {
@@ -142,13 +143,13 @@ const {log, err, args, createPage, closePage, takeScreenshot, waitForServerReady
         await page.getByLabel('Replicas').fill('1');
         await page.getByRole('button', { name: 'Update' }).click();
 
-        await pageApp.waitForTimeout(30000);
+        pageApp = await createPage(arg.headless, arg.ignoreHTTPSErrors);
         await waitForServerReady(pageApp, appUrl);
         await takeScreenshot(pageApp, __filename, 'app-after-cleanup');
     } catch (error) {
         err(`Error cleaning up: ${error}\n`);
         await takeScreenshot(page, __filename, 'error-cleaning');
     }
-    await closePage(pageApp);
     await closePage(page);
+    await closePage(pageApp);
 })();

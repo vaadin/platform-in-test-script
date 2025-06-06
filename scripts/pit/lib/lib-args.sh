@@ -21,13 +21,15 @@ Use: $0 with the next options:
  --skip-prod       Skip production validations
  --skip-dev        Skip dev-mode validations
  --skip-clean      Do not clean maven cache
- --skip-helm       Do not re-install control-center with helm and continue running tests, implies (--offline, --skip-build, --keep-cc)
+ --skip-helm       Do not re-install control-center with helm and continue running tests, implies (--offline, --keep-cc)
  --skip-pw         Do not run playwright tests
  --cluster=name    Run tests in an existing k8s cluster
  --vendor=name     Use a specific cluster vendor to run control-center tests options: [dd, kind, do] (default: kind)
  --keep-cc         Keep control-center running after tests
+ --keep-apps       Keep installed apps in control-center, implies --keep-cc
  --proxy-cc        Forward port 443 from k8s cluster to localhost
  --events-cc       Display events from control-center
+ --cc-version      Install this version for current
  --skip-build      Skip building the docker images for control-center
  --delete-cluster  Delete the cluster/s
  --dashboard=*     Install kubernetes dashboard, options [install, uninstall] (default: install)
@@ -51,7 +53,7 @@ EOF
 
 ## check arguments passed to `run.sh` script and set global variables
 checkArgs() {
-  VERSION=current; GITBASE="https://github.com/"; export PORT=$DEFAULT_PORT; TIMEOUT=$DEFAULT_TIMEOUT; VENDOR=kind
+  VERSION=current; GITBASE="https://github.com/"; export PORT=$DEFAULT_PORT; TIMEOUT=$DEFAULT_TIMEOUT; CLUSTER=pit; VENDOR=kind; CCVERSION=current
   while [ -n "$1" ]
   do
     arg=`echo "$1" | grep = | cut -d= -f2`
@@ -82,10 +84,15 @@ checkArgs() {
       --skip-prod) NOPROD=true;;
       --skip-pw) SKIPPW=true;;
       --cluster=*) CLUSTER="$arg";;
-      --vendor=*) VENDOR="$arg";;
-      --skip-helm) SKIPHELM=true; SKIPBUILD=true; OFFLINE=true; KEEPCC=true ;;
-      --skip-build) SKIPBUILD=true;;
+      --vendor=*)
+        VENDOR="$arg"
+        [ "$VENDOR" = dd ] && CLUSTER="docker-desktop"
+      ;;
+      --cc-version*) CCVERSION="$arg";;
       --keep-cc) KEEPCC=true;;
+      --keep-apps) KEEPAPPS=true;;
+      --skip-build) SKIPBUILD=true;;
+      --skip-helm)  OFFLINE=true; KEEPCC=true; SKIPHELM=true ;;
       --pnpm) PNPM="-Dpnpm.enable=true";;
       --vite) VITE=true;;
       --list*)
@@ -134,9 +141,7 @@ checkArgs() {
           VERBOSE=true runCmd "Running CC proxy" kubectl -n kubernetes-dashboard port-forward svc/kubernetes-dashboard-kong-proxy 8443:443
         fi
         exit ;;
-      --delete*)
-        deleteCluster
-        exit ;;
+      --delete-cluster) deleteCluster; exit ;;
       --git-ssh) GITBASE="git@github.com:" ;;
       --headless) HEADLESS=true ;;
       --headed)   HEADLESS=false ;;
@@ -145,7 +150,6 @@ checkArgs() {
     shift
   done
 
-  [ -z "$VENDOR" ] && VENDOR=kind
-  [ -z "$CLUSTER" -a "$VENDOR" = dd ] && CLUSTER="docker-desktop"
-  [ -z "$CLUSTER" ] && CLUSTER="pit"
+
+
 }

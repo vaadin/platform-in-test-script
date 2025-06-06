@@ -90,7 +90,7 @@ async function createPage(headless, ignoreHTTPSErrors) {
     const browser = await chromium.launch({
         headless: headless,
         chromiumSandbox: false,
-        slowMo: headless ? 400: 1000,
+        slowMo: process.env.FAST ? 0 : headless ? 400: 1000,
         args: ['--window-position=0,0']
     });
     const context = await browser.newContext({ignoreHTTPSErrors: ignoreHTTPSErrors, viewport: { width: 1792, height: 970 } });

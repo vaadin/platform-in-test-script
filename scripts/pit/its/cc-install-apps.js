@@ -1,9 +1,11 @@
 const { expect} = require('@playwright/test');
 const fs = require('fs');
-const {log, err, args, run, createPage, closePage, takeScreenshot, waitForServerReady} = require('./test-utils');
+const {log, args, run, createPage, closePage, takeScreenshot, waitForServerReady} = require('./test-utils');
 
 const arg = args();
 let count = 0;
+const gracePeriodSecs = 90;
+const waitForReadyMsecs = 185000;
 
 async function installApp(app, page) {
     const host = arg.url.replace(/^.*:\/\//, '').replace(/\/.*$/, '');
@@ -12,7 +14,7 @@ async function installApp(app, page) {
     const cert = [ domain, uri ].map(a => `${a}.pem`).filter( a => fs.existsSync(a))[0]
     const tag = arg.tag || 'latest';
     const registry = arg.registry || 'k8sdemos';
-    console.log(`Installing App: ${app} URI: ${uri} Cert: ${cert}`);
+    log(`Installing App: ${app} URI: ${uri} Cert: ${cert} Img: ${registry}/${app}:${tag}`);
 
     await page.getByRole('listitem').filter({ hasText: 'Settings'}).click()
     await page.getByRole('button', {name: /Create|New/}).click()
@@ -25,8 +27,20 @@ async function installApp(app, page) {
         await page.getByPlaceholder('Image Pull Secret').locator('input').fill(arg.secret);
         await takeScreenshot(page, __filename, `form-with-secret-${app}`);
     }
-    await page.getByLabel('Startup Delay (secs)').fill(process.env.GITHUB_ACTIONS ? '90' : '90');
+    await page.getByLabel('Startup Delay (secs)').fill(`${gracePeriodSecs}`);
+
+    await page.getByRole('button', {name: 'Environment Variable'}).click();
+    await takeScreenshot(page, __filename, `env-dialog-opened-${app}`);
+
+    const envDialog = page.getByRole('dialog', { name: 'Environment Variables' });
+    await envDialog.getByPlaceholder('Name').locator('input').fill('SPRING_FLYWAY_ENABLED');
+    await envDialog.getByPlaceholder('Value').locator('input').fill('false');
+    await envDialog.getByLabel("Add").click();
+    await takeScreenshot(page, __filename, `env-dialog-filled-${app}`);
+    await envDialog.getByLabel("Close").click();
+
     await page.getByLabel('Application URI', {exact: true}).locator('input[type="text"]').fill(uri)
+
     if (cert) {
         log(`Uploading certificate ${cert} for ${app}...\n`);
         await page.getByLabel('Upload').click();
@@ -37,7 +51,6 @@ async function installApp(app, page) {
         await takeScreenshot(page, __filename, `form-filled-${app}`);
         await page.locator('.detail-layout').getByRole('button', {name: 'Deploy'}).click();
     } else {
-        log(`No certificate found for ${app}...\n`);
         log(`No certificate found for ${app}\n`);
         run(`pwd`);
         run(`ls -l`);
@@ -70,27 +83,27 @@ async function installApp(app, page) {
     await page.getByRole('button', {name: 'Sign In'}).click()
     await takeScreenshot(page, __filename, 'logged-in');
 
-    for (const app of ['bakery-cc', 'bakery']) {
+    const apps = ['cc-starter', 'bakery-cc', 'bakery'];
+    for (const app of apps) {
         await installApp(app, page);
     }
 
     await takeScreenshot(page, __filename, 'installed-apps');
     const startTime = Date.now();
-    log(`Giving a grace period of 40 secs to wait for 2 apps to be avalable ...\n`);
-    await page.waitForTimeout(40000);
+    log(`Giving a grace period of ${gracePeriodSecs} secs to wait for ${apps.length} apps to be avalable ...\n`);
+    await page.waitForTimeout(gracePeriodSecs);
     await page.reload();
-    log(`Waiting for 2 applications to be available in dashboard ...\n`);
+    log(`Waiting for ${apps.length} applications to be available in dashboard ...\n`);
     await takeScreenshot(page, __filename, 'waiting for apps');
 
     const selector = 'vaadin-grid-cell-content span[theme="badge success"]';
-    await expect(page.locator(selector).nth(0)).toBeVisible({ timeout: 280000 });
-    const firstAppTime = (Date.now() - startTime) / 1000;
-    await takeScreenshot(page, __filename, 'app-1-available');
-    log(`First application is available after ${firstAppTime.toFixed(2)} seconds\n`);
 
-    await expect(page.locator(selector).nth(1)).toBeVisible({ timeout: 280000 });
-    const secondAppTime = (Date.now() - startTime) / 1000;
-    await takeScreenshot(page, __filename, 'app-2-available');
-    log(`Second application is available after ${secondAppTime.toFixed(2)} seconds\n`);
+    for (let i = 0; i < apps.length; i++) {
+        await expect(page.locator(selector).nth(i)).toBeVisible({ timeout: waitForReadyMsecs });
+        const firstAppTime = (Date.now() - startTime) / 1000;
+        await takeScreenshot(page, __filename, 'app-1-available');
+        log(`application ${i + 1} is available after ${firstAppTime.toFixed(2)} seconds\n`);
+    }
+
     await closePage(page);
 })();
