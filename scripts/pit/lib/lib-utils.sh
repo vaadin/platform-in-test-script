@@ -1018,9 +1018,11 @@ getMvnDependencyVersion() {
 setMvnDependencyVersion() {
   expr "$3" : ".*SNAPSHOT" >/dev/null && _newVers=$3 || _newVers=`echo "$3" | tr - .`
   _curVers=`getMvnDependencyVersion "$1" "$2" "$4"` || return 1
-  [ "$_curVers" = "$_newVers" ] && return
-  changeBlock '<artifactId>'$2'</artifactId>' '\s+</dependency>' '${1}<version>'$_newVers'</version>${3}' pom.xml
-  _curVers=`getMvnDependencyVersion "$1" "$2" "$4"` || return 1
-  [ "$_curVers" != "$_newVers" ] && err "CC version mismatch $_curVers != $_newVers" && return 1
+  if [ "$_curVers" != "$_newVers" ]; then
+    changeBlock '<artifactId>'$2'</artifactId>' '\s+</dependency>' '${1}<version>'$_newVers'</version>${3}' pom.xml
+    _curVers=`getMvnDependencyVersion "$1" "$2" "$4"` || return 1
+    [ "$_curVers" != "$_newVers" ] && err "CC version mismatch $_curVers != $_newVers" && return 1
+  fi
+  log "App is using $1:$2:$_curVers"
   return 0
 }
