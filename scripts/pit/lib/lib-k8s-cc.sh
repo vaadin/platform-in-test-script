@@ -261,9 +261,6 @@ runPwTests() {
   [ "$2" = local -a "$VENDOR" = do ] && R=$DO_REG_URL && S="--secret=$DO_REGST"
 
   for f in $CC_TESTS; do
-    [ -n "$SKIPSETUP" -a `basename $f` = "cc-setup.js" ] && continue
-    [ -n "$SKIPAPPS"  -a `basename $f` = "cc-install-apps.js" ] && continue
-    [ -n "$KEEPAPPS"  -a `basename $f` = "cc-remove-apps.js" ] && continue
     [ "$CLUSTER" == "docker-desktop" ] || stopForwardIngress && forwardIngress $CC_NS || return 1
     runPlaywrightTests "$PIT_SCR_FOLDER/its/$f" "" "$T" "control-center" \
       --url=https://$CC_CONTROL --login=$CC_EMAIL --version=$CCVERSION \

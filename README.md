@@ -1,12 +1,3 @@
-# [Platform-In-Test Script]
-
-# How To Use
-
-```
-./scripts/pit/run.sh --help
-```
-
-```
 Use: ./scripts/pit/run.sh with the next options:
 
  --version=string  Vaadin version to test, if not given it only tests current stable, otherwise it runs tests against current stable and then against given version.
@@ -24,8 +15,6 @@ Use: ./scripts/pit/run.sh with the next options:
  --skip-dev        Skip dev-mode validations
  --skip-clean      Do not clean maven cache
  --skip-helm       Do not re-install control-center with helm and continue running tests, implies (--offline, --keep-cc)
- --skip-setup      Like --skip-helm but also do not run first playwright setup test, implies --skip-build --skip-helm
- --skip-apps       Like --skip-setup but also do not run playwright install apps test, implies --skip-build --skip-setup
  --skip-pw         Do not run playwright tests
  --cluster=name    Run tests in an existing k8s cluster
  --vendor=name     Use a specific cluster vendor to run control-center tests options: [dd, kind, do] (default: kind)
@@ -118,7 +107,3 @@ Use: ./scripts/pit/run.sh with the next options:
                    · walking-skeleton:v24.7-hybrid
                    · releases-graph
                    · expo-flow
-```
-
-
-
