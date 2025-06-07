@@ -26,18 +26,24 @@ checkPlaywrightInstallation() {
 }
 
 ## Run playwright tests
+# $1 test file to run
+# $2 output file of the running server-side running in background to save
+# $3 mode (dev, prod)
+# $4 name of the app being tested
+# $5 platform version in test
 runPlaywrightTests() {
-  _test_file="$1"
-  _base_name=`basename "$1"`
-  _ofile="$2"
-  _mode="$3"
-  _name="$4"
-  shift 4
+  local _test_file="$1"
+  local _base_name=`basename "$1"`
+  local _ofile="$2"
+  local _mode="$3"
+  local _name="$4"
+  local _version="$5"
+  shift 5
 
-  _pfile="playwright-$_mode-"`uname`".out"
+  _pfile="playwright-$_version-$_mode-"`uname`".out"
   [ -f "$_test_file" ] && checkPlaywrightInstallation "$_test_file" || return 0
 
-  _args="$* --name=$_name --mode=$_mode"
+  _args="$* --name=$_name --version=$_version --mode=$_mode"
   isHeadless && _args="$_args --headless"
   log "Running visual test: $_base_name"
   PATH=$PATH START=$START runToFile "'$NODE' '$_test_file' $_args" "$_pfile" "$VERBOSE" true
@@ -46,7 +52,7 @@ runPlaywrightTests() {
   H=`grep ' > CONSOLE:' "$_pfile" | perl -pe 's/(> CONSOLE: Received xhr.*?feat":).*/$1 .../g'`
   H=`echo "$H" | egrep -v 'Atmosphere|Vaadin push loaded|Websocket successfully opened|Websocket closed|404.*favicon.ico'`
   [ -n "$H" ] && [ "$_mode" = "prod" ] && reportError "Console Warnings in $_mode mode $5" "$H" && echo "$H"
-  H=`grep ' > JSERROR:' "$_pfile"`
+  H=`egrep ' > (JSERROR|PAGEERROR):' "$_pfile"`
   [ -n "$H" ] && reportError "Console Errors in $_msg" "$H" && echo "$H" && return 1
   H=`tail -15 $_pfile`
   [ $err != 0 ] && reportOutErrors "$_ofile" "Error ($err) running Visual-Test ("`basename $_pfile`")" || echo ">>>> PiT: playwright '$_test_file' done" >> $__file
