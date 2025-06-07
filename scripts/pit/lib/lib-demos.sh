@@ -26,11 +26,11 @@ checkoutDemo() {
   else
     cmd "cd $_workdir"
     cd "$_workdir"
-    runCmd -f "Reseting local changes in $_repo" "git reset --hard HEAD" || return 1
+    runCmd -f "Reseting local changes in $_repo" "git reset $_quiet --hard HEAD" || return 1
     runCmd -f "Deleting preexisting .out files" "rm -rf *.out"
 
   fi
-  [ -z "$_branch" ] || (cmd "git checkout $_branch" && git checkout $_quiet "$_branch")
+  [ -z "$_branch" ] || (cmd "git checkout $_quiet $_branch" && git checkout $_quiet "$_branch")
 }
 ## returns the github repo URL of a demo
 getGitRepo() {
@@ -146,7 +146,7 @@ getInstallCmdDev() {
     *-gradle) echo "$GRADLE clean" ;;
     multi-module-example) echo "$MVN -ntp -B clean install -DskipTests $PNPM";;
     start) echo "rm -rf package-lock.json node_modules target frontend/generated; $MVN -ntp -B clean";;
-    *) echo "$MVN -ntp -B clean -DskipTests $PNPM";;
+    *) echo "$MVN -ntp -B clean $PNPM";;
   esac
 }
 ## Get install command for prod-mode
