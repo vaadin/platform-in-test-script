@@ -282,6 +282,7 @@ getTest() {
 ## $1: name of the demo
 ## $2: version to set
 setDemoVersion() {
+  [ -z "$2" ] && return 1
   case "$1" in
     base-starter-flow-quarkus|mpr-demo)
        if setVersion vaadin.version "$2"; then
@@ -346,6 +347,7 @@ runDemo() {
 
   if [ -z "$NOCURRENT" ]
   then
+    bold -n ">>> PiT current $_demo"
     _current=`setDemoVersion $_demo current`
     [ -z "$_current" ] && reportError "Cannot get current version for $_demo"
     # 2
@@ -360,8 +362,9 @@ runDemo() {
     fi
   fi
   # 5
-  if setDemoVersion $_demo $_version >/dev/null || [ -n "$NOCURRENT" ]
+  if setDemoVersion $_demo $_version >/dev/null
   then
+    bold -n ">>> PiT next $_demo"
     applyPatches "$_demo" next "$_version" prod || return 1
     if hasDev $_demo; then
       # 6

@@ -221,7 +221,7 @@ patchDeployment() {
 uploadLocalImages() {
   case "$VENDOR" in
     kind)
-      echo "" && log "** Loading images for vendor KinD **"
+      log -n "** Loading images for vendor KinD **"
       for i in bakery bakery-cc cc-starter; do
         runCmd -q "Load docker image $i for Kind" \
           kind load docker-image $REGISTRY/$i:local --name "$CLUSTER" || return 1
@@ -233,7 +233,7 @@ uploadLocalImages() {
       done
       ;;
     do)
-      echo "" && log "** Loading images for vendor DO **"
+      log -n "** Loading images for vendor DO **"
       for i in cbakery bakery-cc cc-starter; do
         runCmd -q "Tag image $i" docker tag $REGISTRY/$i:local $DO_REG_URL/$i:local || return 1
         runCmd -q "PUSH image $i" docker push $DO_REG_URL/$i:local || return 1

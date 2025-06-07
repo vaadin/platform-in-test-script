@@ -36,10 +36,7 @@ runValidations() {
   [ "$mode" = prod ] && expr "$compile" : "$MVN" >/dev/null && compile="$compile -Dmaven.compiler.showDeprecation"
   [ "$mode" = prod ] && expr "$cmd" : "$MVN" >/dev/null && cmd="$cmd -Dmaven.compiler.showDeprecation"
 
-
-  echo "" >&2
-  [ -z "$TEST" ] && bold "----> Running builds and tests on app $name, mode=$mode, port=$port, version=$version, mvn=$MVN"
-  [ -n "$TEST" ] && cmd "### Run PiT for: app=$name mode=$mode version=$version"
+  bold -n "--> Run PiT for: app=name, mode=$mode, port=$port, version=$version, mvn=$MVN"
   [ -n "$MAVEN_ARGS" ] && cmd "## MAVEN_ARGS='$MAVEN_ARGS'"
   [ -n "$MAVEN_OPTS" ] && cmd "## MAVEN_OPTS='$MAVEN_OPTS'"
 

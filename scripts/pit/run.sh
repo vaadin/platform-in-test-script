@@ -26,7 +26,7 @@ DEFAULT_STARTERS=`echo "$PRESETS$DEMOS" | grep ...`
 run() {
   $1 "$2" "$3" "$PORT" "$VERSION" "$OFFLINE"
   _err=$?
-  [ -n "$TEST" ] && cleanAll && echo ""  && return 0
+  [ -n "$TEST" ] && cleanAll && printnl && return 0
   if [ $_err = 0 ]; then
     log "==== '$2' was build and tested successfuly ===="
     success="$success $2"

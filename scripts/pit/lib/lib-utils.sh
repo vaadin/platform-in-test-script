@@ -90,25 +90,32 @@ printnl() {
 }
 
 ## log with some nice color
-log() {
+isnl() {
   expr "$1" : "\-" > /dev/null && _opt=${1#-} && shift || _opt=""
-  [ "$_opt" = n ] && echo ""
+  [ "$_opt" = n ] && echo "" >&2 || return 1
+  true
+}
+log() {
+  isnl $1 && shift
   [ -n "$TEST" ] && cmd "## $*" && return 0
-  _p=`computeTime`
   print '> ' 0 32 "$*"
   printnl '' 2 36 " - "`computeTime`""
 }
 bold() {
-  print '\n> ' 1 32 "$*"
-  printnl '' 2 36 " - "`computeTime`"\n"
+  isnl $1 && shift
+  [ -n "$TEST" ] && cmd "## $*" && return 0
+  print '> ' 1 32 "$*"
+  printnl '' 2 36 " - "`computeTime`""
 }
 err() {
   printnl '> ' 0 31 "$*"
 }
 warn() {
+  isnl $1 && shift
   printnl '> ' 0 33 "$*"
 }
 cmd() {
+  isnl $1 && shift
   cmd_=`printf "$*" | tr -s " " | perl -pe 's|\n|\\\\\\\n|g'`
   printnl '  ' 1 34 " $cmd_"
 }

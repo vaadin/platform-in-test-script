@@ -145,7 +145,7 @@ waitForCC() {
           log -n "Control Center up and running - Status: $H"
           return 0 ;;
         *)
-          [ "$H" != "$last" ] && ([ -n "$VERBOSE" -a -n "$last" ] && echo "" || true) \
+          [ "$H" != "$last" ] && ([ -n "$VERBOSE" -a -n "$last" ] && printnl || true) \
                               && log "Control center initializing - Status: $H" \
                               || ([ -n "$VERBOSE" ] && printf .)
           last="$H"
@@ -276,7 +276,7 @@ runPwTests() {
 # $2 tag to use for application images
 # $3 whether it is CC snapshot
 runControlCenter() {
-  log -n "----> Running PiT for app: control-center version: '$1' tag: '$2' "
+  bold -n "----> Running PiT for app: control-center version: '$1' tag: '$2' "
 
   ## Check if port 443 is busy
   [ -n "$TEST" ] || checkBusyPort "443" || return 1
@@ -313,7 +313,7 @@ runControlCenter() {
   ## Uninstall the control-center if --keep-cc is not set
   [ -n "$KEEPCC" ] || uninstallCC --wait=false || return 1
 
-  log "----> Tested version '$1' of 'control-center'"
+  bold "----> Tested version '$1' of 'control-center'"
 
   return 0
 }
