@@ -121,6 +121,8 @@ installCC() {
   if [ $? != 0 ]; then
     err "!! Error installing control-center with helm, trying a second time !!"
     uninstallCC
+    log "sleeping 30 secs"
+    sleep 30
     runToFile "$helmCmd" "helm-install-$1-2.out" "$VERBOSE" || return 1
   fi
 
