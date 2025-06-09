@@ -31,6 +31,9 @@ const { log, args, createPage, closePage, takeScreenshot, waitForServerReady } =
     await page.locator('vaadin-text-field input').fill('bar');
     await page.getByRole('button', { name: 'Say hello' }).click();
     await takeScreenshot(page, __filename, 'react-clicked');
+    // workaround: redo the click to trigger the notification show
+    // reason: on windows, takeScreenshot takes more time than linux
+    await page.getByRole('button', { name: 'Say hello' }).click();
     await expect(page.locator('vaadin-notification-container')).toContainText('Hello bar');
     await takeScreenshot(page, __filename, 'react-result');
 
