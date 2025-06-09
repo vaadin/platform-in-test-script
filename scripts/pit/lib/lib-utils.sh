@@ -219,10 +219,10 @@ runCmd() {
     kill -0 $_pid 2>/dev/null || return 1
   else
     if [ -n "$VERBOSE" ]; then
-      eval "$_cmd" | tee -a runCmd.out
+      GHTK= GITHUB_TOKEN= OPENAI_TOKEN= CC_CERT= CC_KEY= eval "$_cmd" | tee -a runCmd.out
       _err=$?
     else
-      eval "trap 'trap - INT; kill -INT '$$'' INT; $_cmd" > runCmd.out 2>&1
+      GHTK= GITHUB_TOKEN= OPENAI_TOKEN= CC_CERT= CC_KEY= eval "trap 'trap - INT; kill -INT '$$'' INT; $_cmd" > runCmd.out 2>&1
       _err=$?
     fi
     [ $_err != 0 -a -z "$VERBOSE" -a -n "$_silent" ] && cat runCmd.out >&2
@@ -254,14 +254,14 @@ runToFile() {
   if [ -z "$__verbose" ]
   then
     if [ -z "$__stdout" ]; then
-      eval "$__cmd" >> "$__file" 2>&1
+      GHTK= GITHUB_TOKEN= OPENAI_TOKEN= CC_CERT= CC_KEY= eval "$__cmd" >> "$__file" 2>&1
       err=$?
     else
       eval "$__cmd" >> "$__file"
       err=$?
     fi
   else
-    eval "$__cmd" 2>&1 | tee -a "$__file"
+    GHTK= GITHUB_TOKEN= OPENAI_TOKEN= CC_CERT= CC_KEY= eval "$__cmd" 2>&1 | tee -a "$__file"
     err=$?
   fi
   [ $err != 0 ] && reportOutErrors "$__file" "Error ($err) running $__cmd" && return 1 || return 0
@@ -285,7 +285,7 @@ runInBackgroundToFile() {
     tail -f "$__file" &
     pid_tail=$!
   fi
-  $__cmd >> "$__file" 2>&1 &
+  GHTK= GITHUB_TOKEN= OPENAI_TOKEN= CC_CERT= CC_KEY= $__cmd >> "$__file" 2>&1 &
   pid_run=$!
   sleep 2
   kill -0 $pid_run 2>/dev/null || return 1
