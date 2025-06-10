@@ -186,6 +186,7 @@ getRunCmdDev() {
     multi-module-example) echo "$MVN -ntp -B spring-boot:run -pl vaadin-app";;
     spring-petclinic-vaadin-flow|gs-crud-with-vaadin) echo "$MVN -ntp -B spring-boot:run";;
     form-filler-demo) echo "$MVN -ntp -B $PNPM -DOPENAI_TOKEN=$OPENAI_TOKEN";;
+    releases*) echo "$MVN -ntp -B $PNPM -DGITHUB_TOKEN=$GHTK";;
     *) echo "$MVN -ntp -B $PNPM";;
   esac
 }
@@ -209,6 +210,7 @@ getRunCmdPrd() {
       done
       echo "java $H -jar target/*.jar";;
     form-filler-demo) echo "java -DOPENAI_TOKEN=$OPENAI_TOKEN -jar target/*.jar";;
+    releases*) echo "java -DGITHUB_TOKEN=$GHTK -jar target/*.jar";;
     *) echo "java -jar target/*.jar" ;;
   esac
 }

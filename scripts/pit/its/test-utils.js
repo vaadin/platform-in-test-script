@@ -159,7 +159,9 @@ async function dismissDevmode(page) {
   }
   if (await dismiss.count()) {
     dismiss.click()
+    return true;
   }
+  return false;
 }
 
 module.exports = {
