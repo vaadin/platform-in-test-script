@@ -36,6 +36,9 @@ async function installApp(app, page) {
     await envDialog.getByPlaceholder('Name').locator('input').fill('SPRING_FLYWAY_ENABLED');
     await envDialog.getByPlaceholder('Value').locator('input').fill('false');
     await envDialog.getByLabel("Add").click();
+    await envDialog.getByPlaceholder('Name').locator('input').fill('SHOW_INFO');
+    await envDialog.getByPlaceholder('Value').locator('input').fill('true');
+    await envDialog.getByLabel("Add").click();
     await takeScreenshot(page, __filename, `env-dialog-filled-${app}`);
     await envDialog.getByLabel("Close").click();
 

@@ -9,6 +9,10 @@
 ##   These especial patches are loaded and applied in this script
 
 ## Run after updating Vaadin/Hilla versions in order to patch sources
+# $1 application/starter name
+# $2 type (current | next)
+# $3 version
+# $4 mode (dev | prod)
 applyPatches() {
   app_=$1; type_=$2; vers_=$3; mod_=$4
   [ -n "$TEST" ] || log "Applying Patches for $app_ $type_ $vers_"
@@ -47,7 +51,8 @@ applyPatches() {
       ;;
   esac
   case "$vers_" in
-    24.8.0.beta1) runCmd "Installing magic-string for $vers_" "npm i -S magic-string";;
+    # 24.8.0.beta1) runCmd "Installing magic-string for $vers_" "npm i -S magic-string";;
+    24.8.0*) changeMavenBlock parent org.springframework.boot spring-boot-starter-parent 3.5.0 ;;
   esac
 
   # always successful
