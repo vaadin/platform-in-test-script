@@ -12,7 +12,7 @@ compileBakery() {
   computeMvn
   checkoutDemo $CC_APP_REPO || return 1
   setDemoVersion $CC_APP_REPO $VERSION >/dev/null || return 1
-  applyPatches $APP "" $APP "" || return 1
+  applyPatches $APP next "$VERSION" prod || return 1
   setMvnDependencyVersion com.vaadin control-center-starter "$CCVERSION" "-Pcontrol-center" || return 1
   runToFile "'$MVN' -ntp -B clean install -Pproduction -DskipTests" "compile-$APP.out" "$VERBOSE" || return 1
   runCmd "Building Docker image for $APP" docker build -t $REGISTRY/$APP:local .  || return 1
