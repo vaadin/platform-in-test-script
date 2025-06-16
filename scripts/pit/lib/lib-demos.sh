@@ -7,15 +7,14 @@
 ## we add GITHUB_TOKEN or GHTK environment variable to the URL
 ## $1: the name of the demo in the form of `repo[:branch][/folder]`
 checkoutDemo() {
-  _demo=`getGitDemo $1`
-  _branch=`getGitBranch $1`
-  _folder=`getGitFolder $1`
-  _workdir="$_demo$_folder"
-  _repo=`getGitRepo $1`
-  _tk=${GITHUB_TOKEN:-${GHTK}}
-  _base=${GITBASE:-https://gitub.com/}
-  [ -n "$_tk" ] && _base=`echo "$_base" | sed -e 's|\(https://\)|\\1'$_tk'@|'`
-  _gitUrl="${_base}${_repo}.git"
+  local _demo=`getGitDemo $1`
+  local _branch=`getGitBranch $1`
+  local _folder=`getGitFolder $1`
+  local _workdir="$_demo$_folder"
+  local _repo=`getGitRepo $1`
+  local _base=${GITBASE:-https://gitub.com/}
+  [ -n "$GHTK" ] && _base=`echo "$_base" | sed -e 's|\(https://\)|\\1'$GHTK'@|'`
+  local _gitUrl="${_base}${_repo}.git"
   [ -z "$VERBOSE" ] && _quiet="-q"
   if [ -z "$OFFLINE" -o ! -d "$_workdir" ]
   then
@@ -28,7 +27,6 @@ checkoutDemo() {
     cd "$_workdir"
     runCmd -f "Reseting local changes in $_repo" "git reset $_quiet --hard HEAD" || return 1
     runCmd -f "Deleting preexisting .out files" "rm -rf *.out"
-
   fi
   [ -z "$_branch" ] || (cmd "git checkout $_quiet $_branch" && git checkout $_quiet "$_branch")
 }
@@ -186,7 +184,6 @@ getRunCmdDev() {
     multi-module-example) echo "$MVN -ntp -B spring-boot:run -pl vaadin-app";;
     spring-petclinic-vaadin-flow|gs-crud-with-vaadin) echo "$MVN -ntp -B spring-boot:run";;
     form-filler-demo) echo "$MVN -ntp -B $PNPM -DOPENAI_TOKEN=$OPENAI_TOKEN";;
-    releases*) echo "$MVN -ntp -B $PNPM -DGITHUB_TOKEN=$GHTK";;
     *) echo "$MVN -ntp -B $PNPM";;
   esac
 }
@@ -210,7 +207,6 @@ getRunCmdPrd() {
       done
       echo "java $H -jar target/*.jar";;
     form-filler-demo) echo "java -DOPENAI_TOKEN=$OPENAI_TOKEN -jar target/*.jar";;
-    releases*) echo "java -DGITHUB_TOKEN=$GHTK -jar target/*.jar";;
     *) echo "java -jar target/*.jar" ;;
   esac
 }

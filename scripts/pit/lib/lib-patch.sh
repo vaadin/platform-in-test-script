@@ -49,6 +49,9 @@ applyPatches() {
       [ -n "$TEST" ] || log "Fixing quarkus dependencyManagement https://vaadin.com/docs/latest/flow/integrations/quarkus#quarkus.vaadin.knownissues"
       moveQuarkusBomToBottom
       ;;
+    releases-graph)
+      setPropertyInFile src/main/resources/application.properties github.personal.token $GHTK
+      ;;
   esac
   case "$vers_" in
     # 24.8.0.beta1) runCmd "Installing magic-string for $vers_" "npm i -S magic-string";;

@@ -27,6 +27,7 @@ runValidations() {
   [ -n "$6" ] && cmd="$6" || cmd=""
   [ -n "$7" ] && check="$7" || check=""
   [ -n "$8" ] && test="$PIT_SCR_FOLDER/its/$8" || test=""
+  local GHTK= GITHUB_TOKEN=
 
   ## start takes a long to compile the frontend in dev-mode
   [ "$name" = "start" -a "$TIMEOUT" -le "300" ] && timeout=500 || timeout="$TIMEOUT"

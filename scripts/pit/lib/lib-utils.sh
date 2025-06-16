@@ -702,7 +702,7 @@ setPropertyInFile() {
   __file=$1; __key=$2; __val=$3
   [ ! -f "$__file" ] && return 0
   cp $__file $$-1
-  __cur=`egrep ' *'$__key $__file | tr ':' '=' | cut -d "=" -f2`
+  __cur=`egrep ' *'$__key $__file | tr ':' '=' | cut -d "=" -f2-`
   if [ "$__val" = remove ]; then
     _cmd="perl -pi -e 's|\s*($__key)\s*([=:]).*||g' $__file"
           perl -pi -e 's|\s*('$__key')\s*([=:]).*||g' $__file

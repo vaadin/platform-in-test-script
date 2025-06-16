@@ -145,6 +145,7 @@ checkArgs() {
       --git-ssh) GITBASE="git@github.com:" ;;
       --headless) HEADLESS=true ;;
       --headed)   HEADLESS=false ;;
+      --ghtk=*)   GHTK=$arg ;;
       *) echo "Unknown option: $1" && usage && exit 1;;
     esac
     shift

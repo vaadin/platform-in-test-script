@@ -162,6 +162,7 @@ setStartVersion() {
 # 5. run validations for the new version in dev-mode
 # 6. run validations for the new version in prod-mode
 runStarter() {
+  local GHTK= GITHUB_TOKEN=
   # 0
   MVN=mvn
   _preset="$1"
