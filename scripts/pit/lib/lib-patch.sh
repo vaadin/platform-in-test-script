@@ -55,7 +55,11 @@ applyPatches() {
   esac
   case "$vers_" in
     # 24.8.0.beta1) runCmd "Installing magic-string for $vers_" "npm i -S magic-string";;
-    24.8.0*) changeMavenBlock parent org.springframework.boot spring-boot-starter-parent 3.5.0 ;;
+    24.8.0*)
+      changeMavenBlock parent org.springframework.boot spring-boot-starter-parent 3.5.0 || return 0
+      [ "$app_" = spring-petclinic-vaadin-flow ] &&
+        changeBlock 'SELECT\sptype' 'FROM\sPetType' '${3}' src/main/java/org/springframework/samples/petclinic/backend/owner/PetRepository.java
+    ;;
   esac
 
   # always successful

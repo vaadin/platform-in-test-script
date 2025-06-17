@@ -234,7 +234,7 @@ uploadLocalImages() {
       ;;
     do)
       log -n "** Loading images for vendor DO **"
-      for i in cbakery bakery-cc cc-starter; do
+      for i in bakery bakery-cc cc-starter; do
         runCmd -q "Tag image $i" docker tag $REGISTRY/$i:local $DO_REG_URL/$i:local || return 1
         runCmd -q "PUSH image $i" docker push $DO_REG_URL/$i:local || return 1
       done
