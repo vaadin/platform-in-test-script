@@ -267,7 +267,7 @@ runPwTests() {
     [ "$CLUSTER" == "docker-desktop" ] || stopForwardIngress && forwardIngress $CC_NS || return 1
     runPlaywrightTests "$PIT_SCR_FOLDER/its/$f" "" "$T" "control-center" "$CCVERSiON" \
       --url=https://$CC_CONTROL --login=$CC_EMAIL \
-      --tag=$T --registry=$REGISTRY $S $NO_TLS || return 1
+      --tag=$T --registry=$R $S $NO_TLS || return 1
     if [ "$f" = cc-install-apps.js ]; then
       reloadIngress && checkTls || return 1
     fi
