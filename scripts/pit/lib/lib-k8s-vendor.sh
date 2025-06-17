@@ -240,8 +240,7 @@ uploadLocalImages() {
       done
       [ "$1" != true ] && return
       for i in control-center-app control-center-keycloak; do
-        expr "$i" : "^control-center" >/dev/null && R=vaadin || R=$REGISTRY
-        runCmd -q "Tag image $i" docker tag $vaadin/$i:local $DO_REG_URL/$i:local || return 1
+        runCmd -q "Tag image $i" docker tag vaadin/$i:local $DO_REG_URL/$i:local || return 1
         runCmd -q "PUSH image $i" docker push $DO_REG_URL/$i:local || return 1
       done
       ;;
