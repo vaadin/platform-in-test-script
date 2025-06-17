@@ -38,12 +38,12 @@ checkCurrentVersion() {
   echo $V
 }
 
-
-
 ## Given a platform version check what is the corresponding CC version
 # $1 platform version
 computeCCVersion() {
   [ -z "$1" ] && return
+  V=`getVersionFromPlatform "$1" control.center`
+  [ -n "$V" ] && echo "$V" | sed -E 's/^(.*)\.([a-z]+[0-9]+)$/\1-\2/' && return
   git fetch --tags -q
   for i in `git tag | sort -r`; do
     local vVersion=`git show $i:pom.xml 2>/dev/null | grep '<vaadin.components.version>' | cut -d '>' -f2 | cut -d '<' -f1`
