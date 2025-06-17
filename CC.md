@@ -4,6 +4,9 @@
 ##### Run proxy
 ./scripts/pit/run.sh --proxy
 
+##### Run proxy for a specific cluster
+./scripts/pit/run.sh --vendor=kind --cluster=pit --proxy
+
 ##### Delete cluster in DO
 ./scripts/pit/run.sh --proxy --delete --vendor=do
 
