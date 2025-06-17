@@ -78,25 +78,26 @@ downloadLogs() {
 
 ## Install Control Center with Helm
 # $1 control center version
+# $2 true when version is SNAPSHOT
 installCC() {
   log -n "** Installing Control Center $1 with Helm **"
 
   [ -n "$CC_KEY" -a -n "$CC_CERT" ] && args="--set app.tlsSecret=$CC_TLS_A --set keycloak.tlsSecret=$CC_TLS_K" || args=""
 
-  case "$1" in
-    *SNAPSHOT) args="$args charts/control-center --set app.image.tag=local --set keycloak.image.tag=local" ;;
-    current)   args="$args oci://docker.io/vaadin/control-center" ;;
-    "")        err "Unable to compute CC version for platform version '$VERSION'" && return 1 ;;
-    *)         args="$args oci://docker.io/vaadin/control-center --version $1" ;;
-  esac
+  if [ "$2" = true ]; then
+    args="$args charts/control-center --set app.image.tag=local --set keycloak.image.tag=local"
+    [ -n "$DO_REG_URL" ] && args="$args \
+      --set app.image.repository=$DO_REG_URL/control-center-app \
+      --set keycloak.image.repository=$DO_REG_URL/control-center-keycloak"
+  elif [ "$1" = current ]; then
+    args="$args oci://docker.io/vaadin/control-center"
+  else
+    args="$args oci://docker.io/vaadin/control-center --version $1"
+  fi
 
   [ -z "$TEST" ] && log "Installing Control Center with version: $1"
   [ -n "$SKIPHELM" ] && H=`kubectl get pods 2>&1` && echo "$H" | egrep -q 'control-center-[0-9abcdef]+-..... ' && return 0
   [ -n "$VERBOSE" ] && D=--debug || D=""
-
-  [ -n "$DO_REG_URL" ] && args="$args \
-    --set app.image.repository=$DO_REG_URL/control-center-app \
-    --set keycloak.image.repository=$DO_REG_URL/control-center-keycloak"
 
   # TODO: this does not work and it's necessary the patchDeployment below
   # [ -n "$DO_REG_URL" ] && args="$args \
@@ -296,7 +297,7 @@ runControlCenter() {
   [ "$2" != local ] || buildCC "$3" || return 1
 
   ## Install Control Center
-  installCC $1 || return 1
+  installCC $1 $3 || return 1
 
   [ -z "$TEST" ] && H=`isCCInstalled` && log "Installed Control-Center is: $H"
 

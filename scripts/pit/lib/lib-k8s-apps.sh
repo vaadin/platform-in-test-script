@@ -31,7 +31,7 @@ compileCCStarter() {
   for i in $APPS
   do
     PRESETS="$PRESETS&preset=$i"
-  done  
+  done
   _url="https://start.vaadin.com/dl?$PRESETS&projectName=$APP"
   _zip="$APP.zip"
   _dir="$APP"
@@ -75,10 +75,10 @@ buildCC() {
     compileCCStarter || return 1 ; cd $D
     compileBakery || return 1 ; cd $D
   fi
-  [ -n "$SKIPHELM" ] || runCmd -q "Update helm dependencies" helm dependency build charts/control-center
+  [ -n "$SKIPHELM" -o "$1" != true ] || runCmd -q "Update helm dependencies" helm dependency build charts/control-center
   prepareRegistry || return 1
   uploadLocalImages "$1" || return 1
-  [ -z "$CCPUSH" ] || pushLocalToDockerhub next 
+  [ -z "$CCPUSH" ] || pushLocalToDockerhub next
 }
 
 
