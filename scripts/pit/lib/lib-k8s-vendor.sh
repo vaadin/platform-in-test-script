@@ -261,12 +261,12 @@ checkDockerPushPermissions() {
 ## it is enabled by setting the env PUSH=true
 # $1 tag (default next)
 pushLocalToDockerhub() {
-  _tag=${1-next}
+  _tag=${1:-next}
   checkDockerPushPermissions || {
     err "You dont have permissions to push to docker.io/$REGISTRY "; return 1
   }
   for i in bakery bakery-cc cc-starter; do
-    runCmd -q "TAG local image as $1" docker taga $REGISTRY/i:local $REGISTRY/$i:$_tag || return 1
+    runCmd -q "TAG local image as $1" docker tag $REGISTRY/$i:local $REGISTRY/$i:$_tag || return 1
     runCmd -q "PUSH image $i to docker.io" docker push $REGISTRY/$i:$_tag || return 1
   done
 }
