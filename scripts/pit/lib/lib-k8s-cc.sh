@@ -4,7 +4,7 @@
 . `dirname $0`/lib/lib-k8s-apps.sh
 
 ## Domain and Host Configuration
-CC_DOMAIN=local.alcala.org
+CC_DOMAIN=${CC_DOMAIN:-local.alcala.org}
 CC_CONTROL=control.$CC_DOMAIN
 CC_AUTH=auth.$CC_DOMAIN
 CC_EMAIL=admin@$CC_DOMAIN
