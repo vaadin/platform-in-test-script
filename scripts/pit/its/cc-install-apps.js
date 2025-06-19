@@ -4,7 +4,7 @@ const {log, args, run, createPage, closePage, takeScreenshot, waitForServerReady
 
 const arg = args();
 let count = 0;
-const gracePeriodSecs = 90;
+const gracePeriodSecs = process.env.FAST ? 20: 90;
 const waitForReadyMsecs = 185000;
 
 async function installApp(app, page) {
@@ -29,18 +29,16 @@ async function installApp(app, page) {
     }
     await page.getByLabel('Startup Delay (secs)').fill(`${gracePeriodSecs}`);
 
-    await page.getByRole('button', {name: 'Environment Variable'}).click();
-    await takeScreenshot(page, __filename, `env-dialog-opened-${app}`);
-
-    const envDialog = page.getByRole('dialog', { name: 'Environment Variables' });
-    await envDialog.getByPlaceholder('Name').locator('input').fill('SPRING_FLYWAY_ENABLED');
-    await envDialog.getByPlaceholder('Value').locator('input').fill('false');
-    await envDialog.getByLabel("Add").click();
-    await envDialog.getByPlaceholder('Name').locator('input').fill('SHOW_INFO');
-    await envDialog.getByPlaceholder('Value').locator('input').fill('true');
-    await envDialog.getByLabel("Add").click();
-    await takeScreenshot(page, __filename, `env-dialog-filled-${app}`);
-    await envDialog.getByLabel("Close").click();
+    if (/bakery/.test(app)) {
+        await page.getByRole('button', {name: 'Environment Variable'}).click();
+        await takeScreenshot(page, __filename, `env-dialog-opened-${app}`);
+        const envDialog = page.getByRole('dialog', { name: 'Environment Variables' });
+        await envDialog.getByPlaceholder('Name').locator('input').fill('SHOW_INFO');
+        await envDialog.getByPlaceholder('Value').locator('input').fill('true');
+        await takeScreenshot(page, __filename, `env-dialog-filled-${app}`);
+        await envDialog.getByLabel("Add").click();
+        await envDialog.getByLabel("Close").click();
+    }
 
     await page.getByLabel('Application URI', {exact: true}).locator('input[type="text"]').fill(uri)
 
@@ -94,7 +92,7 @@ async function installApp(app, page) {
     await takeScreenshot(page, __filename, 'installed-apps');
     const startTime = Date.now();
     log(`Giving a grace period of ${gracePeriodSecs} secs to wait for ${apps.length} apps to be avalable ...\n`);
-    await page.waitForTimeout(gracePeriodSecs);
+    await page.waitForTimeout(gracePeriodSecs * 1000);
     await page.reload();
     log(`Waiting for ${apps.length} applications to be available in dashboard ...\n`);
     await takeScreenshot(page, __filename, 'waiting for apps');
