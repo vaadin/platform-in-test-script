@@ -27,7 +27,7 @@ const {log, args, createPage, closePage, takeScreenshot, waitForServerReady, dis
     await page.getByLabel(labelRegex).click();
 
     await takeScreenshot(page, __filename, `element-${labelRegex}-clicked`);
-    let selector = `path.highcharts-point[aria-label*="${arg.version}"]`
+    let selector = `path.highcharts-point[aria-label*="${arg.version},"]`
     await expect(page.getByLabel('Interactive chart').locator(selector)).toBeVisible();
     await takeScreenshot(page, __filename, `interactive-chart-${arg.version}-loaded`);
 

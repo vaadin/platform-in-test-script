@@ -111,8 +111,7 @@ jobs:
       - name: Run PiT
         run: |
           echo ./scripts/pit/run.sh ${{env.PIT_ARGS}}
-          ./scripts/pit/run.sh ${{env.PIT_ARGS}} --test
-          ./scripts/pit/run.sh ${{env.PIT_ARGS}}
+          ./scripts/pit/run.sh ${{env.PIT_ARGS}} --ghtk=${{secrets.GHTK}}
         shell: bash
       # - if: ${{failure()}}
       #   name: Setup upterm session
