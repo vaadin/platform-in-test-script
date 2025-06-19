@@ -1,6 +1,6 @@
 const { expect } = require('@playwright/test');
 const fs = require('fs');
-const { log, err, args, run, createPage, closePage, takeScreenshot, waitForServerReady } = require('./test-utils');
+const { log, err, args, warn, run, createPage, closePage, takeScreenshot, waitForServerReady } = require('./test-utils');
 const { assert } = require('console');
 
 (async () => {
@@ -12,6 +12,7 @@ const { assert } = require('console');
     const app = `bakery-cc`;
     const downloadsDir = './downloads';
     const propsFile = 'translations.properties';
+    const appTitle = 'Panaderia';
 
     const page = await createPage(arg.headless, arg.ignoreHTTPSErrors);
     await waitForServerReady(page, arg.url);
@@ -61,7 +62,7 @@ const { assert } = require('console');
 
     await takeScreenshot(page, __filename, 'localization-loaded');
     await page.getByText('Bakery', { exact: true }).click();
-    await page.locator('vaadin-text-area.inline textarea').fill('Panaderia');
+    await page.locator('vaadin-text-area.inline textarea').fill(appTitle);
     await page.locator('vaadin-grid').getByRole('button').first().click();
     await takeScreenshot(page, __filename, 'localization-changed');
 
@@ -74,8 +75,8 @@ const { assert } = require('console');
     await download.saveAs(filePath);
 
     await run(`unzip -d ${downloadsDir} -o ${filePath}`);
-    const str = await fs.readFileSync('./downloads/translations.properties', 'utf8');
-    assert(str.includes('app.title=Panaderia'));
+    const str = await fs.readFileSync(`${downloadsDir}/${propsFile}`, 'utf8');
+    assert(str.includes(`app.title=${appTitle}`));
     await fs.rmSync(downloadsDir, { recursive: true });
     await takeScreenshot(page, __filename, 'title-translagted');
 
@@ -93,10 +94,15 @@ const { assert } = require('console');
     await waitForServerReady(pagePrev, previewUrl);
     await takeScreenshot(pagePrev, __filename, 'preview-ready');
 
-    //  TODO: bakery is not internationalized yet
-    //  await expect(pagePrev.getByText('Panaderia', { exact: true })).toBeVisible();
     await expect(pagePrev.getByRole('button', { name: 'New order' })).toBeVisible();
     await takeScreenshot(pagePrev, __filename, 'preview-loaded');
+    try {
+        await expect(pagePrev.getByText(appTitle, { exact: true, timeout: 500 })).toBeVisible();
+        log(`Found translation in preview: ${appTitle}`);
+    } catch (error) {
+        warn(`Not found translation in preview: ${appTitle}`);
+    }
+
     await closePage(pagePrev);
 
     log('Cleaning up...\n');
