@@ -42,14 +42,16 @@ checkCurrentVersion() {
 # $1 platform version
 computeCCVersion() {
   [ -z "$1" ] && return
-  V=`getVersionFromPlatform "$1" control.center`
-  [ -n "$V" ] && echo "$V" | sed -E 's/^(.*)\.([a-z]+[0-9]+)$/\1-\2/' && return
-  git fetch --tags -q
-  for i in `git tag | sort -r`; do
-    local vVersion=`git show $i:pom.xml 2>/dev/null | grep '<vaadin.components.version>' | cut -d '>' -f2 | cut -d '<' -f1`
-    # echo "$1 - $vVersion" >&2
-    [ "$vVersion" = "$1" ] && echo $i && ([ -n "$TEST" ] || log "Platform $VERSION has control-center CC $i") && return 0
-  done
+  if ! expr "$1" : ".*-SNAPSHOT" >/dev/null; then
+    V=`getVersionFromPlatform "$1" control.center`
+    [ -n "$V" ] && echo "$V" | sed -E 's/^(.*)\.([a-z]+[0-9]+)$/\1-\2/' && return
+    git fetch --tags -q
+    for i in `git tag | sort -r`; do
+      local vVersion=`git show $i:pom.xml 2>/dev/null | grep '<vaadin.components.version>' | cut -d '>' -f2 | cut -d '<' -f1`
+      # echo "$1 - $vVersion" >&2
+      [ "$vVersion" = "$1" ] && echo $i && ([ -n "$TEST" ] || log "Platform $VERSION has control-center CC $i") && return 0
+    done
+  fi
   mvn help:evaluate -Dexpression=project.version -q -DforceStdout
 }
 
@@ -198,7 +200,7 @@ reloadIngress() {
 
 ## Configure secrets for the control-center and the keycloak servers
 installTls() {
-  [ -n "$SKIPSETUP" ] && return 0
+  [ -n "$FAST" -a -n "$SKIPHELM" ] && return
   [ -z "$CC_KEY" -o -z "$CC_CERT" ] && log "No CC_KEY and CC_CERT provided, skiping TLS installation" && return 0
   # [ -n "$CC_FULL" ] && CC_CERT="$CC_FULL"
   [ -z "$TEST" ] && log "Installing TLS $CC_TLS for $CC_CONTROL and $CC_AUTH" || cmd "## Creating TLS file '$CC_DOMAIN.pem' from envs"
