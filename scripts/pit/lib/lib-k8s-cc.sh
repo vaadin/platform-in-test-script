@@ -107,16 +107,13 @@ installCC() {
   helmCmd="helm install control-center $args \
     -n $CC_NS --create-namespace \
     --set app.startupProbe.initialDelaySeconds=90 \
-    --set app.readinessProbe.initialDelaySeconds=10 \
     --set app.resources.limits.memory=1Gi \
     --set app.resources.requests.memory=256Mi \
     --set keycloak.startupProbe.initialDelaySeconds=70 \
-    --set keycloak.readinessProbe.initialDelaySeconds=10 \
     --set keycloak.resources.limits.memory=1Gi \
     --set keycloak.resources.requests.memory=256Mi \
     --set domain=$CC_DOMAIN \
-    --set user.email=$CC_EMAIL \
-    --set app.host=$CC_CONTROL --set keycloak.host=$CC_AUTH $D"
+    --set user.email=$CC_EMAIL"
 
   runToFile "$helmCmd" "helm-install-$1-1.out" "$VERBOSE"
   if [ $? != 0 ]; then

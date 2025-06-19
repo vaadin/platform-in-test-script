@@ -20,15 +20,13 @@ checkoutDemo() {
   then
     [ ! -d "$_demo" ] || runCmd -qf "Removing preexisting folder $_demo" "rm -rf $_demo" || return 1
     runCmd -f "Cloning repository $_repo" "git clone $_quiet $_gitUrl" || return 1
-    cmd "cd $_workdir"
-    cd "$_workdir"
+    cmd "cd $_workdir"; cd "$_workdir" || return 1
   else
-    cmd "cd $_workdir"
-    cd "$_workdir"
+    cmd "cd $_workdir"; cd "$_workdir" || return 1
     runCmd -f "Reseting local changes in $_repo" "git reset $_quiet --hard HEAD" || return 1
     runCmd -f "Deleting preexisting .out files" "rm -rf *.out"
   fi
-  [ -z "$_branch" ] || (cmd "git checkout $_quiet $_branch" && git checkout $_quiet "$_branch")
+  [ -z "$_branch" ] || runCmd -f "Selecting branch: $_branch" "git checkout $_quiet $_branch"
 }
 ## returns the github repo URL of a demo
 getGitRepo() {

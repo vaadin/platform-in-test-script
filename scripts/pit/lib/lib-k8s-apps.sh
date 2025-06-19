@@ -1,7 +1,7 @@
 . `dirname $0`/lib/lib-utils.sh
 . `dirname $0`/lib/lib-demos.sh
 
-CC_APP_REPO=bakery-app-starter-flow-spring:cc-24.7
+CC_APP_REPO=bakery-app-starter-flow-spring:cc
 CC_BAKERY_APP=bakery
 CC_STARTER_APP=cc-starter
 
@@ -11,7 +11,7 @@ compileBakery() {
   log -n "* Building $APP & $APP-cc apps *"
   computeMvn
   checkoutDemo $CC_APP_REPO || return 1
-  setDemoVersion $CC_APP_REPO $VERSION >/dev/null || return 1
+  setDemoVersion $CC_APP_REPO $VERSION >/dev/null
   applyPatches $APP next "$VERSION" prod || return 1
   setMvnDependencyVersion com.vaadin control-center-starter "$CCVERSION" "-Pcontrol-center" || return 1
   runToFile "'$MVN' -ntp -B clean install -Pproduction -DskipTests" "compile-$APP.out" "$VERBOSE" || return 1
