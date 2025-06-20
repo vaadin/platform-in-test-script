@@ -101,6 +101,7 @@ main() {
   for i in $demos; do
     log -n "================= $HEAD for '$i' =================="
     if expr $i : control-center >/dev/null; then
+      [ -n "$GITHUB_ACTIONS" ] && isWindows && warn "Control Center cannot be run in GH Windows runners" && return 0
       cd "$tmp"
       checkoutDemo $i || return 1
       run validateControlCenter $i
