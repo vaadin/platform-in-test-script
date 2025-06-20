@@ -38,10 +38,9 @@ async function installApp(app, page) {
         await envDialog.getByPlaceholder('Value').locator('input').fill('true');
         await envDialog.getByLabel("Add").click();
         if (/bakery.cc/.test(app)) {
+            log("Setting SPRING_FLYWAY_ENABLED=false")
             await envDialog.getByPlaceholder('Name').locator('input').fill('SPRING_FLYWAY_ENABLED');
-           log("Setting SPRING_FLYWAY_ENABLED=false")
             await envDialog.getByPlaceholder('Value').locator('input').fill('false');
-            await envDialog.getByLabel("Add").click();
             await envDialog.getByLabel("Add").click();
         }
         await takeScreenshot(page, __filename, `env-dialog-filled-${app}`);

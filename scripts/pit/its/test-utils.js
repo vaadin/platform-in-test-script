@@ -112,6 +112,7 @@ async function closePage(page) {
 const screenshots = "screenshots.out"
 let sscount = 0;
 async function takeScreenshot(page, name, descr) {
+  if (process.env.FAST) return;
   const scr = path.basename(name);
   const cnt = String(++sscount).padStart(2, "0");
   const file = `${screenshots}/${mode ? mode + '-': '' }${version ? version + '-': '' }${scr}-${cnt}-${descr}.png`;

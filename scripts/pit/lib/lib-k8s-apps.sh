@@ -45,7 +45,7 @@ compileCCStarter() {
   fi
 
   cmd "cd '$_dir'" && cd "$_dir" || return 1
-  setVersion vaadin.version "$VERSION" >/dev/null || return 1
+  setVersion vaadin.version "$VERSION" >/dev/null
   applyPatches $APP "" $VERSION "" || return 1
   setMvnDependencyVersion com.vaadin control-center-starter "$CCVERSION" || return 1
   runToFile "'$MVN' -ntp clean package -Pproduction" "compile_$APP.out" "$VERBOSE" || return 1
@@ -79,6 +79,21 @@ buildCC() {
   prepareRegistry || return 1
   uploadLocalImages "$1" || return 1
   [ -z "$CCPUSH" ] || pushLocalToDockerhub next
+}
+
+## Delete an installed app
+# $1 app name
+deleteApp() {
+  for a in $*
+  do
+    for i in deployments secrets ingresses services configmaps
+    do
+      for n in `kubectl -n $CC_NS get $i | egrep "^$a( |.i18n)" | cut -d " " -f1`
+      do
+        runCmd "Deleting $i $n" kubectl -n $CC_NS delete $i $n
+      done
+    done
+  done
 }
 
 
