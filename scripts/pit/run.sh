@@ -36,6 +36,7 @@ run() {
   fi
   killAll
   cleanAll
+  return $_err
 }
 
 ## compute what starters to run based on the command line arguments
@@ -103,8 +104,7 @@ main() {
     if expr $i : control-center >/dev/null; then
       [ -n "$GITHUB_ACTIONS" ] && isWindows && warn "Control Center cannot be run in GH Windows runners" && return 0
       cd "$tmp"
-      checkoutDemo $i || return 1
-      run validateControlCenter $i
+      run checkoutDemo $i && run validateControlCenter $i
       cd "$pwd"
       continue
     elif expr "$i" : '.*_jdk' >/dev/null; then

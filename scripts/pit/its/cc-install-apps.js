@@ -33,10 +33,18 @@ async function installApp(app, page) {
         await page.getByRole('button', {name: 'Environment Variable'}).click();
         await takeScreenshot(page, __filename, `env-dialog-opened-${app}`);
         const envDialog = page.getByRole('dialog', { name: 'Environment Variables' });
+        log("Setting SHOW_INFO=true")
         await envDialog.getByPlaceholder('Name').locator('input').fill('SHOW_INFO');
         await envDialog.getByPlaceholder('Value').locator('input').fill('true');
-        await takeScreenshot(page, __filename, `env-dialog-filled-${app}`);
         await envDialog.getByLabel("Add").click();
+        if (/bakery.cc/.test(app)) {
+            await envDialog.getByPlaceholder('Name').locator('input').fill('SPRING_FLYWAY_ENABLED');
+           log("Setting SPRING_FLYWAY_ENABLED=false")
+            await envDialog.getByPlaceholder('Value').locator('input').fill('false');
+            await envDialog.getByLabel("Add").click();
+            await envDialog.getByLabel("Add").click();
+        }
+        await takeScreenshot(page, __filename, `env-dialog-filled-${app}`);
         await envDialog.getByLabel("Close").click();
     }
 
