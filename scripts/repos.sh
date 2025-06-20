@@ -68,7 +68,7 @@ spring-petclinic/spring-petclinic-vaadin-flow
 form-filler-demo
 flow-hilla-hybrid-example
 designer-tutorial
-walking-skeleton:v24.7-hybrid
+walking-skeleton:v24.8-hybrid
 releases-graph
 expo-flow
 "

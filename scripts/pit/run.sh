@@ -68,12 +68,13 @@ main() {
   ## Check which arguments are valid names of presets or demos
   for i in `echo "$STARTERS" | tr ',' ' '`
   do
-    if echo "$PRESETS" | grep -q "^$i$"; then
+    b=${i%%:*}
+    if echo "$PRESETS" | grep -q "^$b$"; then
       presets="$presets $i"
-    elif echo "$DEMOS" | grep -q "^$i$"; then
+    elif echo "$DEMOS" | grep -q "^$b$"; then
       demos="$demos $i"
-    else
-      err "Unknown starter: $i" && exit 1
+    elif echo "$DEMOS" | grep -q "^$b:.*$"; then
+      demos="$demos $i"
     fi
   done
 
@@ -95,7 +96,6 @@ main() {
     fi
     run runStarter "$i" "$tmp"
   done
-
 
   ## Run demos (proper starters in github)
   for i in $demos; do

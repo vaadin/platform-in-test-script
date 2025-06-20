@@ -66,7 +66,8 @@ checkArgs() {
         S=""
         for i in `echo "$arg" | tr ',' ' '`
         do
-          n=${i#\!}
+          b=${i%%:*}
+          n=${b#\!}
           H=`printf "$PRESETS\n$DEMOS" | egrep "^$n$|/$n$|/$n[/:]|^$n[/:]" | head -1`
           [ -z "$H" ] && err "Unknown starter: $n" && exit 1
           [ "$n" = "$i" ] && S="$S,$H" || S="$i"
