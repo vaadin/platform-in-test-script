@@ -93,7 +93,7 @@ async function createPage(headless, ignoreHTTPSErrors) {
         slowMo: process.env.FAST ? 0 : headless ? 400: 1000,
         args: ['--window-position=0,0']
     });
-    const context = await browser.newContext({ignoreHTTPSErrors: ignoreHTTPSErrors, viewport: { width: 1792, height: 970 } });
+    const context = await browser.newContext({ignoreHTTPSErrors: ignoreHTTPSErrors, locale: 'en-US', viewport: { width: 1792, height: 970 } });
     const page = await context.newPage();
     page.on('console', msg => {
       const text = `${msg.text()} - ${msg.location().url}`.replace(/\s+/g, ' ');

@@ -13,6 +13,7 @@ const { assert } = require('console');
     const downloadsDir = './downloads';
     const propsFile = 'translations.properties';
     const appTitle = 'Panaderia';
+    const keyTitle = '!en-US: app.title';
 
     const page = await createPage(arg.headless, arg.ignoreHTTPSErrors);
     await waitForServerReady(page, arg.url);
@@ -38,9 +39,14 @@ const { assert } = require('console');
     const pageApp = await createPage(arg.headless, arg.ignoreHTTPSErrors);
     await waitForServerReady(pageApp, url);
     await takeScreenshot(pageApp, __filename, 'app-running');
-    await closePage(pageApp);
 
-    log(`Uploading and updating localization keys ...\n`);
+    log(`Testing that preview page: ${previewUrl} shows ${keyTitle} \n`);
+    await pageApp.goto(previewUrl);
+    await takeScreenshot(pageApp, __filename, 'app-preview-before-localization');
+    await expect(pageApp.getByText(`${keyTitle}`, { exact: true})).toBeVisible();
+
+    log(`Enabling localization and uploading keys ...\n`);
+    await page.bringToFront();
     await page.locator('vaadin-select vaadin-input-container div').click();
     await page.getByRole('option', { name: app }).locator('div').nth(2).click();
     await takeScreenshot(page, __filename, 'selected-app');
@@ -59,8 +65,9 @@ const { assert } = require('console');
     await fileChooser.setFiles(propsFile);
     await page.getByRole('button', { name: 'Replace data' }).click();
     fs.unlinkSync(propsFile);
-
     await takeScreenshot(page, __filename, 'localization-loaded');
+
+    log(`Changing app.tittle from Bakery to ${appTitle} ...\n`);
     await page.getByText('Bakery', { exact: true }).click();
     await page.locator('vaadin-text-area.inline textarea').fill(appTitle);
     await page.locator('vaadin-grid').getByRole('button').first().click();
@@ -80,48 +87,28 @@ const { assert } = require('console');
     await fs.rmSync(downloadsDir, { recursive: true });
     await takeScreenshot(page, __filename, 'title-translagted');
 
-    try {
-        // old versions of cc
-        await page.getByRole('button', { name: 'Start preview' }).click({ timeout: 500 });
-        log(`Started preview server\n`);
-        await page.waitForTimeout(5000);
-        previewUrl = url.replace(/:\/\//, '://preview.');
-    } catch (error) {
-    }
+    log(`Testing that preview page: ${previewUrl} shows ${appTitle} \n`);
+    await pageApp.bringToFront();
+    await pageApp.reload();
+    await takeScreenshot(pageApp, __filename, 'preview-ready');
+    await expect(pageApp.getByRole('button', { name: 'New order' })).toBeVisible();
+    await expect(pageApp.getByText(appTitle, { exact: true, timeout: 500 })).toBeVisible();
 
-    log(`Testing that preview page: ${previewUrl} is up and running\n`);
-    const pagePrev = await createPage(arg.headless, true /* preview pages do not have a valid certificate */);
-    await waitForServerReady(pagePrev, previewUrl);
-    await takeScreenshot(pagePrev, __filename, 'preview-ready');
+    log('Disabling Localizaton ...\n');
+    await page.bringToFront();
+    await page.getByRole('link', { name: 'Settings' }).click();
+    await page.locator('vaadin-grid').getByText('bakery-cc', { exact: true }).click();
+    await page.getByLabel('Localization').uncheck();
+    await page.getByRole('button', { name: 'Disable' }).click();
+    await page.getByRole('button', { name: 'Update' }).click();
+    await takeScreenshot(pageApp, __filename, 'removed-loc');
 
-    await expect(pagePrev.getByRole('button', { name: 'New order' })).toBeVisible();
-    await takeScreenshot(pagePrev, __filename, 'preview-loaded');
-    try {
-        await expect(pagePrev.getByText(appTitle, { exact: true, timeout: 500 })).toBeVisible();
-        log(`Found translation in preview: ${appTitle}`);
-    } catch (error) {
-        warn(`Not found translation in preview: ${appTitle}`);
-    }
+    log(`Testing that preview page: ${previewUrl} shows ${keyTitle} \n`);
+    await pageApp.bringToFront();
+    await pageApp.reload();
+    await takeScreenshot(pageApp, __filename, 'preview-after-removed-loc');
+    await expect(pageApp.getByText(keyTitle, { exact: true })).toBeVisible();
 
-    await closePage(pagePrev);
-
-    log('Cleaning up...\n');
-    try {
-        // old versions of cc
-        await page.getByRole('button', { name: 'Stop preview' }).click({ timeout: 500 });
-    } catch (error) {
-    }
-
-    try {
-        await waitForServerReady(page, arg.url);
-        await page.getByRole('link', { name: 'Settings' }).click();
-        await page.locator('vaadin-grid').getByText('bakery-cc', { exact: true }).click();
-        await page.getByLabel('Localization').uncheck();
-        await page.getByRole('button', { name: 'Disable' }).click();
-        await page.getByRole('button', { name: 'Update' }).click();
-    } catch (error) {
-        err(`Error cleaning up: ${error}\n`);
-        await takeScreenshot(page, __filename, 'error-cleaning');
-    }
+    await closePage(pageApp);
     await closePage(page);
 })();

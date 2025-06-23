@@ -104,7 +104,11 @@ main() {
     if expr $i : control-center >/dev/null; then
       [ -n "$GITHUB_ACTIONS" ] && isWindows && warn "Control Center cannot be run in GH Windows runners" && return 0
       cd "$tmp"
-      run checkoutDemo $i && run validateControlCenter $i
+      if checkoutDemo $i; then
+        run validateControlCenter $i 
+      else
+        failed="$failed $i"
+      fi
       cd "$pwd"
       continue
     elif expr "$i" : '.*_jdk' >/dev/null; then
