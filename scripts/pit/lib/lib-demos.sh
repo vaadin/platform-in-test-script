@@ -13,7 +13,7 @@ checkoutDemo() {
   local _workdir="$_demo$_folder"
   local _repo=`getGitRepo $1`
   local _base=${GITBASE:-https://gitub.com/}
-  [ -n "$GHTK" ] && _base=`echo "$_base" | sed -e 's|\(https://\)|\\1'$GHTK'@|'`
+  validateToken $_repo && _base=`echo "$_base" | sed -e 's|\(https://\)|\\1'$GHTK'@|'`
   local _gitUrl="${_base}${_repo}.git"
   [ -z "$VERBOSE" ] && _quiet="-q"
   if [ -z "$OFFLINE" -o ! -d "$_workdir" ]

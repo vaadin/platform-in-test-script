@@ -1033,3 +1033,13 @@ setMvnDependencyVersion() {
   log "App is using $1:$2:$_curVers"
   return 0
 }
+
+validateToken() {
+  [ -z "$GHTK" ] && return 1
+  H=`curl -s -H "Authorization: Bearer $GHTK" https://api.github.com/user | jq '.login'`
+  [ -z "$H" -o "$H" = null ] && err "Invalid GHTK, $H" && return 1
+  log "Using GH $H"
+  H=`curl -s -H "Authorization: Bearer $GHTK" https://api.github.com/repos/$1 | jq -r '.permissions.pull'`
+  [ "$H" != true ] && err "No pull access $H" && return 1
+  return 0
+}
