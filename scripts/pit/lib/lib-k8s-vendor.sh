@@ -122,6 +122,7 @@ createCluster() {
   case "$type" in
     kind) createKindCluster $name ;;
     do)   createDOCluster $name ;;
+    az)   warn "experimental support to '$2' vendor" ;;
     *)    warn "Unsupported vendor: '$2'"
           return 1;;
   esac
@@ -243,6 +244,9 @@ uploadLocalImages() {
         runCmd -q "Tag image $i" docker tag vaadin/$i:local $DO_REG_URL/$i:local || return 1
         runCmd -q "PUSH image $i" docker push $DO_REG_URL/$i:local || return 1
       done
+      ;;
+    az)
+      warn "Vendor $VENDOR needs to implement how to load images"
       ;;
     *) :;;
   esac
