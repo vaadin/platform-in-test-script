@@ -13,7 +13,7 @@ const { assert } = require('console');
     const downloadsDir = './downloads';
     const propsFile = 'translations.properties';
     const appTitle = 'Panaderia';
-    const keyTitle = '!en-US: app.title';
+    const keyTitle = '!en: app.title';
 
     const page = await createPage(arg.headless, arg.ignoreHTTPSErrors);
     await waitForServerReady(page, arg.url);
