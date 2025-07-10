@@ -324,7 +324,7 @@ runControlCenter() {
 validateControlCenter() {
   local GHTK= GITHUB_TOKEN=
   checkCommands docker kubectl helm unzip || return 1
-  checkDockerRunning || return 1
+  [ "$VENDOR" != kind ] || checkDockerRunning || return 1
   rm -rf screenshots.out
   ## Run control center in current version (stable)
   if [ -z "$NOCURRENT" ]; then
