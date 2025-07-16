@@ -279,9 +279,10 @@ runPwTests() {
 ## Main method for running control center
 # $1 Version of CC to test
 # $2 tag to use for application images
-# $3 whether it is CC snapshot
+# $3 vaadin Version to test
+# $4 whether it is CC snapshot
 runControlCenter() {
-  bold -n "----> Running PiT for app: control-center version: '$1' tag: '$2' "
+  bold -n "----> Running PiT for app: control-center version: '$1' tag: '$2' - vaadinVersion: $3"
 
   ## Check if port 443 is busy
   [ -n "$TEST" ] || checkBusyPort "443" || return 1
@@ -296,10 +297,10 @@ runControlCenter() {
   [ -z "$SKIPHELM" ] && uninstallCC
 
   ## Build CC and apps
-  [ "$2" != local ] || buildCC "$3" || return 1
+  [ "$2" != local ] || buildCC "$4" || return 1
 
   ## Install Control Center
-  installCC $1 $3 || return 1
+  installCC $1 $4 || return 1
 
   [ -z "$TEST" ] && H=`isCCInstalled`
 
@@ -313,7 +314,7 @@ runControlCenter() {
   installTls && checkTls || return 1
 
   ## Run Playwright tests for the control-center
-  runPwTests "$1" "$2" "$3" || return 1
+  runPwTests "$1" "$2" "$4" || return 1
 
   ## Uninstall the control-center if --keep-cc is not set
   [ -n "$KEEPCC" ] || uninstallCC --wait=false || return 1
@@ -332,12 +333,12 @@ validateControlCenter() {
   ## Run control center in current version (stable)
   if [ -z "$NOCURRENT" ]; then
     CCVERSION=`checkCurrentVersion $CCVERSION` || return 1
-    runControlCenter $CCVERSION latest || downloadLogs || return 1
+    runControlCenter $CCVERSION latest current || downloadLogs || return 1
   fi
   ## Run control center for provided version
   if [ "$VERSION" != "current" ]; then
     CCVERSION=`computeCCVersion $VERSION` || return 1
     expr "$CCVERSION" : ".*SNAPSHOT" >/dev/null && H=true || H=""
-    runControlCenter $CCVERSION local $H || downloadLogs || return 1
+    runControlCenter $CCVERSION local $VERSION $H || downloadLogs || return 1
   fi
 }
