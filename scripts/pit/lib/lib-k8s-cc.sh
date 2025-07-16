@@ -18,7 +18,7 @@ CC_ING_K=control-center-keycloak-ingress
 # Namespace used for CC
 CC_NS=control-center
 ## UI tests to run after the control-center is installed
-CC_TESTS=${CC_TESTS:-cc-setup.js cc-install-apps.js cc-identity-management.js cc-localization.js}
+CC_TESTS=${CC_TESTS:-${CC_TEST:-cc-setup.js cc-install-apps.js cc-identity-management.js cc-localization.js}}
 
 ## check if docker is working
 checkDockerRunning() {
