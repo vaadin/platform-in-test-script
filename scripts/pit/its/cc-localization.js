@@ -13,7 +13,7 @@ const { assert } = require('console');
     const downloadsDir = './downloads';
     const propsFile = 'translations.properties';
     const appTitle = 'Panaderia';
-    const keyTitle = '!en-US: app.title';
+    const keyTitle = /^!en(-..)?: app.title$/;
 
     const page = await createPage(arg.headless, arg.ignoreHTTPSErrors);
     await waitForServerReady(page, arg.url);
@@ -43,7 +43,7 @@ const { assert } = require('console');
     log(`Testing that preview page: ${previewUrl} shows ${keyTitle} \n`);
     await pageApp.goto(previewUrl);
     await takeScreenshot(pageApp, __filename, 'app-preview-before-localization');
-    await expect(pageApp.getByText(`${keyTitle}`, { exact: true})).toBeVisible();
+    await expect(pageApp.getByText(keyTitle, { exact: true })).toBeVisible();
 
     log(`Enabling localization and uploading keys ...\n`);
     await page.bringToFront();
