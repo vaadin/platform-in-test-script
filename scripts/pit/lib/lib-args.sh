@@ -129,7 +129,8 @@ checkArgs() {
         RUN_FUCTION=${*}
         break ;;
       --proxy*)
-        setClusterContext "$CLUSTER" "$CC_NS" "$VENDOR"
+        setClusterContext "$CLUSTER" "$CC_NS" "$VENDOR" || exit 1
+        isCCInstalled || exit 1
         VERBOSE=true runCmd "Running CC proxy" kubectl port-forward service/control-center-ingress-nginx-controller 443:443 -n $CC_NS
         exit ;;
       --events*)

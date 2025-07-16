@@ -57,7 +57,10 @@ computeCCVersion() {
 
 ## Check whether the control-center chart is installed and display info
 isCCInstalled() {
-  helm list -n control-center | grep -v "^NAME" |  awk '{print " · "$9" · "$10" · "$4}'
+  H=`helm list -n control-center | grep -v "^NAME" |  awk '{print " · "$9" · "$10" · "$4}'`
+  ret=$?
+  [ $ret = 0 ] && log "Installed Control-Center is: $H" || log "Control-Center is not installed yet"
+  return $ret
 }
 
 ## If the process fails, download the logs of the apps running for inclussion in the CI artifact
@@ -298,7 +301,7 @@ runControlCenter() {
   ## Install Control Center
   installCC $1 $3 || return 1
 
-  [ -z "$TEST" ] && H=`isCCInstalled` && log "Installed Control-Center is: $H"
+  [ -z "$TEST" ] && H=`isCCInstalled`
 
   ## Control center takes a long time to start
   waitForCC 900 || return 1
