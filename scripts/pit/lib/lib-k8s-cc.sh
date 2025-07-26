@@ -266,13 +266,14 @@ runPwTests() {
   [ "$2" = local -a "$VENDOR" = do ] && R=$DO_REG_URL && S="--secret=$DO_REGST"
 
   for f in $CC_TESTS; do
-    [ "$CLUSTER" == "docker-desktop" ] || stopForwardIngress && forwardIngress $CC_NS || return 1
+    [ "$CLUSTER" == "docker-desktop" ] || forwardIngress $CC_NS || return 1
     runPlaywrightTests "$PIT_SCR_FOLDER/its/$f" "" "$T" "control-center" "$CCVERSiON" \
       --url=https://$CC_CONTROL --login=$CC_EMAIL \
       --tag=$T --registry=$R $S $NO_TLS || return 1
     if [ "$f" = cc-install-apps.js ]; then
       reloadIngress && checkTls || return 1
     fi
+    [ "$CLUSTER" == "docker-desktop" ] || stopForwardIngress
   done
 }
 
@@ -329,6 +330,7 @@ validateControlCenter() {
   local GHTK= GITHUB_TOKEN=
   checkCommands docker kubectl helm unzip || return 1
   [ "$VENDOR" != kind ] || checkDockerRunning || return 1
+  [ "$VENDOR" != docker-desktop ] || onExit stopForwardIngress
   rm -rf screenshots.out
   ## Run control center in current version (stable)
   if [ -z "$NOCURRENT" ]; then

@@ -47,7 +47,7 @@ startPortForward() {
   [ -z "$TEST" ] && checkPort "$4" && err "Port $4 is already in use" && return 1
   H=`getPids "kubectl port-forward $2"`
   [ -n "$H" ] && log "Already running k8s port-forward $1 $2 $3 -> $4 with pid $H" && return 0
-  [ -z "$TEST" ] && log "Starting k8s port-forward $1 $2 $3 -> $4"
+  [ -z "$TEST" ] && log "Starting k8s port-forward $1 $2 $3 -> $4" || cmd "## Start proxy"
   [ "$4" -le 1024 ] && K=`setSuid kubectl` || return 1
   bgf="k8s-port-forward-$3-$4.log"
   rm -f "$bgf"
@@ -61,6 +61,7 @@ startPortForward() {
 ## Stop k8s portforward
 # $1: service
 stopPortForward() {
+  [ -n "$TEST" ] && runCmd "Stop proxy" "killall kubectl"
   H=`getPids kubectl "port-forward service/$1"`
   [ -z "$H" ] && return 0
   runCmd -q "Stoping k8s port-forward $1" "kill -TERM $H" || return 1
