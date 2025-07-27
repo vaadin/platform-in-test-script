@@ -110,8 +110,10 @@ runValidations() {
   checkHttpServlet "http://localhost:$port/" "$file" || return 1
 
   # 11
-  if [ -z "$SKIPTESTS" -a -z "$SKIPPW" ]; then
+  if [ -n "$test" -a -z "$SKIPTESTS" -a -z "$SKIPPW" ]; then
     runPlaywrightTests "$test" "$file" "$mode" "$name" "$version" "--port=$port"  || return 1
+  elif [ -n "$TEST" ]; then
+    cmd "## No PW tests to run"
   fi
 
   # 12
