@@ -60,6 +60,9 @@ applyPatches() {
       [ "$app_" = spring-petclinic-vaadin-flow ] &&
         changeBlock 'SELECT\sptype' 'FROM\sPetType' '${3}' src/main/java/org/springframework/samples/petclinic/backend/owner/PetRepository.java
     ;;
+    25.0.0*)
+      [ "$type_" = next ] && addAnonymousAllowedToAppLayout
+    ;;
   esac
 
   # always successful
@@ -101,6 +104,19 @@ moveQuarkusBomToBottom() {
     '<dependencyManagement>\s*<dependencies>)(\s*<dependency>\s*<groupId>\${quarkus\.platform\.group-id}.*?</dependency>' \
     '\s*</dependencies>\s*</dependencyManagement>' \
     '${1}${3}${2}${4}' pom.xml
+}
+
+## Find all java class files that extends AppLayouts and add @AnonymousAllowed
+addAnonymousAllowedToAppLayout() {
+  find src -name "*.java" -exec grep -l "extends AppLayout" {} + | xargs grep -L "extends AppLayoutElement" | while read file; do
+    # Insert the annotation above the class definition if not already present
+    grep -q "com.vaadin.flow.server.auth.AnonymousAllowed" "$file" && continue
+    warn "adding AnonymousAllowed to $file"
+    perl -0777 -pi -e 's/(public\s+class\s+[A-Za-z0-9_]+\s+extends\s+AppLayout)/\@AnonymousAllowed\n\1/' "$file"
+    # Add import if not present
+    grep -q "import com.vaadin.flow.server.auth.AnonymousAllowed;" "$file" || \
+      perl -pi -e 's|^(package\s+.*?;\s*)|\1\nimport com.vaadin.flow.server.auth.AnonymousAllowed;\n|' "$file"
+  done
 }
 
 # removeDeprecated() {
