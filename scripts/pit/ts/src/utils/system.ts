@@ -220,27 +220,59 @@ export async function isPortBusy(port: number): Promise<boolean> {
 }
 
 export async function killProcessesByPort(port: number): Promise<void> {
-  const result = await runCommand(`lsof -ti:${port} | xargs kill -9 2>/dev/null || true`);
-  if (!result.success) {
-    logger.debug(`No processes found on port ${port}`);
+  // First, try to find and kill processes using the port
+  const result = await runCommand(`lsof -ti:${port} 2>/dev/null || true`, { silent: true });
+  
+  if (result.stdout.trim()) {
+    const pids = result.stdout.trim().split('\n').filter(pid => pid.trim());
+    
+    for (const pid of pids) {
+      logger.debug(`Killing process ${pid} using port ${port}`);
+      
+      // First try SIGTERM for graceful shutdown
+      await runCommand(`kill ${pid} 2>/dev/null || true`, { silent: true });
+      
+      // Wait a moment for graceful shutdown
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Check if process is still running
+      const checkResult = await runCommand(`ps -p ${pid} >/dev/null 2>&1`, { silent: true });
+      
+      if (checkResult.success) {
+        // Force kill if still running
+        logger.debug(`Force killing process ${pid}`);
+        await runCommand(`kill -9 ${pid} 2>/dev/null || true`, { silent: true });
+      }
+    }
   }
 }
 
 export async function killProcesses(): Promise<void> {
-  // Kill common development server processes
-  const commands = [
-    'pkill -f "spring-boot:run" || true',
-    'pkill -f "mvn.*jetty:run" || true',
-    'pkill -f "gradle.*bootRun" || true',
-    'pkill -f "quarkus:dev" || true',
+  // Kill common development server processes by pattern
+  const patterns = [
+    'spring-boot:run',
+    'mvn.*jetty:run',
+    'gradle.*bootRun',
+    'quarkus:dev',
+    'Application.*--server.port=8080',
+    'target/classes.*Application'
   ];
 
-  for (const cmd of commands) {
-    await runCommand(cmd, { silent: true });
+  for (const pattern of patterns) {
+    const result = await runCommand(`pkill -f "${pattern}" 2>/dev/null || true`, { silent: true });
+    if (result.success) {
+      logger.debug(`Killed processes matching pattern: ${pattern}`);
+    }
+  }
+
+  // Also kill any processes specifically on common development ports
+  const ports = [8080, 8081, 3000, 4200];
+  for (const port of ports) {
+    await killProcessesByPort(port);
   }
 
   // Give processes time to shut down
-  await new Promise(resolve => setTimeout(resolve, 2000));
+  await new Promise(resolve => setTimeout(resolve, 3000));
 }
 
 export async function waitForServer(url: string, timeoutSeconds: number): Promise<void> {

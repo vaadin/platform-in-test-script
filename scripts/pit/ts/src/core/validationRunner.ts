@@ -1,6 +1,6 @@
 import type { PitConfig } from '../types.js';
 import { logger } from '../utils/logger.js';
-import { runCommand, killProcesses, waitForServer } from '../utils/system.js';
+import { runCommand, killProcesses, killProcessesByPort, waitForServer } from '../utils/system.js';
 import { fileExists, joinPaths, writeFile, readFile } from '../utils/file.js';
 import { PatchManager } from '../patches/patchManager.js';
 import { PlaywrightRunner } from './playwrightRunner.js';
@@ -133,7 +133,8 @@ export class ValidationRunner {
           }
         }
         
-        // Also kill any remaining processes on the port
+        // Also kill any remaining processes on the port and by pattern
+        await killProcessesByPort(this.config.port);
         await killProcesses();
       }
 
@@ -154,23 +155,28 @@ export class ValidationRunner {
   }
 
   private async checkBusyPort(port: number): Promise<void> {
-    const result = await runCommand(`lsof -ti:${port} 2>/dev/null || true`);
+    const result = await runCommand(`lsof -ti:${port} 2>/dev/null || true`, { silent: true });
     if (result.stdout.trim()) {
-      throw new Error(`Port ${port} is already in use`);
+      logger.warn(`Port ${port} is already in use. Attempting to kill processes...`);
+      
+      // Try to kill processes using the port
+      await killProcessesByPort(port);
+      
+      // Wait a moment and check again
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const checkAgain = await runCommand(`lsof -ti:${port} 2>/dev/null || true`, { silent: true });
+      if (checkAgain.stdout.trim()) {
+        throw new Error(`Port ${port} is already in use`);
+      }
+      
+      logger.info(`✓ Port ${port} is now available`);
     }
   }
 
   private async optimizeBuildSettings(projectDir: string): Promise<void> {
-    // Disable launch browser
-    const vaadinPropsPath = joinPaths(projectDir, 'src/main/resources/vaadin-featureflags.properties');
-    if (await fileExists(vaadinPropsPath)) {
-      const content = await readFile(vaadinPropsPath);
-      if (content && !content.includes('com.vaadin.launch-browser=false')) {
-        await writeFile(vaadinPropsPath, content + '\ncom.vaadin.launch-browser=false\n');
-      }
-    } else {
-      await writeFile(vaadinPropsPath, 'com.vaadin.launch-browser=false\n');
-    }
+    // Disable launch browser - matches bash disableLaunchBrowser() function
+    await this.disableLaunchBrowser(projectDir);
 
     // Enable PNPM if configured
     if (this.config.pnpm) {
@@ -181,6 +187,64 @@ export class ValidationRunner {
     if (this.config.vite) {
       await this.enableVite(projectDir);
     }
+  }
+
+  private async disableLaunchBrowser(projectDir: string): Promise<void> {
+    // Find all application.properties files in src directory (matches bash implementation)
+    const srcDir = joinPaths(projectDir, 'src');
+    if (!(await fileExists(srcDir))) {
+      return;
+    }
+
+    try {
+      const propertiesFiles = await this.findApplicationPropertiesFiles(srcDir);
+      
+      for (const file of propertiesFiles) {
+        const fullPath = joinPaths(projectDir, file);
+        if (await fileExists(fullPath)) {
+          await this.removePropertyFromFile(fullPath, 'vaadin.launch-browser');
+          logger.debug(`Removed vaadin.launch-browser from ${file}`);
+        }
+      }
+    } catch (error) {
+      logger.debug(`Error in disableLaunchBrowser: ${error}`);
+    }
+  }
+
+  private async findApplicationPropertiesFiles(srcDir: string): Promise<string[]> {
+    const { exec } = await import('child_process');
+    const { promisify } = await import('util');
+    const execAsync = promisify(exec);
+    
+    try {
+      // We use 'find src' relative to project directory to match bash behavior
+      const { stdout } = await execAsync(`find src -name application.properties 2>/dev/null || true`);
+      return stdout.trim().split('\n').filter(file => file.length > 0);
+    } catch (error) {
+      logger.debug(`Error finding application.properties files in ${srcDir}: ${error}`);
+      return [];
+    }
+  }
+
+  private async removePropertyFromFile(filePath: string, propertyName: string): Promise<void> {
+    if (!(await fileExists(filePath))) {
+      return;
+    }
+
+    const content = await readFile(filePath);
+    if (!content) {
+      return;
+    }
+
+    // Remove lines that contain the property (matches bash setPropertyInFile with 'remove')
+    const lines = content.split('\n');
+    const filteredLines = lines.filter(line => {
+      const trimmed = line.trim();
+      return !trimmed.startsWith(propertyName + '=') && 
+             !trimmed.startsWith(propertyName + ':');
+    });
+
+    await writeFile(filePath, filteredLines.join('\n'));
   }
 
   private async enablePnpm(projectDir: string): Promise<void> {
