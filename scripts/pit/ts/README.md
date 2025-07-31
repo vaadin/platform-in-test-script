@@ -2,6 +2,16 @@
 
 This is a TypeScript implementation of the Vaadin Platform in Test (PiT) testing suite, converted from the original bash scripts while maintaining the same behavior and functionality.
 
+## Recent Updates
+
+**Latest Release - All Critical Issues Resolved:**
+- ✅ Fixed logger color formatting (ANSI color reset sequences)
+- ✅ Resolved starter-to-test mapping for `--run-pw` mode
+- ✅ Aligned TypeScript test logic with JavaScript originals
+- ✅ Updated comprehensive documentation with validation commands
+
+For detailed information, see [CHANGELOG.md](CHANGELOG.md) and [CONVERSION_SUMMARY.md](CONVERSION_SUMMARY.md).
+
 ## Features
 
 - ✅ All original command-line options preserved
@@ -225,6 +235,22 @@ The following environment variables are used by specific tests:
 ## Supported Starters and Demos
 
 See the output of `--list` for the complete list of supported starters and demos.
+
+## Validation and Testing
+
+After installation, validate the fixes with:
+
+```bash
+# Test logger color formatting
+npm run dev -- --starters hello --dev --clean
+
+# Test starter-to-test mapping
+npm run dev -- --starters test-hybrid-react --run-pw
+
+# Test specific implementations
+npm run dev -- --starters test-start --run-pw
+npm run dev -- --starters test-hybrid-react --run-pw
+```
 
 ## Contributing
 

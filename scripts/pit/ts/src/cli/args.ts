@@ -47,6 +47,8 @@ export function createProgram(): Command {
     .option('--headed', 'Run the browser in headed mode', DEFAULT_CONFIG.headed)
     .option('--debug', 'Enable debug mode with extra logging', DEFAULT_CONFIG.debug)
     .option('--run-pw', 'Skip setup and only run Playwright tests (assumes server is already running)', DEFAULT_CONFIG.runPw)
+    .option('--ghtk <token>', 'GitHub personal access token (sets GHTK environment variable)')
+    .option('--gh-token <token>', 'GitHub personal access token (alias for --ghtk)')
     .option('--function <function>', 'Run only one function')
     .option('--starters <list>', 'List of demos or presets separated by comma', DEFAULT_CONFIG.starters);
 
@@ -94,6 +96,12 @@ export function parseArguments(args: string[]): PitConfig {
     headlessMode = true;
   } else if (options['headed']) {
     headlessMode = false;
+  }
+
+  // Handle GitHub token arguments
+  if (options['ghtk'] || options['ghToken']) {
+    const token = options['ghtk'] || options['ghToken'];
+    process.env['GHTK'] = token;
   }
 
   const config: PitConfig = {

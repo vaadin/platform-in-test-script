@@ -168,4 +168,45 @@ The TypeScript implementation supports all original features plus enhanced testi
 
 # Test build tool detection
 ./run-ts.sh --starters="initializer-vaadin-maven-react,initializer-vaadin-gradle-flow" --test
+
+# Test Playwright-only mode (requires running server)
+./run-ts.sh --starters="test-hybrid-react" --run-pw
+```
+
+## Recent Updates (July 2025)
+
+### Critical Fixes Applied ✅
+
+#### Logger Color Issues Fixed
+- **Problem**: Debug output was causing subsequent log lines to appear dim
+- **Solution**: Fixed ANSI color reset sequences in logger implementation
+- **Status**: All log output now displays with correct colors and formatting
+
+#### Starter-to-Test Mapping Fixed
+- **Problem**: `--run-pw` mode was failing with "Test not found" errors for valid starters
+- **Example**: `./run-ts.sh --starters test-hybrid-react --run-pw` was broken
+- **Solution**: Fixed `PlaywrightRunner.runMultipleTests()` to properly map starter names to test names
+- **Status**: All starter names now correctly resolve to their corresponding tests
+
+#### Test Logic Accuracy Improved
+- **Problem**: Some TypeScript tests had different UI logic than original JavaScript tests
+- **Examples Fixed**:
+  - `start.test.ts`: Now looks for `/manolo/` instead of `/updated/` to match original
+  - `hybrid-react.test.ts`: Now tests actual Flow/Hilla functionality instead of generic React selectors
+- **Status**: All tests now faithfully reproduce original JavaScript behavior with enhanced reliability
+
+### Validation Commands for Recent Fixes
+
+```bash
+# Test fixed starter mapping
+./run-ts.sh --starters="test-hybrid-react" --run-pw
+
+# Test corrected UI logic  
+./run-ts.sh --starters="start" --test
+
+# Test logger color output
+./run-ts.sh --starters="hello" --verbose --debug
+
+# Comprehensive validation
+./run-ts.sh --demos --test
 ```

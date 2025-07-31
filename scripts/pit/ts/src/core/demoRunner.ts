@@ -83,9 +83,19 @@ export class DemoRunner {
 
     // Parse demo name for repo and branch information
     const { repo, branch, subPath } = this.parseDemoName(demoName);
-    const gitUrl = this.config.gitSsh 
-      ? `git@github.com:${repo}.git`
-      : `${GITHUB_BASE}${repo}.git`;
+    
+    let gitUrl: string;
+    if (this.config.gitSsh) {
+      gitUrl = `git@github.com:${repo}.git`;
+    } else {
+      gitUrl = `${GITHUB_BASE}${repo}.git`;
+      
+      // Include GHTK token for private repositories if available
+      const token = process.env['GHTK'];
+      if (token && await this.validateToken(repo)) {
+        gitUrl = gitUrl.replace('https://', `https://${token}@`);
+      }
+    }
 
     // Clone the repository
     let cloneCommand = `git clone ${gitUrl} .`;
@@ -105,6 +115,53 @@ export class DemoRunner {
       if (!moveResult.success) {
         logger.warn(`Failed to move from subpath ${subPath}: ${moveResult.stderr}`);
       }
+    }
+  }
+
+  private async validateToken(repo: string): Promise<boolean> {
+    const token = process.env['GHTK'];
+    if (!token) {
+      return false;
+    }
+
+    try {
+      // Check if token is valid by getting user info
+      const userResponse = await fetch('https://api.github.com/user', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (!userResponse.ok) {
+        logger.error('Invalid GHTK token');
+        return false;
+      }
+      
+      const userData = await userResponse.json();
+      if (!userData.login) {
+        logger.error('Invalid GHTK token response');
+        return false;
+      }
+      
+      logger.info(`Using GitHub user: ${userData.login}`);
+
+      // Check if token has pull access to the repository
+      const repoResponse = await fetch(`https://api.github.com/repos/${repo}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (!repoResponse.ok) {
+        return false;
+      }
+      
+      const repoData = await repoResponse.json();
+      if (repoData.permissions?.pull !== true) {
+        logger.error(`No pull access to ${repo}`);
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      logger.debug(`Token validation failed: ${error}`);
+      return false;
     }
   }
 

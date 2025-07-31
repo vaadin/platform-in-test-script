@@ -402,6 +402,58 @@ The TypeScript conversion successfully modernizes the PiT testing suite while ma
 
 ## Recent Accomplishments
 
+### Logger Color Reset Issues (Fixed - July 2025)
+- **Issue**: Debug output was causing subsequent info lines to appear dim instead of normal brightness
+- **Root Cause**: `chalk.gray()` in debug method was affecting terminal color state without proper reset
+- **Investigation**: ANSI color codes were not being properly reset after debug output
+- **Solution**: 
+  - Updated all logging methods to use concatenated strings with explicit `chalk.reset()`
+  - Changed from `console.log(chalk.blue('ℹ'), chalk.reset(message))` to `console.log(chalk.blue('ℹ') + chalk.reset(' ' + message) + chalk.reset())`
+  - Ensures complete terminal color state reset after each log operation
+- **Result**: All log outputs now display with correct formatting and colors
+
+### Starter-to-Test Mapping Issues (Fixed - July 2025)
+- **Critical Issue**: `--run-pw` functionality was broken for starter names vs test names
+- **Problem**: `test-hybrid-react` starter was failing with "Test 'test-hybrid-react' not found" 
+- **Root Cause Analysis**: 
+  - Bash implementation correctly maps: `test-hybrid-react` → `hybrid-react.js` (test file)
+  - TypeScript `runMultipleTests()` was passing starter name directly to `runTest()` instead of mapping to test name
+  - `runTest()` expects test names, not starter names
+- **Investigation**: 
+  - Verified bash `getStartTestFile()` function in `lib-start.sh`: `test-hybrid-react*) echo "hybrid-react.js";;`
+  - Found TypeScript `getTestForStarter()` function had correct mapping logic
+  - Discovered `playwrightRunner.runMultipleTests()` was bypassing the mapping function
+- **Solution**: 
+  - Fixed `runMultipleTests()` to call `getTestForStarter(starter)` before calling `runTest()`
+  - Added proper error handling for unmapped starters
+  - Now correctly follows: `test-hybrid-react` → `getTestForStarter()` → `hybrid-react` → `runTest()`
+- **Validation**: Confirmed `./run-ts.sh --starters test-hybrid-react --run-pw` now works correctly
+- **Impact**: All starter names now properly map to their corresponding test implementations
+
+### Playwright Test Logic Accuracy (Fixed - July 2025)  
+- **Issue**: Several TypeScript tests had different UI logic compared to original JavaScript tests
+- **Investigation**: Systematic comparison of `.js` vs `.test.ts` files revealed discrepancies
+- **Key Differences Found**:
+  - **start.test.ts**: Was looking for `/updated/` instead of `/manolo/` like the original
+  - **hybrid-react.test.ts**: Had generic React selectors instead of specific Flow/Hilla test logic
+- **Solutions Applied**:
+  - **start.test.ts**: Corrected final assertion from `text=/updated/` to `text=/manolo/`
+  - **hybrid-react.test.ts**: Replaced generic React component testing with exact JavaScript logic:
+    ```typescript
+    // Test Hello Flow functionality (Flow part of hybrid app)
+    await this.page.locator('text=Hello Flow').nth(0).click();
+    await this.page.locator('text=eula.lane').click();
+    await this.page.locator('input[type="text"]').nth(0).fill('FOO');
+    await this.page.locator('text=Save').click();
+    await this.page.locator('text=/Updated/').waitFor({ state: 'visible' });
+    
+    // Test Hello Hilla functionality (React part of hybrid app)  
+    await this.page.locator('text=Hello Hilla').nth(0).click();
+    await this.page.locator('text=/This place intentionally left empty/').waitFor({ state: 'visible' });
+    ```
+- **Quality Improvements**: TypeScript tests now include better error handling and explicit `.waitFor()` calls
+- **Result**: TypeScript tests now faithfully reproduce original JavaScript test behavior with improved reliability
+
 ### Interactive Mode Fix (Fixed)
 - **Issue**: `--interactive` mode was hanging and not exiting properly
 - **Root Cause**: Improper stdin cleanup in `waitForUserManualTesting` method
