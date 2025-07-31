@@ -1,5 +1,6 @@
 export * from './baseTest.js';
 export * from './start.test.js';
+export * from './start-auth.test.js';
 export * from './react.test.js';
 export * from './react-starter.test.js';
 export * from './basic.test.js';
@@ -13,10 +14,18 @@ export * from './spreadsheet-demo.test.js';
 export * from './releases.test.js';
 export * from './ai.test.js';
 export * from './bookstore.test.js';
+export * from './initializer.test.js';
+export * from './collaboration.test.js';
+export * from './oauth.test.js';
+export * from './hybrid-react.test.js';
+export * from './hybrid.test.js';
+export * from './mpr-demo.test.js';
+export * from './hilla-react-cli.test.js';
 // export * from './cc-identity-management.test.js';  // Temporarily disabled due to compilation issues
 
 import type { TestConfig } from './baseTest.js';
 import { runStartTest } from './start.test.js';
+import { runStartAuthTest } from './start-auth.test.js';
 import { runReactTest } from './react.test.js';
 import { runReactStarterTest } from './react-starter.test.js';
 import { runBasicTest } from './basic.test.js';
@@ -30,7 +39,13 @@ import { runSpreadsheetDemoTest } from './spreadsheet-demo.test.js';
 import { runReleasesTest } from './releases.test.js';
 import { runAiTest } from './ai.test.js';
 import { runBookstoreTest } from './bookstore.test.js';
-// import { runCcIdentityManagementTest } from './cc-identity-management.test.js';  // Temporarily disabled
+import { runInitializerTest } from './initializer.test.js';
+import { runCollaborationTest } from './collaboration.test.js';
+import { runOauthTest } from './oauth.test.js';
+import { runHybridReactTest } from './hybrid-react.test.js';
+import { runHybridTest } from './hybrid.test.js';
+import { runMprDemoTest } from './mpr-demo.test.js';
+import { runHillaReactCliTest } from './hilla-react-cli.test.js';
 import { logger } from '../utils/logger.js';
 
 // Test runner interface
@@ -40,6 +55,7 @@ export type TestFunction = (config: TestConfig) => Promise<boolean>;
 export const TEST_REGISTRY: Record<string, { testFunction: TestFunction; fileName: string }> = {
   // Core starter tests (from lib-start.sh getStartTestFile)
   'start': { testFunction: runStartTest, fileName: 'start.test.ts' },
+  'start-auth': { testFunction: runStartAuthTest, fileName: 'start-auth.test.ts' },
   'basic': { testFunction: runBasicTest, fileName: 'basic.test.ts' },
   'click': { testFunction: runClickTest, fileName: 'click.test.ts' },
   'click-hotswap': { testFunction: runClickHotswapTest, fileName: 'click-hotswap.test.ts' },
@@ -61,25 +77,24 @@ export const TEST_REGISTRY: Record<string, { testFunction: TestFunction; fileNam
   'ai': { testFunction: runAiTest, fileName: 'ai.test.ts' },
   'bookstore': { testFunction: runBookstoreTest, fileName: 'bookstore.test.ts' },
   
+  // Additional tests now migrated:
+  'initializer': { testFunction: runInitializerTest, fileName: 'initializer.test.ts' },
+  'collaboration': { testFunction: runCollaborationTest, fileName: 'collaboration.test.ts' },
+  'oauth': { testFunction: runOauthTest, fileName: 'oauth.test.ts' },
+  'hybrid-react': { testFunction: runHybridReactTest, fileName: 'hybrid-react.test.ts' },
+  'hybrid': { testFunction: runHybridTest, fileName: 'hybrid.test.ts' },
+  'mpr-demo': { testFunction: runMprDemoTest, fileName: 'mpr-demo.test.ts' },
+  'hilla-react-cli': { testFunction: runHillaReactCliTest, fileName: 'hilla-react-cli.test.ts' },
+  
   // Control Center tests (from lib-k8s-cc.sh CC_TESTS)
   // Note: cc-identity-management temporarily disabled due to compilation issues
   // 'cc-setup': { testFunction: runCcSetupTest, fileName: 'cc-setup.test.ts' },
   // 'cc-install-apps': { testFunction: runCcInstallAppsTest, fileName: 'cc-install-apps.test.ts' },
-  // 'cc-identity-management': { testFunction: runCcIdentityManagementTest, fileName: 'cc-identity-management.test.ts' },
   // 'cc-localization': { testFunction: runCcLocalizationTest, fileName: 'cc-localization.test.ts' },
   
-  // Additional tests that need to be migrated:
-  // 'start-auth': { testFunction: runStartAuthTest, fileName: 'start-auth.test.ts' },
-  // 'initializer': { testFunction: runInitializerTest, fileName: 'initializer.test.ts' },
-  // 'click-hotswap': { testFunction: runClickHotswapTest, fileName: 'click-hotswap.test.ts' },
-  // 'hilla-react-cli': { testFunction: runHillaReactCliTest, fileName: 'hilla-react-cli.test.ts' },
-  // 'hybrid-react': { testFunction: runHybridReactTest, fileName: 'hybrid-react.test.ts' },
-  // 'hybrid': { testFunction: runHybridTest, fileName: 'hybrid.test.ts' },
-  // 'collaboration': { testFunction: runCollaborationTest, fileName: 'collaboration.test.ts' },
-  // 'mpr-demo': { testFunction: runMprDemoTest, fileName: 'mpr-demo.test.ts' },
+  // Additional tests that still need to be migrated:
   // 'k8s-demo': { testFunction: runK8sDemoTest, fileName: 'k8s-demo.test.ts' },
   // 'start-wizard': { testFunction: runStartWizardTest, fileName: 'start-wizard.test.ts' },
-  // 'oauth': { testFunction: runOauthTest, fileName: 'oauth.test.ts' },
   // 'expo-flow': { testFunction: runExpoFlowTest, fileName: 'expo-flow.test.ts' },
   
   // Add more tests as they are converted
@@ -133,6 +148,7 @@ export function getTestForStarter(starterName: string): string | undefined {
   if (starterName === 'react') return 'react-starter';  // Uses react-starter.js
   if (starterName.startsWith('test-hybrid-react')) return 'hybrid-react';
   if (starterName.startsWith('test-hybrid')) return 'hybrid';
+  if (starterName === 'flow-hilla-hybrid-example') return 'hybrid';
   if (starterName === 'react-crm-tutorial') return 'noop';
   if (starterName === 'collaboration') return 'collaboration';
   if (starterName === 'latest-java') return 'latest-java';
