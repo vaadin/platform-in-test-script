@@ -30,6 +30,13 @@ export class PitRunner {
   private setupCleanupHandlers(): void {
     const cleanup = async () => {
       logger.info('Cleaning up processes...');
+      
+      // Close stdin to avoid hanging
+      if (process.stdin.readable) {
+        process.stdin.pause();
+        process.stdin.destroy();
+      }
+      
       const { killProcesses } = await import('../utils/system.js');
       await killProcesses();
       process.exit(0);
@@ -37,7 +44,6 @@ export class PitRunner {
 
     process.on('SIGINT', cleanup);
     process.on('SIGTERM', cleanup);
-    process.on('beforeExit', cleanup);
   }
 
   async run(): Promise<void> {
@@ -85,6 +91,12 @@ export class PitRunner {
       // Ensure all processes are killed
       const { killProcesses } = await import('../utils/system.js');
       await killProcesses();
+      
+      // Ensure stdin is properly closed to prevent hanging
+      if (process.stdin.readable) {
+        process.stdin.pause();
+        process.stdin.destroy();
+      }
     }
   }
 
@@ -180,8 +192,9 @@ export class PitRunner {
       return;
     }
 
-    // Kill any running test processes
-    // Implementation would go here
+    // Kill any running test processes using the system utility
+    const { killProcesses } = await import('../utils/system.js');
+    await killProcesses();
   }
 
   private async cleanupTest(_tempDir: string, starterName: string): Promise<void> {
@@ -190,8 +203,9 @@ export class PitRunner {
       return;
     }
 
-    // Cleanup specific test files
-    // Implementation would go here
+    // Kill any remaining processes for this test
+    const { killProcessesByPort } = await import('../utils/system.js');
+    await killProcessesByPort(this.config.port);
   }
 
   private async cleanup(tempDir: string): Promise<void> {

@@ -2,6 +2,7 @@
 
 import { parseArguments, validateConfig } from './cli/args.js';
 import { PitRunner } from './core/pitRunner.js';
+import { PlaywrightRunner } from './core/playwrightRunner.js';
 import { logger } from './utils/logger.js';
 
 async function main(): Promise<void> {
@@ -26,9 +27,19 @@ async function main(): Promise<void> {
       process.exit(1);
     }
 
+    // Handle Playwright-only mode
+    if (config.runPw) {
+      const playwrightRunner = new PlaywrightRunner();
+      await playwrightRunner.runMultipleTests(config);
+      process.exit(0);
+    }
+
     // Create and run PIT
     const runner = new PitRunner(config);
     await runner.run();
+    
+    // Ensure clean exit
+    process.exit(0);
 
   } catch (error) {
     logger.error(`Fatal error: ${error}`);

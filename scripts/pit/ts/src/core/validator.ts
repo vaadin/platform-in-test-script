@@ -247,9 +247,32 @@ export class Validator {
     logger.info(`🔔 Application is running at http://localhost:${port}`);
     logger.info('Press Enter to continue after manual testing...');
     
+    // Ensure stdin is in raw mode for immediate response
+    if (process.stdin.isTTY) {
+      process.stdin.setRawMode(false);
+    }
+    
     // Wait for user input
-    await new Promise((resolve) => {
-      process.stdin.once('data', resolve);
+    return new Promise((resolve) => {
+      const cleanup = () => {
+        process.stdin.pause();
+        resolve();
+      };
+      
+      process.stdin.resume();
+      process.stdin.once('data', cleanup);
+      
+      // Timeout after 10 minutes to prevent infinite hanging
+      const timeout = setTimeout(() => {
+        process.stdin.removeListener('data', cleanup);
+        logger.info('Interactive mode timeout reached, continuing...');
+        cleanup();
+      }, 10 * 60 * 1000);
+      
+      // Clear timeout when user responds
+      process.stdin.once('data', () => {
+        clearTimeout(timeout);
+      });
     });
   }
 

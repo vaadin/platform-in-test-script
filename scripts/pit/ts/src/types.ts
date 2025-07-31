@@ -31,6 +31,8 @@ export interface PitConfig {
   gitSsh: boolean;
   headless: boolean;
   headed: boolean;
+  debug: boolean;
+  runPw: boolean;
   starters: string;
   runFunction?: string;
 }

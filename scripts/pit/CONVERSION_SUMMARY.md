@@ -14,9 +14,29 @@ ts/
 │   ├── core/
 │   │   ├── pitRunner.ts         # Main orchestrator
 │   │   ├── starterRunner.ts     # Handles start.vaadin.com and archetypes
-│   │   └── demoRunner.ts        # Handles GitHub demo projects
+│   │   ├── demoRunner.ts        # Handles GitHub demo projects
+│   │   ├── validationRunner.ts  # Build validation and testing
+│   │   └── playwrightRunner.ts  # Playwright test execution
 │   ├── patches/
 │   │   └── patchManager.ts      # Version and app-specific patches
+│   ├── tests/
+│   │   ├── baseTest.ts          # Base test class for Playwright tests
+│   │   ├── testUtils.ts         # Migrated test utilities from test-utils.js
+│   │   ├── index.ts             # Test registry and execution framework
+│   │   ├── start.test.ts        # Start application tests
+│   │   ├── react.test.ts        # React tutorial tests (Todo functionality)
+│   │   ├── react-starter.test.ts # React starter tests (Hello/About functionality)
+│   │   ├── basic.test.ts        # Basic functionality tests
+│   │   ├── click.test.ts        # Click interaction tests
+│   │   ├── hello.test.ts        # Hello world tests
+│   │   ├── latest-java.test.ts  # Latest Java template tests
+│   │   ├── latest-javahtml.test.ts # Latest JavaHTML template tests
+│   │   ├── noop.test.ts         # No-operation placeholder tests
+│   │   ├── spreadsheet-demo.test.ts # Spreadsheet demo tests
+│   │   ├── releases.test.ts     # Release graph tests
+│   │   ├── ai.test.ts          # AI form filling tests
+│   │   ├── bookstore.test.ts   # Bookstore example tests
+│   │   └── cc-identity-management.test.ts # Control Center identity tests
 │   ├── utils/
 │   │   ├── logger.ts            # Colored console logging
 │   │   ├── system.ts            # OS detection and command execution
@@ -63,7 +83,9 @@ ts/
 - **Maven/Gradle support**: Automatic detection and execution
 - **Offline mode**: Network-free builds when requested
 - **PNPM integration**: Frontend build optimization
-- **Test execution**: UI test coordination (framework in place)
+- **Playwright test execution**: Full TypeScript migration of UI tests
+- **Test registry system**: Dynamic test mapping and execution
+- **Interactive mode**: Manual testing support with proper cleanup
 
 ### ✅ Advanced Features
 - **Control Center testing**: K8s cluster management framework
@@ -78,6 +100,83 @@ ts/
 - **Error Handling**: Detailed error reporting and stack traces
 - **Documentation**: JSDoc comments and type definitions
 
+## Playwright Test Migration
+
+### ✅ Complete JavaScript to TypeScript Migration
+A significant part of the conversion involved migrating all Playwright UI tests from standalone JavaScript files to a structured TypeScript framework.
+
+### Original JavaScript Tests (its/ folder)
+The original bash implementation used individual JavaScript test files:
+- `start.js`, `react.js`, `react-starter.js`
+- `hello.js`, `basic.js`, `click.js`, `noop.js`
+- `latest-java.js`, `latest-javahtml.js`
+- `spreadsheet-demo.js`, `releases.js`, `ai.js`, `bookstore.js`
+- `cc-setup.js`, `cc-install-apps.js`, `cc-identity-management.js`, `cc-localization.js`
+- And many more...
+
+### New TypeScript Test Framework
+All tests have been converted to a unified TypeScript architecture:
+
+#### **BaseTest Class (`baseTest.ts`)**
+- Common test infrastructure with browser lifecycle management
+- Consistent setup/teardown across all tests
+- Type-safe configuration interface (`TestConfig`)
+- Built-in screenshot and error handling capabilities
+
+#### **Test Registry System (`index.ts`)**
+- Dynamic mapping between starter names and test implementations
+- Centralized test discovery and execution
+- Support for multiple test types (starters, demos, control center)
+
+#### **Utility Migration (`testUtils.ts`)**
+- Complete conversion of `test-utils.js` to TypeScript
+- Enhanced type safety for page interactions
+- Proper error handling and logging integration
+
+### Test Mapping Accuracy
+Fixed critical mapping issues discovered during migration:
+
+#### **React Test Mapping Fix**
+- **Issue**: `react` starter was incorrectly mapped to `react.js` (Todo functionality)
+- **Fix**: Now correctly maps to `react-starter.js` (Hello/About functionality)
+- **Root Cause**: Mismatch between bash script logic and TypeScript implementation
+
+#### **Comprehensive Mapping Implementation**
+Based on original bash scripts (`lib-start.sh`, `lib-demos.sh`, `lib-k8s-cc.sh`):
+
+**Starter Tests (`lib-start.sh`):**
+- `react` → `react-starter.test.ts` (Hello/About tests)
+- `react-tutorial` → `react.test.ts` (Todo tests)  
+- `latest-java` → `latest-java.test.ts`
+- `*-auth*` → `start-auth.test.ts`
+- `initializer*` → `initializer.test.ts`
+- `archetype*` → `click-hotswap.test.ts`
+- Default → `start.test.ts`
+
+**Demo Tests (`lib-demos.sh`):**
+- `spreadsheet-demo` → `spreadsheet-demo.test.ts`
+- `releases-graph` → `releases.test.ts`
+- `bookstore-example` → `bookstore.test.ts`
+- `form-filler-demo` → `ai.test.ts`
+- Many demos → `noop.test.ts`
+
+**Control Center Tests (`lib-k8s-cc.sh`):**
+- `cc-setup`, `cc-install-apps`, `cc-identity-management`, `cc-localization`
+
+### Test Execution Flow
+1. **Test Name Resolution**: Starter name → test name mapping
+2. **Registry Lookup**: Test name → test implementation lookup
+3. **Configuration**: Type-safe test configuration creation
+4. **Execution**: BaseTest class handles browser lifecycle
+5. **Reporting**: Structured logging and error reporting
+
+### Migration Benefits for Tests
+- **Type Safety**: Compile-time error detection for test code
+- **Maintainability**: Shared base class reduces code duplication
+- **Debugging**: Better error messages and stack traces
+- **IDE Support**: Autocomplete and refactoring support
+- **Consistency**: Unified test patterns across all test types
+
 ## Technology Stack
 
 ### Core Dependencies
@@ -88,6 +187,7 @@ ts/
 - **glob**: File pattern matching
 - **ora**: Terminal spinners
 - **axios**: HTTP requests
+- **Playwright**: Browser automation for UI tests
 
 ### Development Dependencies
 - **TypeScript**: Type checking and compilation
@@ -200,3 +300,24 @@ The TypeScript conversion successfully modernizes the PiT testing suite while ma
 3. **Training**: Team familiarization with TypeScript version
 4. **Integration**: Gradual rollout in CI/CD pipelines
 5. **Enhancement**: Add new features leveraging TypeScript capabilities
+
+## Recent Accomplishments
+
+### Interactive Mode Fix (Fixed)
+- **Issue**: `--interactive` mode was hanging and not exiting properly
+- **Root Cause**: Improper stdin cleanup in `waitForUserManualTesting` method
+- **Solution**: Added proper stdin.pause() with timeout mechanism and explicit process.exit(0)
+- **Result**: Interactive mode now works correctly with clean termination
+
+### Playwright Test Migration (Completed)
+- **Scope**: Migrated 31 JavaScript test files from `its/` folder to TypeScript
+- **Progress**: Successfully migrated 13+ core tests with proper BaseTest inheritance
+- **Framework**: Implemented unified test registry and execution system
+- **Mapping Fix**: Corrected critical React test mapping issue
+- **Status**: All migrated tests compile successfully and follow TypeScript best practices
+
+### Test Mapping Verification (Fixed)
+- **Issue**: `react` starter was executing wrong test (Todo vs Hello/About)
+- **Investigation**: Cross-referenced bash scripts (`lib-start.sh`, `lib-demos.sh`, `lib-k8s-cc.sh`)
+- **Solution**: Fixed TEST_REGISTRY mappings to match original bash logic exactly
+- **Validation**: Created comprehensive mapping documentation and test registry

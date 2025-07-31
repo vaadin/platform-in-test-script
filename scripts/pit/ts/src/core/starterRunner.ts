@@ -213,8 +213,8 @@ export class StarterRunner {
       throw new Error('No build file found (pom.xml or build.gradle)');
     }
 
-    // Get test file for the starter
-    const testFile = this.getStartTestFile(starterName);
+    // Get test file for the starter (this will be handled by PlaywrightRunner now)
+    const testFile = undefined; // Let PlaywrightRunner determine the test
 
     // Determine startup messages based on project type
     const devStartupMessages = 'Started .*Application|Frontend compiled|Started ServerConnector|Started Vite|Listening on:';
@@ -284,25 +284,6 @@ export class StarterRunner {
         await this.validationRunner.runValidations(starterName, projectDir, prodMode);
       }
     }
-  }
-
-  private getStartTestFile(starterName: string): string | undefined {
-    // Map starter names to test files (based on bash lib-start.sh getStartTestFile function)
-    if (starterName.includes('-auth')) return 'start-auth.js';
-    if (starterName === 'flow-crm-tutorial') return undefined;
-    if (starterName === 'react-tutorial') return 'react.js';
-    if (starterName.startsWith('default') || starterName === 'vaadin-quarkus' || starterName.includes('_prerelease')) return 'hello.js';
-    if (starterName.startsWith('initializer')) return 'initializer.js';
-    if (starterName.startsWith('archetype')) return 'click-hotswap.js';
-    if (starterName === 'hilla-react-cli') return 'hilla-react-cli.js';
-    if (starterName === 'react') return 'react-starter.js';
-    if (starterName.startsWith('test-hybrid-react')) return 'hybrid-react.js';
-    if (starterName.startsWith('test-hybrid')) return 'hybrid.js';
-    if (starterName === 'react-crm-tutorial') return 'noop.js';
-    if (starterName === 'collaboration') return 'collaboration.js';
-    
-    // Default test file
-    return 'start.js';
   }
 
   private getCleanCommand(starterName: string, hasPom: boolean): string {

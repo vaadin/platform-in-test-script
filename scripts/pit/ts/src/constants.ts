@@ -72,8 +72,9 @@ export const DEMOS = [
 ];
 
 export const DEFAULT_CONFIG = {
+  host: 'localhost',
   port: 8080,
-  timeout: 300,
+  timeout: 30,
   version: 'current',
   cluster: 'pit',
   vendor: 'kind' as const,
@@ -103,6 +104,8 @@ export const DEFAULT_CONFIG = {
   gitSsh: false,
   headless: false,
   headed: false,
+  debug: false,
+  runPw: false,
   starters: [...PRESETS, ...DEMOS].filter(s => s.length > 3).join(','),
 };
 
@@ -135,4 +138,10 @@ export const APP_CONFIGURATIONS = {
       'github.personal.token': 'GHTK',
     },
   },
+} as const;
+
+// Playwright configurable timeout constants
+export const PLAYWRIGHT_TIMEOUTS = {
+  TIMEOUT_DEV_MS: 60000,
+  TIMEOUT_PROD_MS: 30000,
 } as const;

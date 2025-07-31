@@ -28,12 +28,15 @@ process.argv.forEach(a => {
   await page.locator('input[type="text"]').fill('Greet');
   await page.locator('text=Say hello').click();
   await page.locator('text=Hello Greet');
-
+ 
   await page.locator('text=Master-Detail').nth(0).click();
   await page.locator('text=eula.lane').click();
   await page.locator('input[type="text"]').nth(0).fill('FOO');
   await page.locator('text=Save').click();
-  await page.locator('text=/stored/');
+  console.log("ADFASADF 1")
+  await page.waitForTimeout(44000)
+  console.log("ADFASADF 2")
+  await page.locator('text=/manolo/');
 
   // ---------------------
   await context.close();

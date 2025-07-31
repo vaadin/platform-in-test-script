@@ -1,8 +1,7 @@
-import { chromium, Browser, BrowserContext, Page } from '@playwright/test';
-import type { PitConfig } from '../types.js';
 import { logger } from '../utils/logger.js';
-import { runCommand } from '../utils/system.js';
-import { fileExists } from '../utils/file.js';
+import { runTest, type TestConfig } from '../tests/index.js';
+import type { PitConfig } from '../types.js';
+import { PLAYWRIGHT_TIMEOUTS } from '../constants.js';
 
 export interface PlaywrightTestOptions {
   port: number;
@@ -13,162 +12,126 @@ export interface PlaywrightTestOptions {
 }
 
 export class PlaywrightRunner {
-  private readonly config: PitConfig;
 
-  constructor(config: PitConfig) {
-    this.config = config;
-  }
+  // Single test runner (used by ValidationRunner)
+  async runTests(testFile: string | undefined, options: PlaywrightTestOptions): Promise<void> {
+    // If no test file specified, use the starter name as test name
+    let testName: string | undefined = testFile || options.name;
+    
+    // Remove .js extension if present (convert from old naming)
+    if (testName?.endsWith('.js')) {
+      testName = testName.slice(0, -3);
+    }
 
-  async runTests(testFile: string, options: PlaywrightTestOptions): Promise<void> {
-    if (!(await fileExists(testFile))) {
-      logger.info(`No test file found: ${testFile}`);
+    if (!testName) {
+      logger.info(`No test found for starter: ${options.name}`);
       return;
     }
 
-    logger.info(`Running Playwright tests: ${testFile}`);
+    logger.info(`Running Playwright test: ${testName} for ${options.name}`);
 
-    // Check if Playwright is installed
-    await this.ensurePlaywrightInstalled();
+    // Create test configuration
+    const testConfig: TestConfig = {
+      url: `http://localhost:${options.port}`,
+      headless: options.headless,
+      host: 'localhost',
+      port: options.port,
+      timeout: options.mode === 'dev' ? PLAYWRIGHT_TIMEOUTS.TIMEOUT_DEV_MS : PLAYWRIGHT_TIMEOUTS.TIMEOUT_PROD_MS
+    };
 
-    // Run the test file with Node.js
-    const args = [
-      `--port=${options.port}`,
-      `--name=${options.name}`,
-      `--version=${options.version}`,
-      `--mode=${options.mode}`,
-    ];
+    // Run the TypeScript test
+    const success = await runTest(testName, testConfig);
 
-    if (options.headless) {
-      args.push('--headless');
+    if (!success) {
+      throw new Error(`Playwright test '${testName}' failed for ${options.name}`);
     }
 
-    const command = `node "${testFile}" ${args.join(' ')}`;
-    const result = await runCommand(command);
-
-    if (!result.success) {
-      throw new Error(`Playwright tests failed: ${result.stderr}`);
-    }
-
-    logger.success('✓ Playwright tests completed successfully');
+    logger.success(`✓ Playwright test '${testName}' passed for ${options.name}`);
   }
 
-  private async ensurePlaywrightInstalled(): Promise<void> {
-    // Check if @playwright/test is installed
-    try {
-      await runCommand('npx playwright --version');
-    } catch {
-      logger.info('Installing Playwright...');
+  // Multiple test runner (used for --run-pw functionality)
+  async runMultipleTests(config: PitConfig): Promise<void> {
+    logger.setVerbose(config.verbose || config.debug);
+    logger.separator('Running Playwright Tests Only');
+
+    // Parse starters
+    const starters = config.starters.split(',').map(s => s.trim()).filter(Boolean);
+
+    if (starters.length === 0) {
+      logger.error('No starters specified. Use --starters to specify which tests to run.');
+      process.exit(1);
+    }
+
+    logger.info(`Running Playwright tests for: ${starters.join(', ')}`);
+    logger.info(`Assuming server is running on http://localhost:${config.port}`);
+
+    const results: Array<{ starter: string; success: boolean; error?: string }> = [];
+
+    for (const starter of starters) {
+      logger.separator(`Running Playwright Test: ${starter}`);
       
-      // Install Playwright
-      const installResult = await runCommand('npm install @playwright/test');
-      if (!installResult.success) {
-        throw new Error(`Failed to install Playwright: ${installResult.stderr}`);
-      }
+      const testConfig: TestConfig = {
+        url: `http://localhost:${config.port}`,
+        host: 'localhost',
+        port: config.port,
+        headless: config.headless || !config.headed,
+        timeout: config.timeout * 1000, // Convert to milliseconds
+      };
 
-      // Install browsers
-      const browsersResult = await runCommand('npx playwright install chromium');
-      if (!browsersResult.success) {
-        throw new Error(`Failed to install Playwright browsers: ${browsersResult.stderr}`);
-      }
+      // Log test execution details
+      logger.info(`Test Configuration:`);
+      logger.info(`  ├─ Starter: ${starter}`);
+      logger.info(`  ├─ Host: ${testConfig.host}`);
+      logger.info(`  ├─ Port: ${testConfig.port}`);
+      logger.info(`  ├─ Headless: ${testConfig.headless}`);
+      logger.info(`  ├─ Timeout: ${testConfig.timeout}ms (${config.timeout}s)`);
+      logger.info(`  └─ URL: http://${testConfig.host}:${testConfig.port}`);
+      
+      try {
+        logger.info(`Executing Playwright test for '${starter}'...`);
+        const success = await runTest(starter, testConfig);
 
-      // Install system dependencies (Linux only)
-      if (process.platform === 'linux') {
-        await runCommand('npx playwright install-deps chromium');
-      }
-    }
-  }
-
-  /**
-   * Create a Playwright test programmatically (alternative to running existing JS files)
-   */
-  async createAndRunTest(
-    testName: string,
-    url: string,
-    testActions: (page: Page) => Promise<void>
-  ): Promise<void> {
-    let browser: Browser | null = null;
-    let context: BrowserContext | null = null;
-
-    try {
-      await this.ensurePlaywrightInstalled();
-
-      browser = await chromium.launch({
-        headless: this.config.headless,
-      });
-
-      context = await browser.newContext();
-      const page = await context.newPage();
-
-      // Set up console and error logging
-      page.on('console', (msg) => {
-        logger.info(`> CONSOLE: ${msg.text()}`);
-      });
-
-      page.on('pageerror', (err) => {
-        logger.error(`> PAGEERROR: ${err.message}`);
-      });
-
-      // Navigate to the URL
-      await page.goto(url, { waitUntil: 'networkidle' });
-
-      // Run the test actions
-      await testActions(page);
-
-      logger.success(`✓ ${testName} test completed successfully`);
-
-    } catch (error) {
-      logger.error(`✗ ${testName} test failed: ${error}`);
-      throw error;
-    } finally {
-      if (context) {
-        await context.close();
-      }
-      if (browser) {
-        await browser.close();
+        results.push({ starter, success });
+        
+        if (success) {
+          logger.success(`✓ Test '${starter}' passed`);
+        } else {
+          logger.error(`✗ Test '${starter}' failed`);
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        logger.error(`✗ Test '${starter}' failed: ${errorMessage}`);
+        results.push({ starter, success: false, error: errorMessage });
       }
     }
+
+    // Report final results
+    this.reportResults(results);
   }
 
-  /**
-   * Run a default starter test (clicks Hello button and checks response)
-   */
-  async runDefaultStarterTest(url: string): Promise<void> {
-    await this.createAndRunTest('Default Starter', url, async (page) => {
-      // Wait for the page to load
-      await page.waitForSelector('text=Hello', { timeout: 10000 });
+  private reportResults(results: Array<{ starter: string; success: boolean; error?: string }>): void {
+    logger.separator('Playwright Test Results');
 
-      // Click the Hello button
-      await page.locator('text=Hello').first().click();
+    const successful = results.filter(r => r.success);
+    const failed = results.filter(r => !r.success);
 
-      // Fill in the text field
-      await page.locator('input[type="text"]').fill('Test User');
+    if (successful.length > 0) {
+      logger.info('Successful tests:');
+      successful.forEach(r => logger.info(`  ✓ ${r.starter}`));
+    }
 
-      // Click "Say hello" button
-      await page.locator('text=Say hello').click();
-
-      // Check for the greeting message
-      await page.locator('text=Hello Test User').waitFor({ timeout: 5000 });
-    });
-  }
-
-  /**
-   * Run a React starter test
-   */
-  async runReactStarterTest(url: string): Promise<void> {
-    await this.createAndRunTest('React Starter', url, async (page) => {
-      // Wait for React app to load
-      await page.waitForSelector('[data-testid="increment-button"], button:has-text("Increment")', { 
-        timeout: 10000 
+    if (failed.length > 0) {
+      logger.info('\nFailed tests:');
+      failed.forEach(r => {
+        const errorSuffix = r.error ? ` - ${r.error}` : '';
+        logger.error(`  ✗ ${r.starter}${errorSuffix}`);
       });
+    }
 
-      // Click increment button multiple times
-      const incrementButton = page.locator('[data-testid="increment-button"], button:has-text("Increment")').first();
-      await incrementButton.click();
-      await incrementButton.click();
-      await incrementButton.click();
+    logger.info(`\nTotal: ${results.length}, Passed: ${successful.length}, Failed: ${failed.length}`);
 
-      // Check that counter has incremented
-      await page.locator('text=3').waitFor({ timeout: 5000 });
-    });
+    if (failed.length > 0) {
+      process.exit(1);
+    }
   }
 }

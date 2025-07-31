@@ -22,7 +22,7 @@ export class ValidationRunner {
   constructor(config: PitConfig) {
     this.config = config;
     this.patchManager = new PatchManager(config);
-    this.playwrightRunner = new PlaywrightRunner(config);
+    this.playwrightRunner = new PlaywrightRunner();
   }
 
   async runValidations(
@@ -101,7 +101,7 @@ export class ValidationRunner {
         await this.checkHttpServlet(`http://localhost:${this.config.port}`);
 
         // Run Playwright tests
-        if (testFile && !this.config.skipTests && !this.config.skipPw) {
+        if (!this.config.skipTests && !this.config.skipPw) {
           await this.playwrightRunner.runTests(testFile, {
             port: this.config.port,
             mode: validationMode,
@@ -330,10 +330,31 @@ export class ValidationRunner {
     logger.info(`🌐 Open http://localhost:${this.config.port} in your browser`);
     logger.info('Press Enter when you have finished testing...');
     
+    // Ensure stdin is in raw mode for immediate response
+    if (process.stdin.isTTY) {
+      process.stdin.setRawMode(false);
+    }
+    
     // Wait for user input
     return new Promise((resolve) => {
-      process.stdin.once('data', () => {
+      const cleanup = () => {
+        process.stdin.pause();
         resolve();
+      };
+      
+      process.stdin.resume();
+      process.stdin.once('data', cleanup);
+      
+      // Timeout after 10 minutes to prevent infinite hanging
+      const timeout = setTimeout(() => {
+        process.stdin.removeListener('data', cleanup);
+        logger.info('Interactive mode timeout reached, continuing...');
+        cleanup();
+      }, 10 * 60 * 1000);
+      
+      // Clear timeout when user responds
+      process.stdin.once('data', () => {
+        clearTimeout(timeout);
       });
     });
   }

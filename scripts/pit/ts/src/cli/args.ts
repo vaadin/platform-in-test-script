@@ -45,6 +45,8 @@ export function createProgram(): Command {
     .option('--git-ssh', 'Use git-ssh instead of https', DEFAULT_CONFIG.gitSsh)
     .option('--headless', 'Run the browser in headless mode', DEFAULT_CONFIG.headless)
     .option('--headed', 'Run the browser in headed mode', DEFAULT_CONFIG.headed)
+    .option('--debug', 'Enable debug mode with extra logging', DEFAULT_CONFIG.debug)
+    .option('--run-pw', 'Skip setup and only run Playwright tests (assumes server is already running)', DEFAULT_CONFIG.runPw)
     .option('--function <function>', 'Run only one function')
     .option('--starters <list>', 'List of demos or presets separated by comma', DEFAULT_CONFIG.starters);
 
@@ -86,6 +88,14 @@ export function parseArguments(args: string[]): PitConfig {
     options['keepCc'] = true;
   }
 
+  // Handle headless/headed logic
+  let headlessMode = DEFAULT_CONFIG.headless; // Default value
+  if (options['headless']) {
+    headlessMode = true;
+  } else if (options['headed']) {
+    headlessMode = false;
+  }
+
   const config: PitConfig = {
     port: parseInt(options['port']) || DEFAULT_CONFIG.port,
     timeout: parseInt(options['timeout']) || DEFAULT_CONFIG.timeout,
@@ -117,8 +127,10 @@ export function parseArguments(args: string[]): PitConfig {
     commit: Boolean(options['commit']),
     test: Boolean(options['test']),
     gitSsh: Boolean(options['gitSsh']),
-    headless: Boolean(options['headless']),
+    headless: headlessMode,
     headed: Boolean(options['headed']),
+    debug: Boolean(options['debug']),
+    runPw: Boolean(options['runPw']),
     starters: options['starters'] || DEFAULT_CONFIG.starters,
     runFunction: options['function'],
   };

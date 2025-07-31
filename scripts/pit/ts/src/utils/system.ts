@@ -255,7 +255,8 @@ export async function killProcesses(): Promise<void> {
     'gradle.*bootRun',
     'quarkus:dev',
     'Application.*--server.port=8080',
-    'target/classes.*Application'
+    'target/classes.*Application',
+    'java.*Application'
   ];
 
   for (const pattern of patterns) {
@@ -273,6 +274,10 @@ export async function killProcesses(): Promise<void> {
 
   // Give processes time to shut down
   await new Promise(resolve => setTimeout(resolve, 3000));
+  
+  // Force kill any remaining Java processes
+  await runCommand(`pkill -9 -f "java.*Application" 2>/dev/null || true`, { silent: true });
+  await runCommand(`pkill -9 -f "spring-boot:run" 2>/dev/null || true`, { silent: true });
 }
 
 export async function waitForServer(url: string, timeoutSeconds: number): Promise<void> {
