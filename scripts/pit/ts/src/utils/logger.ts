@@ -4,6 +4,7 @@ import type { LogLevel } from '../types.js';
 export class Logger {
   private static instance: Logger;
   private verbose = false;
+  private debugMode = false;
 
   private constructor() {}
 
@@ -16,6 +17,19 @@ export class Logger {
 
   setVerbose(verbose: boolean): void {
     this.verbose = verbose;
+  }
+
+  setDebug(debug: boolean): void {
+    this.debugMode = debug;
+  }
+
+  setOptions(verbose: boolean, debug: boolean): void {
+    this.verbose = verbose;
+    this.debugMode = debug;
+  }
+
+  isDebugMode(): boolean {
+    return this.debugMode;
   }
 
   info(message: string): void {

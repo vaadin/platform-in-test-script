@@ -20,8 +20,8 @@ export class PitRunner {
     this.starterRunner = new StarterRunner(config);
     this.demoRunner = new DemoRunner(config);
 
-    // Set logger verbosity
-    logger.setVerbose(config.verbose);
+    // Set logger options (verbose shows 🐛 debug messages, debug shows command output)
+    logger.setOptions(config.verbose, config.debug);
 
     // Set up cleanup handlers
     this.setupCleanupHandlers();

@@ -4,6 +4,7 @@ export * from './react.test.js';
 export * from './react-starter.test.js';
 export * from './basic.test.js';
 export * from './click.test.js';
+export * from './click-hotswap.test.js';
 export * from './hello.test.js';
 export * from './latest-java.test.js';
 export * from './latest-javahtml.test.js';
@@ -20,6 +21,7 @@ import { runReactTest } from './react.test.js';
 import { runReactStarterTest } from './react-starter.test.js';
 import { runBasicTest } from './basic.test.js';
 import { runClickTest } from './click.test.js';
+import { runClickHotswapTest } from './click-hotswap.test.js';
 import { runHelloTest } from './hello.test.js';
 import { runLatestJavaTest } from './latest-java.test.js';
 import { runLatestJavaHtmlTest } from './latest-javahtml.test.js';
@@ -40,6 +42,7 @@ export const TEST_REGISTRY: Record<string, { testFunction: TestFunction; fileNam
   'start': { testFunction: runStartTest, fileName: 'start.test.ts' },
   'basic': { testFunction: runBasicTest, fileName: 'basic.test.ts' },
   'click': { testFunction: runClickTest, fileName: 'click.test.ts' },
+  'click-hotswap': { testFunction: runClickHotswapTest, fileName: 'click-hotswap.test.ts' },
   'hello': { testFunction: runHelloTest, fileName: 'hello.test.ts' },
   'noop': { testFunction: runNoopTest, fileName: 'noop.test.ts' },
   

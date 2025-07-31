@@ -1,5 +1,5 @@
 import { logger } from '../utils/logger.js';
-import { runTest, type TestConfig } from '../tests/index.js';
+import { runTest, getTestForStarter, type TestConfig } from '../tests/index.js';
 import type { PitConfig } from '../types.js';
 import { PLAYWRIGHT_TIMEOUTS } from '../constants.js';
 
@@ -15,8 +15,13 @@ export class PlaywrightRunner {
 
   // Single test runner (used by ValidationRunner)
   async runTests(testFile: string | undefined, options: PlaywrightTestOptions): Promise<void> {
-    // If no test file specified, use the starter name as test name
-    let testName: string | undefined = testFile || options.name;
+    // If no test file specified, use the mapping function to get the correct test name
+    let testName: string | undefined = testFile;
+    
+    if (!testName) {
+      // Use the mapping function to convert starter name to test name
+      testName = getTestForStarter(options.name);
+    }
     
     // Remove .js extension if present (convert from old naming)
     if (testName?.endsWith('.js')) {
@@ -33,6 +38,9 @@ export class PlaywrightRunner {
     // Create test configuration
     const testConfig: TestConfig = {
       url: `http://localhost:${options.port}`,
+      starter: options.name,
+      mode: options.mode,
+      version: options.version,
       headless: options.headless,
       host: 'localhost',
       port: options.port,
@@ -51,7 +59,7 @@ export class PlaywrightRunner {
 
   // Multiple test runner (used for --run-pw functionality)
   async runMultipleTests(config: PitConfig): Promise<void> {
-    logger.setVerbose(config.verbose || config.debug);
+    logger.setOptions(config.verbose, config.debug);
     logger.separator('Running Playwright Tests Only');
 
     // Parse starters

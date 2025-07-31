@@ -40,20 +40,29 @@ export async function runCommand(
     env?: Record<string, string>;
     background?: boolean;
     outputFile?: string;
-    verbose?: boolean;
+    showOutput?: boolean;
   } = {}
 ): Promise<{ stdout: string; stderr: string; success: boolean; process?: ChildProcess }> {
   try {
-    const { silent = false, background = false, verbose = false, outputFile, ...execOptions } = options;
+    const { silent = false, background = false, showOutput = false, outputFile, ...execOptions } = options;
     
-    if (!silent && (verbose || !background)) {
+    if (!silent && (showOutput || !background)) {
       logger.debug(`Running: ${command}`);
     }
 
     if (background) {
       // Run command in background
+      let stdio: 'inherit' | 'pipe' | ['ignore', 'pipe', 'pipe'];
+      if (outputFile) {
+        stdio = ['ignore', 'pipe', 'pipe'];
+      } else if (showOutput) {
+        stdio = 'inherit';
+      } else {
+        stdio = 'pipe';
+      }
+      
       const childProcess = spawn('bash', ['-c', command], {
-        stdio: outputFile ? ['ignore', 'pipe', 'pipe'] : 'inherit',
+        stdio,
         detached: false,
         ...execOptions,
       });
@@ -62,8 +71,24 @@ export async function runCommand(
         // Redirect output to file
         const fs = await import('fs');
         const writeStream = fs.createWriteStream(outputFile, { flags: 'a' });
-        childProcess.stdout.pipe(writeStream);
-        childProcess.stderr.pipe(writeStream);
+        
+        if (showOutput) {
+          // In verbose mode, also pipe to console while writing to file
+          const { PassThrough } = await import('stream');
+          const stdoutPassThrough = new PassThrough();
+          const stderrPassThrough = new PassThrough();
+          
+          childProcess.stdout.pipe(stdoutPassThrough);
+          childProcess.stderr.pipe(stderrPassThrough);
+          
+          stdoutPassThrough.pipe(writeStream, { end: false });
+          stderrPassThrough.pipe(writeStream, { end: false });
+          stdoutPassThrough.pipe(process.stdout, { end: false });
+          stderrPassThrough.pipe(process.stderr, { end: false });
+        } else {
+          childProcess.stdout.pipe(writeStream);
+          childProcess.stderr.pipe(writeStream);
+        }
       }
 
       return {
@@ -72,7 +97,33 @@ export async function runCommand(
         success: true,
         process: childProcess,
       };
+    } else if (showOutput) {
+      // In verbose mode for synchronous commands, use spawn to get real-time output
+      return new Promise((resolve) => {
+        const childProcess = spawn('bash', ['-c', command], {
+          stdio: 'inherit',
+          ...execOptions,
+          env: { ...process.env, ...options.env },
+        });
+
+        let stdout = '';
+        let stderr = '';
+
+        childProcess.on('close', (code) => {
+          const success = code === 0;
+          
+          if (outputFile) {
+            // Append to output file
+            import('fs').then(fs => {
+              fs.promises.appendFile(outputFile, `Command: ${command}\nExit code: ${code}\n`);
+            });
+          }
+
+          resolve({ stdout, stderr, success });
+        });
+      });
     } else {
+      // Non-verbose mode - capture output
       const { stdout, stderr } = await execAsync(command, {
         ...execOptions,
         env: { ...process.env, ...options.env },

@@ -53,11 +53,16 @@ export class ValidationRunner {
       // Optimize build settings
       await this.optimizeBuildSettings(projectDir);
 
+      // Output dependency tree to file (unless in verbose mode)
+      if (!this.config.verbose && !this.config.debug) {
+        await this.outputDependencyTree(projectDir, validationMode, outputPath);
+      }
+
       // Compile the project
       logger.info(`Compiling project: ${compileCommand}`);
       const compileResult = await runCommand(compileCommand, { 
         outputFile: outputPath,
-        verbose: this.config.verbose 
+        showOutput: this.config.debug 
       });
       
       if (!compileResult.success) {
@@ -70,7 +75,7 @@ export class ValidationRunner {
       const serverProcess = await runCommand(startCommand, { 
         background: true,
         outputFile: outputPath,
-        verbose: this.config.verbose 
+        showOutput: this.config.debug 
       });
 
       // Give the server a moment to start before we begin monitoring
@@ -147,6 +152,58 @@ export class ValidationRunner {
         await runCommand(`rm -f "${outputPath}"`);
       }
     }
+  }
+
+  private async outputDependencyTree(
+    projectDir: string, 
+    validationMode: string, 
+    outputPath: string
+  ): Promise<void> {
+    const hasPom = await fileExists(joinPaths(projectDir, 'pom.xml'));
+    const hasBuildGradle = await fileExists(joinPaths(projectDir, 'build.gradle'));
+    
+    if (hasPom) {
+      const mvn = this.getMavenCommand();
+      const profile = validationMode === 'prod' ? ' -Pproduction,it' : '';
+      const command = `${mvn} -ntp -B dependency:tree${profile}`;
+      await runCommand(command, { 
+        outputFile: outputPath,
+        silent: true 
+      });
+    } else if (hasBuildGradle) {
+      const gradle = this.getGradleCommand();
+      const command = `${gradle} dependencies`;
+      await runCommand(command, { 
+        outputFile: outputPath,
+        silent: true 
+      });
+    }
+  }
+
+  private getMavenCommand(): string {
+    // Check if maven wrapper exists (matches bash computeMvn function)
+    try {
+      const fs = eval('require')('fs');
+      if (fs.existsSync('./mvnw')) {
+        return './mvnw';
+      }
+    } catch {
+      // Fall back to mvn if require fails (in pure ES module environments)
+    }
+    return 'mvn';
+  }
+
+  private getGradleCommand(): string {
+    // Check if gradle wrapper exists
+    try {
+      const fs = eval('require')('fs');
+      if (fs.existsSync('./gradlew')) {
+        return './gradlew';
+      }
+    } catch {
+      // Fall back to gradle if require fails
+    }
+    return 'gradle';
   }
 
   private getTimeout(starterName: string): number {

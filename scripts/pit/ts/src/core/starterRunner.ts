@@ -95,7 +95,7 @@ export class StarterRunner {
       throw new Error(`Unknown archetype starter: ${starterName}`);
     }
     
-    const result = await runCommand(command);
+    const result = await runCommand(command, { showOutput: this.config.debug });
     if (!result.success) {
       throw new Error(`Failed to generate archetype: ${result.stderr}`);
     }
@@ -127,18 +127,18 @@ export class StarterRunner {
     
     const url = `https://start.spring.io/starter.zip?type=${projectType}&language=java&bootVersion=${bootVersion}&baseDir=${folderName}&groupId=${group}&artifactId=${folderName}&name=${folderName}&description=${folderName}&packageName=${group}&packaging=jar&javaVersion=${javaVersion}&dependencies=${dependencies}`;
     
-    const result = await runCommand(`curl -s '${url}' --output ${folderName}.zip`);
+    const result = await runCommand(`curl -s '${url}' --output ${folderName}.zip`, { showOutput: this.config.debug });
     if (!result.success) {
       throw new Error(`Failed to download from initializer: ${result.stderr}`);
     }
 
-    const unzipResult = await runCommand(`unzip -q '${folderName}.zip'`);
+    const unzipResult = await runCommand(`unzip -q '${folderName}.zip'`, { showOutput: this.config.debug });
     if (!unzipResult.success) {
       throw new Error(`Failed to unzip initializer: ${unzipResult.stderr}`);
     }
 
     // Clean up zip file
-    await runCommand(`rm -f "${folderName}.zip"`);
+    await runCommand(`rm -f "${folderName}.zip"`, { silent: true });
 
     // Change to the generated directory and initialize git
     process.chdir(folderName);
@@ -156,20 +156,20 @@ export class StarterRunner {
     const zipFile = `${starterName}.zip`;
 
     // Download with appropriate verbosity
-    const silentFlag = this.config.verbose ? '' : '-s';
-    const downloadResult = await runCommand(`curl ${silentFlag} -f '${url}' -o '${zipFile}'`);
+    const silentFlag = this.config.verbose || this.config.debug ? '' : '-s';
+    const downloadResult = await runCommand(`curl ${silentFlag} -f '${url}' -o '${zipFile}'`, { showOutput: this.config.debug });
     if (!downloadResult.success) {
       throw new Error(`Failed to download starter: ${downloadResult.stderr}`);
     }
 
     // Unzip the starter
-    const unzipResult = await runCommand(`unzip -q '${zipFile}'`);
+    const unzipResult = await runCommand(`unzip -q '${zipFile}'`, { showOutput: this.config.debug });
     if (!unzipResult.success) {
       throw new Error(`Failed to unzip starter: ${unzipResult.stderr}`);
     }
 
     // Clean up zip file
-    await runCommand(`rm -f "${zipFile}"`);
+    await runCommand(`rm -f "${zipFile}"`, { silent: true });
 
     // Change to the generated directory and initialize git
     process.chdir(folderName);
@@ -183,21 +183,21 @@ export class StarterRunner {
     }
 
     // Initialize git repository
-    await runCommand('git init -q');
+    await runCommand('git init -q', { silent: true });
     
     // Set up git config if not already set
-    const emailResult = await runCommand('git config user.email');
+    const emailResult = await runCommand('git config user.email', { silent: true });
     if (!emailResult.success || !emailResult.stdout.trim()) {
-      await runCommand('git config user.email "vaadin-bot@vaadin.com"');
+      await runCommand('git config user.email "vaadin-bot@vaadin.com"', { silent: true });
     }
 
-    const nameResult = await runCommand('git config user.name');
+    const nameResult = await runCommand('git config user.name', { silent: true });
     if (!nameResult.success || !nameResult.stdout.trim()) {
-      await runCommand('git config user.name "Vaadin Bot"');
+      await runCommand('git config user.name "Vaadin Bot"', { silent: true });
     }
 
     // Disable advice about ignored files
-    await runCommand('git config advice.addIgnoredFile false');
+    await runCommand('git config advice.addIgnoredFile false', { silent: true });
 
     // Add all files and make initial commit
     await runCommand('git add .??* * 2>/dev/null || true');
@@ -287,47 +287,56 @@ export class StarterRunner {
   }
 
   private getCleanCommand(starterName: string, hasPom: boolean): string {
+    const mvn = this.getMavenCommand();
+    const gradle = this.getGradleCommand();
+    
     if (starterName.includes('gradle')) {
-      return 'gradle clean';
+      return `${gradle} clean`;
     }
-    return hasPom ? 'mvn -ntp -B clean' : 'gradle clean';
+    return hasPom ? `${mvn} -ntp -B clean` : `${gradle} clean`;
   }
 
   private getCompileProdCommand(starterName: string, _hasPom: boolean): string {
+    const mvn = this.getMavenCommand();
+    const gradle = this.getGradleCommand();
+    
     if (starterName === 'archetype-hotswap' || starterName === 'archetype-jetty') {
-      return 'mvn -ntp -B clean';
+      return `${mvn} -ntp -B clean`;
     }
     
     if (starterName.includes('gradle')) {
-      return 'gradle clean build -Dhilla.productionMode -Dvaadin.productionMode && rm -f ./build/libs/*-plain.jar';
+      return `${gradle} clean build -Dhilla.productionMode -Dvaadin.productionMode && rm -f ./build/libs/*-plain.jar`;
     }
     
-    let command = 'mvn -ntp -B -Pproduction clean package';
+    let command = `${mvn} -ntp -B -Pproduction clean package`;
     if (this.config.pnpm) {
       command += ' -Dpnpm.enable=true';
     }
+    // Add deprecation flag for prod mode (matches bash implementation)
+    command += ' -Dmaven.compiler.showDeprecation';
     return command;
   }
 
   private getRunDevCommand(starterName: string, hasPom: boolean): string {
+    const mvn = this.getMavenCommand();
+    const gradle = this.getGradleCommand();
     const port = this.config.port;
     
     if (starterName === 'vaadin-quarkus') {
-      return `mvn -ntp -B quarkus:dev -Dquarkus.http.port=${port}`;
+      return `${mvn} -ntp -B quarkus:dev -Dquarkus.http.port=${port}`;
     }
     
     if (starterName.includes('initializer') && starterName.includes('maven')) {
-      return `mvn -ntp -B spring-boot:run -Dspring-boot.run.arguments="--server.port=${port}"`;
+      return `${mvn} -ntp -B spring-boot:run -Dspring-boot.run.arguments="--server.port=${port}"`;
     }
     
     if (starterName.includes('initializer') && starterName.includes('gradle')) {
-      return `gradle bootRun --args="--server.port=${port}"`;
+      return `${gradle} bootRun --args="--server.port=${port}"`;
     }
     
-    // Default dev command for most starters
-    let command = hasPom 
-      ? `mvn -ntp -B spring-boot:run -Dspring-boot.run.arguments="--server.port=${port}"` 
-      : `gradle bootRun --args="--server.port=${port}"`;
+    // Default dev command for most starters (matches bash _getRunDev default case)
+    // This should be just "mvn -ntp -B" (not spring-boot:run) + pnpm flag if enabled
+    let command = hasPom ? `${mvn} -ntp -B` : `${gradle} bootRun --args="--server.port=${port}"`;
     
     if (this.config.pnpm && hasPom) {
       command += ' -Dpnpm.enable=true';
@@ -336,8 +345,10 @@ export class StarterRunner {
   }
 
   private getRunProdCommand(starterName: string, _hasPom: boolean): string {
+    const mvn = this.getMavenCommand();
+    
     if (starterName === 'archetype-hotswap' || starterName === 'archetype-jetty') {
-      return 'mvn -ntp -B -Pproduction -Dvaadin.productionMode jetty:run-war';
+      return `${mvn} -ntp -B -Pproduction -Dvaadin.productionMode jetty:run-war`;
     }
     
     if (starterName === 'vaadin-quarkus') {
@@ -349,5 +360,32 @@ export class StarterRunner {
     }
     
     return 'java -jar -Dvaadin.productionMode target/*.jar';
+  }
+
+  private getMavenCommand(): string {
+    // Check if maven wrapper exists (matches bash computeMvn function)
+    // Note: Using sync check for simplicity, could be made async if needed
+    try {
+      const fs = eval('require')('fs');
+      if (fs.existsSync('./mvnw')) {
+        return './mvnw';
+      }
+    } catch {
+      // Fall back to mvn if require fails (in pure ES module environments)
+    }
+    return 'mvn';
+  }
+
+  private getGradleCommand(): string {
+    // Check if gradle wrapper exists
+    try {
+      const fs = eval('require')('fs');
+      if (fs.existsSync('./gradlew')) {
+        return './gradlew';
+      }
+    } catch {
+      // Fall back to gradle if require fails
+    }
+    return 'gradle';
   }
 }

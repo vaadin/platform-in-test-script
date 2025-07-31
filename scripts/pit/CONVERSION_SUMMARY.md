@@ -329,3 +329,29 @@ The TypeScript conversion successfully modernizes the PiT testing suite while ma
 - **Solution**: Implemented proper HTTP header checking to detect when Vaadin dev-mode frontend compilation completes
 - **Flow Fix**: Corrected execution order to match bash: frontend compilation check → HTTP servlet check → Playwright tests
 - **Result**: Browser tests now wait properly for frontend compilation instead of spinning indefinitely
+
+### Verbose/Debug Mode Implementation (Fixed)
+- **Issue**: `--verbose` and `--debug` flags were not showing command output like in original bash implementation
+- **Root Cause**: TypeScript `runCommand` function wasn't streaming command output to console in real-time
+- **Investigation**: Analyzed bash `runCmd` function that uses `eval "$_cmd" | tee -a runCmd.out` for verbose mode
+- **Solution**: Enhanced `runCommand` function to stream output in real-time when `verbose: true`
+- **Implementation Details**:
+  - **Background processes**: Stream output using `PassThrough` streams with dual pipes to console and file
+  - **Synchronous commands**: Use `spawn` with `stdio: 'inherit'` instead of `execAsync` for real-time output
+  - **Logger integration**: Both `--verbose` and `--debug` flags now enable verbose logging (`logger.setVerbose(config.verbose || config.debug)`)
+  - **Command execution**: All major operations now respect verbose flag:
+    - Starter generation (curl, unzip, mvn archetype)
+    - Project compilation (mvn clean, mvn package)
+    - Application startup (mvn spring-boot:run, java -jar)
+    - Git operations (silent as appropriate)
+- **Result**: Users can now see detailed command execution output just like original bash version
+
+### Enhanced Mode Validation Messaging (Improved)
+- **Issue**: Dev/prod mode validation messages were not prominent enough in test output
+- **Solution**: Made mode validation messages much more visible using logger separators
+- **Implementation**: 
+  - **Before**: `ℹ Running dev mode validations for react (current)`
+  - **After**: `============= 🛠️ Running DEV mode validations for react (current) =============`
+  - **Emojis**: Added meaningful icons (🛠️ for DEV, 🚀 for PROD)
+  - **Formatting**: Used separator lines and uppercase mode names for better visibility
+- **Result**: Test output now clearly shows which validation mode is running, making it easier to follow test progress
