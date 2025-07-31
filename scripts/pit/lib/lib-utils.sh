@@ -907,7 +907,7 @@ unsetJavaPath() {
 ## it modifies jetty in pom.xml and configures the hotswap-agent.properties
 enableJBRAutoreload() {
   _p=src/main/resources/hotswap-agent.properties
-  mkdir -p `dirname $_p` && echo "autoHotswap=true" > "$_p"
+  mkdir -p `dirname $_p` && echo -e "autoHotswap=true\ndisablePlugin=org.hotswap.agent.plugin.jackson.JacksonPlugin" > "$_p"
   [ -z "$TEST" ] && warn "Disabled Jetty autoreload"
   changeMavenProperty scan -1
 }

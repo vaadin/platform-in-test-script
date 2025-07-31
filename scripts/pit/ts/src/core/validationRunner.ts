@@ -144,6 +144,9 @@ export class ValidationRunner {
         // Also kill any remaining processes on the port and by pattern
         await killProcessesByPort(this.config.port);
         await killProcesses();
+        
+        // Clean up patches (restore proKey, reset environment variables)
+        await this.patchManager.cleanup();
       }
 
     } finally {
