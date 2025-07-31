@@ -321,3 +321,11 @@ The TypeScript conversion successfully modernizes the PiT testing suite while ma
 - **Investigation**: Cross-referenced bash scripts (`lib-start.sh`, `lib-demos.sh`, `lib-k8s-cc.sh`)
 - **Solution**: Fixed TEST_REGISTRY mappings to match original bash logic exactly
 - **Validation**: Created comprehensive mapping documentation and test registry
+
+### Frontend Compilation Detection (Fixed)
+- **Issue**: `waitForFrontendCompiled` was using simple timeout instead of proper detection
+- **Root Cause**: TypeScript implementation used 5-second setTimeout instead of checking `X-DevModePending` header
+- **Investigation**: Found bash `waitUntilFrontendCompiled` function that checks HTTP headers
+- **Solution**: Implemented proper HTTP header checking to detect when Vaadin dev-mode frontend compilation completes
+- **Flow Fix**: Corrected execution order to match bash: frontend compilation check → HTTP servlet check → Playwright tests
+- **Result**: Browser tests now wait properly for frontend compilation instead of spinning indefinitely

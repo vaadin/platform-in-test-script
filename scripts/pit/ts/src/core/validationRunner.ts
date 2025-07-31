@@ -32,7 +32,9 @@ export class ValidationRunner {
   ): Promise<void> {
     const { mode: validationMode, version, compileCommand, runCommand: startCommand, checkMessage, testFile } = mode;
     
-    logger.info(`Running ${validationMode} mode validations for ${starterName} (${version})`);
+    // Make the mode validation message more prominent
+    const modeEmoji = validationMode === 'dev' ? '🛠️' : '🚀';
+    logger.separator(`${modeEmoji} Running ${validationMode.toUpperCase()} mode validations for ${starterName} (${version})`);
 
     const timeout = this.getTimeout(starterName);
     const outputFile = `${starterName}-${validationMode}-${version}-${process.platform}.out`;
@@ -94,6 +96,7 @@ export class ValidationRunner {
         // Check dev bundle creation in dev mode
         if (validationMode === 'dev') {
           await this.checkDevBundle();
+          // Wait for frontend compilation BEFORE checking HTTP servlet
           await this.waitForFrontendCompiled();
         }
 
@@ -384,11 +387,53 @@ export class ValidationRunner {
   }
 
   private async waitForFrontendCompiled(): Promise<void> {
-    // Check for frontend compilation completion
+    // Check for frontend compilation completion by checking X-DevModePending header
+    // This is equivalent to the bash waitUntilFrontendCompiled function
     logger.info('Waiting for frontend compilation...');
     
-    // Wait for frontend to be compiled (simplified implementation)
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    if (this.config.test) {
+      return; // Skip in test mode
+    }
+
+    const url = `http://localhost:${this.config.port}`;
+    let totalTime = 0;
+    const checkInterval = 3000; // 3 seconds between checks
+    
+    while (true) {
+      try {
+        const response = await fetch(url, {
+          headers: {
+            'Accept': 'text/html'
+          },
+          redirect: 'follow'
+        });
+
+        // Check if X-DevModePending header is present
+        const devModePending = response.headers.get('X-DevModePending');
+        
+        if (!devModePending) {
+          // Frontend compilation is complete
+          logger.info(`Frontend compilation completed after ${totalTime} seconds`);
+          return;
+        }
+
+        // Still compiling, wait and try again
+        logger.debug(`Frontend still compiling... (${totalTime}s elapsed)`);
+        await new Promise(resolve => setTimeout(resolve, checkInterval));
+        totalTime += checkInterval / 1000;
+
+      } catch (error) {
+        // If there's a connection error, the server might still be starting
+        logger.debug(`Server not ready yet, retrying... (${totalTime}s elapsed): ${error}`);
+        await new Promise(resolve => setTimeout(resolve, checkInterval));
+        totalTime += checkInterval / 1000;
+        
+        // Prevent infinite loop - give up after reasonable time
+        if (totalTime > this.config.timeout) {
+          throw new Error(`Timeout waiting for frontend compilation after ${totalTime} seconds. Last error: ${error}`);
+        }
+      }
+    }
   }
 
   private async checkHttpServlet(url: string): Promise<void> {
