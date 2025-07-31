@@ -21,23 +21,21 @@ export class HybridReactTest extends BaseTest {
     // Navigate to the main page
     await this.goto('/');
 
-    // Test basic functionality - look for hybrid react components
-    const reactComponent = this.page.locator('[data-testid="react-component"], .react-component, react-view');
-    await reactComponent.waitFor({ state: 'visible', timeout: 30000 });
+    // Test Hello Flow functionality (Flow part of hybrid app)
+    await this.page.locator('text=Hello Flow').nth(0).click();
+    await this.page.locator('text=eula.lane').click();
+    await this.page.locator('input[type="text"]').nth(0).fill('FOO');
+    await this.page.locator('text=Save').click();
+    await this.page.locator('text=/updated/').waitFor({ state: 'visible' });
     
-    logger.info('✓ Hybrid React component loaded successfully');
+    logger.info('✓ Hello Flow functionality verified');
 
-    // Test navigation or interaction if available
-    const navLinks = this.page.locator('vaadin-tabs tab, a[href*="react"], [role="tab"]');
-    const navCount = await navLinks.count();
+    // Test Hello Hilla functionality (React part of hybrid app)
+    await this.page.locator('text=Hello Hilla').nth(0).click();
+    await this.page.locator('text=/This place intentionally left empty/').waitFor({ state: 'visible' });
     
-    if (navCount > 0) {
-      await navLinks.first().click();
-      await this.page.waitForLoadState('networkidle');
-      logger.info('✓ Navigation in hybrid React app working');
-    } else {
-      logger.info('✓ Basic hybrid React app validation completed');
-    }
+    logger.info('✓ Hello Hilla functionality verified');
+    logger.success('Hybrid React application test completed successfully');
   }
 }
 

@@ -33,24 +33,24 @@ export class Logger {
   }
 
   info(message: string): void {
-    console.log(chalk.blue('ℹ'), message);
+    console.log(chalk.blue('ℹ') + chalk.reset(' ' + message) + chalk.reset());
   }
 
   warn(message: string): void {
-    console.log(chalk.yellow('⚠'), message);
+    console.log(chalk.yellow('⚠') + chalk.reset(' ' + message) + chalk.reset());
   }
 
   error(message: string): void {
-    console.log(chalk.red('✗'), message);
+    console.log(chalk.red('✗') + chalk.reset(' ' + message) + chalk.reset());
   }
 
   success(message: string): void {
-    console.log(chalk.green('✓'), message);
+    console.log(chalk.green('✓') + chalk.reset(' ' + message) + chalk.reset());
   }
 
   debug(message: string): void {
     if (this.verbose) {
-      console.log(chalk.gray('🐛'), message);
+      console.log(chalk.gray('🐛') + chalk.reset(' ' + message) + chalk.reset());
     }
   }
 

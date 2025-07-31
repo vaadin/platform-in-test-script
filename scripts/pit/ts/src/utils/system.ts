@@ -1,9 +1,10 @@
 import { platform } from 'os';
-import { exec, execSync, spawn, ChildProcess } from 'child_process';
+import { exec, execSync, spawn } from 'child_process';
 import { promisify } from 'util';
 import which from 'which';
 import type { RuntimeEnvironment } from '../types.js';
 import { logger } from './logger.js';
+import { processManager } from './processManager.js';
 
 const execAsync = promisify(exec);
 
@@ -41,61 +42,31 @@ export async function runCommand(
     background?: boolean;
     outputFile?: string;
     showOutput?: boolean;
+    processId?: string;
   } = {}
-): Promise<{ stdout: string; stderr: string; success: boolean; process?: ChildProcess }> {
+): Promise<{ stdout: string; stderr: string; success: boolean; processId?: string }> {
   try {
-    const { silent = false, background = false, showOutput = false, outputFile, ...execOptions } = options;
+    const { silent = false, background = false, showOutput = false, outputFile, processId, ...execOptions } = options;
     
     if (!silent && (showOutput || !background)) {
       logger.debug(`Running: ${command}`);
     }
 
     if (background) {
-      // Run command in background
-      let stdio: 'inherit' | 'pipe' | ['ignore', 'pipe', 'pipe'];
-      if (outputFile) {
-        stdio = ['ignore', 'pipe', 'pipe'];
-      } else if (showOutput) {
-        stdio = 'inherit';
-      } else {
-        stdio = 'pipe';
-      }
-      
-      const childProcess = spawn('bash', ['-c', command], {
-        stdio,
-        detached: false,
-        ...execOptions,
+      // Use the process manager for background processes
+      const managedProcess = await processManager.spawnProcess(command, {
+        ...(processId && { id: processId }),
+        ...(execOptions.cwd && { cwd: execOptions.cwd }),
+        ...(options.env && { env: options.env }),
+        ...(outputFile && { outputFile }),
+        showOutput,
       });
-
-      if (outputFile && childProcess.stdout && childProcess.stderr) {
-        // Redirect output to file
-        const fs = await import('fs');
-        const writeStream = fs.createWriteStream(outputFile, { flags: 'a' });
-        
-        if (showOutput) {
-          // In verbose mode, also pipe to console while writing to file
-          const { PassThrough } = await import('stream');
-          const stdoutPassThrough = new PassThrough();
-          const stderrPassThrough = new PassThrough();
-          
-          childProcess.stdout.pipe(stdoutPassThrough);
-          childProcess.stderr.pipe(stderrPassThrough);
-          
-          stdoutPassThrough.pipe(writeStream, { end: false });
-          stderrPassThrough.pipe(writeStream, { end: false });
-          stdoutPassThrough.pipe(process.stdout, { end: false });
-          stderrPassThrough.pipe(process.stderr, { end: false });
-        } else {
-          childProcess.stdout.pipe(writeStream);
-          childProcess.stderr.pipe(writeStream);
-        }
-      }
 
       return {
         stdout: '',
         stderr: '',
         success: true,
-        process: childProcess,
+        processId: managedProcess.id,
       };
     } else if (showOutput) {
       // In verbose mode for synchronous commands, use spawn to get real-time output
@@ -192,11 +163,38 @@ export async function getPids(processName: string): Promise<string[]> {
     .map(pid => pid.trim());
 }
 
+export async function killManagedProcess(processId: string): Promise<boolean> {
+  return processManager.killProcess(processId);
+}
+
+export async function killManagedProcessByName(processName: string): Promise<void> {
+  // Kill by pattern in managed processes
+  const processes = processManager.getProcesses();
+  const matchingProcesses = processes.filter(p => p.command.includes(processName));
+  
+  for (const process of matchingProcesses) {
+    logger.debug(`Killing managed process ${process.id} (${processName})`);
+    await processManager.killProcess(process.id, 'SIGTERM');
+    
+    // Wait a bit and force kill if still running
+    await sleep(2000);
+    if (processManager.isProcessRunning(process.id)) {
+      await processManager.killProcess(process.id, 'SIGKILL');
+    }
+  }
+}
+
+/**
+ * @deprecated Use processManager.killAllProcesses() instead
+ */
 export async function killProcess(pid: string, signal: 'TERM' | 'KILL' = 'TERM'): Promise<boolean> {
   const { success } = await runCommand(`kill -${signal} ${pid}`, { silent: true });
   return success;
 }
 
+/**
+ * @deprecated Use killManagedProcessByName instead
+ */
 export async function killProcessByName(processName: string): Promise<void> {
   const pids = await getPids(processName);
   
@@ -239,26 +237,24 @@ export function sanitizeFileName(name: string): string {
   return name.replace(/[^a-zA-Z0-9.-]/g, '_');
 }
 
+/**
+ * @deprecated Use runCommand with background: true instead
+ */
 export async function runCommandInBackground(
   command: string,
   options: {
     cwd?: string;
     env?: Record<string, string>;
   } = {}
-): Promise<any> {
+): Promise<string> {
   logger.debug(`Running in background: ${command}`);
   
-  const args = command.split(' ');
-  const cmd = args.shift()!;
-  
-  const childProcess = spawn(cmd, args, {
+  const result = await runCommand(command, {
     ...options,
-    env: { ...process.env, ...options.env },
-    detached: true,
-    stdio: 'pipe',
+    background: true,
   });
-
-  return childProcess;
+  
+  return result.processId || '';
 }
 
 export async function isPortBusy(port: number): Promise<boolean> {
@@ -298,8 +294,43 @@ export async function killProcessesByPort(port: number): Promise<void> {
   }
 }
 
+/**
+ * Kill all managed processes - this is the preferred method
+ */
+export async function killAllManagedProcesses(): Promise<void> {
+  await processManager.killAllProcesses();
+}
+
+/**
+ * Check for any remaining Playwright/Chromium processes and kill them
+ */
+export async function killPlaywrightProcesses(): Promise<void> {
+  logger.debug('Checking for remaining Playwright/Chromium processes...');
+  
+  const playwrightPatterns = [
+    'chromium',
+    'chrome',
+    'playwright',
+    'node.*chromium',
+    'Browser/chromium'
+  ];
+
+  for (const pattern of playwrightPatterns) {
+    const result = await runCommand(`pkill -f "${pattern}" 2>/dev/null || true`, { silent: true });
+    if (result.success && result.stdout.trim()) {
+      logger.debug(`Killed processes matching pattern: ${pattern}`);
+    }
+  }
+}
+
+/**
+ * @deprecated Use killAllManagedProcesses() instead for better process management
+ */
 export async function killProcesses(): Promise<void> {
-  // Kill common development server processes by pattern
+  // First kill all managed processes
+  await processManager.killAllProcesses();
+  
+  // Also kill any unmanaged processes by pattern (fallback)
   const patterns = [
     'spring-boot:run',
     'mvn.*jetty:run',

@@ -37,8 +37,8 @@ export class PitRunner {
         process.stdin.destroy();
       }
       
-      const { killProcesses } = await import('../utils/system.js');
-      await killProcesses();
+      const { processManager } = await import('../utils/processManager.js');
+      await processManager.killAllProcesses();
       process.exit(0);
     };
 
@@ -88,9 +88,9 @@ export class PitRunner {
       // Cleanup
       await this.cleanup(tempDir);
       
-      // Ensure all processes are killed
-      const { killProcesses } = await import('../utils/system.js');
-      await killProcesses();
+      // Ensure all managed processes are killed using the new process manager
+      const { processManager } = await import('../utils/processManager.js');
+      await processManager.killAllProcesses();
       
       // Ensure stdin is properly closed to prevent hanging
       if (process.stdin.readable) {
@@ -192,9 +192,9 @@ export class PitRunner {
       return;
     }
 
-    // Kill any running test processes using the system utility
-    const { killProcesses } = await import('../utils/system.js');
-    await killProcesses();
+    // Kill any running test processes using the new process manager
+    const { processManager } = await import('../utils/processManager.js');
+    await processManager.killAllProcesses();
   }
 
   private async cleanupTest(_tempDir: string, starterName: string): Promise<void> {

@@ -32,7 +32,7 @@ export class StartTest extends BaseTest {
     await this.page.locator('text=eula.lane').click();
     await this.page.locator('input[type="text"]').nth(0).fill('FOO');
     await this.page.locator('text=Save').click();
-    await this.page.locator('text=/updated/').waitFor({ state: 'visible' });
+    await this.page.locator('text=/manolo/').waitFor({ state: 'visible' });
 
     logger.success('Start application test completed successfully');
   }

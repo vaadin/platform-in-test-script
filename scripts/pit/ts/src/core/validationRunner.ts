@@ -1,9 +1,11 @@
 import type { PitConfig } from '../types.js';
 import { logger } from '../utils/logger.js';
-import { runCommand, killProcesses, killProcessesByPort, waitForServer } from '../utils/system.js';
+import { runCommand, killProcessesByPort, waitForServer } from '../utils/system.js';
 import { fileExists, joinPaths, writeFile, readFile } from '../utils/file.js';
 import { PatchManager } from '../patches/patchManager.js';
 import { PlaywrightRunner } from './playwrightRunner.js';
+import { processManager } from '../utils/processManager.js';
+import { dirname } from 'path';
 
 export interface ValidationMode {
   mode: 'dev' | 'prod';
@@ -72,10 +74,11 @@ export class ValidationRunner {
 
       // Start the application in background
       logger.info(`Starting application: ${startCommand}`);
-      const serverProcess = await runCommand(startCommand, { 
+      await runCommand(startCommand, { 
         background: true,
         outputFile: outputPath,
-        showOutput: this.config.debug 
+        showOutput: this.config.debug,
+        processId: `${starterName}-${validationMode}-server`
       });
 
       // Give the server a moment to start before we begin monitoring
@@ -122,28 +125,14 @@ export class ValidationRunner {
         logger.success(`✓ ${starterName} ${validationMode} mode validation completed successfully`);
 
       } finally {
-        // Kill server processes
-        if (serverProcess?.process) {
-          logger.info('Stopping server...');
-          try {
-            // Try to kill the specific process first
-            serverProcess.process.kill('SIGTERM');
-            
-            // Give it time to shut down gracefully
-            await new Promise(resolve => setTimeout(resolve, 3000));
-            
-            // Force kill if still running
-            if (!serverProcess.process.killed) {
-              serverProcess.process.kill('SIGKILL');
-            }
-          } catch (error) {
-            logger.debug(`Error killing server process: ${error}`);
-          }
-        }
+        // Kill managed processes for this starter
+        logger.info('Stopping server...');
+        const processId = `${starterName}-${validationMode}-server`;
+        await processManager.killProcess(processId);
         
-        // Also kill any remaining processes on the port and by pattern
+        // Also kill any remaining processes on the port and by pattern (fallback)
         await killProcessesByPort(this.config.port);
-        await killProcesses();
+        await processManager.killAllProcesses();
         
         // Clean up patches (restore proKey, reset environment variables)
         await this.patchManager.cleanup();
@@ -337,43 +326,76 @@ export class ValidationRunner {
 
     logger.debug(`Waiting for message "${message}" in file ${filePath}`);
 
+    // Create list of files to check (primary + fallbacks)
+    const checkFiles = await this.getOutputFilesToCheck(filePath);
+
     while (Date.now() - startTime < timeout * 1000) {
-      if (await fileExists(filePath)) {
-        const content = await readFile(filePath);
+      // Check each potential output file
+      for (const checkFile of checkFiles) {
+        const found = await this.checkFileForMessage(checkFile, regex, message);
+        if (found) {
+          return;
+        }
+      }
+
+      // Sleep for 4 seconds (matches bash __sleep=4)
+      await new Promise(resolve => setTimeout(resolve, 4000));
+    }
+
+    // Log final debug info before timeout
+    await this.logFinalDebugInfo(checkFiles);
+    throw new Error(`Timeout waiting for message "${message}". Checked files: ${checkFiles.join(', ')}`);
+  }
+
+  private async getOutputFilesToCheck(filePath: string): Promise<string[]> {
+    return [
+      filePath,
+      filePath.replace('.out', '.log'),
+      joinPaths(dirname(filePath), 'startup-output.log'),
+      joinPaths(dirname(filePath), 'server-output.log'),
+    ];
+  }
+
+  private async checkFileForMessage(filePath: string, regex: RegExp, message: string): Promise<boolean> {
+    if (!(await fileExists(filePath))) {
+      return false;
+    }
+
+    const content = await readFile(filePath);
+    if (!content) {
+      return false;
+    }
+
+    // Debug: show the last few lines of the file
+    const lines = content.split('\n');
+    const lastLines = lines.slice(-5).filter(line => line.trim());
+    if (lastLines.length > 0) {
+      logger.debug(`Last lines in output (${filePath}): ${lastLines.join(' | ')}`);
+    }
+    
+    if (regex.test(content)) {
+      logger.info(`Found startup message: ${message} in ${filePath}`);
+      return true;
+    }
+
+    return false;
+  }
+
+  private async logFinalDebugInfo(checkFiles: string[]): Promise<void> {
+    for (const checkFile of checkFiles) {
+      if (await fileExists(checkFile)) {
+        const content = await readFile(checkFile);
         if (content) {
-          // Debug: show the last few lines of the file
-          const lines = content.split('\n');
-          const lastLines = lines.slice(-5).filter(line => line.trim());
-          if (lastLines.length > 0) {
-            logger.debug(`Last lines in output: ${lastLines.join(' | ')}`);
-          }
-          
-          if (regex.test(content)) {
-            logger.info(`Found startup message: ${message}`);
-            return;
-          }
-        }
-      } else {
-        logger.debug(`Output file ${filePath} does not exist yet`);
-      }
-      await new Promise(resolve => setTimeout(resolve, 2000));
-    }
-
-    // Final debug: show file content if it exists
-    if (await fileExists(filePath)) {
-      const content = await readFile(filePath);
-      if (content) {
-        logger.debug(`Final file content (last 10 lines):`);
-        const lines = content.split('\n').slice(-10);
-        for (const line of lines) {
-          if (line.trim()) {
-            logger.debug(`  ${line}`);
+          logger.debug(`Final file content (last 10 lines) from ${checkFile}:`);
+          const lines = content.split('\n').slice(-10);
+          for (const line of lines) {
+            if (line.trim()) {
+              logger.debug(`  ${line}`);
+            }
           }
         }
       }
     }
-
-    throw new Error(`Timeout waiting for message "${message}" in ${filePath}`);
   }
 
   private async handleCompileFailure(outputPath: string): Promise<void> {

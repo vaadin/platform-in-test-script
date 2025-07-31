@@ -74,7 +74,7 @@ export const DEMOS = [
 export const DEFAULT_CONFIG = {
   host: 'localhost',
   port: 8080,
-  timeout: 30,
+  timeout: 300, // Matches bash DEFAULT_TIMEOUT=300 (5 minutes)
   version: 'current',
   cluster: 'pit',
   vendor: 'kind' as const,

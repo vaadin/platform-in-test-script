@@ -334,8 +334,8 @@ export class StarterRunner {
       return `${gradle} bootRun --args="--server.port=${port}"`;
     }
     
-    // Default dev command for most starters (matches bash _getRunDev default case)
-    // This should be just "mvn -ntp -B" (not spring-boot:run) + pnpm flag if enabled
+    // Default case (matches bash _getRunDev default): just "mvn -ntp -B" + pnpm flag
+    // Note: This relies on the pom.xml having spring-boot-maven-plugin configured for default execution
     let command = hasPom ? `${mvn} -ntp -B` : `${gradle} bootRun --args="--server.port=${port}"`;
     
     if (this.config.pnpm && hasPom) {
@@ -377,15 +377,18 @@ export class StarterRunner {
   }
 
   private getGradleCommand(): string {
-    // Check if gradle wrapper exists
+    // Check if gradle wrapper exists (matches bash computeGradle function)
+    let gradle = 'gradle';
     try {
       const fs = eval('require')('fs');
       if (fs.existsSync('./gradlew')) {
-        return './gradlew';
+        gradle = './gradlew';
       }
     } catch {
       // Fall back to gradle if require fails
     }
-    return 'gradle';
+    
+    // Add the gradle java installations flag (matches bash implementation)
+    return `${gradle} -Porg.gradle.java.installations.auto-detect=false`;
   }
 }

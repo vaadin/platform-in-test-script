@@ -97,7 +97,22 @@ export class PlaywrightRunner {
       
       try {
         logger.info(`Executing Playwright test for '${starter}'...`);
-        const success = await runTest(starter, testConfig);
+        
+        // Get the correct test name for this starter (same logic as single test runner)
+        let testName = getTestForStarter(starter);
+        
+        if (!testName) {
+          logger.error(`No test found for starter: ${starter}`);
+          results.push({ starter, success: false, error: `No test found for starter: ${starter}` });
+          continue;
+        }
+        
+        // Remove .js extension if present (convert from old naming)
+        if (testName.endsWith('.js')) {
+          testName = testName.slice(0, -3);
+        }
+        
+        const success = await runTest(testName, testConfig);
 
         results.push({ starter, success });
         

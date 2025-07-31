@@ -2,11 +2,13 @@ import { BaseTest, type TestConfig } from './baseTest.js';
 import { logger } from '../utils/logger.js';
 import { chromium } from 'playwright';
 import type { Browser, BrowserContext, Page } from 'playwright';
+import { killPlaywrightProcesses } from '../utils/system.js';
 
 export class CollaborationTest extends BaseTest {
   private browser2: Browser | undefined;
   private context2: BrowserContext | undefined;
   private page2: Page | undefined;
+  private secondBrowserSetup = false;
 
   constructor(config: TestConfig) {
     super(config);
@@ -14,17 +16,44 @@ export class CollaborationTest extends BaseTest {
 
   override async runTest(): Promise<boolean> {
     try {
-      return super.runTest(async () => {
+      return await super.runTest(async () => {
         logger.info(`Executing CollaborationTest class from collaboration.test.ts`);
         await this.setupSecondBrowser();
         await this.testCollaborationFlow();
       });
     } finally {
+      // Ensure second browser cleanup happens regardless of test outcome
       await this.cleanupSecondBrowser();
     }
   }
 
+  // Override teardown to also cleanup the second browser with extra safety
+  override async teardown(): Promise<void> {
+    try {
+      // Clean up second browser first with timeout
+      await Promise.race([
+        this.cleanupSecondBrowser(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Second browser cleanup timeout')), 10000)
+        )
+      ]);
+    } catch (error) {
+      logger.error(`Error during second browser cleanup: ${error}`);
+      // Continue with parent cleanup even if second browser cleanup fails
+    } finally {
+      // Then call parent teardown for the main browser
+      await super.teardown();
+    }
+  }
+
   private async setupSecondBrowser(): Promise<void> {
+    if (this.secondBrowserSetup) {
+      logger.debug('Second browser already set up, skipping...');
+      return;
+    }
+
+    logger.debug('Setting up second browser for collaboration testing...');
+    
     // Set up second browser for collaboration testing
     this.browser2 = await chromium.launch({
       headless: this.config.headless ?? true,
@@ -41,14 +70,45 @@ export class CollaborationTest extends BaseTest {
     this.page2.on('pageerror', err => 
       logger.error(`PAGE2 PAGEERROR: ${err}`)
     );
+
+    this.secondBrowserSetup = true;
+    logger.debug('Second browser setup completed');
   }
 
   private async cleanupSecondBrowser(): Promise<void> {
-    if (this.context2) {
-      await this.context2.close();
+    if (!this.secondBrowserSetup) {
+      logger.debug('Second browser not set up, skipping cleanup...');
+      return;
     }
-    if (this.browser2) {
-      await this.browser2.close();
+
+    try {
+      if (this.page2) {
+        logger.debug('Closing second browser page...');
+        await this.page2.close();
+        this.page2 = undefined;
+      }
+      
+      if (this.context2) {
+        logger.debug('Closing second browser context...');
+        await this.context2.close();
+        this.context2 = undefined;
+      }
+      
+      if (this.browser2) {
+        logger.debug('Closing second browser...');
+        await this.browser2.close();
+        this.browser2 = undefined;
+      }
+      
+      this.secondBrowserSetup = false;
+      logger.debug('Second browser cleanup completed');
+
+      // As a final safety measure, kill any remaining Playwright processes
+      await killPlaywrightProcesses();
+      
+    } catch (error) {
+      logger.error(`Error during second browser cleanup: ${error}`);
+      // Don't throw, we want to continue with the rest of cleanup
     }
   }
 
