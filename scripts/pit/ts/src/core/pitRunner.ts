@@ -219,9 +219,9 @@ export class PitRunner {
       return;
     }
 
-    // Kill any remaining processes for this test
-    const { killProcessesByPort } = await import('../utils/system.js');
-    await killProcessesByPort(this.config.port);
+    // Only kill managed child processes - never kill by port as it can kill parent processes
+    const { processManager } = await import('../utils/processManager.js');
+    await processManager.killAllProcesses();
   }
 
   private async cleanup(tempDir: string): Promise<void> {

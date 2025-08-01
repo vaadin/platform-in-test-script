@@ -1,8 +1,9 @@
 import type { PitConfig } from '../types.js';
 import { logger } from '../utils/logger.js';
-import { runCommand, runCommandInBackground, killProcessesByPort, isPortBusy, sleep } from '../utils/system.js';
+import { runCommand, isPortBusy, sleep } from '../utils/system.js';
 import { joinPaths, fileExists, readFile, writeFile } from '../utils/file.js';
 import { PatchManager } from '../patches/patchManager.js';
+import { processManager } from '../utils/processManager.js';
 
 export interface ValidationOptions {
   mode: 'dev' | 'prod';
@@ -16,7 +17,7 @@ export interface ValidationOptions {
 export class Validator {
   private readonly config: PitConfig;
   private readonly patchManager: PatchManager;
-  private backgroundProcess?: any;
+  private backgroundProcessId: string | undefined;
 
   constructor(config: PitConfig) {
     this.config = config;
@@ -174,17 +175,18 @@ export class Validator {
   }
 
   private async startApplication(projectDir: string, mode: string, port: number): Promise<void> {
-    const runCommand = await this.getRunCommand(projectDir, mode, port);
+    const command = await this.getRunCommand(projectDir, mode, port);
     
-    logger.info(`Starting application: ${runCommand}`);
+    logger.info(`Starting application: ${command}`);
     
     if (this.config.test) {
-      logger.info(`Would start application with: ${runCommand}`);
+      logger.info(`Would start application with: ${command}`);
       return;
     }
 
     // Start application in background
-    this.backgroundProcess = await runCommandInBackground(runCommand, { cwd: projectDir });
+    const result = await runCommand(command, { cwd: projectDir, background: true });
+    this.backgroundProcessId = result.processId;
   }
 
   private async getRunCommand(projectDir: string, mode: string, port: number): Promise<string> {
@@ -364,13 +366,13 @@ export class Validator {
   private async cleanup(): Promise<void> {
     logger.info('Cleaning up...');
     
-    if (this.backgroundProcess) {
-      this.backgroundProcess.kill('SIGTERM');
-      this.backgroundProcess = undefined;
+    if (this.backgroundProcessId) {
+      await processManager.killProcess(this.backgroundProcessId, 'SIGTERM');
+      this.backgroundProcessId = undefined;
     }
 
-    // Kill any processes on the port
-    await killProcessesByPort(this.config.port);
+    // Kill any remaining processes managed by the process manager
+    await processManager.killAllProcesses();
     
     await sleep(2000);
   }

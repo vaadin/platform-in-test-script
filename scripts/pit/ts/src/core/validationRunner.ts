@@ -1,6 +1,6 @@
 import type { PitConfig } from '../types.js';
 import { logger } from '../utils/logger.js';
-import { runCommand, killProcessesByPort, waitForServer } from '../utils/system.js';
+import { runCommand, waitForServer } from '../utils/system.js';
 import { fileExists, joinPaths, writeFile, readFile } from '../utils/file.js';
 import { PatchManager } from '../patches/patchManager.js';
 import { PlaywrightRunner } from './playwrightRunner.js';
@@ -130,8 +130,7 @@ export class ValidationRunner {
         const processId = `${starterName}-${validationMode}-server`;
         await processManager.killProcess(processId);
         
-        // Also kill any remaining processes on the port and by pattern (fallback)
-        await killProcessesByPort(this.config.port);
+        // Kill all remaining managed processes
         await processManager.killAllProcesses();
         
         // Clean up patches (restore proKey, reset environment variables)
@@ -209,17 +208,17 @@ export class ValidationRunner {
   private async checkBusyPort(port: number): Promise<void> {
     const result = await runCommand(`lsof -ti:${port} 2>/dev/null || true`, { silent: true });
     if (result.stdout.trim()) {
-      logger.warn(`Port ${port} is already in use. Attempting to kill processes...`);
+      logger.warn(`Port ${port} is already in use. Attempting to clean up...`);
       
-      // Try to kill processes using the port
-      await killProcessesByPort(port);
+      // Try to kill any managed processes first
+      await processManager.killAllProcesses();
       
       // Wait a moment and check again
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise(resolve => setTimeout(resolve, 3000));
       
       const checkAgain = await runCommand(`lsof -ti:${port} 2>/dev/null || true`, { silent: true });
       if (checkAgain.stdout.trim()) {
-        throw new Error(`Port ${port} is already in use`);
+        throw new Error(`Port ${port} is still in use after cleanup. Please free the port manually.`);
       }
       
       logger.info(`✓ Port ${port} is now available`);

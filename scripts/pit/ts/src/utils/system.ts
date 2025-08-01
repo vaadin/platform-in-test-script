@@ -348,10 +348,24 @@ export async function killProcesses(): Promise<void> {
     }
   }
 
-  // Also kill any processes specifically on common development ports
+  // Also kill any processes specifically on common development ports (be more careful)
   const ports = [8080, 8081, 3000, 4200];
   for (const port of ports) {
-    await killProcessesByPort(port);
+    // Only kill processes on these ports if they look like development servers
+    const result = await runCommand(`lsof -ti:${port} 2>/dev/null || true`, { silent: true });
+    if (result.stdout.trim()) {
+      const pids = result.stdout.trim().split('\n').filter(pid => pid.trim());
+      for (const pid of pids) {
+        // Check if the process looks like a development server before killing
+        const processInfo = await runCommand(`ps -p ${pid} -o comm= 2>/dev/null || echo "unknown"`, { silent: true });
+        const processName = processInfo.stdout.trim().toLowerCase();
+        
+        if (processName.includes('java') || processName.includes('node') || processName.includes('mvn') || processName.includes('gradle')) {
+          logger.debug(`Killing development server process ${pid} on port ${port}`);
+          await runCommand(`kill ${pid} 2>/dev/null || true`, { silent: true });
+        }
+      }
+    }
   }
 
   // Give processes time to shut down
