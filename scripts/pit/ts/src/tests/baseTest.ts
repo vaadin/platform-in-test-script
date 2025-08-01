@@ -1,5 +1,6 @@
 import { chromium, Browser, BrowserContext, Page } from 'playwright';
 import { logger } from '../utils/logger.js';
+import { runCommand } from '../utils/system.js';
 
 export interface TestConfig {
   url: string;
@@ -24,6 +25,9 @@ export class BaseTest {
 
   async setup(): Promise<void> {
     try {
+      // Ensure Playwright is installed before trying to launch browser
+      await this.ensurePlaywrightInstalled();
+      
       logger.info(`Setting up Playwright browser...`);
       logger.debug(`Browser Configuration:`);
       logger.debug(`  ├─ Headless: ${this.config.headless ?? true}`);
@@ -77,6 +81,50 @@ export class BaseTest {
     } catch (error) {
       logger.warn(`Error during test teardown: ${error}`);
     }
+  }
+
+  private async ensurePlaywrightInstalled(): Promise<void> {
+    // Quick check if Playwright is already working
+    try {
+      const testResult = await runCommand('npx playwright --version');
+      if (testResult.success) {
+        // Try to create a test browser to see if browsers are installed
+        const testBrowser = await chromium.launch({ headless: true });
+        await testBrowser.close();
+        logger.debug('✓ Playwright is already installed and working');
+        return;
+      }
+    } catch (error) {
+      // Installation needed, continue below
+      logger.debug(`Playwright needs installation: ${error}`);
+    }
+
+    logger.info('Installing Playwright...');
+    
+    // Always ensure @playwright/test is installed
+    const packageResult = await runCommand('npm install --no-audit @playwright/test', { cwd: process.cwd() });
+    if (!packageResult.success) {
+      logger.warn(`Failed to install @playwright/test: ${packageResult.stderr}`);
+    }
+
+    // Install chromium browser
+    logger.info('Installing Playwright browsers...');
+    const browserResult = await runCommand('npx playwright install chromium', { cwd: process.cwd() });
+    if (!browserResult.success) {
+      throw new Error(`Failed to install Playwright browsers: ${browserResult.stderr}`);
+    }
+
+    // On Linux, also install system dependencies
+    if (process.platform === 'linux') {
+      logger.info('Installing Playwright system dependencies for Linux...');
+      const depsResult = await runCommand('npx playwright install-deps chromium', { cwd: process.cwd() });
+      if (!depsResult.success) {
+        logger.warn(`Failed to install system dependencies: ${depsResult.stderr}`);
+        // Don't throw error here as it might work without some optional deps
+      }
+    }
+    
+    logger.info('✓ Playwright installation completed');
   }
 
   protected async goto(path: string = '/'): Promise<void> {

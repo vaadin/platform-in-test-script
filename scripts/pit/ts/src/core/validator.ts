@@ -331,9 +331,6 @@ export class Validator {
 
     logger.info(`Running Playwright tests: ${testFile}`);
 
-    // Install Playwright if needed
-    await this.ensurePlaywrightInstalled();
-
     // Run the test
     const args = [
       `--name=${name}`,
@@ -353,15 +350,6 @@ export class Validator {
     }
     
     logger.info('Playwright tests passed');
-  }
-
-  private async ensurePlaywrightInstalled(): Promise<void> {
-    // Check if Playwright is installed
-    const result = await runCommand('npx playwright --version');
-    if (!result.success) {
-      logger.info('Installing Playwright browsers...');
-      await runCommand('npx playwright install chromium');
-    }
   }
 
   private isUnsupported(name: string): boolean {
