@@ -37,7 +37,7 @@ export function createProgram(): Command {
     .option('--dashboard <action>', 'Install kubernetes dashboard (install, uninstall)', DEFAULT_CONFIG.dashboard)
     .option('--pnpm', 'Use pnpm instead of npm', DEFAULT_CONFIG.pnpm)
     .option('--vite', 'Use vite instead of webpack', DEFAULT_CONFIG.vite)
-    .option('--list', 'Show the list of available starters')
+    .option('--list [groupSize]', 'Show the list of available starters, optionally grouped by comma-separated chunks')
     .option('--hub', 'Use selenium hub instead of local chrome', DEFAULT_CONFIG.hub)
     .option('--commit', 'Commit changes to the base branch', DEFAULT_CONFIG.commit)
     .option('--test', 'Show steps and commands but don\'t run them', DEFAULT_CONFIG.test)
@@ -60,8 +60,10 @@ export function parseArguments(args: string[]): PitConfig {
   const options = program.opts() as any;
 
   // Handle special cases
-  if (options['list']) {
-    showStartersList(options);
+  if (options['list'] !== undefined) {
+    // options['list'] can be true (when --list is used) or a string (when --list=3 is used)
+    const groupSize = options['list'] === true ? null : parseInt(options['list']) || null;
+    showStartersList(options, groupSize);
     process.exit(0);
   }
 
@@ -145,7 +147,7 @@ export function parseArguments(args: string[]): PitConfig {
   return config;
 }
 
-function showStartersList(options: any): void {
+function showStartersList(options: any, groupSize: number | null = null): void {
   // Determine which starters to show based on flags
   let startersToShow: string[] = [];
   
@@ -158,10 +160,18 @@ function showStartersList(options: any): void {
     startersToShow = [...PRESETS, ...DEMOS];
   }
   
-  // Output simple list without decoration, just newline separated
-  startersToShow.forEach(starter => {
-    console.log(starter);
-  });
+  if (groupSize && groupSize > 0) {
+    // Output grouped by comma-separated chunks
+    for (let i = 0; i < startersToShow.length; i += groupSize) {
+      const chunk = startersToShow.slice(i, i + groupSize);
+      console.log(chunk.join(','));
+    }
+  } else {
+    // Output simple list without decoration, just newline separated
+    startersToShow.forEach(starter => {
+      console.log(starter);
+    });
+  }
 }
 
 export function validateConfig(config: PitConfig): { valid: boolean; errors: string[] } {
