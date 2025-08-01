@@ -49,7 +49,7 @@ export class Logger {
   }
 
   debug(message: string): void {
-    if (this.verbose) {
+    if (this.verbose || this.debugMode) {
       console.log(chalk.gray('🐛') + chalk.reset(' ' + message) + chalk.reset());
     }
   }

@@ -85,11 +85,28 @@ npm run lint                 # Check code quality
 
 - **Same Interface**: Zero learning curve
 - **Complete Test Coverage**: All JavaScript tests migrated to TypeScript
+- **Process Safety**: Enhanced ProcessManager prevents dangerous system process killing
+- **CI/CD Reliability**: Improved GitHub Actions compatibility with proper signal handling
 - **Better Error Messages**: Detailed stack traces and context
 - **Type Safety**: Compile-time error detection for tests and core logic
 - **Modern Tooling**: IDE support, debugging, testing frameworks
 - **Enhanced Testing**: Dual-browser support, OAuth flows, build tool detection
 - **Future-Proof**: Easy to extend and maintain
+
+## Process Safety Improvements
+
+The TypeScript version includes critical safety improvements for process management:
+
+### Key Safety Features
+- **Safe Child Process Management**: Only spawned child processes are managed and terminated
+- **No System Process Killing**: Eliminates risk of terminating system processes or PiT itself
+- **ProcessManager Integration**: All background processes are tracked and managed safely
+- **CI/CD Compatible**: Proper signal handling prevents premature termination in GitHub Actions
+
+### Migration Benefits
+- **Before**: `killProcessesByPort()` could kill ANY process using a port (dangerous)
+- **After**: `processManager.killAllProcesses()` only kills managed child processes (safe)
+- **Result**: More reliable CI/CD execution and safer local development
 
 ## Testing Improvements
 

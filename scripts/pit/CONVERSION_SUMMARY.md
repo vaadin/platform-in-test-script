@@ -338,6 +338,18 @@ npm run build:watch
 - **Unit Testing**: Jest test suite for reliable refactoring
 - **Modern Tooling**: ESLint, Prettier, and TypeScript support
 
+### 🔒 Process Safety Improvements
+- **Safe Process Management**: Custom ProcessManager prevents dangerous system-wide process killing
+- **Child Process Tracking**: All spawned processes are registered and tracked for safe cleanup
+- **CI/CD Reliability**: Eliminates risk of killing main PiT process or system processes
+- **Signal Handling**: Proper SIGTERM/SIGINT handling with graceful shutdown
+- **Background Process Safety**: Replaced deprecated `killProcessesByPort()` with managed process cleanup
+
+**Technical Details:**
+- **Before**: `killProcessesByPort(8080)` could kill ANY process using port 8080 (dangerous)
+- **After**: `processManager.killAllProcesses()` only kills child processes spawned by PiT (safe)
+- **Files Updated**: `pitRunner.ts`, `validator.ts`, `validationRunner.ts`, `system.ts`
+
 ### 📈 Improved Developer Experience
 - **Better Error Messages**: Detailed stack traces and context
 - **Autocomplete Support**: IDE integration with type hints

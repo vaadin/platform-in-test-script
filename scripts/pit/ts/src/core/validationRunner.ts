@@ -74,11 +74,14 @@ export class ValidationRunner {
 
       // Start the application in background
       logger.info(`Starting application: ${startCommand}`);
+      const processId = `${starterName}-${validationMode}-server`;
+      logger.debug(`Starting background process with ID: ${processId}`);
+      
       await runCommand(startCommand, { 
         background: true,
         outputFile: outputPath,
         showOutput: this.config.debug,
-        processId: `${starterName}-${validationMode}-server`
+        processId
       });
 
       // Give the server a moment to start before we begin monitoring
@@ -128,10 +131,16 @@ export class ValidationRunner {
         // Kill managed processes for this starter
         logger.info('Stopping server...');
         const processId = `${starterName}-${validationMode}-server`;
+        logger.debug(`Attempting to kill specific process: ${processId}`);
         await processManager.killProcess(processId);
         
         // Kill all remaining managed processes
+        logger.debug('Killing all remaining managed processes...');
         await processManager.killAllProcesses();
+        
+        // Wait longer for processes to fully terminate and release ports
+        logger.debug('Waiting for processes to fully terminate...');
+        await new Promise(resolve => setTimeout(resolve, 3000));
         
         // Clean up patches (restore proKey, reset environment variables)
         await this.patchManager.cleanup();
@@ -209,16 +218,26 @@ export class ValidationRunner {
     const result = await runCommand(`lsof -ti:${port} 2>/dev/null || true`, { silent: true });
     if (result.stdout.trim()) {
       logger.warn(`Port ${port} is already in use. Attempting to clean up...`);
+      logger.debug(`PIDs using port ${port}: ${result.stdout.trim()}`);
       
       // Try to kill any managed processes first
       await processManager.killAllProcesses();
       
-      // Wait a moment and check again
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // Wait longer for port to be released
+      logger.debug(`Waiting for port ${port} to be released...`);
+      await new Promise(resolve => setTimeout(resolve, 5000));
       
       const checkAgain = await runCommand(`lsof -ti:${port} 2>/dev/null || true`, { silent: true });
       if (checkAgain.stdout.trim()) {
-        throw new Error(`Port ${port} is still in use after cleanup. Please free the port manually.`);
+        logger.debug(`Port ${port} still busy. PIDs: ${checkAgain.stdout.trim()}`);
+        
+        // Try once more with a longer wait
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        const finalCheck = await runCommand(`lsof -ti:${port} 2>/dev/null || true`, { silent: true });
+        
+        if (finalCheck.stdout.trim()) {
+          throw new Error(`Port ${port} is still in use after cleanup. PIDs: ${finalCheck.stdout.trim()}. Please free the port manually.`);
+        }
       }
       
       logger.info(`✓ Port ${port} is now available`);

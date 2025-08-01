@@ -5,6 +5,9 @@ This is a TypeScript implementation of the Vaadin Platform in Test (PiT) testing
 ## Recent Updates
 
 **Latest Release - All Critical Issues Resolved:**
+- ✅ Fixed dangerous process cleanup that could kill system processes
+- ✅ Enhanced ProcessManager for safe background process tracking
+- ✅ Improved CI/CD reliability with proper signal handling
 - ✅ Fixed logger color formatting (ANSI color reset sequences)
 - ✅ Resolved starter-to-test mapping for `--run-pw` mode
 - ✅ Aligned TypeScript test logic with JavaScript originals
@@ -101,6 +104,10 @@ Options:
   --git-ssh             Use git-ssh instead of https (default: false)
   --headless            Run the browser in headless mode (default: true)
   --headed              Run the browser in headed mode (default: false)
+  --debug               Enable debug mode with extra logging (default: false)
+  --run-pw              Skip setup and only run Playwright tests (default: false)
+  --ghtk <token>        GitHub personal access token (sets GHTK environment variable)
+  --gh-token <token>    GitHub personal access token (alias for --ghtk)
   --function <function> Run only one function
   --starters <list>     List of demos or presets separated by comma
   -h, --help            display help for command
@@ -138,6 +145,18 @@ npm start -- --test --starters="latest-java"
 npm start -- --verbose --starters="latest-java"
 ```
 
+### Test with GitHub token (for private repos or rate limiting)
+```bash
+npm start -- --ghtk="your_github_token" --starters="releases-graph"
+# or
+npm start -- --gh-token="your_github_token" --starters="releases-graph"
+```
+
+### Skip setup and only run Playwright tests (server already running)
+```bash
+npm start -- --run-pw --starters="latest-java"
+```
+
 ## Architecture
 
 ### Core Components
@@ -154,6 +173,33 @@ npm start -- --verbose --starters="latest-java"
 - **System**: OS detection, command execution, process management
 - **File**: File system operations, JSON/text file handling
 - **Patches**: Automated code patching for different scenarios
+- **ProcessManager**: Safe background process tracking and cleanup
+
+## Process Management
+
+The TypeScript implementation includes a robust ProcessManager that ensures safe handling of background processes:
+
+### Features
+- **Child Process Tracking**: All spawned processes are registered and tracked
+- **Safe Cleanup**: Only managed child processes are terminated, never system processes  
+- **Signal Handling**: Proper SIGTERM/SIGINT handling with graceful shutdown
+- **CI/CD Safety**: Prevents dangerous system-wide process killing in GitHub Actions
+
+### Usage
+```typescript
+// Spawn a background process (automatically tracked)
+const result = await runCommand('mvn spring-boot:run', { 
+  background: true, 
+  cwd: projectDir 
+});
+
+// Clean up all managed processes safely
+await processManager.killAllProcesses();
+```
+
+### Migration from Dangerous Patterns
+- **Before**: `killProcessesByPort(8080)` - Could kill ANY process using port 8080
+- **After**: `processManager.killAllProcesses()` - Only kills child processes spawned by PiT
 
 ### Key Features
 
@@ -191,6 +237,8 @@ The TypeScript implementation maintains 100% compatibility with the original bas
 
 - **Type Safety**: Full TypeScript type checking
 - **Error Handling**: Comprehensive error catching and reporting
+- **Process Safety**: Safe child process management with ProcessManager
+- **CI/CD Reliability**: Proper signal handling and process cleanup
 - **Modularity**: Clean separation of concerns
 - **Maintainability**: Object-oriented architecture
 - **Testability**: Unit test support with Jest
@@ -241,8 +289,11 @@ See the output of `--list` for the complete list of supported starters and demos
 After installation, validate the fixes with:
 
 ```bash
-# Test logger color formatting
-npm run dev -- --starters hello --dev --clean
+# Test process safety improvements
+npm run dev -- --starters hello --test --debug
+
+# Test GitHub token implementation  
+npm run dev -- --ghtk="your_token" --starters releases-graph --test
 
 # Test starter-to-test mapping
 npm run dev -- --starters test-hybrid-react --run-pw
@@ -250,6 +301,9 @@ npm run dev -- --starters test-hybrid-react --run-pw
 # Test specific implementations
 npm run dev -- --starters test-start --run-pw
 npm run dev -- --starters test-hybrid-react --run-pw
+
+# Test CI/CD compatibility (headless mode)
+npm run dev -- --starters latest-java --headless --test
 ```
 
 ## Contributing

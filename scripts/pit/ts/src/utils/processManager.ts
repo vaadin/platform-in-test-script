@@ -78,11 +78,13 @@ export class ProcessManager {
 
     // Track the process
     this.processes.set(id, managedProcess);
+    logger.debug(`Process [${id}] registered. Total managed processes: ${this.processes.size}`);
 
     // Handle process exit
     childProcess.on('exit', (code, signal) => {
       logger.debug(`Process [${id}] exited with code ${code}, signal ${signal}`);
       this.processes.delete(id);
+      logger.debug(`Process [${id}] removed from tracking. Remaining processes: ${this.processes.size}`);
     });
 
     // Handle process errors
@@ -162,7 +164,18 @@ export class ProcessManager {
    * Kill all managed processes
    */
   public async killAllProcesses(): Promise<void> {
-    logger.debug(`Killing ${this.processes.size} managed processes`);
+    const processCount = this.processes.size;
+    logger.debug(`Killing ${processCount} managed processes`);
+    
+    if (processCount === 0) {
+      logger.debug('No managed processes to kill');
+      return;
+    }
+    
+    // Log which processes we're about to kill
+    for (const [id, process] of this.processes.entries()) {
+      logger.debug(`About to kill process [${id}]: ${process.command}`);
+    }
     
     const killPromises = Array.from(this.processes.keys()).map(id => 
       this.killProcess(id, 'SIGTERM')
@@ -179,6 +192,14 @@ export class ProcessManager {
     }
     
     this.processes.clear();
+    
+    // Wait a bit longer for ports to be released by the OS
+    if (processCount > 0) {
+      logger.debug('Waiting for OS to release ports...');
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+    
+    logger.debug('All managed processes cleanup completed');
   }
 
   /**
