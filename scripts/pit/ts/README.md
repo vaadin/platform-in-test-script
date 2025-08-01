@@ -99,7 +99,7 @@ Options:
   --commit              Commit changes to the base branch (default: false)
   --test                Show steps and commands but don't run them (default: false)
   --git-ssh             Use git-ssh instead of https (default: false)
-  --headless            Run the browser in headless mode (default: false)
+  --headless            Run the browser in headless mode (default: true)
   --headed              Run the browser in headed mode (default: false)
   --function <function> Run only one function
   --starters <list>     List of demos or presets separated by comma

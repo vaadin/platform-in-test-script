@@ -91,10 +91,10 @@ export function parseArguments(args: string[]): PitConfig {
   }
 
   // Handle headless/headed logic
-  let headlessMode = DEFAULT_CONFIG.headless; // Default value
-  if (options['headless']) {
+  let headlessMode = DEFAULT_CONFIG.headless; // Default value (true)
+  if (options['headless'] === true) {
     headlessMode = true;
-  } else if (options['headed']) {
+  } else if (options['headed'] === true) {
     headlessMode = false;
   }
 

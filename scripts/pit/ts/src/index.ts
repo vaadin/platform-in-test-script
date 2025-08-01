@@ -31,15 +31,16 @@ async function main(): Promise<void> {
     if (config.runPw) {
       const playwrightRunner = new PlaywrightRunner();
       await playwrightRunner.runMultipleTests(config);
-      process.exit(0);
+      // runMultipleTests handles its own exit status
+      return;
     }
 
     // Create and run PIT
     const runner = new PitRunner(config);
     await runner.run();
     
-    // Ensure clean exit
-    process.exit(0);
+    // If we reach here, all tests passed - runner.run() calls process.exit(1) on failure
+    // No need to call process.exit(0) explicitly
 
   } catch (error) {
     logger.error(`Fatal error: ${error}`);

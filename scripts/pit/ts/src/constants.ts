@@ -102,7 +102,7 @@ export const DEFAULT_CONFIG = {
   commit: false,
   test: false,
   gitSsh: false,
-  headless: false,
+  headless: true,
   headed: false,
   debug: false,
   runPw: false,
