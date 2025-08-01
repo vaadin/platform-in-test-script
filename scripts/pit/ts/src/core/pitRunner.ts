@@ -28,8 +28,9 @@ export class PitRunner {
   }
 
   private setupCleanupHandlers(): void {
-    const cleanup = async () => {
-      logger.info('Cleaning up processes...');
+    const cleanup = async (signal: string) => {
+      logger.info(`Received ${signal}, shutting down gracefully...`);
+      logger.info('Cleaning up managed processes...');
       
       // Close stdin to avoid hanging
       if (process.stdin.readable) {
@@ -39,11 +40,14 @@ export class PitRunner {
       
       const { processManager } = await import('../utils/processManager.js');
       await processManager.killAllProcesses();
-      process.exit(0);
+      
+      // Exit with appropriate status based on test results
+      const exitCode = this.failedTests.length > 0 ? 1 : 0;
+      process.exit(exitCode);
     };
 
-    process.on('SIGINT', cleanup);
-    process.on('SIGTERM', cleanup);
+    process.on('SIGINT', () => cleanup('SIGINT'));
+    process.on('SIGTERM', () => cleanup('SIGTERM'));
   }
 
   async run(): Promise<void> {
@@ -72,13 +76,25 @@ export class PitRunner {
       }
 
       // Run presets (start.vaadin.com or archetypes)
-      for (const preset of presets) {
-        await this.runSingleTest('preset', preset, tempDir);
+      logger.info(`📋 Processing ${presets.length} presets and ${demos.length} demos...`);
+      
+      for (let i = 0; i < presets.length; i++) {
+        const preset = presets[i];
+        if (preset) {
+          const memUsed = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
+          logger.info(`📦 [${i + 1}/${presets.length}] Processing preset: ${preset} (Memory: ${memUsed}MB)`);
+          await this.runSingleTest('preset', preset, tempDir);
+        }
       }
 
       // Run demos (GitHub repositories)
-      for (const demo of demos) {
-        await this.runSingleTest('demo', demo, tempDir);
+      for (let i = 0; i < demos.length; i++) {
+        const demo = demos[i];
+        if (demo) {
+          const memUsed = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
+          logger.info(`🚀 [${i + 1}/${demos.length}] Processing demo: ${demo} (Memory: ${memUsed}MB)`);
+          await this.runSingleTest('demo', demo, tempDir);
+        }
       }
 
       // Report results

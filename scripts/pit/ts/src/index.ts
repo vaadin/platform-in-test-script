@@ -59,17 +59,6 @@ process.on('unhandledRejection', (reason) => {
   process.exit(1);
 });
 
-// Handle graceful shutdown
-process.on('SIGINT', () => {
-  logger.info('Received SIGINT, shutting down gracefully...');
-  process.exit(0);
-});
-
-process.on('SIGTERM', () => {
-  logger.info('Received SIGTERM, shutting down gracefully...');
-  process.exit(0);
-});
-
 // Run the main function
 main().catch((error) => {
   logger.error(`Main function error: ${error}`);
