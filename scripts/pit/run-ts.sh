@@ -84,5 +84,10 @@ if needs_build; then
 fi
 
 # Run the TypeScript version with all arguments passed through
-echo "Running PiT TypeScript version..."
-exec node dist/index.js "$@"
+# Suppress the startup message if --list is used for clean output
+if [[ "$*" == *"--list"* ]]; then
+    exec node dist/index.js "$@"
+else
+    echo "Running PiT TypeScript version..."
+    exec node dist/index.js "$@"
+fi

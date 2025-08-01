@@ -1,7 +1,6 @@
 import { Command } from 'commander';
 import { DEFAULT_CONFIG, PRESETS, DEMOS } from '../constants.js';
 import type { PitConfig } from '../types.js';
-import { logger } from '../utils/logger.js';
 
 export function createProgram(): Command {
   const program = new Command();
@@ -62,7 +61,7 @@ export function parseArguments(args: string[]): PitConfig {
 
   // Handle special cases
   if (options['list']) {
-    showStartersList();
+    showStartersList(options);
     process.exit(0);
   }
 
@@ -146,17 +145,22 @@ export function parseArguments(args: string[]): PitConfig {
   return config;
 }
 
-function showStartersList(): void {
-  logger.separator('Available Starters');
+function showStartersList(options: any): void {
+  // Determine which starters to show based on flags
+  let startersToShow: string[] = [];
   
-  logger.info('Presets (generated from start.vaadin.com or archetypes):');
-  PRESETS.forEach(preset => {
-    logger.info(`  · ${preset}`);
-  });
-
-  logger.info('\nDemos (from GitHub repositories):');
-  DEMOS.forEach(demo => {
-    logger.info(`  · ${demo}`);
+  if (options['generated']) {
+    startersToShow = PRESETS;
+  } else if (options['demos']) {
+    startersToShow = DEMOS;
+  } else {
+    // Show all if no specific flag is provided
+    startersToShow = [...PRESETS, ...DEMOS];
+  }
+  
+  // Output simple list without decoration, just newline separated
+  startersToShow.forEach(starter => {
+    console.log(starter);
   });
 }
 
