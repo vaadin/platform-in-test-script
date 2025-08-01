@@ -103,7 +103,6 @@ export const DEFAULT_CONFIG = {
   test: false,
   gitSsh: false,
   headless: true,
-  headed: false,
   debug: false,
   runPw: false,
   starters: [...PRESETS, ...DEMOS].filter(s => s.length > 3).join(','),

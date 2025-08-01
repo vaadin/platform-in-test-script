@@ -1,6 +1,6 @@
 import type { PitConfig } from '../types.js';
 import { logger } from '../utils/logger.js';
-import { runCommand, waitForServer } from '../utils/system.js';
+import { runCommand, waitForServer, killProcessesByPort } from '../utils/system.js';
 import { fileExists, joinPaths, writeFile, readFile } from '../utils/file.js';
 import { PatchManager } from '../patches/patchManager.js';
 import { PlaywrightRunner } from './playwrightRunner.js';
@@ -138,6 +138,10 @@ export class ValidationRunner {
         logger.debug('Killing all remaining managed processes...');
         await processManager.killAllProcesses();
         
+        // Also kill any processes specifically using the port
+        logger.debug(`Cleaning up port ${this.config.port}...`);
+        await killProcessesByPort(this.config.port);
+        
         // Wait longer for processes to fully terminate and release ports
         logger.debug('Waiting for processes to fully terminate...');
         await new Promise(resolve => setTimeout(resolve, 3000));
@@ -222,6 +226,9 @@ export class ValidationRunner {
       
       // Try to kill any managed processes first
       await processManager.killAllProcesses();
+      
+      // Also kill any processes specifically using this port
+      await killProcessesByPort(port);
       
       // Wait longer for port to be released
       logger.debug(`Waiting for port ${port} to be released...`);

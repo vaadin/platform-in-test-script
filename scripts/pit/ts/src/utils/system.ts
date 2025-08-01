@@ -266,6 +266,44 @@ export async function isPortBusy(port: number): Promise<boolean> {
   }
 }
 
+async function killProcessWithGroup(pid: string): Promise<void> {
+  logger.debug(`Killing process ${pid}`);
+  
+  // On Linux, try to kill the entire process group first
+  if (process.platform === 'linux') {
+    // Kill process group with SIGTERM
+    await runCommand(`kill -TERM -${pid} 2>/dev/null || true`, { silent: true });
+    // Also kill the specific process
+    await runCommand(`kill -TERM ${pid} 2>/dev/null || true`, { silent: true });
+  } else {
+    // First try SIGTERM for graceful shutdown
+    await runCommand(`kill ${pid} 2>/dev/null || true`, { silent: true });
+  }
+  
+  // Wait for graceful shutdown
+  await new Promise(resolve => setTimeout(resolve, 3000));
+  
+  // Check if process is still running
+  const checkResult = await runCommand(`ps -p ${pid} >/dev/null 2>&1`, { silent: true });
+  
+  if (checkResult.success) {
+    // Force kill if still running
+    logger.debug(`Force killing process ${pid} and its children`);
+    
+    if (process.platform === 'linux') {
+      // Kill entire process group with SIGKILL
+      await runCommand(`kill -KILL -${pid} 2>/dev/null || true`, { silent: true });
+      // Also kill the specific process
+      await runCommand(`kill -KILL ${pid} 2>/dev/null || true`, { silent: true });
+    } else {
+      await runCommand(`kill -9 ${pid} 2>/dev/null || true`, { silent: true });
+    }
+    
+    // Wait a bit more for cleanup
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  }
+}
+
 export async function killProcessesByPort(port: number): Promise<void> {
   // First, try to find and kill processes using the port
   const result = await runCommand(`lsof -ti:${port} 2>/dev/null || true`, { silent: true });
@@ -274,22 +312,14 @@ export async function killProcessesByPort(port: number): Promise<void> {
     const pids = result.stdout.trim().split('\n').filter(pid => pid.trim());
     
     for (const pid of pids) {
-      logger.debug(`Killing process ${pid} using port ${port}`);
-      
-      // First try SIGTERM for graceful shutdown
-      await runCommand(`kill ${pid} 2>/dev/null || true`, { silent: true });
-      
-      // Wait a moment for graceful shutdown
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Check if process is still running
-      const checkResult = await runCommand(`ps -p ${pid} >/dev/null 2>&1`, { silent: true });
-      
-      if (checkResult.success) {
-        // Force kill if still running
-        logger.debug(`Force killing process ${pid}`);
-        await runCommand(`kill -9 ${pid} 2>/dev/null || true`, { silent: true });
-      }
+      await killProcessWithGroup(pid);
+    }
+    
+    // Extra verification - check if port is still in use
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    const finalCheck = await runCommand(`lsof -ti:${port} 2>/dev/null || true`, { silent: true });
+    if (finalCheck.stdout.trim()) {
+      logger.warn(`Port ${port} still has processes after cleanup: ${finalCheck.stdout.trim()}`);
     }
   }
 }

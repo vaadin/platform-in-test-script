@@ -43,7 +43,7 @@ export function createProgram(): Command {
     .option('--test', 'Show steps and commands but don\'t run them', DEFAULT_CONFIG.test)
     .option('--git-ssh', 'Use git-ssh instead of https', DEFAULT_CONFIG.gitSsh)
     .option('--headless', 'Run the browser in headless mode', DEFAULT_CONFIG.headless)
-    .option('--headed', 'Run the browser in headed mode', DEFAULT_CONFIG.headed)
+    .option('--headed', 'Run the browser in headed mode', !DEFAULT_CONFIG.headless)
     .option('--debug', 'Enable debug mode with extra logging', DEFAULT_CONFIG.debug)
     .option('--run-pw', 'Skip setup and only run Playwright tests (assumes server is already running)', DEFAULT_CONFIG.runPw)
     .option('--ghtk <token>', 'GitHub personal access token (sets GHTK environment variable)')
@@ -92,7 +92,7 @@ export function parseArguments(args: string[]): PitConfig {
   }
 
   // Handle headless/headed logic
-  let headlessMode = DEFAULT_CONFIG.headless; // Default value (true)
+  let headlessMode = DEFAULT_CONFIG.headless;
   if (options['headless'] === true) {
     headlessMode = true;
   } else if (options['headed'] === true) {
