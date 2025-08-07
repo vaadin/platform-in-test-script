@@ -54,6 +54,16 @@ from .vaadin_utils import (
     add_prereleases, add_spring_release_repo, enable_snapshots
 )
 
+# Import new PiT modules
+from . import repos
+from . import pit_args  
+from . import starter_utils
+from . import k8s_utils
+from . import pit_runner
+
+# Note: patch_utils, playwright_utils, validation_utils, and utils 
+# are imported directly by modules that need them to avoid circular dependencies
+
 
 __version__ = "1.0.0"
 __author__ = "Vaadin Platform Team"

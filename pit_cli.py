@@ -1,6 +1,27 @@
 #!/usr/bin/env python3
 """
-Command-line interface for the PiT Python utilities.
+Platform Integration Test (PiT) CLI
+
+A comprehensive Python-based testing framework for Vaadin platform components.
+Migrated from bash scripts to provide better maintainability and cross-platform support.
+
+Completed migration includes:
+- Repository management (repos.py)
+- Argument parsing (pit_args.py)  
+- Starter/demo handling (starter_utils.py)
+- Kubernetes/Control Center management (k8s_utils.py)
+- Main test runner (pit_runner.py)
+- Patch management (patch_utils.py)
+- Playwright testing (playwright_utils.py)
+- Validation framework (validation_utils.py)
+- General utilities (utils.py)
+
+Commands:
+    run         Run Platform Integration Tests (equivalent to scripts/pit/run.sh)
+    list        List available starters and demos
+    help        Show help information
+
+For PiT run options, use: pit_cli.py run --help
 """
 
 import sys
@@ -22,7 +43,9 @@ from python import (
     # Java utilities
     compute_npm, compute_java_major,
     # Vaadin utilities
-    get_version_from_platform
+    get_version_from_platform,
+    # PiT runner
+    pit_runner
 )
 
 
@@ -91,6 +114,47 @@ def main():
     exec_parser.add_argument('cmd', help='Command to execute')
     exec_parser.add_argument('--test', action='store_true', help='Test mode (show only)')
     exec_parser.add_argument('--quiet', '-q', action='store_true', help='Quiet mode')
+    
+    # PiT runner command
+    pit_parser = subparsers.add_parser('run', help='Run Platform Integration Tests')
+    pit_parser.add_argument('--version', type=str, help='Vaadin version to test')
+    pit_parser.add_argument('--demos', action='store_true', help='Run all demo projects')
+    pit_parser.add_argument('--generated', action='store_true', help='Run all generated projects')
+    pit_parser.add_argument('--starters', type=str, help='Comma-separated list of starters to run')
+    pit_parser.add_argument('--port', type=int, default=8080, help='HTTP port for servlet container')
+    pit_parser.add_argument('--timeout', type=int, default=300, help='Timeout in seconds')
+    pit_parser.add_argument('--jdk', type=str, help='Specific JDK version to use')
+    pit_parser.add_argument('--verbose', action='store_true', help='Show server output')
+    pit_parser.add_argument('--offline', action='store_true', help='Use offline mode')
+    pit_parser.add_argument('--interactive', action='store_true', help='Interactive testing mode')
+    pit_parser.add_argument('--skip-tests', action='store_true', help='Skip UI tests')
+    pit_parser.add_argument('--skip-current', action='store_true', help='Skip current version')
+    pit_parser.add_argument('--skip-prod', action='store_true', help='Skip production validations')
+    pit_parser.add_argument('--skip-dev', action='store_true', help='Skip dev-mode validations')
+    pit_parser.add_argument('--skip-clean', action='store_true', help='Do not clean maven cache')
+    pit_parser.add_argument('--skip-helm', action='store_true', help='Do not re-install control-center')
+    pit_parser.add_argument('--skip-pw', action='store_true', help='Do not run playwright tests')
+    pit_parser.add_argument('--cluster', type=str, help='Existing k8s cluster name')
+    pit_parser.add_argument('--vendor', type=str, default='kind', choices=['kind', 'do', 'az', 'docker-desktop'], help='Cluster vendor')
+    pit_parser.add_argument('--keep-cc', action='store_true', help='Keep control-center running')
+    pit_parser.add_argument('--keep-apps', action='store_true', help='Keep installed apps')
+    pit_parser.add_argument('--proxy-cc', action='store_true', help='Forward port 443 from k8s')
+    pit_parser.add_argument('--events-cc', action='store_true', help='Display CC events')
+    pit_parser.add_argument('--cc-version', type=str, help='Control Center version')
+    pit_parser.add_argument('--skip-build', action='store_true', help='Skip building docker images')
+    pit_parser.add_argument('--delete-cluster', action='store_true', help='Delete clusters')
+    pit_parser.add_argument('--dashboard', type=str, choices=['install', 'uninstall'], help='Kubernetes dashboard')
+    pit_parser.add_argument('--pnpm', action='store_true', help='Use pnpm instead of npm')
+    pit_parser.add_argument('--vite', action='store_true', help='Use vite instead of webpack')
+    pit_parser.add_argument('--git-ssh', action='store_true', help='Use git-ssh instead of https')
+    pit_parser.add_argument('--commit', action='store_true', help='Commit changes to base branch')
+    pit_parser.add_argument('--hub', action='store_true', help='Use selenium hub')
+    pit_parser.add_argument('--headless', action='store_true', help='Run browser in headless mode')
+    pit_parser.add_argument('--headed', action='store_true', help='Run browser in headed mode')
+    pit_parser.add_argument('--test', action='store_true', help='Show commands but do not run them')
+    pit_parser.add_argument('--list', action='store_true', help='Show available starters')
+    pit_parser.add_argument('--function', type=str, help='Run specific function')
+    pit_parser.add_argument('--path', action='store_true', help='Show available SW paths')
     
     args = parser.parse_args()
     
@@ -231,6 +295,92 @@ def main():
             )
             print(f"Command completed with return code: {return_code}", flush=True)
             return return_code
+        
+        # PiT runner command
+        elif args.command == 'run':
+            # Convert argparse Namespace to list for pit_runner
+            pit_args = []
+            
+            # Add all PiT-specific arguments
+            if args.version:
+                pit_args.extend(['--version', args.version])
+            if args.demos:
+                pit_args.append('--demos')
+            if args.generated:
+                pit_args.append('--generated')
+            if args.starters:
+                pit_args.extend(['--starters', args.starters])
+            if args.port != 8080:
+                pit_args.extend(['--port', str(args.port)])
+            if args.timeout != 300:
+                pit_args.extend(['--timeout', str(args.timeout)])
+            if args.jdk:
+                pit_args.extend(['--jdk', args.jdk])
+            if args.verbose:
+                pit_args.append('--verbose')
+            if args.offline:
+                pit_args.append('--offline')
+            if args.interactive:
+                pit_args.append('--interactive')
+            if args.skip_tests:
+                pit_args.append('--skip-tests')
+            if args.skip_current:
+                pit_args.append('--skip-current')
+            if args.skip_prod:
+                pit_args.append('--skip-prod')
+            if args.skip_dev:
+                pit_args.append('--skip-dev')
+            if args.skip_clean:
+                pit_args.append('--skip-clean')
+            if args.skip_helm:
+                pit_args.append('--skip-helm')
+            if args.skip_pw:
+                pit_args.append('--skip-pw')
+            if args.cluster:
+                pit_args.extend(['--cluster', args.cluster])
+            if args.vendor != 'kind':
+                pit_args.extend(['--vendor', args.vendor])
+            if args.keep_cc:
+                pit_args.append('--keep-cc')
+            if args.keep_apps:
+                pit_args.append('--keep-apps')
+            if args.proxy_cc:
+                pit_args.append('--proxy-cc')
+            if args.events_cc:
+                pit_args.append('--events-cc')
+            if args.cc_version:
+                pit_args.extend(['--cc-version', args.cc_version])
+            if args.skip_build:
+                pit_args.append('--skip-build')
+            if args.delete_cluster:
+                pit_args.append('--delete-cluster')
+            if args.dashboard:
+                pit_args.extend(['--dashboard', args.dashboard])
+            if args.pnpm:
+                pit_args.append('--pnpm')
+            if args.vite:
+                pit_args.append('--vite')
+            if args.git_ssh:
+                pit_args.append('--git-ssh')
+            if args.commit:
+                pit_args.append('--commit')
+            if args.hub:
+                pit_args.append('--hub')
+            if args.headless:
+                pit_args.append('--headless')
+            if args.headed:
+                pit_args.append('--headed')
+            if args.test:
+                pit_args.append('--test')
+            if args.list:
+                pit_args.append('--list')
+            if args.function:
+                pit_args.extend(['--function', args.function])
+            if args.path:
+                pit_args.append('--path')
+            
+            # Run the PiT runner
+            return pit_runner.main(pit_args)
             
     except Exception as e:
         err(f'Error: {e}')
