@@ -339,17 +339,7 @@ class DemoManager:
 def run_starter(starter_name: str, target_dir: str, port: int, 
                version: Optional[str] = None, offline: bool = False) -> int:
     """
-    Run a complete starter test.
-    
-    Args:
-        starter_name: Name of the starter to test
-        target_dir: Directory to work in
-        port: Port to run the server on
-        version: Vaadin version to test
-        offline: Whether to use offline mode
-        
-    Returns:
-        Exit code (0 for success)
+    Generate and test a starter application.
     """
     config = {
         'verbose': os.environ.get('VERBOSE') == '1',
@@ -357,73 +347,53 @@ def run_starter(starter_name: str, target_dir: str, port: int,
         'test_mode': os.environ.get('TEST') == '1'
     }
     
-    starter_mgr = StarterManager(config)
-    
-    # Create target directory
-    os.makedirs(target_dir, exist_ok=True)
     original_dir = os.getcwd()
     
     try:
-        os.chdir(target_dir)
-        
-        # Generate or download the starter
-        if starter_name.startswith('archetype') or starter_name.endswith('-cli') or starter_name == 'vaadin-quarkus':
-            success = starter_mgr.generate_starter(starter_name)
-        else:
-            success = starter_mgr.download_starter(starter_name, starter_name)
-        
-        if not success:
+        # Generate starter
+        starter_mgr = StarterManager(config)
+        if not starter_mgr.generate_starter(starter_name, target_dir, version):
+            err(f"Failed to generate starter {starter_name}")
             return 1
         
-        # Initialize git repository
-        starter_mgr.init_git()
+        # Change to starter directory
+        work_dir = Path(target_dir) / starter_name
+        if not work_dir.exists():
+            err(f"Starter directory does not exist: {work_dir}")
+            return 1
         
-        # Import validation modules when needed to avoid circular imports
-        from .validation_utils import ValidationManager
+        os.chdir(work_dir)
+        
+        # Apply patches BEFORE validation
         from .patch_utils import PatchManager
+        patch_mgr = PatchManager()
+        patch_version = version or 'latest'
+        if not patch_mgr.apply_patches(starter_name, patch_version):
+            warn(f"Some patches failed to apply for {starter_name} version {patch_version}")
         
-        # Apply patches if needed
-        if version:
-            patch_mgr = PatchManager()
-            patch_mgr.apply_patches(starter_name, version)
+        # Determine build tool and commands
+        build_tool, compile_cmd, run_cmd = _determine_build_commands(starter_name)
         
-        # Run validation process
+        # Determine check string based on starter type
+        check_string = _determine_check_string(starter_name, build_tool)
+        
+        log(f"Using build tool: {build_tool}")
+        log(f"Compile command: {compile_cmd}")
+        log(f"Run command: {run_cmd}")
+        log(f"Check string: {check_string}")
+        
+        # Run validation
+        from .validation_utils import ValidationManager
         validation_mgr = ValidationManager()
-        
-        # Determine build commands
-        mvn_cmd = compute_mvn()
-        if Path('pom.xml').exists():
-            compile_cmd = f"{mvn_cmd} clean compile"
-            run_cmd = f"{mvn_cmd} spring-boot:run"
-            check_string = "Started"
-        elif Path('build.gradle').exists():
-            # Use cross-platform Gradle wrapper detection
-            gradle_cmd = compute_gradle()
-            compile_cmd = f"{gradle_cmd} clean compileJava"
-            run_cmd = f"{gradle_cmd} bootRun"
-            check_string = "Started"
-        elif Path('package.json').exists():
-            node_path, npm_cmd = compute_npm()
-            compile_cmd = f"{npm_cmd} install"
-            run_cmd = f"{npm_cmd} run dev"
-            check_string = "ready"
-        else:
-            log(f"No recognized build file found for {starter_name}")
-            # Use Python print instead of echo
-            compile_cmd = 'python -c "print(\'No build file found\')"'
-            run_cmd = 'python -c "print(\'No run command available\')"'
-            check_string = "ready"
-        
-        # Run the validation process
         success = validation_mgr.run_validations(
-            mode='dev',  # Default to dev mode
+            mode='dev',
             version=version or 'latest',
             name=starter_name,
             port=str(port),
             compile_cmd=compile_cmd,
             run_cmd=run_cmd,
             check_string=check_string,
-            test_file=None,  # Could be determined based on starter
+            test_file=None,
             timeout=300,
             interactive=False,
             skip_tests=config.get('test_mode', False),
@@ -501,24 +471,16 @@ def run_demo(demo_name: str, target_dir: str, port: int,
         # Run validation process
         validation_mgr = ValidationManager()
         
-        # Determine build commands
-        mvn_cmd = compute_mvn()
-        if Path('pom.xml').exists():
-            compile_cmd = f"{mvn_cmd} clean compile"
-            run_cmd = f"{mvn_cmd} spring-boot:run"
-            check_string = "Started"
-        elif Path('build.gradle').exists():
-            # Use cross-platform Gradle wrapper detection
-            gradle_cmd = compute_gradle()
-            compile_cmd = f"{gradle_cmd} clean compileJava"
-            run_cmd = f"{gradle_cmd} bootRun"
-            check_string = "Started"
-        else:
-            log(f"No recognized build file found for {demo_name}")
-            # Use Python print instead of echo
-            compile_cmd = 'python -c "print(\'No build file found\')"'
-            run_cmd = 'python -c "print(\'No run command available\')"'
-            check_string = "ready"
+        # Determine build tool and commands using smart detection
+        build_tool, compile_cmd, run_cmd = _determine_build_commands(demo_name)
+        
+        # Determine check string based on demo type
+        check_string = _determine_check_string(demo_name, build_tool)
+        
+        log(f"Using build tool: {build_tool}")
+        log(f"Compile command: {compile_cmd}")
+        log(f"Run command: {run_cmd}")
+        log(f"Check string: {check_string}")
         
         # Run the validation process
         success = validation_mgr.run_validations(
@@ -530,7 +492,7 @@ def run_demo(demo_name: str, target_dir: str, port: int,
             run_cmd=run_cmd,
             check_string=check_string,
             test_file=None,  # Could be determined based on demo
-            timeout=300,
+            timeout=600,  # Increased timeout for frontend bundle build
             interactive=False,
             skip_tests=config.get('test_mode', False),
             skip_playwright=config.get('test_mode', False),
@@ -551,3 +513,76 @@ def run_demo(demo_name: str, target_dir: str, port: int,
         return 1
     finally:
         os.chdir(original_dir)
+
+
+def _determine_build_commands(app_name: str) -> Tuple[str, str, str]:
+    """
+    Determine the appropriate build tool and commands for an application.
+    
+    Returns:
+        Tuple of (build_tool, compile_cmd, run_cmd)
+    """
+    # Check if Gradle project
+    if Path('build.gradle').exists() or Path('build.gradle.kts').exists():
+        gradle_cmd = compute_gradle()
+        return ('gradle', f"{gradle_cmd} compileJava", f"{gradle_cmd} appRun")
+    
+    # Maven project
+    mvn_cmd = compute_mvn()
+    
+    # Check pom.xml content to determine the right plugin
+    if Path('pom.xml').exists():
+        try:
+            with open('pom.xml', 'r', encoding='utf-8') as f:
+                pom_content = f.read()
+            
+            # Check for different Maven plugins
+            if 'jetty-maven-plugin' in pom_content or 'jetty-ee10-maven-plugin' in pom_content:
+                return ('maven', f"{mvn_cmd} compile", f"{mvn_cmd} jetty:run")
+            elif 'tomcat7-maven-plugin' in pom_content:
+                return ('maven', f"{mvn_cmd} compile", f"{mvn_cmd} tomcat7:run")
+            elif 'spring-boot-maven-plugin' in pom_content:
+                return ('maven', f"{mvn_cmd} compile", f"{mvn_cmd} spring-boot:run")
+            elif 'exec-maven-plugin' in pom_content:
+                return ('maven', f"{mvn_cmd} compile", f"{mvn_cmd} exec:java")
+            
+        except Exception as e:
+            warn(f"Error reading pom.xml: {e}")
+    
+    # Default fallback - many Vaadin demos use Jetty
+    return ('maven', f"{mvn_cmd} compile", f"{mvn_cmd} jetty:run")
+
+
+def _determine_check_string(app_name: str, build_tool: str) -> str:
+    """
+    Determine the appropriate check string to wait for during startup.
+    
+    Args:
+        app_name: Name of the application
+        build_tool: Build tool being used
+        
+    Returns:
+        String to search for in the output
+    """
+    # Spring Boot applications
+    spring_boot_patterns = [
+        'spring-boot', 'starter-', 'boot-'
+    ]
+    
+    if any(pattern in app_name.lower() for pattern in spring_boot_patterns):
+        return "Started.*in.*seconds"
+    
+    # Jetty applications (common pattern for Jetty startup)
+    jetty_patterns = [
+        'jetty', 'spreadsheet', 'addressbook', 'demo'
+    ]
+    
+    if any(pattern in app_name.lower() for pattern in jetty_patterns):
+        return "Started oejs.Server"
+    
+    # Gradle applications
+    if build_tool == 'gradle':
+        return "Server startup"
+    
+    # Default for Maven/Jetty
+    return "Started Server"
