@@ -20,13 +20,13 @@ def compute_mvn() -> str:
     Returns:
         str: Maven command (mvn, ./mvnw, or ./mvnw.bat/cmd)
     """
-    if Path('./mvnw').is_file() and os.access('./mvnw', os.X_OK):
+    if Path('./mvnw').is_file() and not os.access('mvnw', os.X_OK):
         return './mvnw'
     elif is_windows():
         if Path('./mvnw.bat').is_file():
-            return './mvnw.bat'
+            return '.\\mvnw.bat'
         elif Path('./mvnw.cmd').is_file():
-            return './mvnw.cmd'
+            return '.\\mvnw.cmd'
     
     return 'mvn'
 
@@ -44,9 +44,9 @@ def compute_gradle() -> str:
         gradle_cmd = './gradlew'
     elif is_windows():
         if Path('./gradlew.bat').is_file():
-            gradle_cmd = './gradlew.bat'
+            gradle_cmd = '.\\gradlew.bat'
         elif Path('./gradlew.cmd').is_file():
-            gradle_cmd = './gradlew.cmd'
+            gradle_cmd = '.\\gradlew.cmd'
     
     return f"{gradle_cmd} -Porg.gradle.java.installations.auto-detect=false"
 

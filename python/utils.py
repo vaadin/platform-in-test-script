@@ -538,9 +538,9 @@ class MavenGradleUtils:
             return './mvnw'
         elif PlatformUtils.is_windows():
             if Path('./mvnw.bat').is_file():
-                return './mvnw.bat'
+                return '.\\mvnw.bat'
             elif Path('./mvnw.cmd').is_file():
-                return './mvnw.cmd'
+                return '.\\mvnw.cmd'
         return 'mvn'
     
     @staticmethod
@@ -552,9 +552,9 @@ class MavenGradleUtils:
             gradle_cmd = './gradlew'
         elif PlatformUtils.is_windows():
             if Path('./gradlew.bat').is_file():
-                gradle_cmd = './gradlew.bat'
+                gradle_cmd = '.\\gradlew.bat'
             elif Path('./gradlew.cmd').is_file():
-                gradle_cmd = './gradlew.cmd'
+                gradle_cmd = '.\\gradlew.cmd'
         
         # Add Java installation auto-detect flag
         return f"{gradle_cmd} -Porg.gradle.java.installations.auto-detect=false"

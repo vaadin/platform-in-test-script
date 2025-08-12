@@ -118,22 +118,44 @@ def run_command(
                     universal_newlines=True
                 )
                 
-                for line in process.stdout:
-                    print(line, end='')
-                
-                return_code = process.wait()
+                # Use communicate with timeout to avoid hanging
+                try:
+                    output, _ = process.communicate(timeout=300)  # 5 minute timeout
+                    if output:
+                        print(output, end='')
+                    return_code = process.returncode
+                        
+                except subprocess.TimeoutExpired:
+                    print(f"Command timed out after 5 minutes")
+                    process.kill()
+                    process.communicate()  # Clean up
+                    return_code = 124  # Standard timeout exit code
+                except Exception as e:
+                    print(f"Error waiting for process: {e}")
+                    process.kill()
+                    return_code = 1
+                    
             else:
-                result = subprocess.run(
-                    command,
-                    shell=True,
-                    capture_output=True,
-                    text=True
-                )
-                return_code = result.returncode
-                
-                if return_code != 0 and not quiet:
-                    print(result.stdout, file=sys.stderr)
-                    print(result.stderr, file=sys.stderr)
+                try:
+                    result = subprocess.run(
+                        command,
+                        shell=True,
+                        capture_output=True,
+                        text=True,
+                        timeout=300  # 5 minute timeout
+                    )
+                    return_code = result.returncode
+                    
+                    if return_code != 0 and not quiet:
+                        print(result.stdout, file=sys.stderr)
+                        print(result.stderr, file=sys.stderr)
+                        
+                except subprocess.TimeoutExpired:
+                    print(f"Command timed out after 5 minutes")
+                    return_code = 124
+                except Exception as e:
+                    print(f"Error running command: {e}")
+                    return_code = 1
             
             return return_code
     except KeyboardInterrupt:
