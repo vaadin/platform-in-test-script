@@ -16,13 +16,15 @@ public class PitArguments {
     // @Parameter(names = "--demos", description = "Comma-separated list of demo projects to test.", splitter = CommaParameterSplitter.class, variableArity = true)
     // public List<String> demos;
 
-    //TODO separation between demo and starters seems arbitrary, consider merging
+    //separation between demo and starters seems arbitrary, we just launch everything with one parameter
     @Parameter(names = "--run", description = "Comma-separated list of demo projects to test.", splitter = CommaParameterSplitter.class, variableArity = true)
     public List<String> toRun;
 
-
-    @Parameter(names = "--version", description = "The Vaadin version to use for the test.")
+    @Parameter(names = "--version", description = "The Vaadin version to use for the test(s).")
     public String version;
+
+    @Parameter(names = "--javaVersion", description = "The Java version to use for the test(s).")
+    String javaVersion = "21";
 
     @Parameter(names = "--port", description = "The port number for the application server.")
     public Integer port = 8080;
