@@ -87,25 +87,39 @@ class PatchManager:
             return False
     
     def _apply_v24_4_patches(self, app_name: str) -> bool:
-        """Apply patches specific to version 24.4."""
-        try:
-            # Replace deprecated Spring Boot version property
-            if self._file_exists('pom.xml'):
-                self._replace_in_file(
-                    'pom.xml',
-                    '<spring-boot.version>',
-                    '<spring.boot.version>'
-                )
-            
-            # Update Quarkus version for compatibility
-            if 'quarkus' in app_name.lower():
-                self._update_quarkus_version()
-            
-            return True
-        except Exception as e:
-            logger.error(f"Error applying v24.4 patches: {e}")
-            return False
-    
+        """Applies patches for Vaadin 24.4."""
+        from .output_utils import log, warn, cmd
+        from .maven_utils import rename_maven_property, change_maven_block, remove_maven_block
+
+        log(f"Applying Vaadin 24.4 patches for {app_name}")
+        
+        # Generic patches
+        rename_maven_property('hilla.version', 'vaadin.version')
+        change_maven_block('dependency', 'dev.hilla', 'hilla-bom', r'\${vaadin.version}', 'com.vaadin', 'vaadin-bom')
+        change_maven_block('dependency', 'dev.hilla', 'hilla-spring-boot-starter', r'\${vaadin.version}', 'com.vaadin', 'vaadin-spring-boot-starter')
+        change_maven_block('plugin', 'dev.hilla', 'hilla-maven-plugin', r'\${vaadin.version}', 'com.vaadin', 'vaadin-maven-plugin')
+
+        # React specific
+        if 'react' in app_name:
+            cmd("Patching React project")
+            remove_maven_block('dependency', 'dev.hilla', 'hilla-react')
+
+        # Lit specific
+        if 'lit' in app_name:
+            cmd("Patching Lit project")
+            change_maven_block('dependency', 'dev.hilla', 'hilla', r'\${vaadin.version}', 'com.vaadin', 'vaadin')
+            # Add reactEnable=false to vaadin-maven-plugin
+            # This is more complex and requires proper XML parsing with ElementTree
+
+        # Hilla source code replacements
+        self._replace_in_files('*.java', 'import dev.hilla', 'import com.vaadin.hilla')
+        self._replace_in_files('*.ts*', '@hilla/form', '@vaadin/hilla-lit-form')
+        self._replace_in_files('*.ts*', '@hilla/frontend', '@vaadin/hilla-frontend')
+        self._replace_in_files('*.ts*', '@hilla/react-form', '@vaadin/hilla-react-form')
+        self._replace_in_files('*.ts*', '@hilla/', '@vaadin/')
+        
+        return True
+
     def _apply_v24_5_patches(self, app_name: str) -> bool:
         """Apply patches specific to version 24.5."""
         try:
@@ -462,6 +476,21 @@ class PatchManager:
         except Exception as e:
             logger.error(f"Error removing dependency {group_id}:{artifact_id}: {e}")
             return False
+    
+    def _replace_in_files(self, pattern: str, old_str: str, new_str: str):
+        """Helper to replace strings in files matching a glob pattern."""
+        from .output_utils import cmd
+        try:
+            for filepath in Path.cwd().glob(f"**/{pattern}"):
+                if filepath.is_file():
+                    content = filepath.read_text('utf-8')
+                    if old_str in content:
+                        cmd(f"Replacing '{old_str}' in {filepath}")
+                        content = content.replace(old_str, new_str)
+                        filepath.write_text(content, 'utf-8')
+        except Exception as e:
+            from .output_utils import warn
+            warn(f"Failed to replace string in files: {e}")
     
     # Placeholder methods for additional patch functionality
     def _update_quarkus_version(self) -> bool:
