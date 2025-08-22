@@ -61,6 +61,7 @@ applyPatches() {
         changeBlock 'SELECT\sptype' 'FROM\sPetType' '${3}' src/main/java/org/springframework/samples/petclinic/backend/owner/PetRepository.java
     ;;
     25.0.0*)
+      [ "$type_" = next ] && changeMavenBlock parent org.springframework.boot spring-boot-starter-parent 4.0.0-M1 || return 0
       [ "$type_" = next ] && addAnonymousAllowedToAppLayout
     ;;
   esac
