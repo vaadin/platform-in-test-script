@@ -1023,7 +1023,8 @@ getMvnDependencyVersion() {
 # $3 version
 # $4 extra arguments to pass to mvn
 setMvnDependencyVersion() {
-  expr "$3" : ".*SNAPSHOT" >/dev/null && _newVers=$3 || _newVers=`echo "$3" | tr - .`
+  # expr "$3" : ".*SNAPSHOT" >/dev/null && _newVers=$3 || _newVers=$3
+  _newVers=$3
   _curVers=`getMvnDependencyVersion "$1" "$2" "$4"` || return 1
   if [ "$_curVers" != "$_newVers" ]; then
     changeBlock '<artifactId>'$2'</artifactId>' '\s+</dependency>' '${1}<version>'$_newVers'</version>${3}' pom.xml
