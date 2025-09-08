@@ -59,7 +59,7 @@ patchPomV24() {
     changeMavenBlock plugin org.eclipse.jetty jetty-maven-plugin 11.0.13
 
     # removeMavenProperty selenium.version
-    changeMavenProperty selenium.version 4.19.1
+    changeMavenProperty selenium.version 4.35.0
     changeMavenProperty java.version 17
     changeMavenProperty maven.compiler.source 17
     changeMavenProperty maven.compiler.target 17
