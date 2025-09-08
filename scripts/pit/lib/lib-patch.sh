@@ -52,6 +52,10 @@ applyPatches() {
     releases-graph)
       setPropertyInFile src/main/resources/application.properties github.personal.token $GHTK
       ;;
+    testbench-demo)
+      S=src/test/screenshots
+      [ -d "$S" ] && runCmd "Removing $S" "rm -rf $S"
+      ;;
   esac
   case "$vers_" in
     24.8.0*)
