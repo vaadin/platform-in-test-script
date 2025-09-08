@@ -165,7 +165,7 @@ getInstallCmdPrd() {
     mpr-demo|spreadsheet-demo) echo "$MVN -ntp -B clean";;
     start) echo "$MVN -ntp -B install -Dmaven.test.skip -Pcircleci" ;;
     form-filler-demo) echo "$H $E $PNPM -DOPENAI_TOKEN=$OPENAI_TOKEN";;
-    testbench-demo) echo "$H $E $PNPM -Dselenium.version=4.19.1";;
+    testbench-demo) echo "$H $E $PNPM -Dselenium.version=4.35.0";;
     *) echo "$H $PNPM";;
   esac
 }
