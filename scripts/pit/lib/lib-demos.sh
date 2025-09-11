@@ -12,7 +12,9 @@ checkoutDemo() {
   local _folder=`getGitFolder $1`
   local _workdir="$_demo$_folder"
   local _repo=`getGitRepo $1`
-  local _base=${GITBASE:-https://gitub.com/}
+  local _base="https://github.com/"
+  grep -q '^github' ~/.ssh/known_hosts 2>/dev/null && _base="git@github.com:"
+
   validateToken $_repo && _base=`echo "$_base" | sed -e 's|\(https://\)|\\1'$GHTK'@|'`
   local _gitUrl="${_base}${_repo}.git"
   [ -z "$VERBOSE" ] && _quiet="-q"

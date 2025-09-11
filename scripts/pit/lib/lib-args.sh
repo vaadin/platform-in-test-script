@@ -39,7 +39,6 @@ Use: $0 with the next options:
  --hub             Use selenium hub instead of local chrome, it assumes that selenium docker is running as service in localhost
  --commit          Commit changes to the base branch
  --test            Checkout starters, and show steps and commands to execute, but don't run them
- --git-ssh         Use git-ssh instead of https to checkout projects (you need a valid ssh key)
  --headless        Run the browser in headless mode even if interactive mode is enabled
  --headed          Run the browser in headed mode even if interactive mode is disabled
  --function        run only one function of the libs in current folder.
@@ -53,7 +52,7 @@ EOF
 
 ## check arguments passed to `run.sh` script and set global variables
 checkArgs() {
-  VERSION=current; GITBASE="https://github.com/"; export PORT=$DEFAULT_PORT; TIMEOUT=$DEFAULT_TIMEOUT; CLUSTER=pit; VENDOR=kind; CCVERSION=current
+  VERSION=current; export PORT=$DEFAULT_PORT; TIMEOUT=$DEFAULT_TIMEOUT; CLUSTER=pit; VENDOR=kind; CCVERSION=current
   while [ -n "$1" ]
   do
     arg=`echo "$1" | grep = | cut -d= -f2`
@@ -145,7 +144,6 @@ checkArgs() {
         fi
         exit ;;
       --delete-cluster) deleteCluster; exit ;;
-      --git-ssh) GITBASE="git@github.com:" ;;
       --headless) HEADLESS=true ;;
       --headed)   HEADLESS=false ;;
       --ghtk=*|--gh-token=*)   GHTK=$arg ;;
