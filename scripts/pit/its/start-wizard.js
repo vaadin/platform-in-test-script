@@ -34,7 +34,7 @@ process.argv.forEach(a => {
   // Start a new project
   log(`Starting new project\n`);
   await page.getByText(/Start (a Project|Playing)/).click();
-  await page.locator('body').click();
+  await page.keyboard.press('Escape');
 
   // No demo view anymore
   // Test example views
