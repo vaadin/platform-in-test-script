@@ -35,7 +35,7 @@ compileCCStarter() {
   _url="https://start.vaadin.com/dl?$PRESETS&projectName=$APP"
   _zip="$APP.zip"
   _dir="$APP"
-  [ -z "$VERBOSE" ] && _silent="-s"
+  [ -z "$VERBOSE" ] && _silent="-s" || _silent=""
   if [ -n "$OFFLINE" -a -d "$APP" ]; then
     runCmd -f "Reseting local changes in $APP" "git --git-dir=$APP/.git --work-tree=$APP reset --hard HEAD" || return 1
   else
