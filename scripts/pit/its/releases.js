@@ -31,13 +31,14 @@ const {log, args, createPage, closePage, takeScreenshot, waitForServerReady, dis
     await expect(page.getByLabel('Interactive chart').locator(selector)).toBeVisible();
     await takeScreenshot(page, __filename, `interactive-chart-${arg.version}-loaded`);
 
-    if (await page.getByText(arg.version).first().isEnabled()) {
-        await page.getByText(arg.version).first().click();
-    } else if (await page.locator(`${arg.version}, 1.`).isEnabled()) {
-        await page.locator(`${arg.version}, 1.`).isEnabled();
-    } else if (await page.locator(selector).first().isEnabled()) {
-        await page.locator(selector).first().click();
+    try {
+        // click on the bullet image
+        await page.locator('#chart').nth(1).getByRole('img', {name: arg.version + ', 1.'}).click({timeout: 1000});
+    } catch (error) {
+        // click on the tooltip
+        await page.locator('#chart').nth(1).getByText(arg.version).first().click({timeout: 1000});
     }
+
     await expect(page.getByRole('heading', { name: `Release Notes for ${arg.version}` })).toBeVisible();
     await takeScreenshot(page, __filename, `release-notes-${arg.version}-loaded`);
 
