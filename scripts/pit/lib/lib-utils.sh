@@ -751,11 +751,11 @@ isHeadless() {
 printVersions() {
   computeNpm
   [ -n "$TEST" ] && return
-  _vers=`MAVEN_OPTS="$HOT" MAVEN_ARGS="$MAVEN_ARGS" $MVN -version | tr \\\\ / 2>/dev/null | egrep -i 'maven|java|agent.HotswapAgent'`
+  _vers=`MAVEN_OPTS="$MAVEN_OPTS" MAVEN_ARGS="$MAVEN_ARGS" $MVN -version | tr \\\\ / 2>/dev/null | egrep -i 'maven|java'`
   [ $? != 0 ] && err "Error $? when running $MVN, $_vers" && return 1
   log "==== VERSIONS ====
 
-MAVEN_OPTS='$HOT $MAVEN_OPTS' MAVEN_ARGS='$MAVEN_ARGS' $MVN -version
+MAVEN_OPTS='$MAVEN_OPTS' MAVEN_ARGS='$MAVEN_ARGS' $MVN -version
 $_vers
 NODE=$NODE
 Java version: `java -version 2>&1`
@@ -852,7 +852,7 @@ installJBRRuntime() {
     download "$__hsau" "$H/lib/hotswap/hotswap-agent.jar" || return 1
     [ -z "$TEST" ] && log "Installed "`ls -1 $H/lib/hotswap/hotswap-agent.jar`
   fi
-  export HOT="-XX:+AllowEnhancedClassRedefinition -XX:HotswapAgent=fatjar"
+  export HOT="-Djetty.deployMode=FORK -Djetty.jvmArgs=-XX:HotswapAgent=fatjar"
 }
 
 ## Installs a certain version of OPENJDK

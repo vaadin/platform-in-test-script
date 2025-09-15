@@ -197,7 +197,7 @@ runStarter() {
 
   printVersions || return 1
 
-  _msg="Started .*Application|Frontend compiled|Started ServerConnector|Started Vite|Listening on:"
+  _msg="Started .*Application|Frontend compiled|Started ServerConnector|Started Vite|Listening on:|Vaadin is running"
   _msgprod="Started .*Application|Started ServerConnector|Listening on:"
   _prod=`_getRunProd "$_preset"`
   _dev=`_getRunDev "$_preset"`
@@ -212,7 +212,7 @@ runStarter() {
     applyPatches $_preset current $_current dev || return 0
     # 2
     if [ -z "$NODEV" ]; then
-      MAVEN_OPTS="$HOT" runValidations dev "$_current" "$_preset" "$_port" "$_clean" "$_dev" "$_msg" "$_test" || return 1
+      runValidations dev "$_current" "$_preset" "$_port" "$_clean" "$_dev $HOT" "$_msg" "$_test" || return 1
     fi
     # 3
     if [ -z "$NOPROD" ]; then
@@ -227,7 +227,7 @@ runStarter() {
     applyPatches "$_preset" next "$_version" prod || return 0
     # 5
     if [ -z "$NODEV" ]; then
-      MAVEN_ARGS="$MAVEN_ARGS" MAVEN_OPTS="$HOT" runValidations dev "$_version" "$_preset" "$_port" "$_clean" "$_dev" "$_msg" "$_test" || return 1
+      runValidations dev "$_version" "$_preset" "$_port" "$_clean" "$_dev $HOT" "$_msg" "$_test" || return 1
     fi
     # 6
     if [ -z "$NOPROD" ]; then
