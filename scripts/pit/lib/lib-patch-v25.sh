@@ -81,22 +81,35 @@ updateSpringBootApplication() {
   if grep -q "SqlDataSourceScriptDatabaseInitializer" "$app_file"; then
     [ -z "$TEST" ] && warn "removing database initialization method from $app_file" || cmd "## removing database initialization method from $app_file"
 
-    # Use perl to remove @Bean method and imports in one pass
+    # Use perl line-by-line processing for more reliable method and import removal
     if [ -z "$TEST" ]; then
-      perl -0777 -pi -e '
-        # Step 1: Remove the @Bean method - find the start and manually handle nested braces
-        # This approach looks for the pattern and removes everything until the final closing brace
-        s/\s*\@Bean\s*\n\s*SqlDataSourceScriptDatabaseInitializer\s+dataSourceScriptDatabaseInitializer.*?return\s+false;\s*\n\s*\}\s*\n\s*\};\s*\n\s*\}\s*\n?//s;
+      perl -i -ne '
+        BEGIN { $in_method = $braces = $removed = $found_bean = 0; }
 
-        # Remove specific imports
-        s/^import\s+javax\.sql\.DataSource;\s*\n//gm;
-        s/^import\s+org\.springframework\.boot\.autoconfigure\.sql\.init\.SqlDataSourceScriptDatabaseInitializer;\s*\n//gm;
-        s/^import\s+org\.springframework\.boot\.autoconfigure\.sql\.init\.SqlInitializationProperties;\s*\n//gm;
-        s/^import\s+org\.springframework\.context\.annotation\.Bean;\s*\n//gm;
-        s/^import\s+.*SamplePersonRepository.*;\s*\n//gm;
+        # Skip target imports - fixed regex pattern
+        if (/^import\s+(javax\.sql\.DataSource|org\.springframework\.boot\.autoconfigure\.sql\.init\..*|org\.springframework\.context\.annotation\.Bean|.*SamplePersonRepository.*);/) {
+          $removed++; next;
+        }
 
-        # Clean up extra blank lines
-        s/\n\s*\n\s*\n/\n\n/g;
+        # Handle @Bean detection and method tracking
+        if (/^\s*\@Bean\s*$/) { $found_bean = 1; $removed++; next; }
+        if ($found_bean && /SqlDataSourceScriptDatabaseInitializer/) {
+          $in_method = 1; $found_bean = 0;
+          $braces += tr/\{/\{/ - tr/\}/\}/;
+          $removed++; next;
+        }
+        if ($found_bean && !/SqlDataSourceScriptDatabaseInitializer/ && /\S/) { $found_bean = 0; print "\@Bean\n"; }
+
+        # Track braces inside method and skip lines
+        if ($in_method) {
+          $braces += tr/\{/\{/ - tr/\}/\}/;
+          $removed++;
+          if ($braces <= 0) { $in_method = $braces = 0; }
+          next;
+        }
+
+        print;
+        END { warn "Removed $removed lines from SqlDataSourceScriptDatabaseInitializer method and imports\n" if $removed; }
       ' "$app_file"
     fi
   fi
