@@ -16,7 +16,11 @@ process.argv.forEach(a => {
     headless: headless,
     chromiumSandbox: false
   });
-  const context = await browser.newContext();
+  
+  // TODO: should work with smaller viewport too like in 24.9
+  const context = await browser.newContext({
+    viewport: { width: 1920, height: 1080 }
+  });
 
   const page = await context.newPage();
   page.on('console', msg => console.log("> CONSOLE:", (msg.text() + ' - ' + msg.location().url).replace(/\s+/g, ' ')));
