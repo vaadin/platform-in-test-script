@@ -495,6 +495,44 @@ setGradleVersion() {
   fi
 }
 
+## Set version for a specific artifact in build.gradle
+## $1: groupId:artifactId (for dependencies) or plugin.id (for plugins)
+## $2: new version
+setVersionInGradle() {
+  local identifier="$1"
+  local newVersion="$2"
+  local buildFile="build.gradle"
+
+  [ ! -f "$buildFile" ] && return 0
+  [ -z "$newVersion" ] && return 1
+
+  # Check if identifier contains ':' (dependency format: groupId:artifactId)
+  if echo "$identifier" | grep -q ':'; then
+    local groupId=$(echo "$identifier" | cut -d':' -f1)
+    local artifactId=$(echo "$identifier" | cut -d':' -f2)
+
+    # Update dependency version: implementation 'groupId:artifactId:version'
+    if grep -q "$identifier:" "$buildFile"; then
+      [ -z "$TEST" ] && warn "updating dependency $identifier version to $newVersion in $buildFile" || cmd "## updating dependency $identifier version to $newVersion in $buildFile"
+
+      _cmd="perl -pi -e \"s/(['\\\"]$identifier:)[^'\\\"]+(['\\\"])/\\\${1}$newVersion\\\${2}/g\" \"$buildFile\""
+      cmd "$_cmd"
+      [ -n "$TEST" ] || eval "$_cmd"
+    fi
+  else
+    # Update plugin version: id 'plugin.name' version 'x.y.z'
+    local pluginId="$identifier"
+
+    if grep -q "id ['\"]$pluginId['\"] version" "$buildFile"; then
+      [ -z "$TEST" ] && warn "updating plugin $pluginId version to $newVersion in $buildFile" || cmd "## updating plugin $pluginId version to $newVersion in $buildFile"
+
+      _cmd="perl -pi -e \"s/(id ['\\\"]$pluginId['\\\"] version ['\\\"])[^'\\\"]+(['\\\"])/\\\${1}$newVersion\\\${2}/g\" \"$buildFile\""
+      cmd "$_cmd"
+      [ -n "$TEST" ] || eval "$_cmd"
+    fi
+  fi
+}
+
 ## checks whether an express dev-bundle has been created for the project
 checkBundleNotCreated() {
   log "Checking Express Bundle"
