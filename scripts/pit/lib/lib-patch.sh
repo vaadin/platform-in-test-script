@@ -1,6 +1,4 @@
-. `dirname $0`/lib/lib-patch-v24.sh
-. `dirname $0`/lib/lib-patch-v24.4.sh
-
+. `dirname $0`/lib/lib-patch-v25.sh
 
 ## LIBRARY for patching Vaadin starters or demos
 ##   It has especial workarounds for specific apps.
@@ -23,7 +21,6 @@ applyPatches() {
   expr "$vers_" : ".*SNAPSHOT" >/dev/null && enableSnapshots
   expr "$vers_" : "24.3.0.alpha.*" >/dev/null && addSpringReleaseRepo
   checkProjectUsingOldVaadin "$type_" "$vers_"
-  downgradeJava
 
   case $app_ in
     archetype-hotswap)
@@ -58,15 +55,8 @@ applyPatches() {
       ;;
   esac
   case "$vers_" in
-    24.8.0*)
-      [ "$type_" = next ] &&
-        changeMavenBlock parent org.springframework.boot spring-boot-starter-parent 3.5.0 || return 0
-      [ "$app_" = spring-petclinic-vaadin-flow ] &&
-        changeBlock 'SELECT\sptype' 'FROM\sPetType' '${3}' src/main/java/org/springframework/samples/petclinic/backend/owner/PetRepository.java
-    ;;
     25.0.0*)
-      [ "$type_" = next ] && changeMavenBlock parent org.springframework.boot spring-boot-starter-parent 4.0.0-M1 || return 0
-      [ "$type_" = next ] && addAnonymousAllowedToAppLayout
+      [ "$type_" = next ] && applyv25patches
     ;;
   esac
 
