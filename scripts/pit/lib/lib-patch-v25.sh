@@ -1,6 +1,5 @@
 
 
-
 applyv25patches() {
   app_=$1; type_=$2; vers_=$3
   [ -d src/main ] && D=src/main || D=*/src/main
@@ -10,6 +9,7 @@ applyv25patches() {
   setVersionInGradle "org.springframework.boot" "4.0.0-M3"
   addAnonymousAllowedToAppLayout
   updateAppLayoutAfterNavigation
+  updateSpringBootApplication
   updateGradleWrapper
   cleanAfterBumpingVersions
 
@@ -66,4 +66,38 @@ updateAppLayoutAfterNavigation() {
       [ -n "$TEST" ] || eval "$_cmd2"
     fi
   done
+}
+
+## Find Application class with @SpringBootApplication and remove database initialization method and unused imports
+## This is needed when upgrading to new Spring Boot versions where manual database initialization is no longer required
+## TODO: needs to be documented in vaadin migration guide to 25
+updateSpringBootApplication() {
+  # Find the Application class with @SpringBootApplication annotation
+  local app_file=$(find src -name "*.java" -exec grep -l "@SpringBootApplication" {} +)
+
+  [ -z "$app_file" ] && return 0
+
+  # Check if file contains the SqlDataSourceScriptDatabaseInitializer method
+  if grep -q "SqlDataSourceScriptDatabaseInitializer" "$app_file"; then
+    [ -z "$TEST" ] && warn "removing database initialization method from $app_file" || cmd "## removing database initialization method from $app_file"
+
+    # Use perl to remove @Bean method and imports in one pass
+    if [ -z "$TEST" ]; then
+      perl -0777 -pi -e '
+        # Step 1: Remove the @Bean method - find the start and manually handle nested braces
+        # This approach looks for the pattern and removes everything until the final closing brace
+        s/\s*\@Bean\s*\n\s*SqlDataSourceScriptDatabaseInitializer\s+dataSourceScriptDatabaseInitializer.*?return\s+false;\s*\n\s*\}\s*\n\s*\};\s*\n\s*\}\s*\n?//s;
+
+        # Remove specific imports
+        s/^import\s+javax\.sql\.DataSource;\s*\n//gm;
+        s/^import\s+org\.springframework\.boot\.autoconfigure\.sql\.init\.SqlDataSourceScriptDatabaseInitializer;\s*\n//gm;
+        s/^import\s+org\.springframework\.boot\.autoconfigure\.sql\.init\.SqlInitializationProperties;\s*\n//gm;
+        s/^import\s+org\.springframework\.context\.annotation\.Bean;\s*\n//gm;
+        s/^import\s+.*SamplePersonRepository.*;\s*\n//gm;
+
+        # Clean up extra blank lines
+        s/\n\s*\n\s*\n/\n\n/g;
+      ' "$app_file"
+    fi
+  fi
 }
