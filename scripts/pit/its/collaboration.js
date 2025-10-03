@@ -24,14 +24,20 @@ process.argv.forEach(a => {
     chromiumSandbox: true
   });
 
-  const context1 = await browser1.newContext();
+  // TODO: should work with smaller viewport too like in 24.9
+  const context1 = await browser1.newContext({
+    viewport: { width: 1920, height: 1080 }
+  });
   const page1 = await context1.newPage();
   page1.on('console', msg => console.log("> PAGE1 CONSOLE:", (msg.text() + ' - ' + msg.location().url).replace(/\s+/g, ' ')));
   page1.on('pageerror', err => console.log("> PAGE1 PAGEERROR:", ('' + err).replace(/\s+/g, ' ')));
 
   await page1.goto(`http://${host}:${port}/`);
 
-  const context2 = await browser2.newContext();
+  // TODO: should work with smaller viewport too like in 24.9
+  const context2 = await browser2.newContext({
+    viewport: { width: 1920, height: 1080 }
+  });
   const page2 = await context2.newPage();
   page2.on('console', msg => console.log("> PAGE2 CONSOLE:", (msg.text() + ' - ' + msg.location().url).replace(/\s+/g, ' ')));
   page2.on('pageerror', err => console.log("> PAGE2 PAGEERROR:", ('' + err).replace(/\s+/g, ' ')));
