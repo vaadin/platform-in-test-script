@@ -11,7 +11,7 @@ applyv25patches() {
   updateAppLayoutAfterNavigation
 
   diff_=`git diff $D $F | egrep '^[+-]'`
-  [ -n "$diff_" ] && echo "" && warn "Patched sources\n" && dim "====== BEGIN ======\n\n$diff_\n======  END  ======"
+  [ -z "$TEST" -a -n "$diff_" ] && echo "" && warn "Patched sources\n" && dim "====== BEGIN ======\n\n$diff_\n======  END  ======"
 
   return 0
 }
@@ -23,16 +23,20 @@ updateAppLayoutAfterNavigation() {
   find src -name "*.java" -exec grep -l "extends AppLayout" {} + | xargs grep -L "extends AppLayoutElement" | while read file; do
     # Check if the file contains afterNavigation method
     if grep -q "afterNavigation()" "$file"; then
-      warn "updating afterNavigation method in $file"
+      [ -z "$TEST" ] && warn "updating afterNavigation method in $file" || cmd "## updating afterNavigation method in $file"
       
       # Check if already implements AfterNavigationObserver
       if ! grep -q "implements.*AfterNavigationObserver" "$file"; then
         # Add implements AfterNavigationObserver to class declaration
-        perl -pi -e 's/(public\s+class\s+[A-Za-z0-9_]+\s+extends\s+AppLayout)(\s*)(\{)/$1 implements com.vaadin.flow.router.AfterNavigationObserver$2$3/' "$file"
+        _cmd1="perl -pi -e 's/(public\s+class\s+[A-Za-z0-9_]+\s+extends\s+AppLayout)(\s*)(\{)/\$1 implements com.vaadin.flow.router.AfterNavigationObserver\$2\$3/' \"$file\""
+        cmd "$_cmd1"
+        [ -n "$TEST" ] || eval "$_cmd1"
       fi
       
       # Transform the method - handle both with and without @Override in one pattern
-      perl -0777 -pi -e 's/(\s+)(?:@Override\s+)?protected\s+void\s+afterNavigation\(\)\s*\{\s*super\.afterNavigation\(\);\s*/$1@Override\n$1public void afterNavigation(com.vaadin.flow.router.AfterNavigationEvent event) {\n$1/gs' "$file"
+      _cmd2="perl -0777 -pi -e 's/(\s+)(?:@Override\s+)?protected\s+void\s+afterNavigation\(\)\s*\{\s*super\.afterNavigation\(\);\s*/\$1@Override\n\$1public void afterNavigation(com.vaadin.flow.router.AfterNavigationEvent event) {\n\$1/gs' \"$file\""
+      cmd "$_cmd2"
+      [ -n "$TEST" ] || eval "$_cmd2"
     fi
   done
 }
