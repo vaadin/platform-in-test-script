@@ -9,11 +9,19 @@ applyv25patches() {
   changeMavenBlock parent org.springframework.boot spring-boot-starter-parent 4.0.0-M3
   addAnonymousAllowedToAppLayout
   updateAppLayoutAfterNavigation
+  cleanAfterBumpingVersions
 
   diff_=`git diff $D $F | egrep '^[+-]'`
   [ -z "$TEST" -a -n "$diff_" ] && echo "" && warn "Patched sources\n" && dim "====== BEGIN ======\n\n$diff_\n======  END  ======"
 
   return 0
+}
+
+## TODO: needs to be documented in vaadin migration guide to 25
+## vaadin:clean-frontend is not enough it needs to clean target too
+cleanAfterBumpingVersions() {
+  [ -z "$NOCURRENT" ] && [ ! -d target ] && return
+  runCmd "Cleaning project after version bump" "mvn clean vaadin:clean-frontend"
 }
 
 ## Find all java class files that extend AppLayout and have afterNavigation() method, then update them to implement AfterNavigationObserver
