@@ -36,13 +36,16 @@ process.argv.forEach(a => {
   await page.locator('text=Hello').nth(0).click();
   await page.locator('input[type="text"]').fill('Greet');
   await page.locator('text=Say hello').click();
-  await page.locator('text=Hello Greet');
+  await page.locator('text=Hello Greet').waitFor({ state: 'visible' });
 
+  // TODO: investigate why this is needed when notification is visible click does not work in master-detail
+  await page.goto(`http://${host}:${port}/master-detail-view`);
   await page.locator('text=Master-Detail').nth(0).click();
+  console.log('--- Click on eula.lane');
   await page.locator('text=eula.lane').click();
   await page.locator('input[type="text"]').nth(0).fill('FOO');
   await page.locator('text=Save').click();
-  await page.locator('text=/stored/');
+  await page.locator('text=/Data updated/').waitFor({ state: 'visible' });
   await page.waitForTimeout(5000);
 
   await page.locator('text=/Emma/').click();
