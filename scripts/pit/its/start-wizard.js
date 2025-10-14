@@ -71,7 +71,9 @@ process.argv.forEach(a => {
     }
     log(`${label} clicking on ${viewLabel}\n`);
     await viewLabel.click();
-    const addViewButton = page.getByRole('button', { name: 'Add View' });
+    const addViewButton  = page.getByLabel('Add view').getByRole('button', { name: 'Add View' });
+
+    // const addViewButton = page.getByRole('button', { name: 'Add View' });
     log(`${label} clicking on ${addViewButton}\n`);
     await addViewButton.click();
     let newViewNameTextBox = page.getByRole('textbox', { name: 'Name' });
@@ -133,7 +135,7 @@ process.argv.forEach(a => {
     log(`Downloading project\n`);
     await page.getByRole('button', { name: 'Download Project' }).click();
     const downloadPromise = page.waitForEvent('download');
-    await page.getByRole('button', { name: 'Download' }).click();
+    await page.getByRole('button', { name: 'Download', exact: true }).click();
     const download = await downloadPromise;
     await download.saveAs(fname);
     log(`Downloaded file ${fname}\n`);
