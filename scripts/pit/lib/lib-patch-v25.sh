@@ -12,19 +12,18 @@ applyv25patches() {
   updateSpringBootApplication
   updateGradleWrapper
   cleanAfterBumpingVersions
-  ## TODO: needs to be documented in release notes, but also in migration guide to 25
-  if [ "$app_" = "skeleton-starter-flow-cdi" ]; then
-    warn "Patching $app_ to exclude jaxrs subsystem from WildFly deployment"
-    cat <<EOF > src/main/webapp/WEB-INF/jboss-deployment-structure.xml
-<jboss-deployment-structure>
-    <deployment>
-        <exclude-subsystems>
-            <subsystem name="jaxrs" />
-        </exclude-subsystems>
-    </deployment>
-</jboss-deployment-structure>
-EOF
-  fi
+  case $app_ in
+    business-app-starter-flow)
+      ## TODO: Update all starters where applicable
+      updateTheme
+      removeJsImport '\@vaadin/vaadin-lumo-styles/badge'
+      addNpmImport '\@polymer/polymer' '^3.5.2'
+      ;;
+    skeleton-starter-flow-cdi)
+      ## TODO: needs to be documented in release notes, but also in migration guide to 25
+      patchJaxrs $app_
+      ;;
+  esac
 
   diff_=`git diff $D $F | egrep '^[+-]'`
   [ -z "$TEST" -a -n "$diff_" ] && echo "" && warn "Patched sources\n" && dim "====== BEGIN ======\n\n$diff_\n======  END  ======"
@@ -127,5 +126,53 @@ updateSpringBootApplication() {
         END { warn "Removed $removed lines from SqlDataSourceScriptDatabaseInitializer method and imports\n" if $removed; }
       ' "$app_file"
     fi
+  fi
+}
+
+patchJaxrs() {
+  [ -f src/main/webapp/WEB-INF/jboss-deployment-structure.xml ] && return
+  warn "Patching $1 to exclude jaxrs subsystem from WildFly deployment"
+  cat <<EOF > src/main/webapp/WEB-INF/jboss-deployment-structure.xml
+<jboss-deployment-structure>
+    <deployment>
+        <exclude-subsystems>
+            <subsystem name="jaxrs" />
+        </exclude-subsystems>
+    </deployment>
+</jboss-deployment-structure>
+EOF
+}
+
+updateTheme() {
+  F=`grep -rl 'AppShellConfigurator' src/main/java --include='*.java'`
+  [ -z "$F" ] && return
+  if grep -q '@Theme' $F; then
+    [ -z "$TEST" ] && warn "removing @Theme annotation from $F" || cmd "## removing @Theme annotation from $F"
+    perl -0777 -pi -e 's/\s*\@Theme\s*\(\s*.*?\s*\)\s*//s' $F
+  fi
+  if ! grep -q 'vaadin/vaadin-lumo-styles/lumo.css' $F; then
+    [ -z "$TEST" ] && warn "adding @CssImport for Lumo theme to $F" || cmd "## adding @CssImport for Lumo theme to $F"
+    perl -pi -e 's|(public\s+class\s+.*?implements\s+AppShellConfigurator\s*\{)|\@com.vaadin.flow.component.dependency.CssImport("\@vaadin/vaadin-lumo-styles/lumo.css")\n\1|' $F
+  fi
+}
+removeJsImport() {
+  value=$1
+  # remove @JsModule("$1") if present
+  F=`grep -rl "$value" src/main/java --include='*.java'`
+  [ -z "$F" ] && return
+  if grep -q "$value" $F; then
+    [ -z "$TEST" ] && warn "removing @JsModule($value) annotation from $F" || cmd "## removing @JsModule($value) annotation from $F"
+    perl -0777 -pi -e 's|\s*\@JsModule\s*\(\s*"'$value'"\s*\)||s' $F
+  fi
+}
+addNpmImport() {
+  value=$1
+  version=$2
+  # add import '$1'; to main layout if not present
+  F=`grep -rl "AppShellConfigurator" src/main/java --include='*.java'`
+  [ -z "$F" ] && return
+  if ! grep -q "$value" $F; then
+    [ -z "$TEST" ] && warn "adding NPM import $value to $F" || cmd "## adding NPM import $value to $F"
+    perl -pi -e 's|(public\s+class\s+.*?implements\s+AppShellConfigurator\s*\{)|\@com.vaadin.flow.component.dependency.NpmPackage(value="'$value'", version="'$version'")\n\1|' $F
   fi
 }
