@@ -23,6 +23,10 @@ applyv25patches() {
       ## TODO: needs to be documented in release notes, but also in migration guide to 25
       patchJaxrs $app_
       ;;
+    testbench-demo)
+      ## TODO: changes are already in v25, make it main branch when 25.0 GA
+      patchTestBenchJUnit
+      ;;
   esac
   ## TODO: document in migration guide to 25
   patchImports 'import com.fasterxml.jackson.core.type.TypeReference;' 'import tools.jackson.core.type.TypeReference;' 
@@ -186,4 +190,33 @@ patchImports() {
     [ -z "$TEST" ] && warn "replacing $1 in $i" || cmd "## replacing $1 in $i"
     perl -pi -e 's|'"$1"'|'"$2"'|g' $i
   done
+}
+
+patchTestBenchJUnit() {
+  # Check if JUnit dependencies are already present
+  if grep -q "junit-vintage-engine" pom.xml; then
+    return 0
+  fi
+  [ -z "$TEST" ] && warn "adding JUnit dependencies to pom.xml" || cmd "## adding JUnit dependencies to pom.xml"
+block="    <dependency>
+              <groupId>org.junit.vintage</groupId>
+              <artifactId>junit-vintage-engine</artifactId>
+              <version>5.13.1</version>
+              <scope>test</scope>
+            </dependency>
+            <dependency>
+              <groupId>org.junit.jupiter</groupId>
+              <artifactId>junit-jupiter-engine</artifactId>
+              <version>5.13.1</version>
+              <scope>test</scope>
+            </dependency>
+            <dependency>
+              <groupId>org.junit.platform</groupId>
+              <artifactId>junit-platform-launcher</artifactId>
+              <version>1.13.1</version>
+              <scope>test</scope>
+            </dependency>"
+  _cmd="perl -0777 -pi -e 's|(\s*)</dependencies>|\$1$block\$1</dependencies>|' pom.xml"
+  cmd "$_cmd"
+  [ -n "$TEST" ] || eval "$_cmd"
 }
