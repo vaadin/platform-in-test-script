@@ -24,6 +24,8 @@ applyv25patches() {
       patchJaxrs $app_
       ;;
   esac
+  ## TODO: document in migration guide to 25
+  patchImports 'import com.fasterxml.jackson.core.type.TypeReference;' 'import tools.jackson.core.type.TypeReference;' 
 
   diff_=`git diff $D $F | egrep '^[+-]'`
   [ -z "$TEST" -a -n "$diff_" ] && echo "" && warn "Patched sources\n" && dim "====== BEGIN ======\n\n$diff_\n======  END  ======"
@@ -176,4 +178,12 @@ addNpmImport() {
     [ -z "$TEST" ] && warn "adding NPM import $value to $F" || cmd "## adding NPM import $value to $F"
     perl -pi -e 's|(public\s+class\s+.*?implements\s+AppShellConfigurator\s*\{)|\@com.vaadin.flow.component.dependency.NpmPackage(value="'$value'", version="'$version'")\n\1|' $F
   fi
+}
+
+patchImports() {
+  F=`grep -rl "$1" src/main/java --include='*.java'`
+  for i in $F; do
+    [ -z "$TEST" ] && warn "replacing $1 in $i" || cmd "## replacing $1 in $i"
+    perl -pi -e 's|'"$1"'|'"$2"'|g' $i
+  done
 }
