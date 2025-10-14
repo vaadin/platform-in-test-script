@@ -12,6 +12,19 @@ applyv25patches() {
   updateSpringBootApplication
   updateGradleWrapper
   cleanAfterBumpingVersions
+  ## TODO: needs to be documented in release notes, but also in migration guide to 25
+  if [ "$app_" = "skeleton-starter-flow-cdi" ]; then
+    warn "Patching $app_ to exclude jaxrs subsystem from WildFly deployment"
+    cat <<EOF > src/main/webapp/WEB-INF/jboss-deployment-structure.xml
+<jboss-deployment-structure>
+    <deployment>
+        <exclude-subsystems>
+            <subsystem name="jaxrs" />
+        </exclude-subsystems>
+    </deployment>
+</jboss-deployment-structure>
+EOF
+  fi
 
   diff_=`git diff $D $F | egrep '^[+-]'`
   [ -z "$TEST" -a -n "$diff_" ] && echo "" && warn "Patched sources\n" && dim "====== BEGIN ======\n\n$diff_\n======  END  ======"

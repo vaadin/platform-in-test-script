@@ -56,7 +56,7 @@ applyPatches() {
   esac
   case "$vers_" in
     25.0.0*)
-      [ "$type_" = next ] && applyv25patches
+      [ "$type_" = next ] && applyv25patches $app_
     ;;
   esac
 
