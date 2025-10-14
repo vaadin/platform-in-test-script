@@ -54,7 +54,8 @@ cleanAfterBumpingVersions() {
   [ -z "$NOCURRENT" ] && [ ! -d target ] && return
   ## vaadin:clean-frontend is not enough it needs to clean target too
   ## note that archetype-spring (and maybe others) needs the production profile to have vaadin plugin available
-  runCmd "Cleaning project after version bump" "mvn clean vaadin:clean-frontend -Pproduction"
+  grep -q "flow-maven-plugin" pom.xml && mplugin=flow || mplugin=vaadin
+  runCmd "Cleaning project after version bump" "mvn clean $mplugin:clean-frontend -Pproduction"
 }
 
 ## Find all java class files that extend AppLayout and have afterNavigation() method, then update them to implement AfterNavigationObserver
