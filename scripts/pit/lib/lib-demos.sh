@@ -17,7 +17,7 @@ checkoutDemo() {
 
   validateToken $_repo && _base=`echo "$_base" | sed -e 's|\(https://\)|\\1'$GHTK'@|'`
   local _gitUrl="${_base}${_repo}.git"
-  [ -z "$VERBOSE" ] && _quiet="-q"
+  [ -z "$VERBOSE" -o -n "$TEST" ] && _quiet="-q"
   if [ -z "$OFFLINE" -o ! -d "$_workdir" ]
   then
     [ ! -d "$_demo" ] || runCmd -qf "Removing preexisting folder $_demo" "rm -rf $_demo" || return 1

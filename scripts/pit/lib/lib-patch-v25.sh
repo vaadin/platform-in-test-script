@@ -32,10 +32,11 @@ updateGradleWrapper() {
 
 ## TODO: needs to be documented in vaadin migration guide to 25
 cleanAfterBumpingVersions() {
+  computeGradle
   if [ -f build.gradle ]; then
     ## vaadinClean is not enough it needs to clean everything also
-    rm -rf build package* tsconfig* types* vite* target* src/main/frontend/generated/ src/main/bundles
-    runCmd "Cleaning project after version bump" "./gradlew clean vaadinClean"
+    runCmd "Removing build artifacts" "rm -rf build package-lock.json tsconfig* types* vite* target* src/main/frontend/generated/ src/main/bundles"
+    runCmd "Cleaning project after version bump" "$GRADLE clean vaadinClean"
     return
   fi
   [ -z "$NOCURRENT" ] && [ ! -d target ] && return
