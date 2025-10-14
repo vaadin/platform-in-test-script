@@ -46,9 +46,6 @@ applyPatches() {
       [ -n "$TEST" ] || log "Fixing quarkus dependencyManagement https://vaadin.com/docs/latest/flow/integrations/quarkus#quarkus.vaadin.knownissues"
       moveQuarkusBomToBottom
       ;;
-    releases-graph)
-      setPropertyInFile src/main/resources/application.properties github.personal.token $GHTK
-      ;;
     testbench-demo)
       S=src/test/screenshots
       [ -d "$S" ] && runCmd "Removing $S" "rm -rf $S"
