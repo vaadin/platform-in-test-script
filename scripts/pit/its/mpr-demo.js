@@ -35,7 +35,7 @@ process.argv.forEach(a => {
   await page.getByRole('link', { name: 'Spreadsheet' }).click();
   await page.waitForURL(`http://${host}:${port}/spreadsheet`);
 
-  await page.getByText('90').click();
+  await page.getByText('90', { exact: true }).click();
   await page.locator('div:nth-child(59)').dblclick();
 
   await page.locator('#cellinput').click();
