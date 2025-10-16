@@ -27,6 +27,10 @@ applyv25patches() {
       ## TODO: changes are already in v25, make it main branch when 25.0 GA
       patchTestBenchJUnit
       ;;
+    base-starter-flow-quarkus)
+      ## TODO: changes are already in v25, make it main branch when 25.0 GA
+      changeMavenProperty quarkus.platform.version 3.24.2
+      ;;
   esac
   ## TODO: document in migration guide to 25
   patchImports 'import com.fasterxml.jackson.core.type.TypeReference;' 'import tools.jackson.core.type.TypeReference;' 
