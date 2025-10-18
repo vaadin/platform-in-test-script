@@ -121,7 +121,7 @@ process.argv.forEach(a => {
   await page.getByLabel('Close')
     // in 24.4 there is no close button, so we click the eye icon to continue
     .or(page.locator('vaadin-radio-button').locator('vaadin-icon[icon="lumo:eye"]'))
-    .click();
+    .first().click();
   log(`Closed login to save\n`);
 
   // Show source code
