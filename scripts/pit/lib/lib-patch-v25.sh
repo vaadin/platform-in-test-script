@@ -72,7 +72,7 @@ cleanAfterBumpingVersions() {
 ## This break change is in https://github.com/vaadin/flow-components/issues/5449
 ## TODO: needs to be documented in vaadin migration guide to 25 and updated in starter repos
 updateAppLayoutAfterNavigation() {
-  find src -name "*.java" -exec grep -l "extends AppLayout" {} + | xargs grep -L "extends AppLayoutElement" | while read file; do
+  find src -name "*.java" -exec grep -l "extends AppLayout" {}  | xargs grep -L "extends AppLayoutElement" | while read file; do
     # Check if the file contains afterNavigation method
     if grep -q "afterNavigation()" "$file"; then
       [ -z "$TEST" ] && warn "updating afterNavigation method in $file" || cmd "## updating afterNavigation method in $file"
@@ -205,19 +205,19 @@ patchTestBenchJUnit() {
 block="    <dependency>
               <groupId>org.junit.vintage</groupId>
               <artifactId>junit-vintage-engine</artifactId>
-              <version>5.13.1</version>
+              <version>5.14.0</version>
               <scope>test</scope>
             </dependency>
             <dependency>
               <groupId>org.junit.jupiter</groupId>
               <artifactId>junit-jupiter-engine</artifactId>
-              <version>5.13.1</version>
+              <version>5.14.0</version>
               <scope>test</scope>
             </dependency>
             <dependency>
               <groupId>org.junit.platform</groupId>
               <artifactId>junit-platform-launcher</artifactId>
-              <version>1.13.1</version>
+              <version>1.14.0</version>
               <scope>test</scope>
             </dependency>"
   _cmd="perl -0777 -pi -e 's|(\s*)</dependencies>|\$1$block\$1</dependencies>|' pom.xml"
