@@ -31,6 +31,10 @@ applyv25patches() {
       ## TODO: changes are already in v25, make it main branch when 25.0 GA
       changeMavenProperty quarkus.platform.version 3.24.2
       ;;
+    gs-crud-with-vaadin)
+      ## TODO: Update test to use Mockito extension instead of Spring Boot test
+      patchTestCrudWithVaadin
+      ;;
   esac
   ## TODO: document in migration guide to 25
   patchImports 'import com.fasterxml.jackson.core.type.TypeReference;' 'import tools.jackson.core.type.TypeReference;'
@@ -78,6 +82,8 @@ cleanAfterBumpingVersions() {
 ## Find all java class files that extend AppLayout and have afterNavigation() method, then update them to implement AfterNavigationObserver
 ## This break change is in https://github.com/vaadin/flow-components/issues/5449
 ## TODO: needs to be documented in vaadin migration guide to 25 and updated in starter repos
+## The API has significantly changed in Spring Boot 4.0.0-M3.
+## The entire Spring Boot auto-configuration for web applications has been restructured.
 updateAppLayoutAfterNavigation() {
   find . -name "*.java" -exec grep -l "extends AppLayout" {} + | xargs grep -L "extends AppLayoutElement" | while read file; do
     # Check if the file contains afterNavigation method
@@ -228,4 +234,22 @@ block="    <dependency>
   _cmd="perl -0777 -pi -e 's|(\s*)</dependencies>|\$1$block\$1</dependencies>|' pom.xml"
   cmd "$_cmd"
   [ -n "$TEST" ] || eval "$_cmd"
+}
+
+## Update gs-crud-with-vaadin test to use Mockito extension instead of Spring Boot test
+## TODO: needs to be documented in vaadin migration guide to 25
+patchTestCrudWithVaadin() {
+  local test_file=$(find . -name "*CustomerEditorTests.java" -o -name "*CustomerEditor*Test*.java")
+  [ -z "$test_file" ] && return 0
+  [ -z "$TEST" ] && warn "updating CustomerEditor test to use Mockito extension in $test_file" || cmd "## updating CustomerEditor test to use Mockito extension in $test_file"
+  # 1. Replace import org.mockito.InjectMocks with import org.junit.jupiter.api.extension.ExtendWith
+  perl -pi -e 's|import org\.mockito\.InjectMocks;|import org.junit.jupiter.api.extension.ExtendWith;|' "$test_file"
+  # 2. Replace import org.springframework.boot.test.context.SpringBootTest with import org.mockito.junit.jupiter.MockitoExtension
+  perl -pi -e 's|import org\.springframework\.boot\.test\.context\.SpringBootTest;|import org.mockito.junit.jupiter.MockitoExtension;|' "$test_file"
+  # 3. Replace @SpringBootTest with @ExtendWith(MockitoExtension.class)
+  perl -pi -e 's|\@SpringBootTest|\@ExtendWith(MockitoExtension.class)|' "$test_file"
+  # 4. Remove @InjectMocks annotation
+  perl -pi -e 's|(\s*)\@InjectMocks\s*|$1|' "$test_file"
+  # 5. Add editor instantiation in init method
+  perl -0777 -pi -e 's|(\@BeforeEach\s*\n\s*public\s+void\s+init\(\)\s*\{\s*)|${1}editor = new CustomerEditor(customerRepository);\n\t\t|s' "$test_file"
 }
