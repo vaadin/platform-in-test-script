@@ -104,7 +104,7 @@ moveQuarkusBomToBottom() {
 
 ## Find all java class files that extends AppLayouts and add @AnonymousAllowed
 addAnonymousAllowedToAppLayout() {
-  find src -name "*.java" -exec grep -l "extends AppLayout" {} + | xargs grep -L "extends AppLayoutElement" | while read file; do
+  find . -name "*.java" -exec grep -l "extends AppLayout" {} + | xargs grep -L "extends AppLayoutElement" | while read file; do
     # Insert the annotation above the class definition if not already present
     grep -q "com.vaadin.flow.server.auth.AnonymousAllowed" "$file" && continue
     warn "adding AnonymousAllowed to $file"
