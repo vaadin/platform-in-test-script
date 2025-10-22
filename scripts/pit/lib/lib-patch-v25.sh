@@ -54,21 +54,24 @@ updateGradleWrapper() {
 
 ## TODO: needs to be documented in vaadin migration guide to 25
 cleanAfterBumpingVersions() {
-  computeGradle
   if [ -f build.gradle ]; then
+    computeGradle
     ## vaadinClean is not enough it needs to clean everything also
     runCmd "Removing build artifacts" "rm -rf build package-lock.json tsconfig* types* vite* target* src/main/frontend/generated/ src/main/bundles"
     runCmd "Cleaning project after version bump" "$GRADLE clean vaadinClean"
     return
   fi
-  [ -z "$NOCURRENT" ] && [ ! -d target ] && return
+  [ -n "$NOCURRENT" ] && exit
   ## vaadin:clean-frontend is not enough it needs to clean target too
   ## note that archetype-spring (and maybe others) needs the production profile to have vaadin plugin available
   for i in `getPomFiles`; do
     local P
-    grep -q "vaadin-maven-plugin" $i && P=vaadin
-    grep -q "flow-maven-plugin" $i && P=flow
-    [ -z "$P" ] || runCmd "Cleaning project after version bump" "mvn clean $P:clean-frontend -Pproduction -f $i"
+    local T=`dirname $i`/target
+    if [ -d "$T" ]; then
+      grep -q "vaadin-maven-plugin" $i && P=vaadin
+      grep -q "flow-maven-plugin" $i && P=flow
+      [ -z "$P" ] || runCmd -f "Cleaning project after version bump" "$MVN clean $P:clean-frontend -Pproduction -f $i"
+    fi
   done
 }
 
@@ -86,13 +89,13 @@ updateAppLayoutAfterNavigation() {
         # Add implements AfterNavigationObserver to class declaration
         _cmd1="perl -pi -e 's/(public\s+class\s+[A-Za-z0-9_]+\s+extends\s+AppLayout)(\s*)(\{)/\$1 implements com.vaadin.flow.router.AfterNavigationObserver\$2\$3/' \"$file\""
         cmd "$_cmd1"
-        [ -n "$TEST" ] || eval "$_cmd1"
+        eval "$_cmd1"
       fi
 
       # Transform the method - handle both with and without @Override in one pattern
       _cmd2="perl -0777 -pi -e 's/(\s+)(?:@Override\s+)?protected\s+void\s+afterNavigation\(\)\s*\{\s*super\.afterNavigation\(\);\s*/\$1@Override\n\$1public void afterNavigation(com.vaadin.flow.router.AfterNavigationEvent event) {\n\$1/gs' \"$file\""
       cmd "$_cmd2"
-      [ -n "$TEST" ] || eval "$_cmd2"
+      eval "$_cmd2"
     fi
   done
 }
@@ -111,7 +114,6 @@ updateSpringBootApplication() {
     [ -z "$TEST" ] && warn "removing database initialization method from $app_file" || cmd "## removing database initialization method from $app_file"
 
     # Use perl line-by-line processing for more reliable method and import removal
-    if [ -z "$TEST" ]; then
       perl -i -ne '
         BEGIN { $in_method = $braces = $removed = $found_bean = 0; }
 
@@ -141,7 +143,6 @@ updateSpringBootApplication() {
         END { warn "Removed $removed lines from SqlDataSourceScriptDatabaseInitializer method and imports\n" if $removed; }
       ' "$app_file"
     fi
-  fi
 }
 
 patchJaxrs() {
