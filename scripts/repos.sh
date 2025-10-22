@@ -58,7 +58,6 @@ bookstore-example:rtl-demo
 bakery-app-starter-flow-spring
 k8s-demo-app
 mpr-demo
-mpr-demo_jdk17
 testbench-demo
 ce-demo
 start
@@ -71,9 +70,11 @@ releases-graph
 expo-flow
 "
 
+## mpr-demo_jdk17 might be revived with _jdk21 at some point
 OLD_V24_DEMOS="
 form-filler-demo
 control-center
+mpr-demo_jdk17
 "
 
 ## Not needed so far since the hybrid should cover all the views
