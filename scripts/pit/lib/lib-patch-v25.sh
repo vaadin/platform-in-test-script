@@ -39,6 +39,10 @@ applyv25patches() {
       ## TODO: Update test to not use configuration
       patchTestPetClinic
       ;;
+    hilla-quickstart-tutorial)
+      ## TODO: Update Lumo imports in TypeScript files
+      patchLumoImports
+      ;;
   esac
   ## TODO: document in migration guide to 25
   patchImports 'import com.fasterxml.jackson.core.type.TypeReference;' 'import tools.jackson.core.type.TypeReference;'
@@ -301,4 +305,34 @@ class CacheConfiguration {
         }
 }
 EOF
+}
+
+## Update Lumo imports in TypeScript files for hilla-quickstart-tutorial
+## Replace individual sizing and spacing imports with unified utility.css import
+## TODO: needs to be documented in vaadin migration guide to 25
+patchLumoImports() {
+  local views_dir="src/main/frontend/views"
+  [ ! -d "$views_dir" ] && return 0
+
+  # Find all TypeScript files in the views directory
+  local ts_files=$(find "$views_dir" -name "*.ts" -type f)
+  [ -z "$ts_files" ] && return 0
+
+  local file
+  for file in $ts_files; do
+    # Check if file contains @vaadin/vaadin-lumo-styles imports that are not utility.css
+    local has_other_lumo_imports=$(grep "^import '@vaadin/vaadin-lumo-styles/" "$file" | grep -v "utility\.css" | wc -l)
+    if [ "$has_other_lumo_imports" -gt 0 ]; then
+      [ -z "$TEST" ] && warn "updating Lumo imports in $file" || cmd "## updating Lumo imports in $file"
+
+      # Remove all @vaadin/vaadin-lumo-styles imports except utility.css
+      perl -pi -e "s|^import '\@vaadin/vaadin-lumo-styles/(?!utility\.css).*';\s*\n||" "$file"
+
+      # Add the new unified import if not already present
+      if ! grep -q "@vaadin/vaadin-lumo-styles/utility.css" "$file"; then
+        # Simply add the import at the top of the file using perl
+        perl -i -pe 'print "import '\''\@vaadin/vaadin-lumo-styles/utility.css'\'';\n" if $. == 1' "$file"
+      fi
+    fi
+  done
 }
