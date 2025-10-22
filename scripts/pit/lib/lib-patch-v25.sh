@@ -35,6 +35,10 @@ applyv25patches() {
       ## TODO: Update test to use Mockito extension instead of Spring Boot test
       patchTestCrudWithVaadin
       ;;
+    spring-petclinic-vaadin-flow)
+      ## TODO: Update test to not use configuration
+      patchTestPetClinic
+      ;;
   esac
   ## TODO: document in migration guide to 25
   patchImports 'import com.fasterxml.jackson.core.type.TypeReference;' 'import tools.jackson.core.type.TypeReference;'
@@ -65,7 +69,7 @@ cleanAfterBumpingVersions() {
     runCmd "Cleaning project after version bump" "$GRADLE clean vaadinClean"
     return
   fi
-  [ -n "$NOCURRENT" ] && exit
+  [ -n "$NOCURRENT" ] && return
   ## vaadin:clean-frontend is not enough it needs to clean target too
   ## note that archetype-spring (and maybe others) needs the production profile to have vaadin plugin available
   for i in `getPomFiles`; do
@@ -252,4 +256,49 @@ patchTestCrudWithVaadin() {
   perl -pi -e 's|(\s*)\@InjectMocks\s*|$1|' "$test_file"
   # 5. Add editor instantiation in init method
   perl -0777 -pi -e 's|(\@BeforeEach\s*\n\s*public\s+void\s+init\(\)\s*\{\s*)|${1}editor = new CustomerEditor(customerRepository);\n\t\t|s' "$test_file"
+}
+
+
+## TODO: needs to be documented that EHCache is configured via spring-boot-starter-cache and ehcache dependency.
+patchTestPetClinic() {
+  local T=src/main/java/org/springframework/samples/petclinic/backend/system/CacheConfiguration.java
+  [ ! -f $T ] && err "No test found: $T" && return 1
+  [ -z "$TEST" ] && warn "patching $T" || cmd "## updating CacheConfiguration to use EHCache autoconfiguration"
+  cat <<EOF > $T
+/*
+ * Copyright 2012-2019 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ *
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ */
+
+package org.springframework.samples.petclinic.backend.system;
+
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+/**
+ * Cache configuration for the Pet Clinic application.
+ * This configuration enables Spring's caching abstraction and defines the required caches.
+ */
+@Configuration(proxyBeanMethods = false)
+@EnableCaching
+class CacheConfiguration {
+        @Bean
+        public CacheManager cacheManager() {
+                // Create a simple in-memory cache manager with the required caches
+                return new ConcurrentMapCacheManager("vets");
+        }
+}
+EOF
 }
