@@ -614,7 +614,6 @@ changeMavenBlock() {
   __nvers=${4:-\$\{8\}}
   __grp2=${5:-$__grp}
   __id2=${6:-$__id}
-  __extra=${7:-\$\{11\}}
   for __file in `getPomFiles`
   do
     cp $__file $$-1
@@ -629,6 +628,7 @@ changeMavenBlock() {
         _cmd="perl -0777 -pi -e 's|(\s+)(<$__tag>\s*<groupId>)($__grp)(</groupId>\s*<artifactId>)($__id)(</artifactId>\s*)(\s*)(.*?)?(\s*</$__tag>)|\${1}\${2}'${__grp2}'\${4}'${__id2}'\${6}\${7}${__extra}\${9}|msg' $__file"
         perl -0777 -pi -e 's|(\s+)(<'$__tag'>\s*<groupId>)('$__grp')(</groupId>\s*<artifactId>)('$__id')(</artifactId>\s*)(\s*)(.*?)?(\s*</'$__tag'>)|${1}${2}'${__grp2}'${4}'${__id2}'${6}${7}'${__extra}'${9}|msg' $__file
       else
+        __extra=${7:-\$\{11\}}
         _cmd="perl -0777 -pi -e 's|(\s+)(<$__tag>\s*<groupId>)($__grp)(</groupId>\s*<artifactId>)($__id)(</artifactId>\s*)(?:(<version>)([^<]+)(</version>))?(\s*)(.*?)?(\s*</$__tag>)|\${1}\${2}'${__grp2}'\${4}'${__id2}'\${6}\${7}${__nvers}\${9}\${10}${__extra}\${12}|msg' $__file"
         perl -0777 -pi -e 's|(\s+)(<'$__tag'>\s*<groupId>)('$__grp')(</groupId>\s*<artifactId>)('$__id')(</artifactId>\s*)(?:(<version>)([^<]+)(</version>))?(\s*)(.*?)?(\s*</'$__tag'>)|${1}${2}'${__grp2}'${4}'${__id2}'${6}${7}'${__nvers}'${9}${10}'${__extra}'${12}|msg' $__file
       fi
