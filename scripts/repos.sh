@@ -24,7 +24,6 @@ initializer-vaadin-gradle-flow
 collaboration
 "
 DEMOS="
-control-center
 skeleton-starter-flow
 skeleton-starter-flow-spring
 skeleton-starter-hilla-react
@@ -65,12 +64,16 @@ ce-demo
 start
 spring-guides/gs-crud-with-vaadin/complete
 spring-petclinic/spring-petclinic-vaadin-flow
-form-filler-demo
 flow-hilla-hybrid-example
 designer-tutorial
 walking-skeleton:v24.8-hybrid
 releases-graph
 expo-flow
+"
+
+OLD_V24_DEMOS="
+form-filler-demo
+control-center
 "
 
 ## Not needed so far since the hybrid should cover all the views
