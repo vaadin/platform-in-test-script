@@ -33,7 +33,7 @@ applyv25patches() {
       ;;
   esac
   ## TODO: document in migration guide to 25
-  patchImports 'import com.fasterxml.jackson.core.type.TypeReference;' 'import tools.jackson.core.type.TypeReference;' 
+  patchImports 'import com.fasterxml.jackson.core.type.TypeReference;' 'import tools.jackson.core.type.TypeReference;'
 
   diff_=`git diff $D $F | egrep '^[+-]'`
   [ -z "$TEST" -a -n "$diff_" ] && echo "" && warn "Patched sources\n" && dim "====== BEGIN ======\n\n$diff_\n======  END  ======"
@@ -64,15 +64,19 @@ cleanAfterBumpingVersions() {
   [ -z "$NOCURRENT" ] && [ ! -d target ] && return
   ## vaadin:clean-frontend is not enough it needs to clean target too
   ## note that archetype-spring (and maybe others) needs the production profile to have vaadin plugin available
-  grep -q "flow-maven-plugin" pom.xml && mplugin=flow || mplugin=vaadin
-  runCmd "Cleaning project after version bump" "mvn clean $mplugin:clean-frontend -Pproduction"
+  for i in `getPomFiles`; do
+    local P
+    grep -q "vaadin-maven-plugin" $i && P=vaadin
+    grep -q "flow-maven-plugin" $i && P=flow
+    [ -z "$P" ] || runCmd "Cleaning project after version bump" "mvn clean $P:clean-frontend -Pproduction -f $i"
+  done
 }
 
 ## Find all java class files that extend AppLayout and have afterNavigation() method, then update them to implement AfterNavigationObserver
 ## This break change is in https://github.com/vaadin/flow-components/issues/5449
 ## TODO: needs to be documented in vaadin migration guide to 25 and updated in starter repos
 updateAppLayoutAfterNavigation() {
-  find src -name "*.java" -exec grep -l "extends AppLayout" {}  | xargs grep -L "extends AppLayoutElement" | while read file; do
+  find . -name "*.java" -exec grep -l "extends AppLayout" {} + | xargs grep -L "extends AppLayoutElement" | while read file; do
     # Check if the file contains afterNavigation method
     if grep -q "afterNavigation()" "$file"; then
       [ -z "$TEST" ] && warn "updating afterNavigation method in $file" || cmd "## updating afterNavigation method in $file"
@@ -98,7 +102,7 @@ updateAppLayoutAfterNavigation() {
 ## TODO: needs to be documented in vaadin migration guide to 25
 updateSpringBootApplication() {
   # Find the Application class with @SpringBootApplication annotation
-  local app_file=$(find src -name "*.java" -exec grep -l "@SpringBootApplication" {} +)
+  local app_file=$(find . -name "*.java" -exec grep -l "@SpringBootApplication" {} +)
 
   [ -z "$app_file" ] && return 0
 
@@ -155,7 +159,7 @@ EOF
 }
 
 updateTheme() {
-  F=`grep -rl 'AppShellConfigurator' src/main/java --include='*.java'`
+  F=`grep -rl 'AppShellConfigurator' . --include='*.java'`
   [ -z "$F" ] && return
   if grep -q '@Theme' $F; then
     [ -z "$TEST" ] && warn "removing @Theme annotation from $F" || cmd "## removing @Theme annotation from $F"
@@ -169,7 +173,7 @@ updateTheme() {
 removeJsImport() {
   value=$1
   # remove @JsModule("$1") if present
-  F=`grep -rl "$value" src/main/java --include='*.java'`
+  F=`grep -rl "$value" . --include='*.java'`
   [ -z "$F" ] && return
   if grep -q "$value" $F; then
     [ -z "$TEST" ] && warn "removing @JsModule($value) annotation from $F" || cmd "## removing @JsModule($value) annotation from $F"
@@ -180,7 +184,7 @@ addNpmImport() {
   value=$1
   version=$2
   # add import '$1'; to main layout if not present
-  F=`grep -rl "AppShellConfigurator" src/main/java --include='*.java'`
+  F=`grep -rl "AppShellConfigurator" . --include='*.java'`
   [ -z "$F" ] && return
   if ! grep -q "$value" $F; then
     [ -z "$TEST" ] && warn "adding NPM import $value to $F" || cmd "## adding NPM import $value to $F"
@@ -189,7 +193,7 @@ addNpmImport() {
 }
 
 patchImports() {
-  F=`grep -rl "$1" src/main/java --include='*.java'`
+  F=`grep -rl "$1" . --include='*.java'`
   for i in $F; do
     [ -z "$TEST" ] && warn "replacing $1 in $i" || cmd "## replacing $1 in $i"
     perl -pi -e 's|'"$1"'|'"$2"'|g' $i

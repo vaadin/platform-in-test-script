@@ -762,7 +762,7 @@ setPropertyInFile() {
 
 ## Do not open Browser after app is started
 disableLaunchBrowser() {
-  for __file in `find src -name application.properties`; do
+  for __file in `find . -name application.properties`; do
     setPropertyInFile $__file vaadin.launch-browser remove
   done
 }
