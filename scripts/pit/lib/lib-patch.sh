@@ -16,7 +16,7 @@ applyPatches() {
   [ -n "$TEST" ] || log "Applying Patches for $app_ $type_ $vers_"
 
   case $vers_ in
-    *alpha*|*beta*|*rc*|*SNAP*) addPrereleases;;
+    *alpha*|*SNAP*) addPrereleases;;
   esac
   expr "$vers_" : ".*SNAPSHOT" >/dev/null && enableSnapshots
   expr "$vers_" : "24.3.0.alpha.*" >/dev/null && addSpringReleaseRepo
