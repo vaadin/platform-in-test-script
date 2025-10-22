@@ -34,6 +34,10 @@ applyPatches() {
         spring.security.oauth2.client.registration.google.client-secret \
         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
       ;;
+    releases-graph)
+      setPropertyInFile src/main/resources/application.properties \
+        github.personal.token ${GHTK:-$GITHUB_TOKEN}
+      ;;
     mpr-demo)
       SS=~/vaadin.spreadsheet.developer.license
       [ ! -f $SS ] && err "Install a Valid License $SS" && return 1
