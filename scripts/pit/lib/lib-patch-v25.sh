@@ -46,6 +46,10 @@ applyv25patches() {
   esac
   ## TODO: document in migration guide to 25
   patchImports 'import com.fasterxml.jackson.core.type.TypeReference;' 'import tools.jackson.core.type.TypeReference;'
+  patchImports 'import com.fasterxml.jackson.databind.node.ObjectNode;' 'import tools.jackson.databind.node.ObjectNode;'
+  patchImports 'import com.fasterxml.jackson.databind.node.ArrayNode;' 'import tools.jackson.databind.node.ArrayNode;'
+  patchImports 'import org.springframework.boot.autoconfigure.domain.EntityScan;' 'import org.springframework.boot.persistence.autoconfigure.EntityScan;'
+  patchImports 'import org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration;' 'import org.springframework.boot.webmvc.autoconfigure.error.ErrorMvcAutoConfiguration;'
 
   diff_=`git diff $D $F | egrep '^[+-]'`
   [ -z "$TEST" -a -n "$diff_" ] && echo "" && warn "Patched sources\n" && dim "====== BEGIN ======\n\n$diff_\n======  END  ======"
