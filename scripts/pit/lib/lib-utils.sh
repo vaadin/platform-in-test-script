@@ -1084,3 +1084,15 @@ validateToken() {
   [ "$H" != true ] && err "No pull access $H" && return 1
   return 0
 }
+
+## change java version in pom files
+## $1 new version
+setJavaVersion() {
+  for i in `getPomFiles`; do
+    local v=`grep '</java.version>' pom.xml  | sed -e 's|[^0-9]||g'`
+    [ -z "$v" -o "$v" = "$1" ] && return
+    cmd "perl -pi -e 's|<java.version>\d+</java.version>|<java.version>'$1'</java.version>|' $i"
+    perl -pi -e 's|<java.version>\d+</java.version>|<java.version>'$1'</java.version>|' $i
+    [ -n "$TEST" ] || warn "Changed Java version from $v to $1 in $i"
+  done
+}

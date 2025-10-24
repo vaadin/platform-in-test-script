@@ -55,9 +55,15 @@ applyPatches() {
       ;;
   esac
   case "$vers_" in
+    ## The minimum version of Java supported by vaadin is 17, hence we test for it
+    23*|24*)
+      setJavaVersion 17
+      ;;
     25.0.0*)
+      ## The minimum version of Java supported by vaadin is 17, hence we test for it
+      setJavaVersion 21
       [ "$type_" = next ] && applyv25patches $app_
-    ;;
+      ;;
   esac
 
   # always successful
@@ -82,15 +88,6 @@ isUnsupported() {
 
   ## Everything else is supported
   return 1
-}
-
-## The minimum version of Java supported by vaadin is 17, hence we test for it
-downgradeJava() {
-  [ ! -f pom.xml ] && return
-  grep -q '<java.version>21</java.version>' pom.xml || return
-  cmd "perl -pi -e 's|<java.version>21</java.version>|<java.version>17</java.version>|' pom.xml"
-  perl -pi -e 's|<java.version>21</java.version>|<java.version>17</java.version>|' pom.xml
-  [ -n "$TEST" ] || warn "Downgraded Java version from 21 to 17 in pom.xml"
 }
 
 ## Moves quarkus dependency to the bottom of the dependencyManagement block

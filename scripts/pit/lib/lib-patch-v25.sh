@@ -46,10 +46,10 @@ applyv25patches() {
   esac
   ## TODO: document in migration guide to 25
   patchImports 'import com.fasterxml.jackson.core.type.TypeReference;' 'import tools.jackson.core.type.TypeReference;'
-  patchImports 'import com.fasterxml.jackson.databind.node.ObjectNode;' 'import tools.jackson.databind.node.ObjectNode;'
-  patchImports 'import com.fasterxml.jackson.databind.node.ArrayNode;' 'import tools.jackson.databind.node.ArrayNode;'
+  patchImports 'import com.fasterxml.jackson.databind' 'import tools.jackson.databind'
   patchImports 'import org.springframework.boot.autoconfigure.domain.EntityScan;' 'import org.springframework.boot.persistence.autoconfigure.EntityScan;'
   patchImports 'import org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration;' 'import org.springframework.boot.webmvc.autoconfigure.error.ErrorMvcAutoConfiguration;'
+  patchMapper
 
   diff_=`git diff $D $F | egrep '^[+-]'`
   [ -z "$TEST" -a -n "$diff_" ] && echo "" && warn "Patched sources\n" && dim "====== BEGIN ======\n\n$diff_\n======  END  ======"
@@ -338,5 +338,23 @@ patchLumoImports() {
         perl -i -pe 'print "import '\''\@vaadin/vaadin-lumo-styles/utility.css'\'';\n" if $. == 1' "$file"
       fi
     fi
+  done
+}
+
+## TODO: needs to be documented in vaadin migration guide to 25
+patchMapper() {
+  # Find all Java files that contain the JavaTimeModule registration
+  local java_files=$(grep -rl ".*mapper.registerModule.*JavaTimeModule.*" . --include="*.java" 2>/dev/null)
+  [ -z "$java_files" ] && return 0
+
+  local file
+  for file in $java_files; do
+    [ -z "$TEST" ] && warn "patching ObjectMapper configuration in $file" || cmd "## patching ObjectMapper configuration in $file"
+
+    # Remove the JavaTimeModule registration line
+    perl -pi -e 's|.*mapper.registerModule.*JavaTimeModule.*||' "$file"
+
+    # Replace IOException with Exception in the same file
+    perl -pi -e 's|catch \(IOException|catch (Exception|g' "$file"
   done
 }
