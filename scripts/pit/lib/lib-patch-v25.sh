@@ -49,6 +49,8 @@ applyv25patches() {
   patchImports 'import com.fasterxml.jackson.databind' 'import tools.jackson.databind'
   patchImports 'import org.springframework.boot.autoconfigure.domain.EntityScan;' 'import org.springframework.boot.persistence.autoconfigure.EntityScan;'
   patchImports 'import org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration;' 'import org.springframework.boot.webmvc.autoconfigure.error.ErrorMvcAutoConfiguration;'
+  ## ce-demo
+  patchImports 'import com.fasterxml.jackson.core.JsonProcessingException;' ''
   patchMapper
 
   diff_=`git diff $D $F | egrep '^[+-]'`
@@ -344,17 +346,17 @@ patchLumoImports() {
 ## TODO: needs to be documented in vaadin migration guide to 25
 patchMapper() {
   # Find all Java files that contain the JavaTimeModule registration
-  local java_files=$(grep -rl ".*mapper.registerModule.*JavaTimeModule.*" . --include="*.java" 2>/dev/null)
+  local java_files=$(grep -rEl "(.*mapper.registerModule.*JavaTimeModule.*|.*Json.*Exception.*)" . --include="*.java" 2>/dev/null)
   [ -z "$java_files" ] && return 0
 
   local file
   for file in $java_files; do
-    [ -z "$TEST" ] && warn "patching ObjectMapper configuration in $file" || cmd "## patching ObjectMapper configuration in $file"
+    [ -z "$TEST" ] && warn "patching jackson ussage in $file" || cmd "## patching jackson ussage in $file"
 
     # Remove the JavaTimeModule registration line
     perl -pi -e 's|.*mapper.registerModule.*JavaTimeModule.*||' "$file"
 
-    # Replace IOException with Exception in the same file
-    perl -pi -e 's|catch \(IOException|catch (Exception|g' "$file"
+    # Replace IOException or Json.*Exception with Exception in the same file
+    perl -pi -e 's/catch \((IOException|Json[A-z]*Exception)/catch (Exception/g' "$file"
   done
 }
