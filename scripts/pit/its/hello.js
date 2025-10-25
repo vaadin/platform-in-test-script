@@ -47,7 +47,7 @@ const log = s => process.stderr.write(`\x1b[1m=> TEST: \x1b[0;33m${s}\x1b[0m`);
     log(`Error looking for input[type="text"], sleeping and reloading page\n`);
     await page.reload();
     await page.waitForLoadState('load')
-    // await page.waitForTimeout(10000);
+    await page.waitForTimeout(10000);
     await takeScreenshot(page, 'initial-view-after-reload');
     await page.locator('input[type="text"]').click({timeout:60000});
   }
