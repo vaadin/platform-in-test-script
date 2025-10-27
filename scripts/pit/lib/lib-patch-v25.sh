@@ -99,7 +99,7 @@ cleanAfterBumpingVersions() {
 ## The API has significantly changed in Spring Boot 4.0.0-M3.
 ## The entire Spring Boot auto-configuration for web applications has been restructured.
 updateAppLayoutAfterNavigation() {
-  find . -name "*.java" -exec grep -l "extends AppLayout" {} + | xargs grep -L "extends AppLayoutElement" | while read file; do
+  find . -name "*.java" -exec grep -l "extends AppLayout" {} +  | while read file; do
     # Check if the file contains afterNavigation method
     if grep -q "afterNavigation()" "$file"; then
       [ -z "$TEST" ] && warn "updating afterNavigation method in $file" || cmd "## updating afterNavigation method in $file"
