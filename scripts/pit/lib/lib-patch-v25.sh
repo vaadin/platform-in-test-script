@@ -77,6 +77,8 @@ cleanAfterBumpingVersions() {
     ## vaadinClean is not enough it needs to clean everything also
     runCmd "Removing build artifacts" "rm -rf build package-lock.json tsconfig* types* vite* target* src/main/frontend/generated/ src/main/bundles"
     runCmd "Cleaning project after version bump" "$GRADLE clean vaadinClean"
+    ## TODO: temporary solution for https://github.com/vaadin/flow/issues/22586#issuecomment-3460191787
+    addRepoToGradle 'mavenLocal()'
     return
   fi
   [ -n "$NOCURRENT" ] && return

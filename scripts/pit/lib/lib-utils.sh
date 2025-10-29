@@ -824,14 +824,23 @@ addRepoToPom() {
 ## $1: repo url
 addRepoToGradle() {
   U="$1"
-  H=`[ -f settings.gradle ] && grep "$U" settings.gradle`
+  # Check if URL contains http to determine the format
+  if echo "$U" | grep -q "http"; then
+    REPO_FORMAT="maven { url = \"$U\" }"
+    BUILD_REPO_FORMAT="maven { url \"$U\" }"
+  else
+    REPO_FORMAT="$U"
+    BUILD_REPO_FORMAT="$U"
+  fi
+
+  H=`[ -f settings.gradle ] && grep -E "pluginManagement|$U" settings.gradle`
   if [ -z "$H" ]; then
     runCmd -f "Adding $U repository to settings.gradle" \
-      "perl -0777 -pi -e 's|^|pluginManagement {\n  repositories {\n    maven { url = \"$U\" }\n    gradlePluginPortal()\n  }\n}\n|' settings.gradle"
+      "perl -0777 -pi -e 's|^|pluginManagement {\n  repositories {\n    $REPO_FORMAT\n    gradlePluginPortal()\n  }\n}\n|' settings.gradle"
   fi
   grep -q "$U" build.gradle && return 0
   runCmd -f "Adding $U repository to build.gradle" \
-    "perl -pi -e 's|(repositories\s*{)|\$1\n    maven { url \"$U\" }|' build.gradle"
+    "perl -pi -e 's|(repositories\s*{)|\$1\n    $BUILD_REPO_FORMAT|' build.gradle"
 }
 
 ## adds the pre-releases repositories to the pom.xml
