@@ -16,7 +16,6 @@ applyv25patches() {
   updateAppLayoutAfterNavigation
   updateSpringBootApplication
   updateGradleWrapper
-  cleanAfterBumpingVersions
   case $app_ in
     business-app-starter-flow)
       ## TODO: Update all starters where applicable
@@ -55,8 +54,12 @@ applyv25patches() {
     start)
       ## TODO: document this for tests using spring tests
       addMavenDep org.springframework.boot spring-boot-webmvc-test test
+      ## TODO: open an issue in start, why after vaadin:dance this is not installed
+      ## For some reason npm install glob@^11.0.3 --save modifies devdeps but not deps
+      perl -0777 -pi -e 's|(    "lit":)|\n    "glob": "^11.0.3",$1|' package.json
       ;;
   esac
+
   ## TODO: document in migration guide to 25
   patchImports 'import com.fasterxml.jackson.core.type.TypeReference;'\
                'import tools.jackson.core.type.TypeReference;'
@@ -78,8 +81,10 @@ applyv25patches() {
   patchImports 'throws JsonProcessingException' 'throws Exception'
   patchMapper
 
-  diff_=`git diff $D $D/../test $F | egrep '^[+-]'`
+  diff_=`git diff -- pom.xml package.json *gradle* .gradle $D $D/../test $F | egrep '^[+-]'`
   [ -z "$TEST" -a -n "$diff_" ] && echo "" && warn "Patched sources\n" && dim "====== BEGIN ======\n\n$diff_\n======  END  ======"
+
+  cleanAfterBumpingVersions
 
   return 0
 }
