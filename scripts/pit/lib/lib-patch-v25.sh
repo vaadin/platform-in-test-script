@@ -43,6 +43,10 @@ applyv25patches() {
       ## TODO: Update Lumo imports in TypeScript files
       patchLumoImports
       ;;
+    archetype-spring)
+      ## TODO: should we deliver starters or demos with property enabled?
+      enableLiveReload
+      ;;
   esac
   ## TODO: document in migration guide to 25
   patchImports 'import com.fasterxml.jackson.core.type.TypeReference;' 'import tools.jackson.core.type.TypeReference;'
@@ -94,6 +98,11 @@ cleanAfterBumpingVersions() {
       [ -z "$P" ] || runCmd -f "Cleaning project after version bump" "$MVN clean $P:clean-frontend -Pproduction -f $i"
     fi
   done
+}
+
+## TODO: document this in migration guide
+enableLiveReload() {
+  setPropertyInFile src/main/resources/application.properties spring.devtools.livereload.enabled true
 }
 
 ## Find all java class files that extend AppLayout and have afterNavigation() method, then update them to implement AfterNavigationObserver
