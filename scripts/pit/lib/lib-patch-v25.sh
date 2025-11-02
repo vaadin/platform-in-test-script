@@ -377,3 +377,18 @@ patchMapper() {
     perl -pi -e 's/catch \((IOException|Json[A-z]*Exception)/catch (Exception/g' "$file"
   done
 }
+
+
+## Find all java class files that extends AppLayouts and add @AnonymousAllowed
+## TODO: verify that this is explained in migration guide
+addAnonymousAllowedToAppLayout() {
+  find . -name "*.java" -exec grep -l "extends AppLayout[ {]" {} + | while read file; do
+    # Insert the annotation above the class definition if not already present
+    grep -q "com.vaadin.flow.server.auth.AnonymousAllowed" "$file" && continue
+    warn "adding AnonymousAllowed to $file"
+    perl -0777 -pi -e 's/(public\s+class\s+[A-Za-z0-9_]+\s+extends\s+AppLayout)/\@AnonymousAllowed\n\1/' "$file"
+    # Add import if not present
+    grep -q "import com.vaadin.flow.server.auth.AnonymousAllowed;" "$file" || \
+      perl -pi -e 's|^(package\s+.*?;\s*)|\1\nimport com.vaadin.flow.server.auth.AnonymousAllowed;\n|' "$file"
+  done
+}

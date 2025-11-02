@@ -98,19 +98,6 @@ moveQuarkusBomToBottom() {
     '${1}${3}${2}${4}' pom.xml
 }
 
-## Find all java class files that extends AppLayouts and add @AnonymousAllowed
-addAnonymousAllowedToAppLayout() {
-  find . -name "*.java" -exec grep -l "extends AppLayoutElement" {} + | while read file; do
-    # Insert the annotation above the class definition if not already present
-    grep -q "com.vaadin.flow.server.auth.AnonymousAllowed" "$file" && continue
-    warn "adding AnonymousAllowed to $file"
-    perl -0777 -pi -e 's/(public\s+class\s+[A-Za-z0-9_]+\s+extends\s+AppLayout)/\@AnonymousAllowed\n\1/' "$file"
-    # Add import if not present
-    grep -q "import com.vaadin.flow.server.auth.AnonymousAllowed;" "$file" || \
-      perl -pi -e 's|^(package\s+.*?;\s*)|\1\nimport com.vaadin.flow.server.auth.AnonymousAllowed;\n|' "$file"
-  done
-}
-
 # removeDeprecated() {
 #   [ ! -f pom.xml ] && return
 #   grep -q '<productionMode>true</productionMode>' pom.xml || return
