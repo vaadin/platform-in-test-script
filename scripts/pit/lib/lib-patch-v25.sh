@@ -5,8 +5,13 @@ applyv25patches() {
   [ -d src/main ] && D=src/main || D=*/src/main
   F=$D/frontend
 
-  changeMavenBlock parent org.springframework.boot spring-boot-starter-parent 4.0.0-M3
-  setVersionInGradle "org.springframework.boot" "4.0.0-M3"
+  case $vers_ in
+    *beta1|*beta2|*beta3) SV=4.0.0-M3 ;;
+    *)                    SV=4.0.0-RC1 ;;
+  esac
+  changeMavenBlock parent org.springframework.boot spring-boot-starter-parent $SV
+  setVersionInGradle "org.springframework.boot" $SV
+
   addAnonymousAllowedToAppLayout
   updateAppLayoutAfterNavigation
   updateSpringBootApplication
