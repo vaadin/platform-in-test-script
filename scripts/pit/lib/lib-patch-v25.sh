@@ -112,17 +112,17 @@ cleanAfterBumpingVersions() {
     setPropertyInFile src/main/resources/application.properties vaadin.allowed-packages FOO
     return
   fi
-  [ -n "$NOCURRENT" ] && return
+  ## TODO: revise this https://github.com/vaadin/flow/issues/22676
+  [ ! -d src/main/frontend/views/ -a -n "$NOCURRENT" ] && return
   ## vaadin:clean-frontend is not enough it needs to clean target too
   ## note that archetype-spring (and maybe others) needs the production profile to have vaadin plugin available
   for i in `getPomFiles`; do
-    local P
-    local T=`dirname $i`/target
-    if [ -d "$T" ]; then
+    # local T=`dirname $i`/target
+    # if [ -d "$T" ]; then
       grep -q "vaadin-maven-plugin" $i && P=vaadin
       grep -q "flow-maven-plugin" $i && P=flow
       [ -z "$P" ] || runCmd -f "Cleaning project after version bump" "$MVN clean $P:clean-frontend -Pproduction -f $i"
-    fi
+    # fi
   done
 }
 
