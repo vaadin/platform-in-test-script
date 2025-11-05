@@ -113,7 +113,7 @@ cleanAfterBumpingVersions() {
     return
   fi
   ## TODO: revise this https://github.com/vaadin/flow/issues/22676
-  [ ! -d src/main/frontend/views/ -a -n "$NOCURRENT" ] && return
+  # [ ! -d src/main/frontend/views/ -a -n "$NOCURRENT" ] && return
   ## vaadin:clean-frontend is not enough it needs to clean target too
   ## note that archetype-spring (and maybe others) needs the production profile to have vaadin plugin available
   for i in `getPomFiles`; do
