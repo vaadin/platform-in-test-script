@@ -307,12 +307,13 @@ patchTestCrudWithVaadin() {
 }
 
 
-## TODO: needs to be documented that EHCache is configured via spring-boot-starter-cache and ehcache dependency.
+## TODO: Update test to use SpringBootTest instead of DataJpaTest and update CacheConfiguration
 patchTestPetClinic() {
-  local T=src/main/java/org/springframework/samples/petclinic/backend/system/CacheConfiguration.java
-  [ ! -f $T ] && err "No test found: $T" && return 1
-  [ -z "$TEST" ] && warn "patching $T" || cmd "## updating CacheConfiguration to use EHCache autoconfiguration"
-  cat <<EOF > $T
+  # First patch: Update CacheConfiguration.java
+  local T1=src/main/java/org/springframework/samples/petclinic/backend/system/CacheConfiguration.java
+  if [ -f $T1 ]; then
+    [ -z "$TEST" ] && warn "patching $T1" || cmd "## updating CacheConfiguration to use EHCache autoconfiguration"
+    cat <<EOF > $T1
 /*
  * Copyright 2012-2019 the original author or authors.
  *
@@ -349,6 +350,57 @@ class CacheConfiguration {
         }
 }
 EOF
+  fi
+
+  # Second patch: Update ClinicServiceTests.java
+  local T2=src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java
+  if [ -f $T2 ]; then
+    [ -z "$TEST" ] && warn "patching $T2" || cmd "## updating ClinicServiceTests to use SpringBootTest"
+    
+    patch -p1 <<'EOF'
+--- a/src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java
++++ b/src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java
+@@ -19,10 +19,7 @@ import java.time.LocalDate;
+ import java.util.Collection;
+ import org.junit.jupiter.api.Test;
+ import org.springframework.beans.factory.annotation.Autowired;
+-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace;
+-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+-import org.springframework.context.annotation.ComponentScan;
++import org.springframework.boot.test.context.SpringBootTest;
+ import org.springframework.data.domain.Page;
+ import org.springframework.data.domain.Pageable;
+ import org.springframework.samples.petclinic.backend.owner.Owner;
+@@ -34,7 +31,9 @@ import org.springframework.samples.petclinic.backend.vet.Vet;
+ import org.springframework.samples.petclinic.backend.vet.VetRepository;
+ import org.springframework.samples.petclinic.backend.visit.Visit;
+ import org.springframework.samples.petclinic.backend.visit.VisitRepository;
++import org.springframework.samples.petclinic.service.EntityUtils;
+ import org.springframework.stereotype.Service;
++import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+ import org.springframework.transaction.annotation.Transactional;
+
+ /**
+@@ -63,9 +62,8 @@ import org.springframework.transaction.annotation.Transactional;
+  * @author Michael Isvy
+  * @author Dave Syer
+  */
+-@DataJpaTest(includeFilters = @ComponentScan.Filter(Service.class))
+-// Ensure that if the mysql profile is active we connect to the real database:
+-@AutoConfigureTestDatabase(replace = Replace.NONE)
++@SpringBootTest
++@Transactional
+ class ClinicServiceTests {
+
+        @Autowired
+EOF
+  fi
+  
+  # Return error only if neither file exists
+  [ ! -f $T1 -a ! -f $T2 ] && err "No files found: $T1 or $T2" && return 1
+  return 0
+
 }
 
 ## Update Lumo imports in TypeScript files for hilla-quickstart-tutorial
