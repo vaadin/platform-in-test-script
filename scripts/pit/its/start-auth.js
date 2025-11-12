@@ -16,7 +16,9 @@ process.argv.forEach(a => {
     headless: headless,
     chromiumSandbox: false
   });
-  const context = await browser.newContext();
+  const context = await browser.newContext({
+    viewport: { width: 1024, height: 800 }
+  });
 
   const page = await context.newPage();
   page.on('console', msg => console.log("> CONSOLE:", (msg.text() + ' - ' + msg.location().url).replace(/\s+/g, ' ')));
@@ -44,6 +46,10 @@ process.argv.forEach(a => {
   console.log('--- Click on eula.lane');
   await page.locator('text=eula.lane').click();
   await page.locator('input[type="text"]').nth(0).fill('FOO');
+
+  // TODO: reduce screen height above and uncomment this when fixed
+  // https://github.com/vaadin/start/issues/3521
+  // await page.locator('text=Save').scrollIntoViewIfNeeded();
   await page.locator('text=Save').click();
   await page.locator('text=/Data updated/').waitFor({ state: 'visible' });
   await page.waitForTimeout(5000);
