@@ -23,6 +23,7 @@ Use: $0 with the next options:
  --skip-clean      Do not clean maven cache
  --skip-helm       Do not re-install control-center with helm and continue running tests, implies (--offline, --keep-cc)
  --skip-pw         Do not run playwright tests
+ --screenshots     Save screenshots before and after running tests (useful to visit them after theming changes)
  --cluster=name    Run tests in an existing k8s cluster
  --vendor=name     Use a specific cluster vendor to run control-center tests options: [dd, kind, do] (default: kind)
  --keep-cc         Keep control-center running after tests
@@ -83,6 +84,7 @@ checkArgs() {
       --skip-dev) NODEV=true;;
       --skip-prod) NOPROD=true;;
       --skip-pw) SKIPPW=true;;
+      --screenshots) SCREENSHOTS=true;;
       --cluster=*) CLUSTER="$arg";;
       --vendor=*)
         VENDOR="$arg"

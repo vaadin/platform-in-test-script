@@ -46,7 +46,7 @@ let mode, version;
 const args = () => {
   const ret = {
     headless: false,
-    port: '8000',
+    port: '8080',
     host: 'localhost',
     pass: 'Servantes',
     ignoreHTTPSErrors: false,
@@ -80,6 +80,8 @@ const args = () => {
       version = ret.version = a.split('=')[1];
     } else if (/^--prefix=/.test(a)) {
       ret.prefix = a.split('=')[1];
+    } else if (/^--name=/.test(a)) {
+      ret.name = a.split('=')[1];
     }
   });
   if (!ret.url) {

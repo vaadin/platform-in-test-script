@@ -111,7 +111,18 @@ runValidations() {
 
   # 11
   if [ -n "$test" -a -z "$SKIPTESTS" -a -z "$SKIPPW" ]; then
-    runPlaywrightTests "$test" "$file" "$mode" "$name" "$version" "--port=$port"  || return 1
+    # Take screenshot before running tests
+    [ -n "$SCREENSHOTS" ] && runPlaywrightTests "$SCRSHT" "$file" "$mode" "$name" "$version" "--port=$port" "--prefix=_before"
+
+    runPlaywrightTests "$test" "$file" "$mode" "$name" "$version" "--port=$port"
+    test_result=$?
+
+    # Take screenshot after tests succeed
+    [ -n "$SCREENSHOTS"  -a $test_result = 0 ] && runPlaywrightTests "$SCRSHT" "$file" "$mode" "$name" "$version" "--port=$port" "--prefix=_after"
+
+
+    # Return the test result
+    [ $test_result != 0 ] && return 1
   elif [ -n "$TEST" ]; then
     cmd "## No PW tests to run"
   fi

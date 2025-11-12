@@ -37,6 +37,8 @@ const log = s => process.stderr.write(`\x1b[1m=> TEST: \x1b[0;33m${s}\x1b[0m`);
 
   // Go to http://localhost:8080/
   await page.goto(`http://${host}:${port}/`);
+  // Wait for vaadin ready
+  await page.waitForSelector('#outlet > * > *:not(style):not(script)');
 
   await takeScreenshot(page, 'initial-view');
   // Click input[type="text"]
