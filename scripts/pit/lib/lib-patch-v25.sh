@@ -357,7 +357,7 @@ EOF
   local T2=src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java
   if [ -f $T2 ]; then
     [ -z "$TEST" ] && warn "patching $T2" || cmd "## updating ClinicServiceTests to use SpringBootTest"
-    
+
     patch -p1 <<'EOF'
 --- a/src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java
 +++ b/src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java
@@ -397,7 +397,7 @@ EOF
         @Autowired
 EOF
   fi
-  
+
   # Return error only if neither file exists
   [ ! -f $T1 -a ! -f $T2 ] && err "No files found: $T1 or $T2" && return 1
   return 0
@@ -473,30 +473,71 @@ addAnonymousAllowedToAppLayout() {
 addHillaStarterIfNeeded() {
   local has_hilla_imports=false
   local has_ts_views=false
-  
+
   # Check for Java files with Hilla imports
   if find . -name "*.java" -type f 2>/dev/null | xargs grep -l "import com\.vaadin\.hilla\." 2>/dev/null | head -1 >/dev/null; then
     has_hilla_imports=true
     [ -z "$TEST" ] && log "Found Java files with Hilla imports"
   fi
-  
+
   # Check for TypeScript files in views directories
   if find . -path "*/src/main/frontend/views/*.ts" -o -path "*/frontend/views/*.ts" 2>/dev/null | head -1 >/dev/null; then
     has_ts_views=true
     [ -z "$TEST" ] && log "Found TypeScript view files"
   fi
-  
+
   # Add Hilla Spring Boot Starter if conditions are met
   if [ "$has_hilla_imports" = true ] || [ "$has_ts_views" = true ]; then
-    # Check if dependency is not already present
-    if ! grep -q "hilla-spring-boot-starter" pom.xml 2>/dev/null; then
-      [ -z "$TEST" ] && log "Adding Hilla Spring Boot Starter dependency"
-      addMavenDep "com.vaadin" "hilla-spring-boot-starter" "compile"
-    else
-      [ -z "$TEST" ] && log "Hilla Spring Boot Starter dependency already present"
+    # Handle Maven projects
+    if [ -f "pom.xml" ]; then
+      if ! grep -q "hilla-spring-boot-starter" pom.xml 2>/dev/null; then
+        [ -z "$TEST" ] && log "Adding Hilla Spring Boot Starter dependency to Maven project"
+        addMavenDep "com.vaadin" "hilla-spring-boot-starter" "compile"
+      else
+        [ -z "$TEST" ] && log "Hilla Spring Boot Starter dependency already present in Maven project"
+      fi
+    fi
+
+    # Handle Gradle projects
+    if [ -f "build.gradle" ]; then
+      if ! grep -q "hilla-spring-boot-starter" build.gradle 2>/dev/null; then
+        [ -z "$TEST" ] && log "Adding Hilla Spring Boot Starter dependency to Gradle project"
+        addGradleDep "com.vaadin" "hilla-spring-boot-starter"
+      else
+        [ -z "$TEST" ] && log "Hilla Spring Boot Starter dependency already present in Gradle project"
+      fi
     fi
   else
     [ -z "$TEST" ] && log "No Hilla usage detected, skipping Hilla Spring Boot Starter"
+  fi
+}
+
+## Adds a Gradle dependency to build.gradle
+## $1 groupId
+## $2 artifactId
+addGradleDep() {
+  local groupId=$1
+  local artifactId=$2
+  local buildFile="build.gradle"
+
+  [ ! -f "$buildFile" ] && return 0
+
+  # Check if vaadin-spring-boot-starter is present to add after it
+  if grep -q "implementation.*com\.vaadin:vaadin-spring-boot-starter" "$buildFile"; then
+    [ -z "$TEST" ] && warn "Adding implementation '$groupId:$artifactId' after vaadin-spring-boot-starter in $buildFile" || cmd "## Adding implementation '$groupId:$artifactId' after vaadin-spring-boot-starter in $buildFile"
+
+    _cmd="perl -pi -e \"s|(\\s*implementation\\s+['\\\"]com\\.vaadin:vaadin-spring-boot-starter['\\\"].*)|\\1\\n    implementation '$groupId:$artifactId'|\" \"$buildFile\""
+    cmd "$_cmd"
+    [ -n "$TEST" ] || eval "$_cmd"
+  else
+    # Fallback: add in dependencies block
+    if grep -q "dependencies\\s*{" "$buildFile"; then
+      [ -z "$TEST" ] && warn "Adding implementation '$groupId:$artifactId' to dependencies in $buildFile" || cmd "## Adding implementation '$groupId:$artifactId' to dependencies in $buildFile"
+
+      _cmd="perl -pi -e \"s|(dependencies\\s*{)|\\1\\n    implementation '$groupId:$artifactId'|\" \"$buildFile\""
+      cmd "$_cmd"
+      [ -n "$TEST" ] || eval "$_cmd"
+    fi
   fi
 }
 
