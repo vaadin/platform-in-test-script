@@ -78,6 +78,8 @@ const args = () => {
       ret.secret = a.split('=')[1];
     } else if (/^--version/.test(a)) {
       version = ret.version = a.split('=')[1];
+    } else if (/^--prefix=/.test(a)) {
+      ret.prefix = a.split('=')[1];
     }
   });
   if (!ret.url) {
@@ -111,11 +113,13 @@ async function closePage(page) {
 
 const screenshots = "screenshots.out"
 let sscount = 0;
-async function takeScreenshot(page, name, descr) {
+async function takeScreenshot(page, name, descr, prefix) {
   if (process.env.FAST) return;
   const scr = path.basename(name);
   const cnt = String(++sscount).padStart(2, "0");
-  const file = `${screenshots}/${mode ? mode + '-': '' }${version ? version + '-': '' }${scr}-${cnt}-${descr}.png`;
+  const prefixStr = prefix ? prefix + '-' : '';
+  const modeStr = mode ? mode + '-' : '';
+  const file = `${screenshots}/${prefixStr}${modeStr}${version ? version + '-': '' }${scr}-${cnt}-${descr}.png`;
   await page.waitForTimeout(/^win/.test(process.platform) ? 10000 : process.env.GITHUB_ACTIONS ? 800 : 200);
   await page.screenshot({ path: file });
   out(` 📸 Screenshot taken: ${file}\n`);

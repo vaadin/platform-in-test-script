@@ -15,6 +15,7 @@ applyv25patches() {
   addAnonymousAllowedToAppLayout
   updateAppLayoutAfterNavigation
   updateSpringBootApplication
+  addHillaStarterIfNeeded
   updateGradleWrapper
   case $app_ in
     business-app-starter-flow)
@@ -465,3 +466,38 @@ addAnonymousAllowedToAppLayout() {
       perl -pi -e 's|^(package\s+.*?;\s*)|\1\nimport com.vaadin.flow.server.auth.AnonymousAllowed;\n|' "$file"
   done
 }
+
+## Adds Hilla Spring Boot Starter dependency if project uses Hilla
+## Checks for Java files with Hilla imports or TypeScript files in views directories
+## TODO: verify that is explained in migration guide
+addHillaStarterIfNeeded() {
+  local has_hilla_imports=false
+  local has_ts_views=false
+  
+  # Check for Java files with Hilla imports
+  if find . -name "*.java" -type f 2>/dev/null | xargs grep -l "import com\.vaadin\.hilla\." 2>/dev/null | head -1 >/dev/null; then
+    has_hilla_imports=true
+    [ -z "$TEST" ] && log "Found Java files with Hilla imports"
+  fi
+  
+  # Check for TypeScript files in views directories
+  if find . -path "*/src/main/frontend/views/*.ts" -o -path "*/frontend/views/*.ts" 2>/dev/null | head -1 >/dev/null; then
+    has_ts_views=true
+    [ -z "$TEST" ] && log "Found TypeScript view files"
+  fi
+  
+  # Add Hilla Spring Boot Starter if conditions are met
+  if [ "$has_hilla_imports" = true ] || [ "$has_ts_views" = true ]; then
+    # Check if dependency is not already present
+    if ! grep -q "hilla-spring-boot-starter" pom.xml 2>/dev/null; then
+      [ -z "$TEST" ] && log "Adding Hilla Spring Boot Starter dependency"
+      addMavenDep "com.vaadin" "hilla-spring-boot-starter" "compile"
+    else
+      [ -z "$TEST" ] && log "Hilla Spring Boot Starter dependency already present"
+    fi
+  else
+    [ -z "$TEST" ] && log "No Hilla usage detected, skipping Hilla Spring Boot Starter"
+  fi
+}
+
+
