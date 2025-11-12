@@ -7,7 +7,7 @@ applyv25patches() {
 
   case $vers_ in
     *beta1|*beta2|*beta3) SV=4.0.0-M3 ;;
-    *)                    SV=4.0.0-RC1 ;;
+    *)                    SV=4.0.0-RC2 ;;
   esac
   changeMavenBlock parent org.springframework.boot spring-boot-starter-parent $SV
   setVersionInGradle "org.springframework.boot" $SV
@@ -48,8 +48,9 @@ applyv25patches() {
       ## TODO: Update Lumo imports in TypeScript files
       patchLumoImports
       ;;
-    archetype-spring)
-      ## TODO: should we deliver starters or demos with property enabled?
+    archetype-spring|initializer-vaadin-maven-react)
+      ## TODO: spring 4 does not enables this prop as default as before
+      ## should we deliver starters or demos with property enabled?
       enableLiveReload
       ;;
     start)
@@ -58,6 +59,10 @@ applyv25patches() {
       ## TODO: open an issue in start, why after vaadin:dance this is not installed
       ## For some reason npm install glob@^11.0.3 --save modifies devdeps but not deps
       perl -0777 -pi -e 's|(    "lit":)|\n    "glob": "^11.0.3",$1|' package.json
+      ;;
+    bookstore-example)
+      ## TODO: check that documentation mention elemental is not a transitive dep anymore
+      addMavenDep "com.google.gwt" "gwt-elemental" compile '\<version\>2.9.0\</version\>'
       ;;
   esac
 

@@ -828,7 +828,7 @@ addRepoToPom() {
 addMavenDep() {
   local GI=$1; local AI=$2; local SC=$3; local EX="$4"
   local t='    '
-  __cmd="perl -0777 -pi -e 's|(\n[ \t]*)(</dependencies>\s+<build>)|\$1$t<dependency>\$1$t$t<groupId>${GI}</groupId>\$1$t$t<artifactId>${AI}</artifactId>\$1$t$t<scope>${SC}</scope>${EX}\$1$t</dependency>\$1\$2|' pom.xml"
+  __cmd="perl -0777 -pi -e 's|(\n[ \t]*)(</dependencies>\s+(<build>\|<repo))|\$1$t<dependency>\$1$t$t<groupId>${GI}</groupId>\$1$t$t<artifactId>${AI}</artifactId>\$1$t$t<scope>${SC}</scope>${EX}\$1$t</dependency>\$1\$2|' pom.xml"
   runCmd -f "Adding dependency $GI $AI $SC to pom.xml" "$__cmd"
 }
 
