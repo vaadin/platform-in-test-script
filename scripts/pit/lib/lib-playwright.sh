@@ -1,4 +1,3 @@
-PIT_SCR_FOLDER=`computeAbsolutePath`
 SCRSHT="$PIT_SCR_FOLDER/its/screenshot.js"
 
 ## LIBRARY for installing and running playwright tests

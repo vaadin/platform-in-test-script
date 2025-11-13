@@ -193,7 +193,7 @@ runStarter() {
       *) downloadStarter "$_preset" "$_folder" || return 1 ;;
     esac
   fi
-
+  cd "$_folder"
   computeMvn
   computeGradle
 

@@ -84,7 +84,7 @@ checkArgs() {
       --skip-dev) NODEV=true;;
       --skip-prod) NOPROD=true;;
       --skip-pw) SKIPPW=true;;
-      --screenshots) SCREENSHOTS=true;;
+      --screensho*) SCREENSHOTS=true;;
       --cluster=*) CLUSTER="$arg";;
       --vendor=*)
         VENDOR="$arg"

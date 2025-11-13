@@ -18,6 +18,7 @@ DEFAULT_TIMEOUT=300
 START=`date +%s`
 ## starters and demos list is maintained in the repos.sh file
 DEFAULT_STARTERS=`echo "$PRESETS$DEMOS" | grep ...`
+PIT_SCR_FOLDER=`computeAbsolutePath`
 
 ## run an specific starter or demo
 ## $1: function to run (runStarter, runDemo)
