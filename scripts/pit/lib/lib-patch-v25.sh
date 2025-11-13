@@ -267,6 +267,7 @@ patchImports() {
 
 patchTestBenchJUnit() {
   # Check if JUnit dependencies are already present
+  # https://github.com/vaadin/testbench-demo/issues/185
   if grep -q "junit-vintage-engine" pom.xml; then
     return 0
   fi
