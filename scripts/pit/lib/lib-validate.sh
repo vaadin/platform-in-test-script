@@ -118,8 +118,7 @@ runValidations() {
     test_result=$?
 
     # Take screenshot after tests succeed
-    [ -n "$SCREENSHOTS"  -a $test_result = 0 ] && runPlaywrightTests "$SCRSHT" "$file" "$mode" "$name" "$version" "--port=$port" "--prefix=_after"
-
+    [ -n "$SCREENSHOTS" ] && runPlaywrightTests "$SCRSHT" "$file" "$mode" "$name" "$version" "--port=$port" "--prefix=_after"
 
     # Return the test result
     [ $test_result != 0 ] && return 1
