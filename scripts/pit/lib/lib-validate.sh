@@ -121,7 +121,7 @@ runValidations() {
     [ -n "$SCREENSHOTS" ] && runPlaywrightTests "$SCRSHT" "$file" "$mode" "$name" "$version" "--port=$port" "--prefix=_after"
 
     # Return the test result
-    [ $test_result != 0 ] && return 1
+    [ -z "$TEST" -a $test_result != 0 ] && return 1
   elif [ -n "$TEST" ]; then
     cmd "## No PW tests to run"
   fi

@@ -1,4 +1,5 @@
 . `dirname $0`/lib/lib-utils.sh
+PIT_SCR_FOLDER=`computeAbsolutePath`
 
 ### LIBRARY for parsing arguments when `run.sh` is executed
 

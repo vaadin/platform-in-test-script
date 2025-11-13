@@ -18,7 +18,6 @@ DEFAULT_TIMEOUT=300
 START=`date +%s`
 ## starters and demos list is maintained in the repos.sh file
 DEFAULT_STARTERS=`echo "$PRESETS$DEMOS" | grep ...`
-PIT_SCR_FOLDER=`computeAbsolutePath`
 
 ## run an specific starter or demo
 ## $1: function to run (runStarter, runDemo)
@@ -106,7 +105,7 @@ main() {
       [ -n "$GITHUB_ACTIONS" ] && isWindows && warn "Control Center cannot be run in GH Windows runners" && return 0
       cd "$tmp"
       if checkoutDemo $i; then
-        run validateControlCenter $i 
+        run validateControlCenter $i
       else
         failed="$failed $i"
       fi
