@@ -192,8 +192,9 @@ runStarter() {
       initializer-*-gradle*) downloadInitializer "$_preset" gradle-project vaadin,devtools || return 1 ;;
       *) downloadStarter "$_preset" "$_folder" || return 1 ;;
     esac
+  else
+    cd "$_folder"
   fi
-  cd "$_folder"
   computeMvn
   computeGradle
 

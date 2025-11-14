@@ -481,13 +481,13 @@ addHillaStarterIfNeeded() {
   local has_ts_views=false
 
   # Check for Java files with Hilla imports
-  if find . -name "*.java" -type f 2>/dev/null | xargs grep -l "import com\.vaadin\.hilla\." 2>/dev/null | head -1 >/dev/null; then
+  if find . -name "*.java" -type f 2>/dev/null | xargs grep -l "import com\.vaadin\.hilla\." 2>/dev/null | grep -q .; then
     has_hilla_imports=true
     [ -z "$TEST" ] && log "Found Java files with Hilla imports"
   fi
 
   # Check for TypeScript files in views directories
-  if find . -path "*/src/main/frontend/views/*.ts" -o -path "*/frontend/views/*.ts" 2>/dev/null | head -1 >/dev/null; then
+  if find . -path "*/src/main/frontend/views/*.ts" -o -path "*/frontend/views/*.ts" 2>/dev/null | grep -q .; then
     has_ts_views=true
     [ -z "$TEST" ] && log "Found TypeScript view files"
   fi
