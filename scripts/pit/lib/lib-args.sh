@@ -52,6 +52,30 @@ EOF
   exit 1
 }
 
+processStarters() {
+  local arg="$1"
+  # Check if we have ONLY exclusions (all items start with !)
+  echo "$arg" | tr ',' '\n' | grep -v '^!' >/dev/null && {
+    # Has positive starters - only use those (ignore exclusions)
+    local S=""
+    for i in `echo "$arg" | tr ',' ' '`; do
+      [ "${i#\!}" = "$i" ] && {  # This is NOT an exclusion
+        local b=${i%%:*}
+        local H=`printf "$PRESETS\n$DEMOS" | egrep "^$b$|/$b$|/$b[/:]|^$b[/:]" | head -1`
+        [ -z "$H" ] && err "Unknown starter: $b" && exit 1
+        S="${S:+$S,}$H"
+      }
+    done
+    STARTERS="$S"
+  } || {
+    # Only exclusions - filter DEFAULT_STARTERS
+    STARTERS="$DEFAULT_STARTERS"
+    for i in `echo "$arg" | tr ',' ' '`; do
+      STARTERS=`echo "$STARTERS" | tr ',' '\n' | egrep -v "^${i#\!}$" | tr '\n' ',' | sed 's/,$//'`
+    done
+  }
+}
+
 ## check arguments passed to `run.sh` script and set global variables
 checkArgs() {
   VERSION=current; export PORT=$DEFAULT_PORT; TIMEOUT=$DEFAULT_TIMEOUT; CLUSTER=pit; VENDOR=kind; CCVERSION=current
@@ -62,18 +86,7 @@ checkArgs() {
       --port=*) export PORT="$arg";;
       --generated) STARTERS=`echo "$PRESETS" | tr "\n" "," | sed -e 's/^,//' | sed -e 's/,$//'`;;
       --demos) STARTERS=`echo "$DEMOS" | tr "\n" "," | sed -e 's/^,//' | sed -e 's/,$//'`;;
-      --start*=*)
-        ## discover valid starters, when only providing the project name without repo, folder, or branch parts
-        S=""
-        for i in `echo "$arg" | tr ',' ' '`
-        do
-          b=${i%%:*}
-          n=${b#\!}
-          H=`printf "$PRESETS\n$DEMOS" | egrep "^$n$|/$n$|/$n[/:]|^$n[/:]" | head -1`
-          [ -z "$H" ] && err "Unknown starter: $n" && exit 1
-          [ "$n" = "$i" ] && S="$S,$H" || S="$i"
-        done
-        STARTERS="$S";;
+      --start*=*) processStarters "$arg" ;;
       --version=*) VERSION="$arg";;
       --timeout=*) TIMEOUT="$arg";;
       --jdk=*) JDK="$arg";;
@@ -99,12 +112,12 @@ checkArgs() {
       --pnpm) PNPM="-Dpnpm.enable=true";;
       --vite) VITE=true;;
       --list*)
-        for i in `echo "${STARTERS#,}" | tr "," " "`; do
-          [ "${i#\!}" != "$i" ] && STARTERS="" && DEFAULT_STARTERS=`echo "$DEFAULT_STARTERS" | grep -v "${i#\!}"`
-        done
-        [ -z "$STARTERS" ] && STARTERS="${DEFAULT_STARTERS}" || STARTERS=`echo "$STARTERS" | tr "," "\n" | grep ...`
+        # If STARTERS is already set (from --starters), use it; otherwise use DEFAULT_STARTERS
+        if [ -z "$STARTERS" ]; then
+          STARTERS="$DEFAULT_STARTERS"
+        fi
         [ -z "$arg" ] && arg=1
-        echo "$STARTERS" | xargs -n $arg | tr ' ' ,
+        echo "$STARTERS" | tr ',' '\n' | xargs -n $arg | tr ' ' ,
         exit 0
         ;;
       --help) usage && exit 0;;
