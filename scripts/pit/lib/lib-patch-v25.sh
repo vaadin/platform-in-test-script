@@ -487,7 +487,7 @@ addHillaStarterIfNeeded() {
   fi
 
   # Check for TypeScript files in views directories
-  if find . -path "*/src/main/frontend/views/*.ts" -o -path "*/frontend/views/*.ts" 2>/dev/null | grep -q .; then
+  if find . -path "*/src/main/frontend/views/*.ts" -o -path "*/frontend/views/*.ts" -o -path "*/src/main/frontend/views/*.tsx" -o -path "*/frontend/views/*.tsx" 2>/dev/null | grep -q .; then
     has_ts_views=true
     [ -z "$TEST" ] && log "Found TypeScript view files"
   fi
