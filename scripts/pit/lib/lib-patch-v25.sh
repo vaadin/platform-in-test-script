@@ -6,8 +6,14 @@ applyv25patches() {
   F=$D/frontend
 
   case $vers_ in
-    *beta1|*beta2|*beta3) SV=4.0.0-M3 ;;
-    *)                    SV=4.0.0-RC2 ;;
+    *alpha7|*alpha8|*alpha9)       SV=4.0.0-M1 ;;
+    *alpha10|*alpha11)             SV=4.0.0-M2 ;;
+    *alpha12|*beta1|*beta2|*beta3) SV=4.0.0-M3 ;;
+    *beta4)                        SV=4.0.0-RC1 ;;
+    *beta*)
+       SV=4.0.0-RC2
+       addHillaStarterIfNeeded $app_
+       ;;
   esac
   changeMavenBlock parent org.springframework.boot spring-boot-starter-parent $SV
   setVersionInGradle "org.springframework.boot" $SV
@@ -15,7 +21,6 @@ applyv25patches() {
   addAnonymousAllowedToAppLayout
   updateAppLayoutAfterNavigation
   updateSpringBootApplication
-  addHillaStarterIfNeeded
   updateGradleWrapper
   case $app_ in
     business-app-starter-flow)
@@ -477,23 +482,31 @@ addAnonymousAllowedToAppLayout() {
 ## Checks for Java files with Hilla imports or TypeScript files in views directories
 ## TODO: verify that is explained in migration guide
 addHillaStarterIfNeeded() {
-  local has_hilla_imports=false
-  local has_ts_views=false
+  local add_hilla=false
+  local app=$1
+  if [ -z "$app" ]; then
+    app=`basename $PWD`
+  fi
+  case "$app" in
+    initializer*react) add_hilla=true ;;
+  esac
 
   # Check for Java files with Hilla imports
   if find . -name "*.java" -type f 2>/dev/null | xargs grep -l "import com\.vaadin\.hilla\." 2>/dev/null | grep -q .; then
-    has_hilla_imports=true
+    add_hilla=true
     [ -z "$TEST" ] && log "Found Java files with Hilla imports"
   fi
 
   # Check for TypeScript files in views directories
   if find . -path "*/src/main/frontend/views/*.ts" -o -path "*/frontend/views/*.ts" -o -path "*/src/main/frontend/views/*.tsx" -o -path "*/frontend/views/*.tsx" 2>/dev/null | grep -q .; then
-    has_ts_views=true
+    add_hilla=true
     [ -z "$TEST" ] && log "Found TypeScript view files"
   fi
 
+
+
   # Add Hilla Spring Boot Starter if conditions are met
-  if [ "$has_hilla_imports" = true ] || [ "$has_ts_views" = true ]; then
+  if [ "$add_hilla" = true ]; then
     # Handle Maven projects
     if [ -f "pom.xml" ]; then
       if ! grep -q "hilla-spring-boot-starter" pom.xml 2>/dev/null; then

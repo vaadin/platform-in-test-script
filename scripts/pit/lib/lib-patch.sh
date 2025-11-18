@@ -62,7 +62,7 @@ applyPatches() {
     25.0.0*)
       ## The minimum version of Java supported by vaadin is 17, hence we test for it
       setJavaVersion 21
-      [ "$type_" = next ] && applyv25patches $app_
+      [ "$type_" = next ] && applyv25patches $app_ $type_ $vers_
       ;;
   esac
 
