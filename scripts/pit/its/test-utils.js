@@ -109,6 +109,7 @@ async function createPage(headless, ignoreHTTPSErrors) {
     return page;
 }
 async function closePage(page) {
+    await page.goto('about:blank');
     await page.context().close();
     await page.browser.close();
 }

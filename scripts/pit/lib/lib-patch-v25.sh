@@ -87,6 +87,9 @@ applyv25patches() {
                'import org.springframework.boot.security.autoconfigure.SecurityAutoConfiguration;'
   patchImports 'import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;' \
                'import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;'
+
+  ## releases-graph
+  patchImports 'import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;' ''
   ## ce-demo
   patchImports 'import com.fasterxml.jackson.core.JsonProcessingException;' ''
   patchImports 'throws JsonProcessingException' 'throws Exception'
