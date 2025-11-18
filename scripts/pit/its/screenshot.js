@@ -19,5 +19,6 @@ const {log, dismissDevmode, args, createPage, closePage, takeScreenshot, waitFor
   await page.waitForSelector(sel);
   
   await takeScreenshot(page, arg.name ? arg.name : __filename, 'screenshot', arg.prefix);
+  await waitForServerReady(page, url + "/foo");
   await closePage(page);
 })();
