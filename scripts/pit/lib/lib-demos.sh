@@ -165,7 +165,7 @@ getInstallCmdPrd() {
       echo "$GRADLE clean build $H $PNPM";;
     *-quarkus) echo "$MVN -ntp -B clean package -Pproduction $E $PNPM -Dquarkus.analytics.disabled=true";;
     mpr-demo|spreadsheet-demo) echo "$MVN -ntp -B clean";;
-    start) echo "$MVN -ntp -B install -Dmaven.test.skip -Pcircleci" ;;
+    start) echo "$MVN -ntp -B install -Dmaven.test.skip -Pci" ;;
     form-filler-demo) echo "$H $E $PNPM -DOPENAI_TOKEN=$OPENAI_TOKEN";;
     testbench-demo) echo "$H $E $PNPM";;
     *) echo "$H $PNPM";;
