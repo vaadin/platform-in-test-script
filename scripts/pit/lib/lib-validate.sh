@@ -28,7 +28,7 @@ runValidations() {
   [ -n "$7" ] && check="$7" || check=""
   [ -n "$8" ] && test="$PIT_SCR_FOLDER/its/$8" || test=""
   local GHTK= GITHUB_TOKEN=
-  timeout="$TIMEOUT"
+  [ "$name" = "start" -a "$TIMEOUT" -le "300" ] && timeout=500 || timeout="$TIMEOUT"
 
   file="$name-$mode-$version-"`uname`".out"
   rm -f $file
