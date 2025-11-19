@@ -1,35 +1,27 @@
-const { chromium } = require('playwright');
-
-let headless = false, host = 'localhost', port = '8080', hub = false;
-process.argv.forEach(a => {
-  if (/^--headless/.test(a)) {
-    headless = true;
-  } else if (/^--ip=/.test(a)) {
-    ip = a.split('=')[1];
-  } else if (/^--port=/.test(a)) {
-    port = a.split('=')[1];
-  }
-});
+const { log, args, createPage, closePage, takeScreenshot, waitForServerReady, dismissDevmode } = require('./test-utils');
 
 (async () => {
-  const browser = await chromium.launch({
-    headless: headless,
-    chromiumSandbox: false
-  });
-  const context = await browser.newContext();
+    const arg = args();
 
-  const page = await context.newPage();
-  page.on('console', msg => console.log("> CONSOLE:", (msg.text() + ' - ' + msg.location().url).replace(/\s+/g, ' ')));
-  page.on('pageerror', err => console.log("> PAGEERROR:", ('' + err).replace(/\s+/g, ' ')));
+    const page = await createPage(arg.headless);
 
-  await page.goto(`http://${host}:${port}/`);
+    await waitForServerReady(page, arg.url);
 
-  await page.waitForURL('http://localhost:8080/login');
-  await page.getByRole('link', { name: 'Login with Google' }).click();
-  await page.locator('input[type=email]').fill('aaa');
-  await page.getByRole('button').nth(2).click();
+    // Dismiss dev mode notification if present
+    await dismissDevmode(page);
+    await takeScreenshot(page, __filename, 'page-loaded');
 
+    log('Testing OAuth login flow');
+    await page.waitForURL(`${arg.url.replace(':8080', ':8080')}/login`);
+    await takeScreenshot(page, __filename, 'login-page');
 
-  await context.close();
-  await browser.close();
+    await page.getByRole('link', { name: 'Login with Google' }).click();
+    await takeScreenshot(page, __filename, 'google-login-clicked');
+
+    await page.locator('input[type=email]').fill('aaa');
+    await page.getByRole('button').nth(2).click();
+    await takeScreenshot(page, __filename, 'oauth-form-filled');
+
+    log('OAuth flow tested successfully');
+    await closePage(page);
 })();
