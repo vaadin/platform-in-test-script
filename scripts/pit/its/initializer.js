@@ -1,12 +1,7 @@
 const { expect } = require('@playwright/test');
 const { log, args, createPage, closePage, takeScreenshot, waitForServerReady, dismissDevmode, execCommand, compileAndReload } = require('./test-utils');
-// When using playwright in lib mode we cannot use expect, thus we use regular asserts
-const assert = require('assert');
 
-const { spawn } = require('child_process');
 const fs = require('fs');
-const Net = require('net');
-const isWin = /^win/.test(process.platform);
 
 (async () => {
     const arg = args();
@@ -25,7 +20,7 @@ const isWin = /^win/.test(process.platform);
     if (arg.mode == 'prod') {
         log("Skipping creating views for production mode");
         const text = page.getByText('Could not navigate');
-        assert.ok(await text.isVisible());
+        await expect(text).toBeVisible();
     } else {
         const linkText = /react/.test(arg.name) ?
           'Create a view for coding the UI in TypeScript with Hilla and React' :
@@ -38,7 +33,7 @@ const isWin = /^win/.test(process.platform);
         await takeScreenshot(page, __filename, 'view-created');
         await waitForServerReady(page, arg.url, { maxRetries: 30, retryInterval: 2000 });
         const view = (await execCommand(`find src/main/frontend src/main/java -name '${viewName}'`)).stdout.trim();
-        assert.ok(fs.existsSync(view));
+        expect(fs.existsSync(view)).toBeTruthy();
 
         // Compile the application so as spring-devtools watches the changes
         await compileAndReload(page, arg.url, { waitTime: 10000 });
@@ -66,7 +61,7 @@ const isWin = /^win/.test(process.platform);
         await takeScreenshot(page, __filename, 'view-reloaded-after-compiling');
 
         const text = page.getByText('Welcome');
-        assert.ok(await text.isVisible());
+        await expect(text).toBeVisible();
 
         log(`Removing the view ${view}`);
         fs.unlinkSync(view);

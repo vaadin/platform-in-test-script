@@ -1,7 +1,5 @@
 const { expect } = require('@playwright/test');
 const { log, args, createPage, closePage, takeScreenshot, waitForServerReady, dismissDevmode } = require('./test-utils');
-// When using playwright in lib mode we cannot use expect, thus we use regular asserts
-const assert = require('assert');
 
 (async () => {
     const arg = args();
@@ -61,10 +59,10 @@ const assert = require('assert');
     let expectedAvatarCount = 2+1;
 
     const avatarCount1 = await page1.locator('vaadin-avatar-group > vaadin-avatar').count();
-    assert(avatarCount1 === expectedAvatarCount, "Expected two users but found: "+(avatarCount1-1));
+    expect(avatarCount1).toBe(expectedAvatarCount);
 
     const avatarCount2 = await page2.locator('vaadin-avatar-group > vaadin-avatar').count();
-    assert(avatarCount2 === expectedAvatarCount, "Expected two users but found: "+(avatarCount2-1));
+    expect(avatarCount2).toBe(expectedAvatarCount);
 
     log('Avatar counts verified successfully');
 

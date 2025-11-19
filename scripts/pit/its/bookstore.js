@@ -1,4 +1,3 @@
-const { expect } = require('@playwright/test');
 const { log, args, createPage, closePage, takeScreenshot, waitForServerReady, dismissDevmode } = require('./test-utils');
 
 (async () => {
