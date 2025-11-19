@@ -1,4 +1,5 @@
-const { chromium } = require('playwright');
+const { expect } = require('@playwright/test');
+const { log, args, createPage, closePage, takeScreenshot, waitForServerReady, dismissDevmode, execCommand } = require('./test-utils');
 // When using playwright in lib mode we cannot use expect, thus we use regular asserts
 const assert = require('assert');
 
@@ -6,9 +7,6 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const Net = require('net');
 const isWin = /^win/.test(process.platform);
-const screenshots = "screenshots.out"
-let headless = false, host = 'localhost', port = '8080', mode = 'prod', name;
-
 
 let buildCmd, buildArgs;
 if (fs.existsSync('mvnw') ) {
@@ -29,15 +27,14 @@ if (fs.existsSync('mvnw') ) {
   throw new Error('No build tool found');
 }
 
-const compileProject = async () => await exec(`${buildCmd} ${buildArgs}`);
-const log = s => process.stderr.write(`\x1b[1m=> TEST: \x1b[0;33m${s}\x1b[0m`);
+const compileProject = async () => await execCommand(`${buildCmd} ${buildArgs}`);
 
 async function isPortTaken(port) {
   return new Promise((resolve, reject) => {
     const tester = Net.createServer()
         .once('error', err => resolve(true))
         .once('listening', () => {
-          log(`Port ${port} not listening\n`);
+          log(`Port ${port} not listening`);
           tester.close();
           resolve(false);
         })
@@ -46,134 +43,85 @@ async function isPortTaken(port) {
 }
 
 async function reload(page, url) {
-  log(`reloading page\n`);
+  log(`reloading page`);
   let i = 0;
-  while(i++ < 30 && ! await isPortTaken(port)) {
+  while(i++ < 30 && ! await isPortTaken(url.split(':')[2].split('/')[0])) {
     await page.waitForTimeout(2000);
   }
   await page.reload();
   await page.waitForURL(url);
-  log(`page reloaded\n`);
-  await takeScreenshot(page, 'view-reloaded');
+  log(`page reloaded`);
+  await takeScreenshot(page, 'initializer.js', 'view-reloaded');
 }
 
 async function compile(page, url) {
-  log('Re-compiling project\n');
+  log('Re-compiling project');
   await compileProject();
   await page.waitForTimeout(10000);
   await reload(page, url)
 }
 
-async function exec(order, ops) {
-  return new Promise((resolve, reject) => {
-    const cmd = order.split(/ +/)[0];
-    const arg = order.split(/ +/).splice(1);
-    log(`Executing -> ${order}\n`);
-    let stdout = "", stderr = "";
-    const ls = spawn(cmd, arg, { shell: true });
-    ls.stdout.on('data', (data) => stdout += data);
-    ls.stderr.on('data', (data) => stderr += data);
-    ls.on('close', (code) => {
-      if (code !== 0) {
-        log(`>> ERROR ${code}\n`);
-        log(`>> STDOUT\n ${stdout}\n`);
-        log(`>> STDERR\n ${stderr}\n`);
-        reject({ stdout, stderr, code });
-      } else {
-        resolve({ stdout, stderr, code });
-      }
-    });
-  });
-}
-
-process.argv.forEach(a => {
-  if (/^--headless/.test(a)) {
-    headless = true;
-  } else if (/^--port=/.test(a)) {
-    port = a.split('=')[1];
-  } else if (/^--mode=/.test(a)) {
-    mode = a.split('=')[1];
-  } else if (/^--name=/.test(a)) {
-    name = a.split('=')[1];
-  }
-});
-
-let sscount = 0;
-async function takeScreenshot(page, name) {
-  const path = `${screenshots}/${++sscount}-${name}-${mode}.png`;
-  await page.screenshot({ path });
-  log(`Screenshot taken: ${path}\n`);
-}
-
 (async () => {
+    const arg = args();
 
-  const browser = await chromium.launch({
-    headless: headless,
-    chromiumSandbox: false
-  });
-  const context = await browser.newContext();
+    const page = await createPage(arg.headless, arg.ignoreHTTPSErrors);
+    page.setViewportSize({width: 811, height: 1224});
 
+    await waitForServerReady(page, arg.url);
+    
+    // Dismiss dev mode notification if present
+    await dismissDevmode(page);
+    
+    await page.waitForTimeout(3000);
+    await takeScreenshot(page, __filename, 'view-loaded');
 
-  const page = await context.newPage();
-  page.setViewportSize({width: 811, height: 1224});
+    if (arg.mode == 'prod') {
+        log("Skipping creating views for production mode");
+        const text = page.getByText('Could not navigate');
+        assert.ok(await text.isVisible());
+    } else {
+        const linkText = /react/.test(arg.name) ?
+          'Create a view for coding the UI in TypeScript with Hilla and React' :
+          'Create a view for coding the UI in Java with Flow';
+        const viewName = /react/.test(arg.name) ? '@index.tsx' : 'HomeView.java';
 
-  page.on('console', msg => console.log("> CONSOLE:", (msg.text() + ' - ' + msg.location().url).replace(/\s+/g, ' ')));
-  page.on('pageerror', err => console.log("> PAGEERROR:", ('' + err).replace(/\s+/g, ' ')));
+        log(`Creating ${viewName} view using copilot`);
+        await page.getByRole('link', { name: linkText }).click();
+        await page.waitForTimeout(2000);
+        await takeScreenshot(page, __filename, 'view-created');
+        await reload(page, arg.url);
+        const view = (await execCommand(`find src/main/frontend src/main/java -name '${viewName}'`)).stdout.trim();
+        assert.ok(fs.existsSync(view));
 
-  const url = `http://${host}:${port}/`;
-  await page.goto(url);
-  await page.waitForURL(url);
-  await page.waitForTimeout(3000);
-  await takeScreenshot(page, 'view-loaded');
+        // Compile the application so as spring-devtools watches the changes
+        await compile(page, arg.url);
 
-  if (mode == 'prod') {
-    log("Skipping creating views for production mode\n");
-    const text = page.getByText('Could not navigate');
-    assert.ok(await text.isVisible());
-  } else {
-    const linkText = /react/.test(name) ?
-      'Create a view for coding the UI in TypeScript with Hilla and React' :
-      'Create a view for coding the UI in Java with Flow';
-    const viewName = /react/.test(name) ? '@index.tsx' : 'HomeView.java';
+        await takeScreenshot(page, __filename, 'app-compiled');
 
-    log(`Creating ${viewName} view using copilot\n`);
-    await page.getByRole('link', { name: linkText }).click();
-    await page.waitForTimeout(2000);
-    await takeScreenshot(page, 'view-created');
-    await reload(page, url);
-    const view = (await exec(`find src/main/frontend src/main/java -name '${viewName}'`)).stdout.trim();
-    assert.ok(fs.existsSync(view));
+        // Wait for the frontend to be built
+        log(`Checking if the new view is Building`);
+        const building = page.getByText('Building');
+        if (await building.isVisible()) {
+            await takeScreenshot(page, __filename, 'view-building');
+            log(`Waiting for frontend to be built ...`)
+            while(await building.isVisible()) {
+                process.stderr.write(".");
+                await page.waitForTimeout(1000);
+            }
+            console.error('');
+        }
 
-    // Compile the application so as spring-devtools watches the changes
-    await compile(page, url);
+        log(`checking if the new view is available`);
+        await reload(page, arg.url);
+        await page.waitForTimeout(2000);
+        await takeScreenshot(page, __filename, 'view-reloaded-after-compiling');
 
-    await takeScreenshot(page, 'app-compiled');
+        const text = page.getByText('Welcome');
+        assert.ok(await text.isVisible());
 
-    // Wait for the frontend to be built
-    log(`Checking if the new view is Building\n`);
-    const building = page.getByText('Building');
-    if (await building.isVisible()) {
-      await takeScreenshot(page, 'view-building');
-      log(`Waiting for frontend to be built ...`)
-      while(await building.isVisible()) {
-        process.stderr.write(".");
-        await page.waitForTimeout(1000);
-      }
-      console.error('');
+        log(`Removing the view ${view}`);
+        fs.unlinkSync(view);
     }
 
-    log(`checking if the new view is available\n`);
-    await reload(page, url);
-    await page.waitForTimeout(2000);
-    await takeScreenshot(page, 'view-reloaded-after-compiling');
-
-    const text = page.getByText('Welcome');
-    assert.ok(await text.isVisible());
-
-    log(`Removing the view ${view}\n`);
-    fs.unlinkSync(view);
-  }
-
-  await context.close();
-  await browser.close();
+    await closePage(page);
 })();
