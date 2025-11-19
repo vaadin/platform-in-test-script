@@ -1,4 +1,5 @@
 const { exec } = require('child_process');
+const { spawn } = require('child_process');
 const {chromium} = require('playwright');
 const promisify = require('util').promisify;
 const path = require('path');
@@ -41,6 +42,28 @@ function err(...args) {
 }
 
 const run = async (cmd) => (await promisify(exec)(cmd)).stdout;
+
+async function execCommand(order, ops) {
+  return new Promise((resolve, reject) => {
+    const cmd = order.split(/ +/)[0];
+    const arg = order.split(/ +/).splice(1);
+    log(`Executing -> ${order}`);
+    let stdout = "", stderr = "";
+    const ls = spawn(cmd, arg, { shell: true });
+    ls.stdout.on('data', (data) => stdout += data);
+    ls.stderr.on('data', (data) => stderr += data);
+    ls.on('close', (code) => {
+      if (code !== 0) {
+        log(`ERROR ${code} executing ${order}`);
+        log(`STDOUT\n${stdout}`);
+        log(`STDERR\n${stderr}`);
+        reject({ stdout, stderr, code });
+      } else {
+        resolve({ stdout, stderr, code });
+      }
+    });
+  });
+}
 let mode, version;
 
 const args = () => {
@@ -175,6 +198,7 @@ async function dismissDevmode(page) {
 module.exports = {
   log, out, err, warn,
   run,
+  execCommand,
   args,
   createPage,
   closePage,
