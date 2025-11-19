@@ -109,8 +109,8 @@ const { log, args, createPage, closePage, takeScreenshot, waitForServerReady, di
   log(`Clicked code button\n`);
 
   // Download the App and save in current folder
-  const fname = `my-app-${mode}.zip`
-  if (mode == 'dev' && process.env.RUNNER_OS != 'Windows') {
+  const fname = `my-app-${arg.mode || 'dev'}.zip`
+  if ((arg.mode || 'dev') == 'dev' && process.env.RUNNER_OS != 'Windows') {
     log(`Downloading project\n`);
     await page.getByRole('button', { name: 'Download Project' }).click();
     const downloadPromise = page.waitForEvent('download');
