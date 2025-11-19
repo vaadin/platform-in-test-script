@@ -9,7 +9,6 @@ const { log, args, createPage, closePage, takeScreenshot, waitForServerReady, di
     await takeScreenshot(page, __filename, 'page-loaded');
 
     log('Testing authentication login flow');
-    await page.waitForURL(`${arg.url.replace(':8080', ':8080')}/login`);
     await page.locator('input[name="username"]').click();
     await page.locator('input[name="username"]').fill('admin');
     await page.locator('input[name="password"]').click();
@@ -28,7 +27,7 @@ const { log, args, createPage, closePage, takeScreenshot, waitForServerReady, di
 
     log('Testing Master-Detail functionality');
     // TODO: investigate why this is needed when notification is visible click does not work in master-detail
-    await page.goto(`${arg.url}/master-detail-view`);
+    await page.goto(`${arg.url}master-detail-view`);
     await page.locator('text=Master-Detail').nth(0).click();
     log('--- Click on eula.lane');
     await page.locator('text=eula.lane').click();
