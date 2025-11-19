@@ -1,45 +1,33 @@
-const { chromium } = require('playwright');
-
-let headless = false, host = 'localhost', port = '8080', hub = false;
-process.argv.forEach(a => {
-  if (/^--headless/.test(a)) {
-    headless = true;
-  } else if (/^--ip=/.test(a)) {
-    ip = a.split('=')[1];
-  } else if (/^--port=/.test(a)) {
-    port = a.split('=')[1];
-  }
-});
+const { log, args, createPage, closePage, takeScreenshot, waitForServerReady, dismissDevmode } = require('./test-utils');
 
 (async () => {
-  const browser = await chromium.launch({
-    headless: headless,
-    chromiumSandbox: false
-  });
-  
-  // TODO: should work with smaller viewport too like in 24.9
-  const context = await browser.newContext({
-    viewport: { width: 1920, height: 1080 }
-  });
+    const arg = args();
 
-  const page = await context.newPage();
-  page.on('console', msg => console.log("> CONSOLE:", (msg.text() + ' - ' + msg.location().url).replace(/\s+/g, ' ')));
-  page.on('pageerror', err => console.log("> PAGEERROR:", ('' + err).replace(/\s+/g, ' ')));
+    const page = await createPage(arg.headless);
+    // TODO: should work with smaller viewport too like in 24.9
+    page.setViewportSize({ width: 1920, height: 1080 });
 
-  await page.goto(`http://${host}:${port}/`);
+    await waitForServerReady(page, arg.url);
 
-  await page.locator('text=Hello').nth(0).click();
-  await page.locator('input[type="text"]').fill('Greet');
-  await page.locator('text=Say hello').click();
-  await page.locator('text=Hello Greet');
+    // Dismiss dev mode notification if present
+    await dismissDevmode(page);
+    await takeScreenshot(page, __filename, 'page-loaded');
 
-  await page.locator('text=Master-Detail').nth(0).click();
-  await page.locator('text=eula.lane').click();
-  await page.locator('input[type="text"]').nth(0).fill('FOO');
-  await page.locator('text=Save').click();
-  await page.locator('text=/stored/');
+    log('Testing Hello functionality');
+    await page.locator('text=Hello').nth(0).click();
+    await page.locator('input[type="text"]').fill('Greet');
+    await page.locator('text=Say hello').click();
+    await page.locator('text=Hello Greet');
+    await takeScreenshot(page, __filename, 'hello-tested');
 
-  // ---------------------
-  await context.close();
-  await browser.close();
+    log('Testing Master-Detail functionality');
+    await page.locator('text=Master-Detail').nth(0).click();
+    await page.locator('text=eula.lane').click();
+    await page.locator('input[type="text"]').nth(0).fill('FOO');
+    await page.locator('text=Save').click();
+    await page.locator('text=/stored/');
+    await takeScreenshot(page, __filename, 'master-detail-tested');
+
+    log('Start application tested successfully');
+    await closePage(page);
 })();

@@ -133,6 +133,7 @@ async function createPage(headless, ignoreHTTPSErrors) {
     return page;
 }
 async function closePage(page) {
+    await takeScreenshot(page, getCallingTestFile(), 'ss', '_after');
     await page.goto('about:blank');
     await page.context().close();
     await page.browser.close();
@@ -152,6 +153,23 @@ async function takeScreenshot(page, name, descr, prefix) {
   out(` 📸 Screenshot taken: ${file}\n`);
 }
 
+// Helper function to get the calling test file name
+function getCallingTestFile() {
+  const stack = new Error().stack;
+  const stackLines = stack.split('\n');
+
+  // Look for the first line that contains a .js file that's not test-utils.js
+  for (const line of stackLines) {
+    if (line.includes('.js') && !line.includes('test-utils.js') && !line.includes('node_modules')) {
+      const match = line.match(/\/([^\/]+\.js)/);
+      if (match) {
+        return match[1].replace('.js', '');
+      }
+    }
+  }
+  return '';
+}
+
 // Wait for the server to be ready and to get a valid response
 async function waitForServerReady(page, url, options = {}) {
   const {
@@ -168,6 +186,7 @@ async function waitForServerReady(page, url, options = {}) {
       if (response && response.status() < 400) {
         await page.waitForTimeout(1000);
         ok(` ✓ Attempt ${attempt} Server is ready and returned a valid response. ${response.status()}\n`);
+        await takeScreenshot(page, getCallingTestFile(), 'ss', '_before');
         return response;
       } else {
         out(` ⏲ Attempt ${attempt} Server is not ready yet. ${response.status()}\n`);
@@ -181,6 +200,7 @@ async function waitForServerReady(page, url, options = {}) {
     }
     await page.waitForTimeout(retryInterval);
   }
+  await takeScreenshot(page, getCallingTestFile(), 'ss', '_before');
   throw new Error(`Server did not become ready after ${maxRetries} attempts.\n`);
 }
 
