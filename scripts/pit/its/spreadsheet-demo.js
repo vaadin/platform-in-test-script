@@ -29,7 +29,7 @@ const { log, args, closePage, takeScreenshot, waitForServerReady } = require('./
 
     log('Testing Basic functionality');
     await page.getByRole('link', { name: 'Basic functionality' }).click();
-    await page.waitForURL(`${arg.url}/demo/basic`);
+    await page.waitForURL(`${arg.url}demo/basic`);
     await takeScreenshot(page, __filename, 'basic-functionality');
 
     await page.locator('.col2').first().click();
@@ -39,7 +39,7 @@ const { log, args, closePage, takeScreenshot, waitForServerReady } = require('./
 
     log('Testing Collaborative features');
     await page.getByRole('link', { name: 'Collaborative features' }).click();
-    await page.waitForURL(`${arg.url}/demo/collaborative`);
+    await page.waitForURL(`${arg.url}demo/collaborative`);
     await takeScreenshot(page, __filename, 'collaborative-features');
 
     await page.locator('vaadin-spreadsheet div:has-text("Loan calculator")').nth(2).click();
@@ -60,20 +60,20 @@ const { log, args, closePage, takeScreenshot, waitForServerReady } = require('./
 
     log('Testing Grouping features');
     await page.getByRole('link', { name: 'Grouping' }).click();
-    await page.waitForURL(`${arg.url}/demo/grouping`);
+    await page.waitForURL(`${arg.url}demo/grouping`);
     await page.getByText('+').nth(3).click();
     await page.getByText('December').click();
     await takeScreenshot(page, __filename, 'grouping-tested');
 
     log('Testing Report mode');
     await page.getByRole('link', { name: 'Report mode' }).click();
-    await page.waitForURL(`${arg.url}/demo/reportMode`);
+    await page.waitForURL(`${arg.url}demo/reportMode`);
     await page.getByText('547 Demo Suites #85').click();
     await takeScreenshot(page, __filename, 'report-mode-tested');
 
     log('Testing Simple invoice');
     await page.getByRole('link', { name: 'Simple invoice' }).click();
-    await page.waitForURL(`${arg.url}/demo/simpleInvoice`);
+    await page.waitForURL(`${arg.url}demo/simpleInvoice`);
     await page.getByText('547 Demo Suites #85').click();
     await takeScreenshot(page, __filename, 'simple-invoice-tested');
 

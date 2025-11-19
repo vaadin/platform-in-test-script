@@ -30,7 +30,7 @@ const { log, args, closePage, takeScreenshot, waitForServerReady, dismissDevmode
 
     log('Testing Spreadsheet view');
     await page.getByRole('link', { name: 'Spreadsheet' }).click();
-    await page.waitForURL(`${arg.url}/spreadsheet`);
+    await page.waitForURL(`${arg.url}spreadsheet`);
     await takeScreenshot(page, __filename, 'spreadsheet-loaded');
 
     await page.getByText('90', { exact: true }).click();
@@ -44,7 +44,7 @@ const { log, args, closePage, takeScreenshot, waitForServerReady, dismissDevmode
 
     log('Testing Tree view');
     await page.getByRole('link', { name: 'Tree' }).click();
-    await page.waitForURL(`${arg.url}/tree`);
+    await page.waitForURL(`${arg.url}tree`);
     await takeScreenshot(page, __filename, 'tree-loaded');
 
     await page.locator('span.v-tree8-expander').nth(0).click()
@@ -53,12 +53,12 @@ const { log, args, closePage, takeScreenshot, waitForServerReady, dismissDevmode
 
     log('Testing Video view');
     await page.getByRole('link', { name: 'Video' }).click();
-    await page.waitForURL(`${arg.url}/video`);
+    await page.waitForURL(`${arg.url}video`);
     await takeScreenshot(page, __filename, 'video-loaded');
 
     log('Testing Legacy view');
     await page.getByRole('link', { name: 'Legacy' }).click();
-    await page.waitForURL(`${arg.url}/legacy`);
+    await page.waitForURL(`${arg.url}legacy`);
     await page.getByText('Here we are!').click();
     await takeScreenshot(page, __filename, 'legacy-tested');
 
