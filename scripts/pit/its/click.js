@@ -1,38 +1,24 @@
-const { chromium } = require('playwright');
-
-let headless = false, host = 'localhost', port = '8080', hub = false;
-process.argv.forEach(a => {
-  if (/^--headless/.test(a)) {
-    headless = true;
-  } else if (/^--ip=/.test(a)) {
-    ip = a.split('=')[1];
-  } else if (/^--port=/.test(a)) {
-    port = a.split('=')[1];
-  }
-});
+const { expect } = require('@playwright/test');
+const { log, args, createPage, closePage, takeScreenshot, waitForServerReady, dismissDevmode } = require('./test-utils');
 
 (async () => {
-  const browser = await chromium.launch({
-    headless: headless,
-    chromiumSandbox: false
-  });
-  const context = await browser.newContext();
+    const arg = args();
 
-  // Open new page
-  const page = await context.newPage();
-  page.on('console', msg => console.log("> CONSOLE:", (msg.text() + ' - ' + msg.location().url).replace(/\s+/g, ' ')));
-  page.on('pageerror', err => console.log("> PAGEERROR:", ('' + err).replace(/\s+/g, ' ')));
+    const page = await createPage(arg.headless, arg.ignoreHTTPSErrors);
 
-  // Go to http://localhost:8080/
-  await page.goto(`http://${host}:${port}/`);
+    await waitForServerReady(page, arg.url);
 
-  // Click input[type="text"]
-  await page.locator('text=Click me').click({timeout:60000});
+    // Dismiss dev mode notification if present
+    await dismissDevmode(page);
+    await takeScreenshot(page, __filename, 'page-loaded');
 
-  // Click text=Say hello
-  await page.locator('text=Clicked');
+    // Click the "Click me" button
+    await page.locator('text=Click me').click({timeout:60000});
+    await takeScreenshot(page, __filename, 'button-clicked');
 
-  // ---------------------
-  await context.close();
-  await browser.close();
+    // Wait for "Clicked" text to appear
+    await page.locator('text=Clicked');
+    await takeScreenshot(page, __filename, 'clicked-result');
+
+    await closePage(page);
 })();
