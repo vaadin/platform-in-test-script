@@ -3,6 +3,7 @@ const { spawn } = require('child_process');
 const {chromium} = require('playwright');
 const promisify = require('util').promisify;
 const path = require('path');
+const fs = require('fs');
 const { defineConfig} = require('@playwright/test');
 defineConfig({
   timeout: 60 * 1000,
@@ -195,6 +196,48 @@ async function dismissDevmode(page) {
   return false;
 }
 
+// Unified compilation functions
+function getBuildCommand() {
+  const isWin = /^win/.test(process.platform);
+
+  if (fs.existsSync('mvnw')) {
+    const cmd = isWin ? (fs.existsSync('mvnw.bat') ? 'mvnw.bat' : 'mvnw.cmd') : './mvnw';
+    return { cmd, args: 'compiler:compile' };
+  } else if (fs.existsSync('gradlew')) {
+    const cmd = isWin ? (fs.existsSync('gradlew.bat') ? 'gradlew.bat' : 'gradlew.cmd') : './gradlew';
+    return { cmd, args: 'compileJava' };
+  } else if (isWin) {
+    return { cmd: 'mvn.cmd', args: 'compiler:compile' };
+  } else {
+    return { cmd: 'mvn', args: 'compiler:compile' };
+  }
+}
+
+async function compileProject() {
+  const { cmd, args } = getBuildCommand();
+  return await execCommand(`${cmd} ${args}`);
+}
+
+async function compileAndReload(page, url, options = {}) {
+  const { name, waitTime = 10000 } = options;
+
+  log('Re-compiling project');
+  await compileProject();
+  log(`Sleeping ${waitTime / 1000}secs`);
+  await page.waitForTimeout(waitTime);
+
+  if (name && /jetty/.test(name)) {
+    log('Reloading Page for Jetty');
+    await page.reload();
+    await page.waitForLoadState();
+  } else if (url) {
+    log('Reloading page');
+    await page.reload();
+    await page.waitForURL(url);
+    log('Page reloaded');
+  }
+}
+
 module.exports = {
   log, out, err, warn,
   run,
@@ -205,4 +248,5 @@ module.exports = {
   takeScreenshot,
   waitForServerReady,
   dismissDevmode,
+  compileAndReload,
 };
