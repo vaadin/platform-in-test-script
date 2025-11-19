@@ -1,52 +1,39 @@
-const { chromium } = require('playwright');
-
-let headless = false, host = 'localhost', port = '8080', hub = false;
-process.argv.forEach(a => {
-  if (/^--headless/.test(a)) {
-    headless = true;
-  } else if (/^--ip=/.test(a)) {
-    ip = a.split('=')[1];
-  } else if (/^--port=/.test(a)) {
-    port = a.split('=')[1];
-  }
-});
+const { log, args, createPage, closePage, takeScreenshot, waitForServerReady, dismissDevmode } = require('./test-utils');
 
 (async () => {
-  const browser = await chromium.launch({
-    headless: headless,
-    chromiumSandbox: false
-  });
-  const context = await browser.newContext();
+    const arg = args();
 
-  // Open new page
-  const page = await context.newPage();
-  page.on('console', msg => console.log("> CONSOLE:", (msg.text() + ' - ' + msg.location().url).replace(/\s+/g, ' ')));
-  page.on('pageerror', err => console.log("> PAGEERROR:", ('' + err).replace(/\s+/g, ' ')));
+    const page = await createPage(arg.headless);
 
-  // Go to http://localhost:8080/
-  await page.goto(`http://${host}:${port}/`);
+    await waitForServerReady(page, arg.url);
 
+    // Dismiss dev mode notification if present
+    await dismissDevmode(page);
+    await takeScreenshot(page, __filename, 'page-loaded');
 
-  // Click text=Master-Detail (Javahtml) >> slot >> nth=1
-  await page.locator('text=Master-Detail (Javahtml) >> slot').nth(1).click();
-  await page.waitForURL(`http://${host}:${port}/master-detail-view`);
-  // Click text=Master-Detail SampleAddress (Javahtml) >> slot >> nth=1
-  await page.locator('text=Master-Detail SampleAddress (Javahtml) >> slot').nth(1).click();
-  await page.waitForURL(`http://${host}:${port}/master-detail-view-sampleaddress`);
-  // Click text=Master-Detail SampleBook (Javahtml) >> slot >> nth=1
-  await page.locator('text=Master-Detail SampleBook (Javahtml) >> slot').nth(1).click();
-  await page.waitForURL(`http://${host}:${port}/master-detail-view-samplebook`);
-  // Click text=Hello World (Javahtml) >> slot >> nth=1
-  await page.locator('text=Hello World (Javahtml) >> slot').nth(1).click();
-  await page.waitForURL(`http://${host}:${port}/hello-world-view`);
-  // Fill input[type="text"]
-  await page.locator('input[type="text"]').fill('Greet');
-  // Click text=Say hello
-  await page.locator('text=Say hello').click();
-  await page.locator('text=Hello Greet');
+    log('Testing Master-Detail (Javahtml) views');
+    // Click text=Master-Detail (Javahtml) >> slot >> nth=1
+    await page.locator('text=Master-Detail (Javahtml) >> slot').nth(1).click();
+    await page.waitForURL(`${arg.url}/master-detail-view`);
+    // Click text=Master-Detail SampleAddress (Javahtml) >> slot >> nth=1
+    await page.locator('text=Master-Detail SampleAddress (Javahtml) >> slot').nth(1).click();
+    await page.waitForURL(`${arg.url}/master-detail-view-sampleaddress`);
+    // Click text=Master-Detail SampleBook (Javahtml) >> slot >> nth=1
+    await page.locator('text=Master-Detail SampleBook (Javahtml) >> slot').nth(1).click();
+    await page.waitForURL(`${arg.url}/master-detail-view-samplebook`);
+    await takeScreenshot(page, __filename, 'master-detail-javahtml-tested');
 
+    log('Testing Hello World (Javahtml) view');
+    // Click text=Hello World (Javahtml) >> slot >> nth=1
+    await page.locator('text=Hello World (Javahtml) >> slot').nth(1).click();
+    await page.waitForURL(`${arg.url}/hello-world-view`);
+    // Fill input[type="text"]
+    await page.locator('input[type="text"]').fill('Greet');
+    // Click text=Say hello
+    await page.locator('text=Say hello').click();
+    await page.locator('text=Hello Greet');
+    await takeScreenshot(page, __filename, 'hello-world-javahtml-tested');
 
-  // ---------------------
-  await context.close();
-  await browser.close();
+    log('All Javahtml views tested successfully');
+    await closePage(page);
 })();
