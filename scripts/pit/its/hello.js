@@ -45,7 +45,7 @@ const { log, args, createPage, closePage, takeScreenshot, waitForServerReady, di
         log(`Found ${text} in an 'alert' role: ${m}`);
     } catch (e) {
         log(`Not Found ${text} in an 'alert' role, looking in DOM`);
-        m = await page.locator(`text=/${text}/`).innerText({timeout:5000});
+        m = await page.locator(`text=/${text}/`).first().innerText({timeout:5000});
     }
 
     if (! new RegExp(text).test(m)) {
