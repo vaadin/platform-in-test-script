@@ -1,39 +1,40 @@
-const { chromium } = require('playwright');
-
-let headless = false, host = 'localhost', port = '8080', hub = false;
-process.argv.forEach(a => {
-  if (/^--headless/.test(a)) {
-    headless = true;
-  } else if (/^--ip=/.test(a)) {
-    ip = a.split('=')[1];
-  } else if (/^--port=/.test(a)) {
-    port = a.split('=')[1];
-  }
-});
+const { log, args, createPage, closePage, takeScreenshot, waitForServerReady, dismissDevmode } = require('./test-utils');
 
 (async () => {
-  const browser = await chromium.launch({
-    headless: headless,
-    chromiumSandbox: false
-  });
-  const context = await browser.newContext();
+    const arg = args();
 
-  const page = await context.newPage();
-  page.on('console', msg => console.log("> CONSOLE:", (msg.text() + ' - ' + msg.location().url).replace(/\s+/g, ' ')));
-  page.on('pageerror', err => console.log("> PAGEERROR:", ('' + err).replace(/\s+/g, ' ')));
+    const page = await createPage(arg.headless);
 
-  await page.goto(`http://${host}:${port}/`);
+    await waitForServerReady(page, arg.url);
 
-  await page.locator('text=Hello Flow').nth(0).click();
-  await page.locator('text=eula.lane').click();
-  await page.locator('input[type="text"]').nth(0).fill('FOO');
-  await page.locator('text=Save').click();
-  await page.locator('text=/Updated/');
+    // Dismiss dev mode notification if present
+    await dismissDevmode(page);
+    await takeScreenshot(page, __filename, 'page-loaded');
 
-  await page.locator('text=Hello Hilla').nth(0).click();
-  await page.locator('text=/This place intentionally left empty/').isVisible();
+    log('Testing Flow view functionality');
+    await page.locator('text=Hello Flow').nth(0).click();
+    await takeScreenshot(page, __filename, 'flow-view-opened');
+    
+    await page.locator('text=eula.lane').click();
+    await takeScreenshot(page, __filename, 'person-selected');
+    
+    await page.locator('input[type="text"]').nth(0).fill('FOO');
+    await takeScreenshot(page, __filename, 'input-filled');
+    
+    await page.locator('text=Save').click();
+    await takeScreenshot(page, __filename, 'save-clicked');
+    
+    await page.locator('text=/Updated/');
+    await takeScreenshot(page, __filename, 'update-confirmed');
 
-  // ---------------------
-  await context.close();
-  await browser.close();
+    log('Testing Hilla view functionality');
+    await page.locator('text=Hello Hilla').nth(0).click();
+    await takeScreenshot(page, __filename, 'hilla-view-opened');
+    
+    await page.locator('text=/This place intentionally left empty/').isVisible();
+    await takeScreenshot(page, __filename, 'hilla-content-verified');
+
+    log('Hybrid React application test completed successfully');
+
+    await closePage(page);
 })();
