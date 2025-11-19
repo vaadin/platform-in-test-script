@@ -46,7 +46,7 @@ generateStarter() {
     ## workaround in current quarkus-maven-plugin 3.28.3 : -Dextensions=rest,vaadin
     ## https://github.com/quarkusio/quarkus/issues/50528
     vaadin-quarkus) cmd="$MVN -ntp -q -B io.quarkus.platform:quarkus-maven-plugin:create -Dextensions=rest,vaadin -DwithCodestart -DprojectGroupId=com.vaadin.starter -DprojectArtifactId=$_name" ;;
-    hilla-*-cli)    cmd="npx @hilla/cli init --react $_name" ;;
+    hilla-*-cli)    cmd="npx -y @hilla/cli init --react $_name" ;;
   esac
   runCmd -f "Generating $1" "$cmd" || return 1
   cmd "cd '$_name'" && cd "$_name" || return 1
