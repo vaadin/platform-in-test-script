@@ -1,40 +1,19 @@
-const { chromium } = require('playwright');
-
-
-let headless = false, host = 'localhost', port = '8080', mode = 'prod';
-process.argv.forEach(a => {
-  if (/^--headless/.test(a)) {
-    headless = true;
-  } else if (/^--port=/.test(a)) {
-    port = a.split('=')[1];
-  } else if (/^--mode=/.test(a)) {
-    mode = a.split('=')[1];
-  }
-});
+const { log, args, createPage, closePage, takeScreenshot, waitForServerReady, dismissDevmode } = require('./test-utils');
 
 (async () => {
-  const browser = await chromium.launch({
-    headless: headless,
-    chromiumSandbox: false
-  });
-  const log = s => process.stderr.write(`   ${s}`);
+    const arg = args();
 
-  const context = await browser.newContext();
-  // context.setDefaultTimeout(90000);
-  // context.setDefaultNavigationTimeout(90000)
+    const page = await createPage(arg.headless);
+    page.setViewportSize({width: 811, height: 1224});
 
-  const page = await context.newPage();
-  page.setViewportSize({width: 811, height: 1224});
+    await waitForServerReady(page, arg.url);
+    await takeScreenshot(page, __filename, 'wizard-loaded');
 
-  page.on('console', msg => console.log("> CONSOLE:", (msg.text() + ' - ' + msg.location().url).replace(/\s+/g, ' ')));
-  page.on('pageerror', err => console.log("> PAGEERROR:", ('' + err).replace(/\s+/g, ' ')));
-
-  await page.goto(`http://${host}:${port}/`);
-
-  // Start a new project
-  log(`Starting new project\n`);
-  await page.getByText(/Start (a Project|Playing)/).click();
-  await page.keyboard.press('Escape');
+    // Start a new project
+    log(`Starting new project`);
+    await page.getByText(/Start (a Project|Playing)/).click();
+    await page.keyboard.press('Escape');
+    await takeScreenshot(page, __filename, 'project-started');
 
   // No demo view anymore
   // Test example views
@@ -91,7 +70,7 @@ process.argv.forEach(a => {
         log(`let's see if fails ....`)
       }
     }
-    
+
     await page.waitForTimeout(1000);
     log(`Created view ${label}\n`);
   }
@@ -138,12 +117,13 @@ process.argv.forEach(a => {
     await page.getByRole('button', { name: 'Download', exact: true }).click();
     const download = await downloadPromise;
     await download.saveAs(fname);
-    log(`Downloaded file ${fname}\n`);
+    log(`Downloaded file ${fname}`);
     await page.getByLabel('Close download dialog').click();
+    await takeScreenshot(page, __filename, 'download-completed');
   } else {
-    log(`Skipped download of file ${fname} in Windows\n`);
+    log(`Skipped download of file ${fname} in Windows`);
   }
 
-  await context.close();
-  await browser.close();
+  log('Wizard testing completed successfully');
+  await closePage(page);
 })();
