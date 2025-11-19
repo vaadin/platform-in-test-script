@@ -17,7 +17,7 @@ async function compile(page, name) {
 (async () => {
     const arg = args();
 
-    const page = await createPage(arg.headless, arg.ignoreHTTPSErrors);
+    const page = await createPage(arg.headless);
 
     await waitForServerReady(page, arg.url);
     await takeScreenshot(page, __filename, 'page-loaded');

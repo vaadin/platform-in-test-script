@@ -4,7 +4,7 @@ const { log, args, createPage, closePage, takeScreenshot, waitForServerReady } =
 (async () => {
     const arg = args();
 
-    const page = await createPage(arg.headless, arg.ignoreHTTPSErrors);
+    const page = await createPage(arg.headless);
 
     await waitForServerReady(page, arg.url);
 
