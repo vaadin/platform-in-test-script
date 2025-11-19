@@ -33,7 +33,7 @@ const fs = require('fs');
         await takeScreenshot(page, __filename, 'view-created');
         await waitForServerReady(page, arg.url, { maxRetries: 30, retryInterval: 2000 });
         const view = (await execCommand(`find src/main/frontend src/main/java -name '${viewName}'`)).stdout.trim();
-        expect(fs.existsSync(view)).toBeTruthy();
+        expect(fs.existsSync(view), `Should exist ${view}`).toBeTruthy();
 
         // Compile the application so as spring-devtools watches the changes
         await compileAndReload(page, arg.url, { waitTime: 10000 });
