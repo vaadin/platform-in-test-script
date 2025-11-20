@@ -12,7 +12,10 @@ applyv25patches() {
     *beta4)                        SV=4.0.0-RC1 ;;
     *beta*)
        SV=4.0.0-RC2
-       addHillaStarterIfNeeded $app_
+        ## TODO: document in migration guide to 25
+        addHillaStarterIfNeeded $app_
+        ## TODO: document in migration guide to 25
+        addDevModeIfNeeded
        ;;
   esac
   changeMavenBlock parent org.springframework.boot spring-boot-starter-parent $SV
@@ -481,6 +484,54 @@ addAnonymousAllowedToAppLayout() {
   done
 }
 
+## Adds vaadin-dev dependency for projects without Spring
+## Checks if Spring is not present in build files and adds vaadin-dev dependency
+## TODO: verify that is explained in migration guide
+addDevModeIfNeeded() {
+  local has_spring=false
+
+  # Check for Spring in Maven pom.xml
+  if [ -f "pom.xml" ]; then
+    if grep -qi "spring" pom.xml 2>/dev/null; then
+      has_spring=true
+      [ -z "$TEST" ] && log "Spring detected in pom.xml, skipping vaadin-dev"
+    fi
+  fi
+
+  # Check for Spring in Gradle build.gradle
+  if [ -f "build.gradle" ]; then
+    if grep -qi "spring" build.gradle 2>/dev/null; then
+      has_spring=true
+      [ -z "$TEST" ] && log "Spring detected in build.gradle, skipping vaadin-dev"
+    fi
+  fi
+
+  # Add vaadin-dev dependency if Spring is not found
+  if [ "$has_spring" = false ]; then
+    # Handle Maven projects
+    if [ -f "pom.xml" ]; then
+      if ! grep -q "vaadin-dev" pom.xml 2>/dev/null; then
+        [ -z "$TEST" ] && log "Adding vaadin-dev dependency to Maven project (no Spring detected)"
+        addMavenDep "com.vaadin" "vaadin-dev" "compile"
+      else
+        [ -z "$TEST" ] && log "vaadin-dev dependency already present in Maven project"
+      fi
+    fi
+
+    # Handle Gradle projects
+    if [ -f "build.gradle" ]; then
+      if ! grep -q "vaadin-dev" build.gradle 2>/dev/null; then
+        [ -z "$TEST" ] && log "Adding vaadin-dev dependency to Gradle project (no Spring detected)"
+        addGradleDep "com.vaadin" "vaadin-dev"
+      else
+        [ -z "$TEST" ] && log "vaadin-dev dependency already present in Gradle project"
+      fi
+    fi
+  else
+    [ -z "$TEST" ] && log "Spring framework detected, skipping vaadin-dev dependency"
+  fi
+}
+
 ## Adds Hilla Spring Boot Starter dependency if project uses Hilla
 ## Checks for Java files with Hilla imports or TypeScript files in views directories
 ## TODO: verify that is explained in migration guide
@@ -562,5 +613,6 @@ addGradleDep() {
     fi
   fi
 }
+
 
 
