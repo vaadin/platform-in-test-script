@@ -1,19 +1,40 @@
-const { log, args, createPage, closePage, takeScreenshot, waitForServerReady, dismissDevmode } = require('./test-utils');
+const { chromium } = require('playwright');
+
+
+let headless = false, host = 'localhost', port = '8080', mode = 'prod';
+process.argv.forEach(a => {
+  if (/^--headless/.test(a)) {
+    headless = true;
+  } else if (/^--port=/.test(a)) {
+    port = a.split('=')[1];
+  } else if (/^--mode=/.test(a)) {
+    mode = a.split('=')[1];
+  }
+});
 
 (async () => {
-    const arg = args();
+  const browser = await chromium.launch({
+    headless: headless,
+    chromiumSandbox: false
+  });
+  const log = s => process.stderr.write(`   ${s}`);
 
-    const page = await createPage(arg.headless);
-    page.setViewportSize({width: 811, height: 1224});
+  const context = await browser.newContext();
+  // context.setDefaultTimeout(90000);
+  // context.setDefaultNavigationTimeout(90000)
 
-    await waitForServerReady(page, arg.url);
-    await takeScreenshot(page, __filename, 'wizard-loaded');
+  const page = await context.newPage();
+  page.setViewportSize({width: 811, height: 1224});
 
-    // Start a new project
-    log(`Starting new project`);
-    await page.getByText(/Start (a Project|Playing)/).click();
-    await page.keyboard.press('Escape');
-    await takeScreenshot(page, __filename, 'project-started');
+  page.on('console', msg => console.log("> CONSOLE:", (msg.text() + ' - ' + msg.location().url).replace(/\s+/g, ' ')));
+  page.on('pageerror', err => console.log("> PAGEERROR:", ('' + err).replace(/\s+/g, ' ')));
+
+  await page.goto(`http://${host}:${port}/`);
+
+  // Start a new project
+  log(`Starting new project\n`);
+  await page.getByText(/Start (a Project|Playing)/).click();
+  await page.keyboard.press('Escape');
 
   // No demo view anymore
   // Test example views
@@ -70,7 +91,7 @@ const { log, args, createPage, closePage, takeScreenshot, waitForServerReady, di
         log(`let's see if fails ....`)
       }
     }
-
+    
     await page.waitForTimeout(1000);
     log(`Created view ${label}\n`);
   }
@@ -109,21 +130,20 @@ const { log, args, createPage, closePage, takeScreenshot, waitForServerReady, di
   log(`Clicked code button\n`);
 
   // Download the App and save in current folder
-  const fname = `my-app-${arg.mode || 'dev'}.zip`
-  if ((arg.mode || 'dev') == 'dev' && process.env.RUNNER_OS != 'Windows') {
+  const fname = `my-app-${mode}.zip`
+  if (mode == 'dev' && process.env.RUNNER_OS != 'Windows') {
     log(`Downloading project\n`);
     await page.getByRole('button', { name: 'Download Project' }).click();
     const downloadPromise = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Download', exact: true }).click();
     const download = await downloadPromise;
     await download.saveAs(fname);
-    log(`Downloaded file ${fname}`);
+    log(`Downloaded file ${fname}\n`);
     await page.getByLabel('Close download dialog').click();
-    await takeScreenshot(page, __filename, 'download-completed');
   } else {
-    log(`Skipped download of file ${fname} in Windows`);
+    log(`Skipped download of file ${fname} in Windows\n`);
   }
 
-  log('Wizard testing completed successfully');
-  await closePage(page);
+  await context.close();
+  await browser.close();
 })();
