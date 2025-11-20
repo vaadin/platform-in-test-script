@@ -510,7 +510,8 @@ addDevModeIfNeeded() {
   if [ "$has_spring" = false ]; then
     # Handle Maven projects
     if [ -f "pom.xml" ]; then
-      if ! grep -q "vaadin-dev" pom.xml 2>/dev/null; then
+      # Check for actual dependency, not exclusions
+      if ! grep -A 2 -B 2 "vaadin-dev" pom.xml 2>/dev/null | grep -q "<dependency>" 2>/dev/null; then
         [ -z "$TEST" ] && log "Adding vaadin-dev dependency to Maven project (no Spring detected)"
         addMavenDep "com.vaadin" "vaadin-dev" "compile"
       else
