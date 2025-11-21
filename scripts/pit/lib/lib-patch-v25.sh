@@ -14,6 +14,8 @@ applyv25patches() {
        SV=4.0.0-RC2
         ## TODO: document in migration guide to 25
         addHillaStarterIfNeeded $app_
+        ## TODO: document in migration guide to 25 (bakery, mpr-demo, k8s-demo, start)
+        replaceVaadinSpringWithStarter
         ## TODO: document in migration guide to 25
         addDevModeIfNeeded
        ;;
@@ -482,6 +484,30 @@ addAnonymousAllowedToAppLayout() {
     grep -q "import com.vaadin.flow.server.auth.AnonymousAllowed;" "$file" || \
       perl -pi -e 's|^(package\s+.*?;\s*)|\1\nimport com.vaadin.flow.server.auth.AnonymousAllowed;\n|' "$file"
   done
+}
+
+## Replaces vaadin-spring dependency with vaadin-spring-boot-starter in Maven projects
+## This is needed for Vaadin v25 migration where vaadin-spring is deprecated
+## TODO: verify that is explained in migration guide
+replaceVaadinSpringWithStarter() {
+  if [ -f "pom.xml" ]; then
+    # Check if vaadin-spring dependency exists (not as exclusion)
+    if grep -A 2 -B 2 "vaadin-spring" pom.xml 2>/dev/null | grep -q "<dependency>" 2>/dev/null; then
+      # Check if it's not already vaadin-spring-boot-starter
+      if ! grep -q "vaadin-spring-boot-starter" pom.xml 2>/dev/null; then
+        [ -z "$TEST" ] && warn "Replacing vaadin-spring with vaadin-spring-boot-starter in pom.xml" || cmd "## Replacing vaadin-spring with vaadin-spring-boot-starter in pom.xml"
+        
+        # Replace vaadin-spring with vaadin-spring-boot-starter
+        _cmd="perl -pi -e 's|<artifactId>vaadin-spring</artifactId>|<artifactId>vaadin-spring-boot-starter</artifactId>|g' pom.xml"
+        cmd "$_cmd"
+        [ -n "$TEST" ] || eval "$_cmd"
+      else
+        [ -z "$TEST" ] && log "vaadin-spring-boot-starter already present in Maven project"
+      fi
+    else
+      [ -z "$TEST" ] && log "No vaadin-spring dependency found in Maven project"
+    fi
+  fi
 }
 
 ## Adds vaadin-dev dependency for projects without Spring
