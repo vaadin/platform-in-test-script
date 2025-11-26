@@ -5,15 +5,13 @@ const { log, args, createPage, closePage, takeScreenshot, waitForServerReady, di
 
     const page = await createPage(arg.headless);
 
-    await waitForServerReady(page, arg.url);
+    // Wait for server and vaadin ready
+    await waitForServerReady(page, arg.url, {selector: '#outlet > * > *:not(style):not(script)'});
 
     // Dismiss dev mode notification if present
     await dismissDevmode(page);
 
     const text = 'Greet';
-
-    // Wait for vaadin ready
-    await page.waitForSelector('#outlet > * > *:not(style):not(script)');
 
     await takeScreenshot(page, __filename, 'initial-view');
 

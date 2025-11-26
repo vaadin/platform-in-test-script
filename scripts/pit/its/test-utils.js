@@ -173,10 +173,10 @@ function getCallingTestFile() {
 // Wait for the server to be ready and to get a valid response
 async function waitForServerReady(page, url, options = {}) {
   const {
+    selector,
     maxRetries = 35, // Max number of retries
     retryInterval = 5000 // Interval between retries in milliseconds
   } = options;
-
   log(`Opening ${url}\n`);
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     await page.goto('about:blank');
@@ -184,7 +184,11 @@ async function waitForServerReady(page, url, options = {}) {
       const response = await page.goto(url, {timeout: 5000});
       // Check if the response status is not 503
       if (response && response.status() < 400) {
-        await page.waitForTimeout(1000);
+        if (options.selector) {
+          await page.waitForSelector(selector, {timeout: 1000});
+        } else {
+          await page.waitForTimeout(1000);
+        }
         ok(` ✓ Attempt ${attempt} Server is ready and returned a valid response. ${response.status()}\n`);
         await takeScreenshot(page, getCallingTestFile(), 'ss', '_before');
         return response;

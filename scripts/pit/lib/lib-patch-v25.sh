@@ -59,6 +59,10 @@ applyv25patches() {
       ## TODO: check that documentation mention elemental is not a transitive dep anymore
       addMavenDep "com.google.gwt" "gwt-elemental" compile '\<version\>2.9.0\</version\>'
       ;;
+    flow-quickstart-tutorial) 
+      addMavenDep "commons-io" "commons-io" "compile"
+      addGradleDep "commons-io" "commons-io"
+      ;;
   esac
 
   case $vers_ in
@@ -514,6 +518,7 @@ replaceVaadinSpringWithStarter() {
   fi
 }
 
+
 ## Adds vaadin-dev dependency for projects without Spring
 ## Checks if Spring is not present in build files and adds vaadin-dev dependency
 ## TODO: verify that is explained in migration guide
@@ -541,6 +546,8 @@ addDevModeIfNeeded() {
       fi
     fi
 }
+
+
 
 ## Adds Hilla Spring Boot Starter dependency if project uses Hilla
 ## Checks for Java files with Hilla imports or TypeScript files in views directories
@@ -623,6 +630,7 @@ addGradleDep() {
     fi
   fi
 }
+
 
 
 
