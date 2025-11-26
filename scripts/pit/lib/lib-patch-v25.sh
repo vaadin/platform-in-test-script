@@ -520,7 +520,7 @@ addDevModeIfNeeded() {
       # Check for actual dependency, not exclusions
       if ! grep -A 2 -B 2 "vaadin-dev" pom.xml 2>/dev/null | grep -q "<dependency>" 2>/dev/null; then
         [ -z "$TEST" ] && log "Adding vaadin-dev dependency to Maven project"
-        addMavenDep "com.vaadin" "vaadin-dev" "compile"
+        addMavenDep "com.vaadin" "vaadin-dev" "compile" "<optional>true</optional>"
       else
         [ -z "$TEST" ] && log "vaadin-dev dependency already present in Maven project"
       fi
