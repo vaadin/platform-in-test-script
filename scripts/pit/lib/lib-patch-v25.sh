@@ -5,28 +5,12 @@ applyv25patches() {
   [ -d src/main ] && D=src/main || D=*/src/main
   F=$D/frontend
 
-  case $vers_ in
-    *alpha7|*alpha8|*alpha9)       SV=4.0.0-M1 ;;
-    *alpha10|*alpha11)             SV=4.0.0-M2 ;;
-    *alpha12|*beta1|*beta2|*beta3) SV=4.0.0-M3 ;;
-    *beta4)                        SV=4.0.0-RC1 ;;
-    *beta*)
-       SV=4.0.0-RC2
-        ## TODO: document in migration guide to 25
-        addHillaStarterIfNeeded $app_
-        ## TODO: document in migration guide to 25 (bakery, mpr-demo, k8s-demo, start)
-        replaceVaadinSpringWithStarter
-        ## TODO: document in migration guide to 25
-        addDevModeIfNeeded
-       ;;
-  esac
-  changeMavenBlock parent org.springframework.boot spring-boot-starter-parent $SV
-  setVersionInGradle "org.springframework.boot" $SV
 
   addAnonymousAllowedToAppLayout
   updateAppLayoutAfterNavigation
   updateSpringBootApplication
   updateGradleWrapper
+  _opt="<optional>true</optional>"
   case $app_ in
     business-app-starter-flow)
       ## TODO: Update all starters where applicable
@@ -37,6 +21,7 @@ applyv25patches() {
     skeleton-starter-flow-cdi)
       ## TODO: needs to be documented in release notes, but also in migration guide to 25
       patchJaxrs $app_
+      _opt=""
       ;;
     testbench-demo)
       ## TODO: changes are already in v25, make it main branch when 25.0 GA
@@ -75,6 +60,25 @@ applyv25patches() {
       addMavenDep "com.google.gwt" "gwt-elemental" compile '\<version\>2.9.0\</version\>'
       ;;
   esac
+
+  case $vers_ in
+    *alpha7|*alpha8|*alpha9)       SV=4.0.0-M1 ;;
+    *alpha10|*alpha11)             SV=4.0.0-M2 ;;
+    *alpha12|*beta1|*beta2|*beta3) SV=4.0.0-M3 ;;
+    *beta4)                        SV=4.0.0-RC1 ;;
+    *beta*)
+       SV=4.0.0
+        ## TODO: document in migration guide to 25
+        addHillaStarterIfNeeded $app_
+        ## TODO: document in migration guide to 25 (bakery, mpr-demo, k8s-demo, start)
+        replaceVaadinSpringWithStarter
+        ## TODO: document in migration guide to 25
+        addDevModeIfNeeded "$_opt"
+       ;;
+  esac
+
+  changeMavenBlock parent org.springframework.boot spring-boot-starter-parent $SV
+  setVersionInGradle "org.springframework.boot" $SV
 
   ## TODO: document in migration guide to 25
   patchImports 'import com.fasterxml.jackson.core.type.TypeReference;'\
@@ -513,6 +517,7 @@ replaceVaadinSpringWithStarter() {
 ## Adds vaadin-dev dependency for projects without Spring
 ## Checks if Spring is not present in build files and adds vaadin-dev dependency
 ## TODO: verify that is explained in migration guide
+# $1 optional
 addDevModeIfNeeded() {
   # Add vaadin-dev dependency if Spring is not found
     # Handle Maven projects
@@ -520,7 +525,7 @@ addDevModeIfNeeded() {
       # Check for actual dependency, not exclusions
       if ! grep -A 2 -B 2 "vaadin-dev" pom.xml 2>/dev/null | grep -q "<dependency>" 2>/dev/null; then
         [ -z "$TEST" ] && log "Adding vaadin-dev dependency to Maven project"
-        addMavenDep "com.vaadin" "vaadin-dev" "compile" "<optional>true</optional>"
+        addMavenDep "com.vaadin" "vaadin-dev" "compile" "$1"
       else
         [ -z "$TEST" ] && log "vaadin-dev dependency already present in Maven project"
       fi
