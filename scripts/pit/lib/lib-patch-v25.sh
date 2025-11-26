@@ -609,7 +609,7 @@ addGradleDep() {
   if grep -q "implementation.*com\.vaadin:vaadin-spring-boot-starter" "$buildFile"; then
     [ -z "$TEST" ] && warn "Adding implementation '$groupId:$artifactId' after vaadin-spring-boot-starter in $buildFile" || cmd "## Adding implementation '$groupId:$artifactId' after vaadin-spring-boot-starter in $buildFile"
 
-    _cmd="perl -pi -e \"s|(\\s*implementation\\s+['\\\"]com\\.vaadin:vaadin-spring-boot-starter['\\\"].*)|\\1\\n    implementation '$groupId:$artifactId'|\" \"$buildFile\""
+    _cmd="perl -pi -e \"s|(\\s*implementation[\\s'\\\"\\\(]+com\\.vaadin:vaadin-spring-boot-starter['\\\"].*)|\\1\\n    developmentOnly '$groupId:$artifactId'|\" \"$buildFile\""
     cmd "$_cmd"
     [ -n "$TEST" ] || eval "$_cmd"
   else
