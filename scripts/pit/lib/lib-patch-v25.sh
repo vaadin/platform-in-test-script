@@ -65,7 +65,7 @@ applyv25patches() {
       for __file in `getPomFiles`; do
         addMavenDep "$__file" "commons-io" "commons-io" "compile"
       done
-      addGradleDep "commons-io" "commons-io"
+      addGradleDep "commons-io" "commons-io" developmentOnly
       ;;
   esac
 
@@ -545,7 +545,7 @@ addDevModeIfNeeded() {
     if [ -f "build.gradle" ]; then
       if ! grep -q "vaadin-dev" build.gradle 2>/dev/null; then
         [ -z "$TEST" ] && log "Adding vaadin-dev dependency to Gradle project"
-        addGradleDep "com.vaadin" "vaadin-dev"
+        addGradleDep "com.vaadin" "vaadin-dev" developmentOnly
       else
         [ -z "$TEST" ] && log "vaadin-dev dependency already present in Gradle project"
       fi
@@ -597,7 +597,7 @@ addHillaStarterIfNeeded() {
     if [ -f "build.gradle" ]; then
       if ! grep -q "hilla-spring-boot-starter" build.gradle 2>/dev/null; then
         [ -z "$TEST" ] && log "Adding Hilla Spring Boot Starter dependency to Gradle project"
-        addGradleDep "com.vaadin" "hilla-spring-boot-starter"
+        addGradleDep "com.vaadin" "hilla-spring-boot-starter" implementation
       else
         [ -z "$TEST" ] && log "Hilla Spring Boot Starter dependency already present in Gradle project"
       fi
@@ -610,26 +610,28 @@ addHillaStarterIfNeeded() {
 ## Adds a Gradle dependency to build.gradle
 ## $1 groupId
 ## $2 artifactId
+## $3 scope (optional: developmentOnly or implementation, defaults to implementation)
 addGradleDep() {
   local groupId=$1
   local artifactId=$2
+  local scope=${3:-implementation}
   local buildFile="build.gradle"
 
   [ ! -f "$buildFile" ] && return 0
 
   # Check if vaadin-spring-boot-starter is present to add after it
   if grep -q "implementation.*com\.vaadin:vaadin-spring-boot-starter" "$buildFile"; then
-    [ -z "$TEST" ] && warn "Adding implementation '$groupId:$artifactId' after vaadin-spring-boot-starter in $buildFile" || cmd "## Adding implementation '$groupId:$artifactId' after vaadin-spring-boot-starter in $buildFile"
+    [ -z "$TEST" ] && warn "Adding $scope '$groupId:$artifactId' after vaadin-spring-boot-starter in $buildFile" || cmd "## Adding $scope '$groupId:$artifactId' after vaadin-spring-boot-starter in $buildFile"
 
-    _cmd="perl -pi -e \"s|(\\s*implementation[\\s'\\\"\\\(]+com\\.vaadin:vaadin-spring-boot-starter['\\\"].*)|\\1\\n    developmentOnly '$groupId:$artifactId'|\" \"$buildFile\""
+    _cmd="perl -pi -e \"s|(\\s*implementation[\\s'\\\"\\\(]+com\\.vaadin:vaadin-spring-boot-starter['\\\"].*)|\\1\\n    $scope '$groupId:$artifactId'|\" \"$buildFile\""
     cmd "$_cmd"
     [ -n "$TEST" ] || eval "$_cmd"
   else
     # Fallback: add in dependencies block
     if grep -q "dependencies\\s*{" "$buildFile"; then
-      [ -z "$TEST" ] && warn "Adding implementation '$groupId:$artifactId' to dependencies in $buildFile" || cmd "## Adding implementation '$groupId:$artifactId' to dependencies in $buildFile"
+      [ -z "$TEST" ] && warn "Adding $scope '$groupId:$artifactId' to dependencies in $buildFile" || cmd "## Adding $scope '$groupId:$artifactId' to dependencies in $buildFile"
 
-      _cmd="perl -pi -e \"s|(dependencies\\s*{)|\\1\\n    implementation '$groupId:$artifactId'|\" \"$buildFile\""
+      _cmd="perl -pi -e \"s|(dependencies\\s*{)|\\1\\n    $scope '$groupId:$artifactId'|\" \"$buildFile\""
       cmd "$_cmd"
       [ -n "$TEST" ] || eval "$_cmd"
     fi
