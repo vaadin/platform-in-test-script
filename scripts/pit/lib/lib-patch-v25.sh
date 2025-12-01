@@ -59,9 +59,10 @@ applyv25patches() {
       ## TODO: check that documentation mention elemental is not a transitive dep anymore
       addMavenDep pom.xml "com.google.gwt" "gwt-elemental" compile '\<version\>2.9.0\</version\>'
       ;;
-    flow-quickstart-tutorial|multi-module-example)
+    flow-quickstart-tutorial|multi-module-example|flow-spring-examples|vaadin-quarkus)
       ## TODO: document that this transitive dependency has removed, users might rely on that
       ## see https://github.com/vaadin/copilot-internal/issues/7175
+      ## TODO: check https://github.com/vaadin/flow/issues/22858
       for __file in `getPomFiles`; do
         addMavenDep "$__file" "commons-io" "commons-io" "compile"
       done
