@@ -39,7 +39,7 @@ const { log, args, createPage, closePage, takeScreenshot, waitForServerReady, di
     // Look for the text, sometimes rendered in an alert, sometimes in the dom
     let m;
     try {
-        m = await page.getByRole('alert').nth(1).innerText({timeout:500});
+        m = await page.getByRole('alert').nth(1).innerText({timeout:60});
         log(`Found ${text} in an 'alert' role: ${m}`);
     } catch (e) {
         log(`Not Found ${text} in an 'alert' role, looking in DOM`);
