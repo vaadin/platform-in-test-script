@@ -830,7 +830,7 @@ addMavenDep() {
   local POM=$1; local GI=$2; local AI=$3; local SC=$4; local EX="$5"
   local t='    '
   [ -z "$POM" ] && POM=pom.xml
-  __cmd="perl -0777 -pi -e 's|(\n[ \t]*)(</dependencies>\s+(<build>\|<repo\|<dependencyM))|\$1$t<dependency>\$1$t$t<groupId>${GI}</groupId>\$1$t$t<artifactId>${AI}</artifactId>\$1$t$t<scope>${SC}</scope>${EX}\$1$t</dependency>\$1\$2|' $POM"
+  __cmd="perl -0777 -pi -e 's|(\n[ \t]*)(</dependencies>\s+(<build>\|<repo\|<dependencyM\|<!))|\$1$t<dependency>\$1$t$t<groupId>${GI}</groupId>\$1$t$t<artifactId>${AI}</artifactId>\$1$t$t<scope>${SC}</scope>${EX}\$1$t</dependency>\$1\$2|' $POM"
   runCmd -f "Adding dependency $GI $AI $SC to pom.xml" "$__cmd"
 }
 
