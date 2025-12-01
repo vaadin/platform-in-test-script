@@ -1,7 +1,10 @@
-const { log, args, createPage, closePage, takeScreenshot, waitForServerReady, dismissDevmode} = require('./test-utils');
+const { log, args, createPage, closePage, takeScreenshot, waitForServerReady, dismissDevmode, setupCopilotConfig} = require('./test-utils');
 
 (async () => {
     const arg = args();
+
+    setupCopilotConfig();
+
     const page = await createPage(arg.headless, arg.ignoreHTTPSErrors);
     await waitForServerReady(page, arg.url);
 

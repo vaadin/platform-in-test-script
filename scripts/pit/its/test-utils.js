@@ -262,6 +262,25 @@ async function compileAndReload(page, url, options = {}) {
   }
 }
 
+function setupCopilotConfig() {
+  const os = require('os');
+  const copilotConfigPath = path.join(os.homedir(), '.vaadin', 'copilot-configuration.json');
+  const copilotConfig = {
+    dismissedNotifications: ["devmode"],
+    activationButtonPosition: { right: 212, bottom: 73 }
+  };
+
+  fs.mkdirSync(path.dirname(copilotConfigPath), { recursive: true });
+
+  if (fs.existsSync(copilotConfigPath)) {
+    const existingConfig = JSON.parse(fs.readFileSync(copilotConfigPath, 'utf8'));
+    Object.assign(existingConfig, copilotConfig);
+    fs.writeFileSync(copilotConfigPath, JSON.stringify(existingConfig, null, 2));
+  } else {
+    fs.writeFileSync(copilotConfigPath, JSON.stringify(copilotConfig, null, 2));
+  }
+}
+
 module.exports = {
   log, out, err, warn,
   run,
@@ -273,4 +292,5 @@ module.exports = {
   waitForServerReady,
   dismissDevmode,
   compileAndReload,
+  setupCopilotConfig,
 };
