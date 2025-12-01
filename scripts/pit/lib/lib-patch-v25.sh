@@ -530,7 +530,7 @@ replaceVaadinSpringWithStarter() {
 addDevModeIfNeeded() {
   # Add vaadin-dev dependency if Spring is not found
     # Handle Maven projects in all modules
-    for pom in */pom.xml; do
+    for pom in pom.xml */pom.xml; do
       [ -f "$pom" ] || continue
       # Check for actual dependency, not exclusions
       if ! grep -A 2 -B 2 "vaadin-dev" "$pom" 2>/dev/null | grep -q "<dependency>" 2>/dev/null; then
