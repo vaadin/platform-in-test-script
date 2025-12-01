@@ -821,14 +821,16 @@ addRepoToPom() {
 }
 
 ## Adds a maven dep in the block </dependencies> previous to </build>
-## $1 groupId
-## $2 artifactId
-## $3 scope
-## $4 extra content e.g. <version>nnn</version>
+## $1 pom.xml file
+## $2 groupId
+## $3 artifactId
+## $4 scope
+## $5 extra content e.g. <version>nnn</version>
 addMavenDep() {
-  local GI=$1; local AI=$2; local SC=$3; local EX="$4"
+  local POM=$1; local GI=$2; local AI=$3; local SC=$4; local EX="$5"
   local t='    '
-  __cmd="perl -0777 -pi -e 's|(\n[ \t]*)(</dependencies>\s+(<build>\|<repo\|<dependencyM))|\$1$t<dependency>\$1$t$t<groupId>${GI}</groupId>\$1$t$t<artifactId>${AI}</artifactId>\$1$t$t<scope>${SC}</scope>${EX}\$1$t</dependency>\$1\$2|' pom.xml"
+  [ -z "$POM" ] && POM=pom.xml
+  __cmd="perl -0777 -pi -e 's|(\n[ \t]*)(</dependencies>\s+(<build>\|<repo\|<dependencyM))|\$1$t<dependency>\$1$t$t<groupId>${GI}</groupId>\$1$t$t<artifactId>${AI}</artifactId>\$1$t$t<scope>${SC}</scope>${EX}\$1$t</dependency>\$1\$2|' $POM"
   runCmd -f "Adding dependency $GI $AI $SC to pom.xml" "$__cmd"
 }
 

@@ -50,17 +50,21 @@ applyv25patches() {
       ;;
     start)
       ## TODO: document this for tests using spring tests
-      addMavenDep org.springframework.boot spring-boot-webmvc-test test
+      addMavenDep pom.xml org.springframework.boot spring-boot-webmvc-test test
       ## TODO: open an issue in start, why after vaadin:dance this is not installed
       ## For some reason npm install glob@^11.0.3 --save modifies devdeps but not deps
       perl -0777 -pi -e 's|(    "lit":)|\n    "glob": "^11.0.3",$1|' package.json
       ;;
     bookstore-example)
       ## TODO: check that documentation mention elemental is not a transitive dep anymore
-      addMavenDep "com.google.gwt" "gwt-elemental" compile '\<version\>2.9.0\</version\>'
+      addMavenDep pom.xml "com.google.gwt" "gwt-elemental" compile '\<version\>2.9.0\</version\>'
       ;;
-    flow-quickstart-tutorial) 
-      addMavenDep "commons-io" "commons-io" "compile"
+    flow-quickstart-tutorial|multi-module-example)
+      ## TODO: document that this transitive dependency has removed, users might rely on that
+      ## see https://github.com/vaadin/copilot-internal/issues/7175
+      for __file in `getPomFiles`; do
+        addMavenDep "$__file" "commons-io" "commons-io" "compile"
+      done
       addGradleDep "commons-io" "commons-io"
       ;;
   esac
@@ -504,7 +508,7 @@ replaceVaadinSpringWithStarter() {
       # Check if it's not already vaadin-spring-boot-starter
       if ! grep -q "vaadin-spring-boot-starter" pom.xml 2>/dev/null; then
         [ -z "$TEST" ] && warn "Replacing vaadin-spring with vaadin-spring-boot-starter in pom.xml" || cmd "## Replacing vaadin-spring with vaadin-spring-boot-starter in pom.xml"
-        
+
         # Replace vaadin-spring with vaadin-spring-boot-starter
         _cmd="perl -pi -e 's|<artifactId>vaadin-spring</artifactId>|<artifactId>vaadin-spring-boot-starter</artifactId>|g' pom.xml"
         cmd "$_cmd"
@@ -525,16 +529,17 @@ replaceVaadinSpringWithStarter() {
 # $1 optional
 addDevModeIfNeeded() {
   # Add vaadin-dev dependency if Spring is not found
-    # Handle Maven projects
-    if [ -f "pom.xml" ]; then
+    # Handle Maven projects in all modules
+    for pom in */pom.xml; do
+      [ -f "$pom" ] || continue
       # Check for actual dependency, not exclusions
-      if ! grep -A 2 -B 2 "vaadin-dev" pom.xml 2>/dev/null | grep -q "<dependency>" 2>/dev/null; then
-        [ -z "$TEST" ] && log "Adding vaadin-dev dependency to Maven project"
-        addMavenDep "com.vaadin" "vaadin-dev" "compile" "$1"
+      if ! grep -A 2 -B 2 "vaadin-dev" "$pom" 2>/dev/null | grep -q "<dependency>" 2>/dev/null; then
+        [ -z "$TEST" ] && log "Adding vaadin-dev dependency to Maven project ($pom)"
+        addMavenDep "$pom" "com.vaadin" "vaadin-dev" "compile" "$1"
       else
-        [ -z "$TEST" ] && log "vaadin-dev dependency already present in Maven project"
+        [ -z "$TEST" ] && log "vaadin-dev dependency already present in Maven project ($pom)"
       fi
-    fi
+    done
 
     # Handle Gradle projects
     if [ -f "build.gradle" ]; then
@@ -582,7 +587,7 @@ addHillaStarterIfNeeded() {
     if [ -f "pom.xml" ]; then
       if ! grep -q "hilla-spring-boot-starter" pom.xml 2>/dev/null; then
         [ -z "$TEST" ] && log "Adding Hilla Spring Boot Starter dependency to Maven project"
-        addMavenDep "com.vaadin" "hilla-spring-boot-starter" "compile"
+        addMavenDep pom.xml "com.vaadin" "hilla-spring-boot-starter" "compile"
       else
         [ -z "$TEST" ] && log "Hilla Spring Boot Starter dependency already present in Maven project"
       fi
