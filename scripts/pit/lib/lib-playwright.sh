@@ -1,5 +1,3 @@
-SCRSHT="$PIT_SCR_FOLDER/its/screenshot.js"
-
 ## LIBRARY for installing and running playwright tests
 
 ## Check whether playwright is installed in node_modules folder of the test node-script

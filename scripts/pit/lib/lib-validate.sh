@@ -109,14 +109,9 @@ runValidations() {
 
   # 11
   if [ -n "$test" -a -z "$SKIPTESTS" -a -z "$SKIPPW" ]; then
-    # Take screenshot before running tests
-    [ -n "$SCREENSHOTS" ] && runPlaywrightTests "$SCRSHT" "$file" "$mode" "$name" "$version" "--port=$port" "--prefix=_before"
 
     runPlaywrightTests "$test" "$file" "$mode" "$name" "$version" "--port=$port"
     test_result=$?
-
-    # Take screenshot after tests succeed
-    [ -n "$SCREENSHOTS" ] && runPlaywrightTests "$SCRSHT" "$file" "$mode" "$name" "$version" "--port=$port" "--prefix=_after"
 
     # Return the test result
     [ -z "$TEST" -a $test_result != 0 ] && return 1
