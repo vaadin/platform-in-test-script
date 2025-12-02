@@ -260,7 +260,6 @@ getPort() {
 ## Get SIDE test file
 getTest() {
   case $1 in
-    skeleton*) echo "hello.js";;
     bakery-app-starter-flow-spring);;
     mpr-demo) echo "mpr-demo.js";;
     spreadsheet-demo) echo "spreadsheet-demo.js";;
