@@ -6,13 +6,13 @@ const { log, args, createPage, closePage, takeScreenshot, waitForServerReady, di
     setupCopilotConfig();
 
     const page = await createPage(arg.headless, arg.ignoreHTTPSErrors);
-    await waitForServerReady(page, arg.url);
+    await waitForServerReady(page, arg.url, arg);
 
     await page.evaluate(() =>
         window.localStorage.setItem("vaadin.live-reload.dismissedNotifications","liveReloadUnavailable,preserveOnRefreshWarning")
     );
 
-    await takeScreenshot(page, __filename, 'loaded');
+    await takeScreenshot(page, arg, __filename, 'page-loaded');
 
     log('Testing login flow');
     await page.waitForURL(`${arg.url}login`);
@@ -21,20 +21,20 @@ const { log, args, createPage, closePage, takeScreenshot, waitForServerReady, di
     await page.getByLabel('Password').first().fill('admin');
     await page.getByLabel('Password').first().press('Tab');
     await page.getByRole('button', { name: 'Log in' }).locator('div').click();
-    await takeScreenshot(page, __filename, 'loggedin');
+    await takeScreenshot(page, arg, __filename, 'logged-in');
     await page.waitForURL(`${arg.url}`);
 
     log('Testing Personas navigation');
     await page.getByRole('link').locator('text=/Personas/').click();
-    await takeScreenshot(page, __filename, 'personas');
+    await takeScreenshot(page, arg, __filename, 'personas');
     await page.waitForURL(`${arg.url}personas`);
 
     await dismissDevmode(page);
-    await takeScreenshot(page, __filename, 'dismissed');
+    await takeScreenshot(page, arg, __filename, 'devmode-dismissed');
 
     log('Testing person creation form');
     await page.getByRole('button', { name: '+' }).locator('div').click();
-    await takeScreenshot(page, __filename, 'new');
+    await takeScreenshot(page, arg, __filename, 'new-person-form');
     await page.waitForURL(`${arg.url}personas/new`);
 
     await page.locator('.detail').getByLabel('First Name').click();
@@ -44,18 +44,18 @@ const { log, args, createPage, closePage, takeScreenshot, waitForServerReady, di
     await page.locator('.detail').getByLabel('Last Name').press('Tab');
     await page.locator('.detail').getByLabel('First Name').click();
     await page.locator('.detail').getByLabel('Email').press('Escape');
-    await takeScreenshot(page, __filename, 'escape');
+    await takeScreenshot(page, arg, __filename, 'form-filled');
 
     log('Testing form preservation after reload');
     await page.evaluate(() => window.location.reload());
-    await takeScreenshot(page, __filename, 'reload');
+    await takeScreenshot(page, arg, __filename, 'page-reloaded');
     await page.waitForURL(`${arg.url}personas/new`);
 
     await page.getByRole('button', { name: 'No' }).locator('div').click();
-    await takeScreenshot(page, __filename, 'clicked-no');
+    await takeScreenshot(page, arg, __filename, 'no-clicked');
     const name = await page.locator('.detail').getByLabel('First Name').inputValue();
     if (name != 'FOOBAR') throw new Error();
 
     log('K8s demo tested successfully');
-    await closePage(page);
+    await closePage(page, arg);
 })();

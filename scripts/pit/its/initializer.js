@@ -9,13 +9,13 @@ const fs = require('fs');
     const page = await createPage(arg.headless, arg.ignoreHTTPSErrors);
     page.setViewportSize({width: 811, height: 1224});
 
-    await waitForServerReady(page, arg.url);
+    await waitForServerReady(page, arg.url, arg);
 
     // Dismiss dev mode notification if present
     await dismissDevmode(page);
 
     await page.waitForTimeout(3000);
-    await takeScreenshot(page, __filename, 'view-loaded');
+    await takeScreenshot(page, arg, __filename, 'view-loaded');
 
     if (arg.mode == 'prod') {
         log("Skipping creating views for production mode");
@@ -30,23 +30,23 @@ const fs = require('fs');
         log(`Creating ${viewName} view using copilot`);
         await page.getByRole('link', { name: linkText }).click();
         await page.waitForTimeout(2000);
-        await takeScreenshot(page, __filename, 'view-created');
-        await waitForServerReady(page, arg.url, { maxRetries: 30, retryInterval: 2000 });
+        await takeScreenshot(page, arg, __filename, 'view-created');
+        await waitForServerReady(page, arg.url, arg, { maxRetries: 30, retryInterval: 2000 });
         const view = (await execCommand(`find src/main/frontend src/main/java -name '${viewName}'`)).stdout.trim();
         expect(fs.existsSync(view), `Should exist ${view}`).toBeTruthy();
 
         // Compile the application so as spring-devtools watches the changes
         await compileAndReload(page, arg.url, { waitTime: 10000 });
         // Additional reload to ensure server is ready after compilation
-        await waitForServerReady(page, arg.url, { maxRetries: 30, retryInterval: 2000 });
+        await waitForServerReady(page, arg.url, arg, { maxRetries: 30, retryInterval: 2000 });
 
-        await takeScreenshot(page, __filename, 'app-compiled');
+        await takeScreenshot(page, arg, __filename, 'app-compiled');
 
         // Wait for the frontend to be built
         log(`Checking if the new view is Building`);
         const building = page.getByText('Building');
         if (await building.isVisible()) {
-            await takeScreenshot(page, __filename, 'view-building');
+            await takeScreenshot(page, arg, __filename, 'view-building');
             log(`Waiting for frontend to be built ...`)
             while(await building.isVisible()) {
                 process.stderr.write(".");
@@ -56,9 +56,9 @@ const fs = require('fs');
         }
 
         log(`checking if the new view is available`);
-        await waitForServerReady(page, arg.url, { maxRetries: 30, retryInterval: 2000 });
+        await waitForServerReady(page, arg.url, arg, { maxRetries: 30, retryInterval: 2000 });
         await page.waitForTimeout(2000);
-        await takeScreenshot(page, __filename, 'view-reloaded-after-compiling');
+        await takeScreenshot(page, arg, __filename, 'view-reloaded-after-compiling');
 
         const text = page.getByText('Welcome');
         await expect(text).toBeVisible();
@@ -67,5 +67,5 @@ const fs = require('fs');
         fs.unlinkSync(view);
     }
 
-    await closePage(page);
+    await closePage(page, arg);
 })();

@@ -2,7 +2,7 @@ const {log, dismissDevmode, args, createPage, closePage, takeScreenshot, waitFor
 
 (async () => {
   const arg = args();
-  
+
   if (!arg.prefix) {
     log('Error: Debe proporcionar un prefijo usando --prefix=<nombre>');
     process.exit(1);
@@ -15,9 +15,9 @@ const {log, dismissDevmode, args, createPage, closePage, takeScreenshot, waitFor
     sel = 'app-view';
   }
   const page = await createPage(arg.headless, arg.ignoreHTTPSErrors);
-  await waitForServerReady(page, url);
+  await waitForServerReady(page, url, arg);
   await page.waitForSelector(sel);
-  
-  await takeScreenshot(page, arg.name ? arg.name : __filename, 'screenshot', arg.prefix);
-  await closePage(page);
+
+  await takeScreenshot(page, arg, __filename, 'screenshot');
+  await closePage(page, arg);
 })();

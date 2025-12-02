@@ -5,12 +5,12 @@ const { log, args, createPage, closePage, takeScreenshot, waitForServerReady, ex
 
     const page = await createPage(arg.headless, arg.ignoreHTTPSErrors);
 
-    await waitForServerReady(page, arg.url);
-    await takeScreenshot(page, __filename, 'page-loaded');
+    await waitForServerReady(page, arg.url, arg);
+    await takeScreenshot(page, arg, __filename, 'page-loaded');
 
     await page.locator('text=Click me').click({timeout:90000});
     await page.locator('text=Clicked');
-    await takeScreenshot(page, __filename, 'initial-click');
+    await takeScreenshot(page, arg, __filename, 'initial-click');
 
     if (arg.mode == 'prod') {
         log("Skipping hotswap checks for production mode");
@@ -20,24 +20,24 @@ const { log, args, createPage, closePage, takeScreenshot, waitForServerReady, ex
 
         await execCommand(`perl -pi -e s/Click/Foo/g ${java}`);
         await compileAndReload(page, arg.url, { name: arg.name });
-        await takeScreenshot(page, __filename, 'after-compile-foo');
+        await takeScreenshot(page, arg, __filename, 'after-compile-foo');
 
         await page.locator('text=Foo me').click({timeout:90000});
         const foo = await page.locator('text=Fooed').textContent();
         log(`Ok (${foo})`);
-        await takeScreenshot(page, __filename, 'foo-clicked');
+        await takeScreenshot(page, arg, __filename, 'foo-clicked');
 
         log(`Restoring ${java} and Compiling ...`);
 
         await execCommand(`git checkout ${java}`)
         await compileAndReload(page, arg.url, { name: arg.name });
-        await takeScreenshot(page, __filename, 'after-restore-compile');
+        await takeScreenshot(page, arg, __filename, 'after-restore-compile');
 
         await page.locator('text=Click me').click({timeout:90000});
         const click = await page.locator('text=Clicked').textContent();
         log(`Ok (${click})`);
-        await takeScreenshot(page, __filename, 'restored-click');
+        await takeScreenshot(page, arg, __filename, 'restored-click');
     }
 
-    await closePage(page);
+    await closePage(page, arg);
 })();

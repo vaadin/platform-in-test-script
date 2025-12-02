@@ -13,14 +13,14 @@ const { log, args, createPage, closePage, takeScreenshot, waitForServerReady, di
     // TODO: should work with smaller viewport too like in 24.9
     // The createPage function already sets viewport to 1792x970, which should be sufficient
     
-    await waitForServerReady(page1, arg.url);
-    await waitForServerReady(page2, arg.url);
+    await waitForServerReady(page1, arg.url, arg);
+    await waitForServerReady(page2, arg.url, arg);
 
     // Dismiss dev mode notifications if present
     await dismissDevmode(page1);
     await dismissDevmode(page2);
-    await takeScreenshot(page1, __filename, 'page1-loaded');
-    await takeScreenshot(page2, __filename, 'page2-loaded');
+    await takeScreenshot(page1, arg, __filename, 'page1-loaded');
+    await takeScreenshot(page2, arg, __filename, 'page2-loaded');
 
     /*
     This script tests the collaboration view from Vaadin Start. 
@@ -37,7 +37,7 @@ const { log, args, createPage, closePage, takeScreenshot, waitForServerReady, di
     await page1.getByLabel('Message').click();
     await page1.getByLabel('Message').fill('Test from user 1');
     await page1.getByRole('button', { name: 'Send' }).click();
-    await takeScreenshot(page1, __filename, 'user1-sent-message');
+    await takeScreenshot(page1, arg, __filename, 'user1-sent-message');
 
     //check if user 2 received it and reply
     await page2.getByText('#general').click();
@@ -45,11 +45,11 @@ const { log, args, createPage, closePage, takeScreenshot, waitForServerReady, di
     await page2.getByLabel('Message').click();
     await page2.getByLabel('Message').fill('Test from user 2');
     await page2.getByRole('button', { name: 'Send' }).click();
-    await takeScreenshot(page2, __filename, 'user2-sent-reply');
+    await takeScreenshot(page2, arg, __filename, 'user2-sent-reply');
 
     //check if user1 received answer
     await page1.getByText('Test from user 2');
-    await takeScreenshot(page1, __filename, 'user1-received-reply');
+    await takeScreenshot(page1, arg, __filename, 'user1-received-reply');
 
     log('Testing avatar groups');
 
@@ -77,7 +77,7 @@ const { log, args, createPage, closePage, takeScreenshot, waitForServerReady, di
     await page1.getByRole('button', { name: 'Save' }).click();
     //wait for the notification of data updated (the count is only there for the promise to be resolved)
     await page1.getByRole('alert').count();
-    await takeScreenshot(page1, __filename, 'user1-edited-entry');
+    await takeScreenshot(page1, arg, __filename, 'user1-edited-entry');
 
     //check if changes appear for user 2
     await page2.getByRole('link', { name: 'Master Detail' }).click();
@@ -93,7 +93,7 @@ const { log, args, createPage, closePage, takeScreenshot, waitForServerReady, di
     await page2.getByRole('button', { name: 'Save' }).click();
     //wait for the notification of data updated
     await page2.getByRole('alert').count();
-    await takeScreenshot(page2, __filename, 'user2-edited-entry');
+    await takeScreenshot(page2, arg, __filename, 'user2-edited-entry');
 
     await page1.waitForTimeout(1000);
     await page2.waitForTimeout(1000);
@@ -101,10 +101,10 @@ const { log, args, createPage, closePage, takeScreenshot, waitForServerReady, di
     await page2.reload();
 
     await page1.getByText('Gene James, 3rd', { exact: true }).click();
-    await takeScreenshot(page1, __filename, 'user1-sees-changes');
+    await takeScreenshot(page1, arg, __filename, 'user1-sees-changes');
 
     log('Collaboration test completed successfully');
 
-    await closePage(page1);
-    await closePage(page2);
+    await closePage(page1, arg);
+    await closePage(page2, arg);
 })();

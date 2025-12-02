@@ -132,8 +132,8 @@ async function createPage(headless, ignoreHTTPSErrors) {
     page.browser = browser;
     return page;
 }
-async function closePage(page) {
-    await takeScreenshot(page, getCallingTestFile(), 'ss', '_after');
+async function closePage(page, arg) {
+    await takeScreenshot(page, arg, getCallingTestFile(), 'after');
     await page.goto('about:blank');
     await page.context().close();
     await page.browser.close();
@@ -141,16 +141,16 @@ async function closePage(page) {
 
 const screenshots = "screenshots.out"
 let sscount = 0;
-async function takeScreenshot(page, name, descr, prefix) {
+// Screenshot filename format: args.name-args.mode-args.version-test_filename-test_subject-counter.png
+async function takeScreenshot(page, arg, testFile, subject) {
   if (process.env.FAST) return;
-  const scr = path.basename(name);
+  const testName = path.basename(testFile).replace('.js', '');
   const cnt = String(++sscount).padStart(2, "0");
-  const prefixStr = prefix ? prefix + '-' : '';
-  const modeStr = mode ? mode + '-' : '';
-  const file = `${screenshots}/${prefixStr}${modeStr}${version ? version + '-': '' }${scr}-${cnt}-${descr}.png`;
+  const parts = [arg.name, arg.mode, arg.version, testName, subject, cnt].filter(Boolean);
+  const file = `${screenshots}/${parts.join('-')}.png`;
   await page.waitForTimeout(/^win/.test(process.platform) ? 10000 : process.env.GITHUB_ACTIONS ? 800 : 200);
   await page.screenshot({ path: file });
-  out(` 📸 Screenshot taken: ${file}\n`);
+  ok(` 📸 Screenshot taken: ${file}\n`);
 }
 
 // Helper function to get the calling test file name
@@ -171,7 +171,7 @@ function getCallingTestFile() {
 }
 
 // Wait for the server to be ready and to get a valid response
-async function waitForServerReady(page, url, options = {}) {
+async function waitForServerReady(page, url, arg, options = {}) {
   const {
     selector,
     maxRetries = 35, // Max number of retries
@@ -190,7 +190,7 @@ async function waitForServerReady(page, url, options = {}) {
           await page.waitForTimeout(1000);
         }
         ok(` ✓ Attempt ${attempt} Server is ready and returned a valid response. ${response.status()}\n`);
-        await takeScreenshot(page, getCallingTestFile(), 'ss', '_before');
+        await takeScreenshot(page, arg, getCallingTestFile(), 'before');
         return response;
       } else {
         out(` ⏲ Attempt ${attempt} Server is not ready yet. ${response.status()}\n`);
@@ -204,7 +204,7 @@ async function waitForServerReady(page, url, options = {}) {
     }
     await page.waitForTimeout(retryInterval);
   }
-  await takeScreenshot(page, getCallingTestFile(), 'ss', '_before');
+  await takeScreenshot(page, arg, getCallingTestFile(), 'before');
   throw new Error(`Server did not become ready after ${maxRetries} attempts.\n`);
 }
 

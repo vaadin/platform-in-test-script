@@ -19,8 +19,8 @@ const { log, args, closePage, takeScreenshot, waitForServerReady } = require('./
     page.on('console', msg => console.log("> CONSOLE:", (msg.text() + ' - ' + msg.location().url).replace(/\s+/g, ' ')));
     page.on('pageerror', err => console.log("> PAGEERROR:", ('' + err).replace(/\s+/g, ' ')));
 
-    await waitForServerReady(page, arg.url);
-    await takeScreenshot(page, __filename, 'page-loaded');
+    await waitForServerReady(page, arg.url, arg);
+    await takeScreenshot(page, arg, __filename, 'page-loaded');
 
     await page.evaluate(() => {
         window.localStorage.setItem("vaadin.live-reload.dismissedNotifications","liveReloadUnavailable,preserveOnRefreshWarning")
@@ -30,7 +30,7 @@ const { log, args, closePage, takeScreenshot, waitForServerReady } = require('./
     log('Testing Basic functionality');
     await page.getByRole('link', { name: 'Basic functionality' }).click();
     await page.waitForURL(`${arg.url}demo/basic`);
-    await takeScreenshot(page, __filename, 'basic-functionality');
+    await takeScreenshot(page, arg, __filename, 'basic-functionality');
 
     await page.locator('.col2').first().click();
     await sleep(100);
@@ -40,7 +40,7 @@ const { log, args, closePage, takeScreenshot, waitForServerReady } = require('./
     log('Testing Collaborative features');
     await page.getByRole('link', { name: 'Collaborative features' }).click();
     await page.waitForURL(`${arg.url}demo/collaborative`);
-    await takeScreenshot(page, __filename, 'collaborative-features');
+    await takeScreenshot(page, arg, __filename, 'collaborative-features');
 
     await page.locator('vaadin-spreadsheet div:has-text("Loan calculator")').nth(2).click();
     await page.getByText('5.00%').dblclick();
@@ -56,26 +56,26 @@ const { log, args, closePage, takeScreenshot, waitForServerReady } = require('./
     await page.locator('#cellinput').press('Enter');
     await page.getByText('$13,310.34').click();
     await sleep(100);
-    await takeScreenshot(page, __filename, 'loan-calculator-tested');
+    await takeScreenshot(page, arg, __filename, 'loan-calculator-tested');
 
     log('Testing Grouping features');
     await page.getByRole('link', { name: 'Grouping' }).click();
     await page.waitForURL(`${arg.url}demo/grouping`);
     await page.getByText('+').nth(3).click();
     await page.getByText('December').click();
-    await takeScreenshot(page, __filename, 'grouping-tested');
+    await takeScreenshot(page, arg, __filename, 'grouping-tested');
 
     log('Testing Report mode');
     await page.getByRole('link', { name: 'Report mode' }).click();
     await page.waitForURL(`${arg.url}demo/reportMode`);
     await page.getByText('547 Demo Suites #85').click();
-    await takeScreenshot(page, __filename, 'report-mode-tested');
+    await takeScreenshot(page, arg, __filename, 'report-mode-tested');
 
     log('Testing Simple invoice');
     await page.getByRole('link', { name: 'Simple invoice' }).click();
     await page.waitForURL(`${arg.url}demo/simpleInvoice`);
     await page.getByText('547 Demo Suites #85').click();
-    await takeScreenshot(page, __filename, 'simple-invoice-tested');
+    await takeScreenshot(page, arg, __filename, 'simple-invoice-tested');
 
     log('Spreadsheet demo tested successfully');
     await context.close();
