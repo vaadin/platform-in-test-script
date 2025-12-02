@@ -11,6 +11,7 @@ react-crm-tutorial
 react-tutorial
 test-hybrid-react
 default
+default_partial-prerelease
 latest-java_partial-auth_partial-prerelease
 archetype-hotswap
 archetype-jetty
