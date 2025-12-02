@@ -106,6 +106,8 @@ const args = () => {
       ret.prefix = a.split('=')[1];
     } else if (/^--name=/.test(a)) {
       ret.name = a.split('=')[1];
+    } else if (/^--screenshots/.test(a)) {
+      ret.screenshot = true;
     }
   });
   if (!ret.url) {
@@ -133,7 +135,9 @@ async function createPage(headless, ignoreHTTPSErrors) {
     return page;
 }
 async function closePage(page, arg) {
-    await takeScreenshot(page, arg, getCallingTestFile(), 'after');
+    if (arg.screenshot) {
+        await takeScreenshot(page, arg, getCallingTestFile(), 'after');
+    }
     await page.goto('about:blank');
     await page.context().close();
     await page.browser.close();
@@ -190,7 +194,9 @@ async function waitForServerReady(page, url, arg, options = {}) {
           await page.waitForTimeout(1000);
         }
         ok(` ✓ Attempt ${attempt} Server is ready and returned a valid response. ${response.status()}\n`);
-        await takeScreenshot(page, arg, getCallingTestFile(), 'before');
+        if (arg.screenshot) {
+            await takeScreenshot(page, arg, getCallingTestFile(), 'before');
+        }
         return response;
       } else {
         out(` ⏲ Attempt ${attempt} Server is not ready yet. ${response.status()}\n`);
@@ -204,7 +210,9 @@ async function waitForServerReady(page, url, arg, options = {}) {
     }
     await page.waitForTimeout(retryInterval);
   }
-  await takeScreenshot(page, arg, getCallingTestFile(), 'before');
+  if (arg.screenshot) {
+      await takeScreenshot(page, arg, getCallingTestFile(), 'before');
+  }
   throw new Error(`Server did not become ready after ${maxRetries} attempts.\n`);
 }
 

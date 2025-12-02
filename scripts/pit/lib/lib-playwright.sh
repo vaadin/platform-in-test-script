@@ -42,6 +42,8 @@ runPlaywrightTests() {
   [ -f "$_test_file" ] && checkPlaywrightInstallation "$_test_file" || return 0
 
   _args="$* --name=$_name --version=$_version --mode=$_mode"
+  [ -n "$SCREENSHOTS" ] && _args="$_args --screenshots"
+
   isHeadless && _args="$_args --headless"
   log "Running visual test: $_base_name"
   PATH=$PATH START=$START runToFile "'$NODE' '$_test_file' $_args" "$_pfile" "$VERBOSE" true
