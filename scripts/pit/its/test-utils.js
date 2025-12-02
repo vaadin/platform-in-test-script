@@ -146,12 +146,20 @@ async function closePage(page, arg) {
 const screenshots = "screenshots.out"
 let sscount = 0;
 // Screenshot filename format: args.name-args.mode-args.version-test_filename-test_subject-counter.png
+// For 'before'/'after' screenshots: prefixed with _0_ and _1_ respectively to sort first in folder
 async function takeScreenshot(page, arg, testFile, subject) {
   if (process.env.FAST) return;
   const testName = path.basename(testFile).replace('.js', '');
   const cnt = String(++sscount).padStart(2, "0");
+  // Use _0_ prefix for 'before' and _1_ prefix for 'after' so they sort first
+  let prefix = '';
+  if (subject === 'before') {
+    prefix = '_0_';
+  } else if (subject === 'after') {
+    prefix = '_1_';
+  }
   const parts = [arg.name, arg.mode, arg.version, testName, subject, cnt].filter(Boolean);
-  const file = `${screenshots}/${parts.join('-')}.png`;
+  const file = `${screenshots}/${prefix}${parts.join('-')}.png`;
   await page.waitForTimeout(/^win/.test(process.platform) ? 10000 : process.env.GITHUB_ACTIONS ? 800 : 200);
   await page.screenshot({ path: file });
   ok(` 📸 Screenshot taken: ${file}\n`);
