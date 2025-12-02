@@ -152,14 +152,17 @@ async function takeScreenshot(page, arg, testFile, subject) {
   const testName = path.basename(testFile).replace('.js', '');
   const cnt = String(++sscount).padStart(2, "0");
   // Use _0_ prefix for 'before' and _1_ prefix for 'after' so they sort first
+  let ssType = undefined;
   let prefix = '';
   if (subject === 'before') {
-    prefix = '_0_';
+    ssType = '0_befr';
+    prefix = '_';
   } else if (subject === 'after') {
-    prefix = '_1_';
+    ssType = '1_aftr';
+    prefix = '_';
   }
-  const parts = [arg.name, arg.mode, arg.version, testName, subject, cnt].filter(Boolean);
-  const file = `${screenshots}/${prefix}${parts.join('-')}.png`;
+  const parts = [arg.name, arg.mode, ssType, arg.version, testName, subject, cnt].filter(Boolean);
+  const file = `${screenshots}/${parts.filter(s => !!s).join('-')}.png`;
   await page.waitForTimeout(/^win/.test(process.platform) ? 10000 : process.env.GITHUB_ACTIONS ? 800 : 200);
   await page.screenshot({ path: file });
   ok(` 📸 Screenshot taken: ${file}\n`);
