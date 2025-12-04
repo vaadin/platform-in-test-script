@@ -18,7 +18,7 @@ installPlaywright() {
 
 ## Check if playwright is installed, otherwise install it
 checkPlaywrightInstallation() {
-  [ -n "$UPDATE" ] && installPlaywright "$1"
+  [ -z "$UPDATE" ] || installPlaywright "$1" || return 1
   isInstalledPlaywright "$1" && return 0
   installPlaywright "$1"
 }
