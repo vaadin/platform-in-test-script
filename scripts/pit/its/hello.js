@@ -30,7 +30,6 @@ const { log, args, createPage, closePage, takeScreenshot, waitForServerReady, di
 
     // Click the button
     await page.locator('vaadin-button').click();
-    await takeScreenshot(page, arg, __filename, 'button-clicked');
 
     // Look for the text, sometimes rendered in an alert, sometimes in the dom
     let m;
@@ -38,8 +37,13 @@ const { log, args, createPage, closePage, takeScreenshot, waitForServerReady, di
         m = await page.getByRole('alert').nth(1).innerText({timeout: 500});
     } catch (e) {
         log(`Not Found ${text} in an 'alert' role`);
-        m = await page.locator(`text=/${text}/`).first().innerText({timeout: 5000});
+        try {
+            m = await page.locator(`text=/${text}/`).first().innerText({timeout: 500});
+        } catch (error) {
+            log(`Not Found ${text} in an 'text=/${text}/' locator`);
+        }
     }
+    await takeScreenshot(page, arg, __filename, 'button-clicked');
     if (!new RegExp(text).test(m)) {
         throw new Error(`${text} text not found in ${m}`);
     }
