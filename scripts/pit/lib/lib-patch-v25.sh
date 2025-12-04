@@ -68,6 +68,9 @@ applyv25patches() {
       done
       addGradleDep "commons-io" "commons-io" developmentOnly
       ;;
+    archetype*|bookstore-*|client-server-addon-template|flow-spring-examples|initializer-vaadin-maven-flow|initializer-vaadin-maven-react|latest-java_partial-auth_partial-prerelease|business-app-starter-flow|layout-examples|mpr-demo|releases-graph|spreadsheet-demo|testbench-demo|vaadin-database-example|vaadin-form-example|vaadin-localization-example|vaadin-oauth-example|vaadin-rest-example) 
+      ## TODO: document that if no @Theme it needs to be added
+      addLumoStyleSheet;;
   esac
 
   case $vers_ in
@@ -260,6 +263,34 @@ updateTheme() {
     [ -z "$TEST" ] && warn "adding @CssImport for Lumo theme to $F" || cmd "## adding @CssImport for Lumo theme to $F"
     perl -pi -e 's|(public\s+class\s+.*?implements\s+AppShellConfigurator\s*\{)|\@com.vaadin.flow.component.dependency.CssImport("\@vaadin/vaadin-lumo-styles/lumo.css")\n\1|' $F
   fi
+}
+
+## Add @StyleSheet(Lumo.STYLESHEET) to AppShellConfigurator classes that don't have @Theme or @StyleSheet
+## TODO: needs to be documented in vaadin migration guide to 25
+addLumoStyleSheet() {
+  F=`grep -rl 'implements AppShellConfigurator' . --include='*.java'`
+  [ -z "$F" ] && return 0
+
+  for file in $F; do
+    # Skip if file already has @Theme or @StyleSheet
+    grep -q '@Theme' "$file" && continue
+    grep -q '@StyleSheet' "$file" && continue
+
+    [ -z "$TEST" ] && warn "adding @StyleSheet(Lumo.STYLESHEET) to $file" || cmd "## adding @StyleSheet(Lumo.STYLESHEET) to $file"
+
+    # Add import for Lumo if not present
+    if ! grep -q 'import com.vaadin.flow.theme.lumo.Lumo;' "$file"; then
+      perl -pi -e 's|^(package\s+.*?;\s*)|\1\nimport com.vaadin.flow.theme.lumo.Lumo;|' "$file"
+    fi
+
+    # Add import for StyleSheet if not present
+    if ! grep -q 'import com.vaadin.flow.component.dependency.StyleSheet;' "$file"; then
+      perl -pi -e 's|^(package\s+.*?;\s*)|\1\nimport com.vaadin.flow.component.dependency.StyleSheet;|' "$file"
+    fi
+
+    # Add @StyleSheet(Lumo.STYLESHEET) annotation before the class declaration
+    perl -pi -e 's|(public\s+class\s+\w+\s+implements\s+AppShellConfigurator)|\@StyleSheet(Lumo.STYLESHEET)\n\1|' "$file"
+  done
 }
 removeJsImport() {
   value=$1
