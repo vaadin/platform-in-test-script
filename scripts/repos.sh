@@ -68,7 +68,7 @@ flow-hilla-hybrid-example
 designer-tutorial
 walking-skeleton:v24.9-hybrid
 releases-graph
-expo-flow
+expo-flow:v25
 "
 
 ## mpr-demo_jdk17 might be revived with _jdk21 at some point
