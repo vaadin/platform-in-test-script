@@ -1,12 +1,15 @@
 const { expect } = require('@playwright/test');
-const { log, args, createPage, closePage, takeScreenshot, waitForServerReady } = require('./test-utils');
+const { dismissDevmode, setupCopilotConfig, args, createPage, closePage, takeScreenshot, waitForServerReady } = require('./test-utils');
 
 (async () => {
     const arg = args();
 
-    const page = await createPage(arg.headless);
+    setupCopilotConfig();
 
+    const page = await createPage(arg.headless);
     await waitForServerReady(page, arg.url, arg);
+
+    dismissDevmode(page);
 
     await page.locator('html').first().innerHTML();
     await takeScreenshot(page, arg, __filename, 'page-loaded');
