@@ -34,7 +34,7 @@ const { log, args, createPage, closePage, takeScreenshot, waitForServerReady, di
     // 2) <vaadin-button tabindex="0" role="button" has-tooltip="" part="toggle-button" aria-expanded="true" theme="icon tertiary" aria-label="Hide Log" aria-controls="content" aria-describedby="vaadin-tooltip-10">…</vaadin-button> aka getByLabel('Hide Log')
     // 3) <vaadin-button tabindex="0" role="button" theme="tertiary" part="title-button" class="cursor-inherit font-bold justify-start max-w-full overflow-hidden px-0 text-xs uppercase">…</vaadin-button> aka getByText('Log', { exact: true })
     // 4) <vaadin-button tabindex="0" role="button" has-tooltip="" part="popup-button" theme="icon tertiary" aria-label="Open Log as a popup" aria-describedby="vaadin-tooltip-11">…</vaadin-button> aka getByLabel('Open Log as a popup')
-    await page.getByRole('button', { name: /hello/i }).click();
+    await page.getByRole('button', { name: /hello|start editing/i }).click();
 
     // Look for the text, sometimes rendered in an alert, sometimes in the dom
     let m;
