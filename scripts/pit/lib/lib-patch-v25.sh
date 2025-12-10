@@ -78,7 +78,7 @@ applyv25patches() {
     *alpha10|*alpha11)             SV=4.0.0-M2 ;;
     *alpha12|*beta1|*beta2|*beta3) SV=4.0.0-M3 ;;
     *beta4)                        SV=4.0.0-RC1 ;;
-    *beta*)
+    *beta*|*-rc*)
        SV=4.0.0
         ## TODO: document in migration guide to 25
         addHillaStarterIfNeeded $app_
