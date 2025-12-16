@@ -43,11 +43,6 @@ applyv25patches() {
       ## TODO: Update Lumo imports in TypeScript files
       patchLumoImports
       ;;
-    archetype-spring|initializer-vaadin-maven-react)
-      ## TODO: spring 4 does not enables this prop as default as before
-      ## should we deliver starters or demos with property enabled?
-      enableLiveReload
-      ;;
     start)
       ## TODO: document this for tests using spring tests
       addMavenDep pom.xml org.springframework.boot spring-boot-webmvc-test test
@@ -159,11 +154,6 @@ cleanAfterBumpingVersions() {
       [ -z "$P" ] || runCmd -f "Cleaning project after version bump" "$MVN clean $P:clean-frontend -Pproduction -f $i"
     # fi
   done
-}
-
-## TODO: document this in migration guide
-enableLiveReload() {
-  setPropertyInFile src/main/resources/application.properties spring.devtools.livereload.enabled true
 }
 
 ## Find all java class files that extend AppLayout and have afterNavigation() method, then update them to implement AfterNavigationObserver
