@@ -18,11 +18,6 @@ applyv25patches() {
       removeJsImport '\@vaadin/vaadin-lumo-styles/badge'
       addNpmImport '\@polymer/polymer' '^3.5.2'
       ;;
-    skeleton-starter-flow-cdi)
-      ## TODO: needs to be documented in release notes, but also in migration guide to 25
-      patchJaxrs $app_
-      _opt=""
-      ;;
     testbench-demo)
       ## TODO: changes are already in v25, make it main branch when 25.0 GA
       patchTestBenchJUnit
@@ -228,20 +223,6 @@ updateSpringBootApplication() {
     fi
 }
 
-patchJaxrs() {
-  [ -f src/main/webapp/WEB-INF/jboss-deployment-structure.xml ] && return
-  warn "Patching $1 to exclude jaxrs subsystem from WildFly deployment"
-  cat <<EOF > src/main/webapp/WEB-INF/jboss-deployment-structure.xml
-<jboss-deployment-structure>
-    <deployment>
-        <exclude-subsystems>
-            <subsystem name="jaxrs" />
-        </exclude-subsystems>
-    </deployment>
-</jboss-deployment-structure>
-EOF
-}
-
 updateTheme() {
   F=`grep -rl 'AppShellConfigurator' . --include='*.java'`
   [ -z "$F" ] && return
@@ -322,7 +303,6 @@ patchTestBenchJUnit() {
 block="    <dependency>
               <groupId>org.junit.vintage</groupId>
               <artifactId>junit-vintage-engine</artifactId>
-              <version>5.14.0</version>
               <scope>test</scope>
             </dependency>
             <dependency>
