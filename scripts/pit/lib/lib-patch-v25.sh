@@ -58,7 +58,7 @@ applyv25patches() {
       done
       addGradleDep "commons-io" "commons-io" developmentOnly
       ;;
-    archetype*|bookstore-*|client-server-addon-template|flow-spring-examples|initializer-vaadin-maven-flow|initializer-vaadin-maven-react|latest-java_partial-auth_partial-prerelease|business-app-starter-flow|layout-examples|mpr-demo|releases-graph|spreadsheet-demo|testbench-demo|vaadin-database-example|vaadin-form-example|vaadin-localization-example|vaadin-oauth-example|vaadin-rest-example) 
+    archetype*|bookstore-*|client-server-addon-template|flow-spring-examples|initializer-vaadin-maven-flow|initializer-vaadin-maven-react|latest-java_partial-auth_partial-prerelease|business-app-starter-flow|layout-examples|mpr-demo|releases-graph|spreadsheet-demo|testbench-demo|vaadin-database-example|vaadin-form-example|vaadin-localization-example|vaadin-oauth-example|vaadin-rest-example)
       ## TODO: document that if no @Theme it needs to be added
       addLumoStyleSheet;;
   esac
@@ -68,7 +68,7 @@ applyv25patches() {
     *alpha10|*alpha11)             SV=4.0.0-M2 ;;
     *alpha12|*beta1|*beta2|*beta3) SV=4.0.0-M3 ;;
     *beta4)                        SV=4.0.0-RC1 ;;
-    *beta*|*-rc*)
+    *beta*|*-rc*|25.0.0)
        SV=4.0.0
         ## TODO: document in migration guide to 25
         addHillaStarterIfNeeded $app_
@@ -77,6 +77,7 @@ applyv25patches() {
         ## TODO: document in migration guide to 25
         addDevModeIfNeeded "$_opt"
        ;;
+
   esac
 
   changeMavenBlock parent org.springframework.boot spring-boot-starter-parent $SV

@@ -38,7 +38,7 @@ runPlaywrightTests() {
   local _version="$5"
   shift 5
 
-  _pfile="playwright-$_version-$_mode-"`uname`".out"
+  local _pfile="playwright-$_version-$_mode-"`uname`".out"
   [ -f "$_test_file" ] && checkPlaywrightInstallation "$_test_file" || return 0
 
   _args="$* --name=$_name --version=$_version --mode=$_mode"
@@ -56,7 +56,7 @@ runPlaywrightTests() {
   [ -n "$H" ] && reportError "Console Errors in $_msg" "$H" && echo "$H" && return 1
   H=`tail -15 $_pfile`
   [ $err != 0 ] && reportOutErrors "$_ofile" "Error ($err) running Visual-Test ("`basename $_pfile`")" || echo ">>>> PiT: playwright '$_test_file' done" >> $__file
-  [ $err != 0 ] && rm -f "$_pfile"
+  [ $err = 0 ] && rm -f "$_pfile"
   return $err
 }
 
