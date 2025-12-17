@@ -147,7 +147,7 @@ cleanAfterBumpingVersions() {
     # if [ -d "$T" ]; then
       grep -q "vaadin-maven-plugin" $i && P=vaadin
       grep -q "flow-maven-plugin" $i && P=flow
-      [ -z "$P" ] || runCmd -f "Cleaning project after version bump" "$MVN clean $P:clean-frontend -Pproduction -f $i"
+      [ -z "$P" ] || runCmd -f "Cleaning project after version bump" "$MVN -ntp -B clean $P:clean-frontend -Pproduction -f $i"
     # fi
   done
 }
