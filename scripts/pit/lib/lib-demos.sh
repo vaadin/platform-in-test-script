@@ -3,6 +3,142 @@
 . `dirname $0`/lib/lib-validate.sh
 . `dirname $0`/lib/lib-patch.sh
 
+## Check demo branches for a given version
+## It verifies that demos have the expected branch (v25, v25.0, etc.) and correct Vaadin version
+## $1: version to check (e.g., 25.0.0, 25.1.0)
+checkDemoBranches() {
+  local version="$1"
+  [ -z "$version" -o "$version" = "current" ] && err "Please provide a version with --version=X.Y.Z" && return 1
+
+  # Extract major and minor versions
+  local major=$(echo "$version" | cut -d. -f1)
+  local minor=$(echo "$version" | cut -d. -f2)
+
+  # Branch candidates to check: v25.0, v25
+  local branch_candidates="v${major}.${minor} v${major}"
+
+  bold "Checking demo branches for version $version"
+  bold "Branch candidates: $branch_candidates"
+  printnl
+
+  local demos_list
+  [ -n "$STARTERS" ] && demos_list=$(echo "$STARTERS" | tr ',' '\n') || demos_list="$DEMOS"
+
+  for demo in $demos_list; do
+    [ -z "$demo" ] && continue
+    checkDemoBranch "$demo" "$version" "$branch_candidates"
+  done
+}
+
+## Check a single demo's branch and version
+## $1: demo name (e.g., skeleton-starter-flow, expo-flow:v25)
+## $2: expected version (e.g., 25.0.0)
+## $3: branch candidates (e.g., "v25.0 v25")
+checkDemoBranch() {
+  local demo="$1"
+  local expected_version="$2"
+  local branch_candidates="$3"
+
+  local repo=$(getGitRepo "$demo")
+  local explicit_branch=$(echo "$demo" | grep ':' | cut -d: -f2)
+  local demo_name=$(getGitDemo "$demo")
+
+  # Build git URL with token if available
+  local token="${GHTK:-$GITHUB_TOKEN}"
+  local git_url="https://github.com/${repo}.git"
+  [ -n "$token" ] && git_url="https://${token}@github.com/${repo}.git"
+
+  # If demo has explicit branch in its definition (e.g., expo-flow:v25)
+  if [ -n "$explicit_branch" ]; then
+    checkBranchVersion "$repo" "$explicit_branch" "$expected_version" "$demo_name"
+    return
+  fi
+
+  # Try branch candidates in order
+  local found_branch=""
+  for branch in $branch_candidates; do
+    if git ls-remote --heads "$git_url" "$branch" 2>/dev/null | grep -q "refs/heads/$branch"; then
+      found_branch="$branch"
+      break
+    fi
+  done
+
+  if [ -z "$found_branch" ]; then
+    # No version branch found, check default branch
+    local default_branch=$(git ls-remote --symref "$git_url" HEAD 2>/dev/null | grep 'ref:' | sed 's|.*refs/heads/||' | awk '{print $1}')
+    [ -z "$default_branch" ] && default_branch="main"
+    warn "$demo_name: No branch found ($branch_candidates), using default: $default_branch"
+    checkBranchVersion "$repo" "$default_branch" "$expected_version" "$demo_name"
+  else
+    checkBranchVersion "$repo" "$found_branch" "$expected_version" "$demo_name"
+  fi
+}
+
+## Check if a branch has the expected Vaadin version
+## $1: repo (e.g., vaadin/skeleton-starter-flow)
+## $2: branch
+## $3: expected version
+## $4: demo name for display
+checkBranchVersion() {
+  local repo="$1"
+  local branch="$2"
+  local expected_version="$3"
+  local demo_name="$4"
+
+  # Build curl auth header if token available
+  local token="${GHTK:-$GITHUB_TOKEN}"
+  local auth_header=""
+  [ -n "$token" ] && auth_header="-H \"Authorization: token ${token}\""
+
+  # Get pom.xml from the branch
+  local pom_url="https://raw.githubusercontent.com/${repo}/${branch}/pom.xml"
+  local pom_content=$(eval curl -s -f $auth_header "$pom_url" 2>/dev/null)
+
+  if [ -z "$pom_content" ]; then
+    # Try build.gradle for gradle projects
+    local gradle_url="https://raw.githubusercontent.com/${repo}/${branch}/gradle.properties"
+    local gradle_content=$(eval curl -s -f $auth_header "$gradle_url" 2>/dev/null)
+
+    if [ -z "$gradle_content" ]; then
+      warn "$demo_name [$branch]: Cannot fetch build file"
+      return 1
+    fi
+
+    # Extract version from gradle.properties
+    local actual_version=$(echo "$gradle_content" | grep -E '^vaadinVersion=' | cut -d= -f2)
+    [ -z "$actual_version" ] && actual_version=$(echo "$gradle_content" | grep -E '^hillaVersion=' | cut -d= -f2)
+
+    compareVersions "$demo_name" "$branch" "$expected_version" "$actual_version"
+    return
+  fi
+
+  # Extract vaadin.version from pom.xml
+  local actual_version=$(echo "$pom_content" | grep '<vaadin.version>' | sed 's|.*<vaadin.version>\([^<]*\)</vaadin.version>.*|\1|')
+  [ -z "$actual_version" ] && actual_version=$(echo "$pom_content" | grep '<hilla.version>' | sed 's|.*<hilla.version>\([^<]*\)</hilla.version>.*|\1|')
+
+  compareVersions "$demo_name" "$branch" "$expected_version" "$actual_version"
+}
+
+## Compare and display version status
+## $1: demo name
+## $2: branch
+## $3: expected version
+## $4: actual version
+compareVersions() {
+  local demo_name="$1"
+  local branch="$2"
+  local expected="$3"
+  local actual="$4"
+
+  if [ -z "$actual" ]; then
+    warn "$demo_name [$branch]: Version not found in build file"
+  elif [ "$actual" = "$expected" ]; then
+    log "$demo_name [$branch]: OK ($actual)"
+  else
+    err "$demo_name [$branch]: MISMATCH - expected $expected, found $actual"
+  fi
+}
+
 ## Checkout a branch of a vaadin repository in github
 ## we add GITHUB_TOKEN or GHTK environment variable to the URL
 ## $1: the name of the demo in the form of `repo[:branch][/folder]`
@@ -58,84 +194,6 @@ getGitDemo() {
     */*) echo $_repo | cut -d / -f2 ;;
     *)   echo "$_repo" ;;
   esac
-}
-
-## commit changes performed during testing on fhe next version
-## it should happend after first estable version is released e.g. 24.4.0
-## $1: the name of the demo
-## $2: the version of the demo
-## $3: the command to compile the project for production so that package files etc, are updated
-commitChanges() {
-  _app=$1; _vers=$2; _compile="$3"
-
-  case $_app in
-    skeleton-starter-flow-spring|skeleton-starter-hilla-lit|skeleton-starter-hilla-react|start)
-      return;;
-  esac
-
-  git ls-remote --heads >/dev/null 2>&1 || return 0
-  git update-index --refresh >/dev/null
-  git diff-index --quiet HEAD -- && return 0
-
-  _baseBranch=v`echo "$_vers" | cut -d '.' -f1`
-  _headBranch="update-to-$_baseBranch"
-  _gaBranch="$_baseBranch.0"
-  _tmpBranch="$_baseBranch.tmp"
-  owner=`echo "$_repo" | cut -d / -f2`
-  repo=`echo "$_repo" | cut -d / -f3-100`
-
-  remotes=`git ls-remote --heads 2>/dev/null | grep refs | sed -e 's|.*refs/heads/||g' | egrep "^$_headBranch$"`
-  if [ -n "$remotes" ]; then
-    log "Branch $_app:$_headBranch already exists checkit and update it manually"
-    return 0
-  fi
-
-  baseremote=`git ls-remote --heads 2>/dev/null | grep refs | sed -e 's|.*refs/heads/||g' | egrep "^$_baseBranch$"`
-  if [ -z "$baseremote" ]; then
-    log "Branch $_app:$_baseBranch does not already exit create it before tyring to commit changes"
-    log "Creating branch $_baseBranch"
-    _currBranch=`git branch  --show-current`
-    git push -q -f origin $_currBranch:$_baseBranch || exit 1
-    # git push -q origin :$_baseBranch || exit 1
-  fi
-
-
-  log "Committing and pushing changes"
-  git checkout -q -b $_tmpBranch
-  git add -- `ls -1d frontend */frontend src */src */src/main/frontend pom.xml */pom.xml 2>/dev/null | tr "\n" " "` ':!generated'
-  git restore --staged `ls -1d pom.xml */pom.xml 2>/dev/null`
-
-  if [ -n "$remotes" ]; then
-    if git diff --quiet origin/$_headBranch; then
-      log "No new changes to commit in $_app:$_headBranch"
-      return 0
-    fi
-  fi
-
-  if [ -n "$TEST" -a -n "$_compile" ]; then
-    log "Compiling for production to update package files ..."
-    cmd "$_compile"
-    $_compile  > mvn.log 2>&1
-    log "Exit status: $?"
-  fi
-
-  git commit -q -m "chore: update to $_vers" -a
-  [ -n "$remotes" ] && git rebase origin/$_headBranch 2>/dev/null
-  git push -q -f origin $_tmpBranch:$_headBranch 2>/dev/null
-  if [ -n "$remotes" ]
-  then
-    log "PR for $_headBranch branch already exists"
-  else
-    log "Creating PR for $_headBranch branch"
-    pr_url=`curl -s -L \
-      -X POST \
-      -H "Accept: application/vnd.github+json" \
-      -H "Authorization: Bearer $_tk"\
-      -H "X-GitHub-Api-Version: 2022-11-28" \
-      https://api.github.com/repos/$owner/$repo/pulls \
-      -d '{"title":"chore: PiT - Update to Vaadin '$_baseBranch'","head":"'$_headBranch'","base":"'$_baseBranch'","body":"Created by PiT Script"}' | jq -r '.html_url' 2>/dev/null`
-    warn "$_app Created PR $pr_url"
-  fi
 }
 
 ## Get install command for dev-mode
@@ -370,7 +428,6 @@ runDemo() {
     if hasProduction $_demo; then
       # 7
       runValidations prod "$_version" "$_demo" "$_port" "$_installCmdPrd" "$_runCmdPrd" "$_readyPrd" "$_test" || return 1
-      [ -z "$COMMIT" ] || commitChanges $_demo $_version "$_installCmdPrd"
     fi
   fi
 }

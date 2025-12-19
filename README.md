@@ -59,9 +59,7 @@ Use: ./scripts/pit/run.sh with the next options:
  --list            Show the list of available starters
  
  --hub             Use selenium hub instead of local chrome, it assumes that selenium docker is running as service in localhost
- 
- --commit          Commit changes to the base branch
- 
+
  --test            Checkout starters, and show steps and commands to execute, but don't run them
  
  --git-ssh         Use git-ssh instead of https to checkout projects (you need a valid ssh key)

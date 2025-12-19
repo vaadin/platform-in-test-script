@@ -39,13 +39,13 @@ Use: $0 with the next options:
  --vite            Use vite inetad of webpack to speed up frontend compilation (default webpack)
  --list            Show the list of available starters
  --hub             Use selenium hub instead of local chrome, it assumes that selenium docker is running as service in localhost
- --commit          Commit changes to the base branch
  --test            Checkout starters, and show steps and commands to execute, but don't run them
  --headless        Run the browser in headless mode even if interactive mode is enabled
  --headed          Run the browser in headed mode even if interactive mode is disabled
  --function        run only one function of the libs in current folder.
                    everything after this argument is the function name and arguments passed to the function.
                    you should take care with arguments that contain spaces, they should be quoted twice.
+ --check-branches  Check if demos have correct branch and version (requires --version=X.Y.Z)
  --help            Show this message
  --starters=list   List of demos or presets separated by comma to run (default: all) valid options:`echo ,$DEFAULT_STARTERS | tr ' ' , | sed -e 's/,/\n                   · /g'`
 EOF
@@ -127,7 +127,6 @@ checkArgs() {
         PRESETS=`echo "$PRESETS" | sed -e 's,^latest-,pre-,g'`
         DEFAULT_STARTERS=`echo "$PRESETS" | tr "\n" "," | sed -e 's/^,//' | sed -e 's/,$//'`
         ;;
-      --commit) COMMIT=true ;;
       --check)
         for i in `getReposFromWebsite` ;
         do
@@ -163,6 +162,10 @@ checkArgs() {
       --headless) HEADLESS=true ;;
       --headed)   HEADLESS=false ;;
       --ghtk=*|--gh-token=*)   GHTK=$arg ;;
+      --check-branches)
+        checkDemoBranches "$VERSION"
+        exit
+        ;;
       *) echo "Unknown option: $1" && usage && exit 1;;
     esac
     shift
