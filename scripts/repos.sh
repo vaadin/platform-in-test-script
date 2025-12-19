@@ -58,7 +58,7 @@ bookstore-example
 bookstore-example:rtl-demo
 bakery-app-starter-flow-spring
 k8s-demo-app
-mpr-demo
+mpr-demo:mpr-8
 testbench-demo
 ce-demo
 start
