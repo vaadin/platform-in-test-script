@@ -301,14 +301,11 @@ patchTestBenchJUnit() {
     return 0
   fi
   [ -z "$TEST" ] && warn "adding JUnit dependencies to pom.xml" || cmd "## adding JUnit dependencies to pom.xml"
+  # Note: Must specify versions to align with JUnit 5.14.0/Platform 1.14.0
+  # used by vaadin-testbench-core-junit5, otherwise version mismatch causes test discovery failures
 block="    <dependency>
               <groupId>org.junit.vintage</groupId>
               <artifactId>junit-vintage-engine</artifactId>
-              <scope>test</scope>
-            </dependency>
-            <dependency>
-              <groupId>org.junit.jupiter</groupId>
-              <artifactId>junit-jupiter-engine</artifactId>
               <version>5.14.0</version>
               <scope>test</scope>
             </dependency>
