@@ -116,6 +116,19 @@ checkBranchVersion() {
   local actual_version=$(echo "$pom_content" | grep '<vaadin.version>' | sed 's|.*<vaadin.version>\([^<]*\)</vaadin.version>.*|\1|')
   [ -z "$actual_version" ] && actual_version=$(echo "$pom_content" | grep '<hilla.version>' | sed 's|.*<hilla.version>\([^<]*\)</hilla.version>.*|\1|')
 
+  # If not found, try submodules (for multi-module projects)
+  if [ -z "$actual_version" ]; then
+    for submodule in vaadin-app app ui frontend; do
+      local sub_pom_url="https://raw.githubusercontent.com/${repo}/${branch}/${submodule}/pom.xml"
+      local sub_pom_content=$(eval curl -s -f $auth_header "$sub_pom_url" 2>/dev/null)
+      if [ -n "$sub_pom_content" ]; then
+        actual_version=$(echo "$sub_pom_content" | grep '<vaadin.version>' | sed 's|.*<vaadin.version>\([^<]*\)</vaadin.version>.*|\1|')
+        [ -z "$actual_version" ] && actual_version=$(echo "$sub_pom_content" | grep '<hilla.version>' | sed 's|.*<hilla.version>\([^<]*\)</hilla.version>.*|\1|')
+        [ -n "$actual_version" ] && break
+      fi
+    done
+  fi
+
   compareVersions "$demo_name" "$branch" "$expected_version" "$actual_version"
 }
 
