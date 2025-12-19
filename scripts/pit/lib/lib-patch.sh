@@ -20,6 +20,7 @@ applyPatches() {
   esac
   expr "$vers_" : ".*SNAPSHOT" >/dev/null && enableSnapshots
   checkProjectUsingOldVaadin "$type_" "$vers_"
+  checkProjectHasProductionProfile
 
   case $app_ in
     archetype-hotswap)
@@ -74,9 +75,16 @@ applyPatches() {
 checkProjectUsingOldVaadin() {
   [ "$1" != 'current' ] && return
   case $vers_ in
-    25.0.*|24.9.*|current) : ;;
+    25.1.*|25.0.*|current) : ;;
     *) reportError "Using old version $vers_" "Please upgrade $app_ to latest stable" ;;
   esac
+}
+
+## Check that the project does not have the deprecated 'production' profile in pom.xml
+checkProjectHasProductionProfile() {
+  [ ! -f pom.xml ] && return
+  H=$(grep -l '<id>production</id>' pom.xml 2>/dev/null)
+  [ -n "$H" ] && reportError "Project has deprecated 'production' profile" "Please remove the 'production' profile from pom.xml, use 'mvn -Pproduction' is no longer needed in Vaadin 25+"
 }
 
 ## Run at the beginning of Validate in order to skip upsupported app/version combination

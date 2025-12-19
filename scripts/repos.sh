@@ -66,7 +66,7 @@ spring-guides/gs-crud-with-vaadin/complete
 spring-petclinic/spring-petclinic-vaadin-flow
 flow-hilla-hybrid-example
 designer-tutorial
-walking-skeleton:v24.9-hybrid
+walking-skeleton:v25.0-hybrid
 releases-graph
 expo-flow:v25
 "
