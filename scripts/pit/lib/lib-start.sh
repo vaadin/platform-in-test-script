@@ -202,7 +202,7 @@ runStarter() {
   printVersions || return 1
 
   _msg="Started .*Application|Frontend compiled|Started ServerConnector|Started Vite|Listening on:|Vaadin is running"
-  _msgprod="Started .*Application|Started ServerConnector|Listening on:"
+  _msgprod="Started .*Application|Started ServerConnector|Listening on:|Started oejs.Server"
   _prod=`_getRunProd "$_preset"`
   _dev=`_getRunDev "$_preset"`
   _compile=`_getCompProd "$_preset"`

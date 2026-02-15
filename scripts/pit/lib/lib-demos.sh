@@ -48,9 +48,13 @@ checkDemoBranch() {
   local git_url="https://github.com/${repo}.git"
   [ -n "$token" ] && git_url="https://${token}@github.com/${repo}.git"
 
+  # Get the default branch of the repo
+  local default_branch=$(git ls-remote --symref "$git_url" HEAD 2>/dev/null | grep 'ref:' | sed 's|.*refs/heads/||' | awk '{print $1}')
+  [ -z "$default_branch" ] && default_branch="main"
+
   # If demo has explicit branch in its definition (e.g., expo-flow:v25)
   if [ -n "$explicit_branch" ]; then
-    checkBranchVersion "$repo" "$explicit_branch" "$expected_version" "$demo_name"
+    checkBranchVersion "$repo" "$explicit_branch" "$expected_version" "$demo_name" "$default_branch"
     return
   fi
 
@@ -65,12 +69,10 @@ checkDemoBranch() {
 
   if [ -z "$found_branch" ]; then
     # No version branch found, check default branch
-    local default_branch=$(git ls-remote --symref "$git_url" HEAD 2>/dev/null | grep 'ref:' | sed 's|.*refs/heads/||' | awk '{print $1}')
-    [ -z "$default_branch" ] && default_branch="main"
     warn "$demo_name: No branch found ($branch_candidates), using default: $default_branch"
-    checkBranchVersion "$repo" "$default_branch" "$expected_version" "$demo_name"
+    checkBranchVersion "$repo" "$default_branch" "$expected_version" "$demo_name" "$default_branch"
   else
-    checkBranchVersion "$repo" "$found_branch" "$expected_version" "$demo_name"
+    checkBranchVersion "$repo" "$found_branch" "$expected_version" "$demo_name" "$default_branch"
   fi
 }
 
@@ -79,11 +81,13 @@ checkDemoBranch() {
 ## $2: branch
 ## $3: expected version
 ## $4: demo name for display
+## $5: default branch of the repo
 checkBranchVersion() {
   local repo="$1"
   local branch="$2"
   local expected_version="$3"
   local demo_name="$4"
+  local default_branch="$5"
 
   # Build curl auth header if token available
   local token="${GHTK:-$GITHUB_TOKEN}"
@@ -108,7 +112,7 @@ checkBranchVersion() {
     local actual_version=$(echo "$gradle_content" | grep -E '^vaadinVersion=' | cut -d= -f2)
     [ -z "$actual_version" ] && actual_version=$(echo "$gradle_content" | grep -E '^hillaVersion=' | cut -d= -f2)
 
-    compareVersions "$demo_name" "$branch" "$expected_version" "$actual_version"
+    compareVersions "$demo_name" "$branch" "$expected_version" "$actual_version" "$default_branch"
     return
   fi
 
@@ -129,7 +133,7 @@ checkBranchVersion() {
     done
   fi
 
-  compareVersions "$demo_name" "$branch" "$expected_version" "$actual_version"
+  compareVersions "$demo_name" "$branch" "$expected_version" "$actual_version" "$default_branch"
 }
 
 ## Compare and display version status
@@ -137,18 +141,23 @@ checkBranchVersion() {
 ## $2: branch
 ## $3: expected version
 ## $4: actual version
+## $5: default branch of the repo
 compareVersions() {
   local demo_name="$1"
   local branch="$2"
   local expected="$3"
   local actual="$4"
+  local default_branch="$5"
+
+  local branch_info="$branch"
+  [ -n "$default_branch" ] && [ "$branch" != "$default_branch" ] && branch_info="$branch (default: $default_branch)"
 
   if [ -z "$actual" ]; then
-    warn "$demo_name [$branch]: Version not found in build file"
+    warn "$demo_name [$branch_info]: Version not found in build file"
   elif [ "$actual" = "$expected" ]; then
-    log "$demo_name [$branch]: OK ($actual)"
+    log "$demo_name [$branch_info]: OK ($actual)"
   else
-    err "$demo_name [$branch]: MISMATCH - expected $expected, found $actual"
+    err "$demo_name [$branch_info]: MISMATCH - expected $expected, found $actual"
   fi
 }
 
@@ -293,7 +302,7 @@ getReadyMessageDev() {
     mpr-demo) echo "Vaadin is running in DEBUG MODE";;
     start) echo "Application running at http:";;
     *-gradle|flow-spring-examples) echo "Tomcat started|started and listening";;
-    *) echo "Frontend compiled successfully|Started .*Application|Started Server";;
+    *) echo "Frontend compiled successfully|Started .*Application|Started Server|Started oejs.Server";;
   esac
 }
 ## Get ready message when running the project in prod-mode
