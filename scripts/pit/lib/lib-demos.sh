@@ -313,7 +313,7 @@ getReadyMessagePrd() {
     skeleton-starter-flow-cdi) echo "Registered web contex";;
     mpr-demo|spreadsheet-demo) echo "Started ServerConnector";;
     *-gradle) echo "Tomcat started|started and listening";;
-    client-server-addon-template) echo 'Started ServerConnector.*:8080}';;
+    client-server-addon-template) echo 'Started ServerConnector.*:8080}|Started oejs.Server';;
     bakery*|hilla-*-tutorial|start) echo "Started .*Application|Started Server";;
     *) getReadyMessageDev $1;;
   esac
