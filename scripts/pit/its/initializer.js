@@ -22,13 +22,13 @@ const fs = require('fs');
         const text = page.getByText('Could not navigate');
         await expect(text).toBeVisible();
     } else {
-        const linkText = /react/.test(arg.name) ?
-          'Create a view for coding the UI in TypeScript with Hilla and React' :
-          'Create a view for coding the UI in Java with Flow';
+        const linkPattern = /react/.test(arg.name) ?
+          /Create a view.*(?:TypeScript|Hilla|React)/i :
+          /Create a (?:view.*Java.*Flow|Flow view)/i;
         const viewName = /react/.test(arg.name) ? '@index.tsx' : 'HomeView.java';
 
         log(`Creating ${viewName} view using copilot`);
-        await page.getByRole('link', { name: linkText }).click();
+        await page.getByRole('link', { name: linkPattern }).click();
         await page.waitForTimeout(2000);
         await takeScreenshot(page, arg, __filename, 'view-created');
         await waitForServerReady(page, arg.url, arg, { maxRetries: 30, retryInterval: 2000 });
