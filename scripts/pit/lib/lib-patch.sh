@@ -20,6 +20,7 @@ applyPatches() {
   expr "$vers_" : ".*SNAPSHOT" >/dev/null && enableSnapshots
   checkProjectUsingOldVaadin "$type_" "$vers_"
   checkProjectHasProductionProfile
+  upgradeExampleData
 
   case $app_ in
     archetype-hotswap)
@@ -62,13 +63,8 @@ applyPatches() {
       fi
       ;;
     multi-module-example)
-      ## exampledata 6.2.0 uses com.vaadin.flow.server.frontend.FrontendUtils which was
-      ## moved to com.vaadin.flow.internal.FrontendUtils in flow 25.1 (vaadin/flow#22956)
       ## backend/pom.xml has its own parent (spring-boot-starter-parent), so it needs the repo too
       if [ "$type_" = next ]; then
-        changeBlock \
-          '<artifactId>exampledata</artifactId>' '\s*</dependency>' \
-          '${1}<version>7.0.0-alpha1</version>${3}' backend/pom.xml
         (cd backend && addRepoToPom "https://maven.vaadin.com/vaadin-prereleases")
       fi
       ;;
@@ -102,6 +98,14 @@ checkProjectHasProductionProfile() {
   [ ! -f pom.xml ] && return
   H=$(grep -l '<id>production</id>' pom.xml 2>/dev/null)
   [ -n "$H" ] && reportError "Project has deprecated 'production' profile" "Please remove the 'production' profile from pom.xml, use 'mvn -Pproduction' is no longer needed in Vaadin 25+"
+}
+
+## Upgrade exampledata to 7.0.0-alpha1 for target builds
+## exampledata 6.2.0 uses com.vaadin.flow.server.frontend.FrontendUtils which was
+## moved to com.vaadin.flow.internal.FrontendUtils in flow 25.1 (vaadin/flow#22956)
+upgradeExampleData() {
+  [ "$type_" != next ] && return
+  changeMavenBlock dependency com.vaadin exampledata 7.0.0-alpha1
 }
 
 ## Run at the beginning of Validate in order to skip upsupported app/version combination
