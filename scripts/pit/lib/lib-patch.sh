@@ -71,6 +71,9 @@ applyPatches() {
     base-starter-gradle)
       ## vaadin-dev only included for appRun task, but PiT uses jettyStart (vaadin/base-starter-gradle#308)
       perl -pi -e "s/contains\('appRun'\)/any { it in ['appRun', 'jettyStart', 'jettyRun'] }/" build.gradle
+      ## gretty 4.1.10 uses archivePath removed in Gradle 9, upgrade to 5.0.1
+      perl -pi -e "s/org.gretty' version '4\.[^']+'/org.gretty' version '5.0.1'/" build.gradle
+      perl -pi -e "s/servletContainer = 'jetty11'/servletContainer = 'jetty12'/" build.gradle
       ;;
   esac
   case "$vers_" in
