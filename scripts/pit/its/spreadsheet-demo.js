@@ -49,9 +49,8 @@ const { log, args, closePage, takeScreenshot, waitForServerReady } = require('./
     await page.locator('#cellinput').press('Enter');
     await page.getByText('$10,315.49');
     await sleep(100);
-    await page.keyboard.press('Enter');
+    await page.keyboard.press('F2');
     await sleep(100);
-    await page.locator('#cellinput').click();
     await page.locator('#cellinput').fill('20');
     await page.locator('#cellinput').press('Enter');
     await page.getByText('$13,310.34').click();
