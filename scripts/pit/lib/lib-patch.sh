@@ -68,6 +68,10 @@ applyPatches() {
         (cd backend && addRepoToPom "https://maven.vaadin.com/vaadin-prereleases")
       fi
       ;;
+    base-starter-gradle)
+      ## vaadin-dev only included for appRun task, but PiT uses jettyStart (vaadin/base-starter-gradle#308)
+      perl -pi -e "s/contains\('appRun'\)/any { it in ['appRun', 'jettyStart', 'jettyRun'] }/" build.gradle
+      ;;
   esac
   case "$vers_" in
     ## The minimum version of Java supported by vaadin is 17, hence we test for it
