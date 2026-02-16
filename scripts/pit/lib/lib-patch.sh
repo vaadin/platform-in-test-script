@@ -53,6 +53,17 @@ applyPatches() {
       S=src/test/screenshots
       [ -d "$S" ] && runCmd "Removing $S" "rm -rf $S"
       ;;
+    multi-module-example)
+      ## exampledata 6.2.0 uses com.vaadin.flow.server.frontend.FrontendUtils which was
+      ## moved to com.vaadin.flow.internal.FrontendUtils in flow 25.1 (vaadin/flow#22956)
+      ## backend/pom.xml has its own parent (spring-boot-starter-parent), so it needs the repo too
+      if [ "$type_" = next ]; then
+        changeBlock \
+          '<artifactId>exampledata</artifactId>' '\s*</dependency>' \
+          '${1}<version>7.0.0-alpha1</version>${3}' backend/pom.xml
+        (cd backend && addRepoToPom "https://maven.vaadin.com/vaadin-prereleases")
+      fi
+      ;;
   esac
   case "$vers_" in
     ## The minimum version of Java supported by vaadin is 17, hence we test for it
