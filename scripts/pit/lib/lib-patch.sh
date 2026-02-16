@@ -53,6 +53,14 @@ applyPatches() {
       S=src/test/screenshots
       [ -d "$S" ] && runCmd "Removing $S" "rm -rf $S"
       ;;
+    archetype-spring)
+      ## archetype hardcodes vaadin-maven-plugin version instead of using ${vaadin.version}
+      if [ "$type_" = next ]; then
+        changeBlock \
+          '<artifactId>vaadin-maven-plugin</artifactId>\s*<version>' '</version>' \
+          '${1}'$vers_'${3}' pom.xml
+      fi
+      ;;
     multi-module-example)
       ## exampledata 6.2.0 uses com.vaadin.flow.server.frontend.FrontendUtils which was
       ## moved to com.vaadin.flow.internal.FrontendUtils in flow 25.1 (vaadin/flow#22956)
