@@ -1,4 +1,3 @@
-. `dirname $0`/lib/lib-patch-v25.sh
 
 ## LIBRARY for patching Vaadin starters or demos
 ##   It has especial workarounds for specific apps.
@@ -63,7 +62,6 @@ applyPatches() {
     25.0.0*)
       ## The minimum version of Java supported by vaadin is 17, hence we test for it
       setJavaVersion 21
-      [ "$type_" = next ] && applyv25patches $app_ $type_ $vers_
       ;;
   esac
 
