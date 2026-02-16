@@ -68,6 +68,14 @@ applyPatches() {
         (cd backend && addRepoToPom "https://maven.vaadin.com/vaadin-prereleases")
       fi
       ;;
+    initializer-vaadin-*-react)
+      ## Vaadin 25 no longer includes Hilla by default, need to add it for React views
+      if [ -f pom.xml ]; then
+        addMavenDep pom.xml "com.vaadin" "hilla-spring-boot-starter" "compile"
+      elif [ -f build.gradle ]; then
+        perl -pi -e "s|(implementation\s*['\"]com\.vaadin:vaadin-spring-boot-starter['\"])|\$1\n    implementation 'com.vaadin:hilla-spring-boot-starter'|" build.gradle
+      fi
+      ;;
     base-starter-gradle)
       ## gretty uses archivePath removed in Gradle 9, downgrade to 8.14.2 (vaadin/base-starter-gradle#311)
       perl -pi -e 's/gradle-[\d.]+(-\w+)?-bin\.zip/gradle-8.14.2-bin.zip/' gradle/wrapper/gradle-wrapper.properties

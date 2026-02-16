@@ -22,13 +22,18 @@ const fs = require('fs');
         const text = page.getByText('Could not navigate');
         await expect(text).toBeVisible();
     } else {
-        const linkPattern = /react/.test(arg.name) ?
-          /Create a view.*(?:TypeScript|Hilla|React)/i :
-          /Create a (?:view.*Java.*Flow|Flow view)/i;
-        const viewName = /react/.test(arg.name) ? '@index.tsx' : 'HomeView.java';
+        const isReact = /react/.test(arg.name);
+        const viewName = isReact ? '@index.tsx' : 'HomeView.java';
 
         log(`Creating ${viewName} view using copilot`);
-        await page.getByRole('link', { name: linkPattern }).click();
+        if (isReact) {
+            // In Vaadin 25+, the "No views found" page only shows Flow link.
+            // Use copilot API directly to create a Hilla/React view.
+            await page.evaluate(() => window.Vaadin.copilot.initEmptyApp('hilla'));
+        } else {
+            const linkPattern = /Create a (?:view.*Java.*Flow|Flow view)/i;
+            await page.getByRole('link', { name: linkPattern }).click();
+        }
         await page.waitForTimeout(2000);
         await takeScreenshot(page, arg, __filename, 'view-created');
         await waitForServerReady(page, arg.url, arg, { maxRetries: 30, retryInterval: 2000 });
