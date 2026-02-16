@@ -71,6 +71,8 @@ applyPatches() {
     base-starter-gradle)
       ## gretty uses archivePath removed in Gradle 9, downgrade to 8.14.2 (vaadin/base-starter-gradle#311)
       perl -pi -e 's/gradle-[\d.]+(-\w+)?-bin\.zip/gradle-8.14.2-bin.zip/' gradle/wrapper/gradle-wrapper.properties
+      ## failOnNoDiscoveredTests is Gradle 9 only, remove it for 8.x
+      perl -pi -e 's/^\s*failOnNoDiscoveredTests\s*=.*$//' build.gradle
       ;;
   esac
   case "$vers_" in
