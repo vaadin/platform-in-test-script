@@ -69,7 +69,7 @@ applyPatches() {
       fi
       ;;
     base-starter-gradle)
-      ## gretty uses archivePath removed in Gradle 9, downgrade to 8.12 (vaadin/base-starter-gradle#310)
+      ## gretty uses archivePath removed in Gradle 9, downgrade to 8.12 (vaadin/base-starter-gradle#311)
       perl -pi -e 's/gradle-9\.\d+-bin\.zip/gradle-8.12-bin.zip/' gradle/wrapper/gradle-wrapper.properties
       ;;
   esac
