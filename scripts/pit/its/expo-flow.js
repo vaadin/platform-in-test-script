@@ -25,9 +25,9 @@ const { dismissDevmode, setupCopilotConfig, args, createPage, closePage, takeScr
     await page.getByRole('link', { name: 'Java Playground' }).click();
     await takeScreenshot(page, arg, __filename, 'java-loaded');
     await page.locator('vaadin-text-field input').fill('foo');
-    await page.getByRole('button', { name: 'Say hello' }).click();
+    await page.getByRole('button', { name: 'Click me' }).click();
     await takeScreenshot(page, arg, __filename, 'java-clicked');
-    await expect(page.getByRole('paragraph')).toContainText('Hello foo');
+    await expect(page.getByRole('paragraph')).toContainText('Hello, foo');
 
     await page.getByRole('link', { name: 'React Playground' }).click();
     await takeScreenshot(page, arg, __filename, 'react-loaded');
