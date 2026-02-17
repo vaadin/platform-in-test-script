@@ -181,6 +181,7 @@ checkoutDemo() {
     [ ! -d "$_demo" ] || runCmd -qf "Removing preexisting folder $_demo" "rm -rf $_demo" || return 1
     runCmd -f "Cloning repository $_repo" "git clone $_quiet $_gitUrl" || return 1
     cmd "cd $_workdir"; cd "$_workdir" || return 1
+    log "Default branch: $(git rev-parse --abbrev-ref HEAD)"
   else
     cmd "cd $_workdir"; cd "$_workdir" || return 1
     runCmd -f "Reseting local changes in $_repo" "git reset $_quiet --hard HEAD" || return 1
