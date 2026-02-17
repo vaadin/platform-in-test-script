@@ -76,6 +76,11 @@ applyPatches() {
         perl -pi -e "s|(implementation\s*['\"]com\.vaadin:vaadin-spring-boot-starter['\"])|\$1\n    implementation 'com.vaadin:hilla-spring-boot-starter'|" build.gradle
       fi
       ;;
+    expo-flow)
+      ## TODO: remove
+      ## Tailwind CSS plugin fails to resolve bare @import in META-INF/resources (vaadin/flow#23560)
+      perl -pi -e 's|\@import "((?!\./)[^"]+\.css)"|\@import "./$1"|g' src/main/resources/META-INF/resources/styles.css
+      ;;
     base-starter-gradle)
       ## gretty uses archivePath removed in Gradle 9, downgrade to 8.14.2 (vaadin/base-starter-gradle#311)
       perl -pi -e 's/gradle-[\d.]+(-\w+)?-bin\.zip/gradle-8.14.2-bin.zip/' gradle/wrapper/gradle-wrapper.properties
