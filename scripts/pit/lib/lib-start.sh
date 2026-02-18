@@ -112,7 +112,7 @@ _getCompProd() {
 ## Get the command to run the project in dev mode
 _getRunDev() {
   case $1 in
-    vaadin-quarkus) echo "$MVN -ntp -B quarkus:dev";;
+    vaadin-quarkus) echo "$MVN -ntp -B -Dquarkus.enforceBuildGoal=false quarkus:dev";;
     initializer-*-maven*) echo "$MVN -ntp -B spring-boot:run";;
     initializer-*-gradle*) echo "$GRADLE bootRun";;
     *) echo "$MVN -ntp -B $PNPM";;
