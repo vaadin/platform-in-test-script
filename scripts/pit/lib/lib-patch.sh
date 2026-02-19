@@ -93,6 +93,12 @@ applyPatches() {
       ## failOnNoDiscoveredTests is Gradle 9 only, remove it for 8.x
       perl -pi -e 's/^\s*failOnNoDiscoveredTests\s*=.*$//' build.gradle
       ;;
+    spreadsheet-demo)
+      ## TODO: remove when fixed https://github.com/vaadin/flow/issues/23530#issuecomment-3928679559
+      if [ "$type_" = next ]; then
+        runCmd -f "Cleaning project after version bump" "$MVN -ntp -B clean vaadin:clean-frontend"
+      fi
+      ;;
   esac
   case "$vers_" in
     ## The minimum version of Java supported by vaadin is 17, hence we test for it
