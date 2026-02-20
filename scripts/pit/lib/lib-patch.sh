@@ -94,7 +94,7 @@ applyPatches() {
       perl -pi -e 's/^\s*failOnNoDiscoveredTests\s*=.*$//' build.gradle
       ;;
     spreadsheet-demo)
-      ## TODO: remove when fixed https://github.com/vaadin/flow/issues/23530#issuecomment-3928679559
+      ## TODO: remove when fixed https://github.com/vaadin/flow/issues/23530
       if [ "$type_" = next ]; then
         runCmd -f "Cleaning project after version bump" "$MVN -ntp -B clean vaadin:clean-frontend"
       fi

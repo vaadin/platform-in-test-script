@@ -45,10 +45,12 @@ runValidations() {
   [ -n "$OFFLINE" ] && cmd="$cmd --offline" && compile="$compile --offline"
   # remove dev-bundle and node_modules when in dev mode
   [ "$mode" = dev ] && rm -rf node_modules src/main/dev-bundle
-  # output the mvn dependency tree to the file if there is a pom.xml or build.gradle (useful for debugging)
+  # output the mvn dependency tree to a separate file (useful for debugging)
+  treefile="$name-$mode-$version-"`uname`".tree.out"
+  rm -f "$treefile"
   [ "$mode" = prod ] && H="-Pproduction,it" || H=""
-  [ -z "$VERBOSE" -a -f pom.xml ] && runToFile "$MVN -ntp -B dependency:tree $H" "$file"
-  [ -z "$VERBOSE" -a -f build.gradle ] && runToFile "$GRADLE dependencies" "$file"
+  [ -z "$VERBOSE" -a -f pom.xml ] && runToFile "$MVN -ntp -B dependency:tree $H" "$treefile"
+  [ -z "$VERBOSE" -a -f build.gradle ] && runToFile "$GRADLE dependencies" "$treefile"
 
   # check if the app has spring or hilla dependencies in certain projects that should not have them
   [ -z "$TEST" ] && case "$name" in
@@ -130,7 +132,7 @@ runValidations() {
   fi
 
   # 14
-  rm -f "$file"
+  rm -f "$file" "$treefile"
   return 0
 }
 
