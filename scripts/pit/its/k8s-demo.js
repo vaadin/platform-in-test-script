@@ -33,7 +33,14 @@ const { log, args, createPage, closePage, takeScreenshot, waitForServerReady, di
     await takeScreenshot(page, arg, __filename, 'devmode-dismissed');
 
     log('Testing person creation form');
-    await page.getByRole('button', { name: '+' }).locator('div').click();
+    if (arg.mode === 'dev') {
+        // In dev mode, copilot overlay intercepts clicks on the + button,
+        // so navigate directly to the new person form
+        // TODO: remove when https://github.com/vaadin/copilot-internal/issues/7953
+        await page.goto(`${arg.url}personas/new`);
+    } else {
+        await page.getByRole('button', { name: '+' }).locator('div').click();
+    }
     await takeScreenshot(page, arg, __filename, 'new-person-form');
     await page.waitForURL(`${arg.url}personas/new`);
 
