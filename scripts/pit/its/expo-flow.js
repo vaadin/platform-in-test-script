@@ -17,7 +17,7 @@ const { dismissDevmode, setupCopilotConfig, args, createPage, closePage, takeScr
     await page.getByRole('link', { name: 'Chat' }).click();
     await takeScreenshot(page, arg, __filename, 'chat-loaded');
     await page.getByLabel('Message').fill('hello');
-    await page.getByRole('button', { name: 'Send' }).click();
+    await page.getByLabel('Message').press('Enter');
     await takeScreenshot(page, arg, __filename, 'chat-clicked');
     await expect(page.getByText('Assistant').first()).toBeVisible();
     await takeScreenshot(page, arg, __filename, 'chat-result');
