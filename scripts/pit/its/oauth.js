@@ -12,7 +12,7 @@ const { log, args, createPage, closePage, takeScreenshot, waitForServerReady, di
     await takeScreenshot(page, arg, __filename, 'page-loaded');
 
     log('Testing OAuth login flow');
-    await page.waitForURL(`${arg.url.replace(':8080', ':8080')}/login`);
+    await page.waitForURL(`${arg.url}login`);
     await takeScreenshot(page, arg, __filename, 'login-page');
 
     await page.getByRole('link', { name: 'Login with Google' }).click();

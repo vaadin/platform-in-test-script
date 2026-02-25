@@ -253,49 +253,53 @@ getInstallCmdPrd() {
   esac
 }
 ## Get command for running the project dev-mode after install was run
+## $1: demo name, $2: port
 getRunCmdDev() {
+  _P="-Dserver.port=$2"
   case $1 in
     vaadin-flow-karaf-example) echo "$MVN -ntp -B -pl main-ui install -Prun $PNPM";;
-    *-quarkus) echo "$MVN -ntp -B $PNPM -Dquarkus.analytics.disabled=true";;
-    base-starter-flow-osgi) echo "java -jar app/target/app.jar";;
-    skeleton-starter-flow-cdi) echo "$MVN -ntp -B wildfly:run $PNPM";;
-    base-starter-gradle) echo "$GRADLE jettyStart";; # should be appRun but reads from stdin and fails
-    *-gradle) echo "$GRADLE bootRun";;
-    mpr-demo|testbench-demo) echo "$MVN -ntp -B jetty:run $PNPM";;
-    multi-module-example) echo "$MVN -ntp -B spring-boot:run -pl vaadin-app";;
-    spring-petclinic-vaadin-flow|gs-crud-with-vaadin) echo "$MVN -ntp -B spring-boot:run";;
-    form-filler-demo) echo "$MVN -ntp -B $PNPM -DOPENAI_TOKEN=$OPENAI_TOKEN";;
-    *) echo "$MVN -ntp -B $PNPM";;
+    *-quarkus) echo "$MVN -ntp -B $PNPM -Dquarkus.analytics.disabled=true -Dquarkus.http.port=$2";;
+    base-starter-flow-osgi) echo "java $_P -jar app/target/app.jar";;
+    skeleton-starter-flow-cdi) echo "$MVN -ntp -B wildfly:run $PNPM -Djboss.http.port=$2";;
+    base-starter-gradle) echo "$GRADLE -Djetty.http.port=$2 jettyStart";; # should be appRun but reads from stdin and fails
+    *-gradle) echo "$GRADLE bootRun --args='--server.port=$2'";;
+    mpr-demo|testbench-demo) echo "$MVN -ntp -B -Djetty.http.port=$2 jetty:run $PNPM";;
+    multi-module-example) echo "$MVN -ntp -B spring-boot:run -pl vaadin-app -Dspring-boot.run.arguments=--server.port=$2";;
+    spring-petclinic-vaadin-flow|gs-crud-with-vaadin) echo "$MVN -ntp -B spring-boot:run -Dspring-boot.run.arguments=--server.port=$2";;
+    form-filler-demo) echo "$MVN -ntp -B $PNPM -DOPENAI_TOKEN=$OPENAI_TOKEN $_P";;
+    *) echo "$MVN -ntp -B $PNPM $_P";;
   esac
 }
 ## Get command for running the project prod-mode after install was run
+## $1: demo name, $2: port
 getRunCmdPrd() {
+  _P="-Dserver.port=$2"
   case $1 in
-    base-starter-gradle) echo "$GRADLE jettyStartWar";; # should be appRunWar but reads from stdin and fails
-    *-spring-gradle|*hilla*gradle) echo "java -jar ./build/libs/*-gradle.jar";;
-    *-gradle) echo "$GRADLE jettyStartWar";;
-    *hilla*|k8s-demo-app|skeleton-starter-flow-spring|bakery-app-starter-flow-spring|vaadin-form-example|flow-spring-examples|vaadin-oauth-example) echo "java -jar target/*.jar";;
-    base-starter-flow-quarkus) echo "java -jar target/quarkus-app/quarkus-run.jar";;
-    skeleton-starter-flow-cdi) echo "$MVN -ntp -B wildfly:run -Pproduction $PNPM";;
-    mpr-demo|spreadsheet-demo|layout-examples|skeleton-starter-flow|business-app-starter-flow|bookstore-example|testbench-demo) echo "$MVN -ntp -Pproduction -B jetty:run-war $PNPM";;
-    *addon-template|addon-starter-flow) echo "$MVN -ntp -Pproduction -B jetty:run";;
-    multi-module-example) echo "java -jar vaadin-app/target/*.jar";;
-    ce-demo) echo "java -Dvaadin.ce.dataDir=. -jar target/*.jar";;
+    base-starter-gradle) echo "$GRADLE -Djetty.http.port=$2 jettyStartWar";; # should be appRunWar but reads from stdin and fails
+    *-spring-gradle|*hilla*gradle) echo "java $_P -jar ./build/libs/*-gradle.jar";;
+    *-gradle) echo "$GRADLE -Djetty.http.port=$2 jettyStartWar";;
+    *hilla*|k8s-demo-app|skeleton-starter-flow-spring|bakery-app-starter-flow-spring|vaadin-form-example|flow-spring-examples|vaadin-oauth-example) echo "java $_P -jar target/*.jar";;
+    base-starter-flow-quarkus) echo "java -Dquarkus.http.port=$2 -jar target/quarkus-app/quarkus-run.jar";;
+    skeleton-starter-flow-cdi) echo "$MVN -ntp -B wildfly:run -Pproduction $PNPM -Djboss.http.port=$2";;
+    mpr-demo|spreadsheet-demo|layout-examples|skeleton-starter-flow|business-app-starter-flow|bookstore-example|testbench-demo) echo "$MVN -ntp -Pproduction -B -Djetty.http.port=$2 jetty:run-war $PNPM";;
+    *addon-template|addon-starter-flow) echo "$MVN -ntp -Pproduction -B -Djetty.http.port=$2 jetty:run";;
+    multi-module-example) echo "java $_P -jar vaadin-app/target/*.jar";;
+    ce-demo) echo "java -Dvaadin.ce.dataDir=. $_P -jar target/*.jar";;
     start)
       H=""
       for i in api code file parser tree util ; do
         H="$H --add-exports=jdk.compiler/com.sun.tools.javac.$i=ALL-UNNAMED"
       done
-      echo "java $H -jar target/*.jar";;
-    form-filler-demo) echo "java -DOPENAI_TOKEN=$OPENAI_TOKEN -jar target/*.jar";;
-    *) echo "java -jar target/*.jar" ;;
+      echo "java $H $_P -jar target/*.jar";;
+    form-filler-demo) echo "java -DOPENAI_TOKEN=$OPENAI_TOKEN $_P -jar target/*.jar";;
+    *) echo "java $_P -jar target/*.jar" ;;
   esac
 }
 ## Get ready message when running the project in dev-mode
 getReadyMessageDev() {
   case $1 in
-    base-starter-flow-osgi) echo "HTTP:8080";;
-    skeleton-starter-flow-cdi) echo "Vaadin is running in DEVELOPMENT mode";;
+    base-starter-flow-osgi) echo "HTTP:";;
+    skeleton-starter-flow-cdi) echo "Vaadin is running in DEVELOPMENT mode|Registered web context";;
     skeleton-starter-flow-spring|bakery-app-starter-flow-spring) echo "Started Application";;
     base-starter-flow-quarkus) echo "Listening on:";;
     vaadin-flow-karaf-example) echo "Artifact deployed";;
@@ -310,11 +314,11 @@ getReadyMessageDev() {
 getReadyMessagePrd() {
   case $1 in
     skeleton-starter-flow-spring|k8s-demo-app) echo "Vaadin is running in production mode";;
-    base-starter-flow-quarkus) echo "Listening on: http://0.0.0.0:8080";;
-    skeleton-starter-flow-cdi) echo "Registered web contex";;
+    base-starter-flow-quarkus) echo "Listening on: http://0.0.0.0:";;
+    skeleton-starter-flow-cdi) echo "Registered web contex|Registered web context";;
     mpr-demo|spreadsheet-demo) echo "Started ServerConnector";;
     *-gradle) echo "Tomcat started|started and listening";;
-    client-server-addon-template) echo 'Started ServerConnector.*:8080}|Started oejs.Server';;
+    client-server-addon-template) echo 'Started ServerConnector|Started oejs.Server';;
     bakery*|hilla-*-tutorial|start) echo "Started .*Application|Started Server";;
     *) getReadyMessageDev $1;;
   esac
@@ -414,13 +418,13 @@ runDemo() {
 
   printVersions || return 1
 
+  [ -z "$_port" ] && _port=`getPort $_demo`
   _installCmdDev=`getInstallCmdDev $_demo`
   _installCmdPrd=`getInstallCmdPrd $_demo $_version`
-  _runCmdDev=`getRunCmdDev $_demo`
-  _runCmdPrd=`getRunCmdPrd $_demo`
+  _runCmdDev=`getRunCmdDev $_demo $_port`
+  _runCmdPrd=`getRunCmdPrd $_demo $_port`
   _readyDev=`getReadyMessageDev $_demo`
   _readyPrd=`getReadyMessagePrd $_demo`
-  _port=`getPort $_demo`
   _test=`getTest $_demo`
 
   if [ -z "$NOCURRENT" ]

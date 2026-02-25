@@ -110,22 +110,26 @@ _getCompProd() {
 }
 
 ## Get the command to run the project in dev mode
+## $1: starter name, $2: port
 _getRunDev() {
+  _P="-Dserver.port=$2"
   case $1 in
-    vaadin-quarkus) echo "$MVN -ntp -B -Dquarkus.enforceBuildGoal=false quarkus:dev";;
-    initializer-*-maven*) echo "$MVN -ntp -B spring-boot:run";;
-    initializer-*-gradle*) echo "$GRADLE bootRun";;
-    *) echo "$MVN -ntp -B $PNPM";;
+    vaadin-quarkus) echo "$MVN -ntp -B -Dquarkus.enforceBuildGoal=false -Dquarkus.http.port=$2 quarkus:dev";;
+    initializer-*-maven*) echo "$MVN -ntp -B spring-boot:run -Dspring-boot.run.arguments=--server.port=$2";;
+    initializer-*-gradle*) echo "$GRADLE bootRun --args='--server.port=$2'";;
+    *) echo "$MVN -ntp -B $PNPM $_P";;
   esac
 }
 
 ## Get the command to run the project in production mode
+## $1: starter name, $2: port
 _getRunProd() {
+  _P="-Dserver.port=$2"
   case $1 in
-    archetype-hotswap|archetype-jetty) echo "$MVN -ntp -B -Pproduction -Dvaadin.productionMode jetty:run-war";;
-    vaadin-quarkus) echo "java -jar target/quarkus-app/quarkus-run.jar";;
-    *gradle*) echo "java -jar ./build/libs/*.jar";;
-    *) echo "java -jar -Dvaadin.productionMode target/*.jar";;
+    archetype-hotswap|archetype-jetty) echo "$MVN -ntp -B -Pproduction -Dvaadin.productionMode -Djetty.http.port=$2 jetty:run-war";;
+    vaadin-quarkus) echo "java -Dquarkus.http.port=$2 -jar target/quarkus-app/quarkus-run.jar";;
+    *gradle*) echo "java $_P -jar ./build/libs/*.jar";;
+    *) echo "java $_P -Dvaadin.productionMode -jar target/*.jar";;
   esac
 }
 
@@ -203,8 +207,8 @@ runStarter() {
 
   _msg="Started .*Application|Frontend compiled|Started ServerConnector|Started Vite|Listening on:|Vaadin is running"
   _msgprod="Started .*Application|Started ServerConnector|Listening on:|Started oejs.Server"
-  _prod=`_getRunProd "$_preset"`
-  _dev=`_getRunDev "$_preset"`
+  _prod=`_getRunProd "$_preset" "$_port"`
+  _dev=`_getRunDev "$_preset" "$_port"`
   _compile=`_getCompProd "$_preset"`
   _clean=`_getClean "$_preset"`
 
