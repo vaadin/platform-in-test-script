@@ -50,11 +50,6 @@ applyPatches() {
       [ -n "$TEST" ] || log "Fixing quarkus dependencyManagement https://vaadin.com/docs/latest/flow/integrations/quarkus#quarkus.vaadin.knownissues"
       ## TODO: should not be needed with latest LC
       moveQuarkusBomToBottom
-      ## TODO: remove when https://github.com/vaadin/quarkus/issues/265
-      ## it needs to be changed in both current and next releases
-      changeBlock \
-        '<artifactId>vaadin-quarkus</artifactId>' '\n' \
-        '${1}\n    <packaging>quarkus</packaging>${3}' pom.xml
       ;;
     testbench-demo)
       S=src/test/screenshots
