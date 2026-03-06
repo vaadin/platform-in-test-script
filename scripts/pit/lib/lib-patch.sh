@@ -51,6 +51,14 @@ applyPatches() {
       ## See also: https://vaadin.com/docs/latest/flow/integrations/quarkus#quarkus.vaadin.knownissues
       # moveQuarkusBomToBottom
       ;;
+    flow-spring-examples)
+      ## TODO: remove when https://github.com/vaadin/flow-spring-examples/issues/330 is fixed
+      if [ "$type_" = next ]; then
+        changeBlock \
+          '<artifactId>commons-io</artifactId>' '\n' \
+          '${1}\n            <version>2.21.0</version>${3}' pom.xml
+      fi
+      ;;
     testbench-demo)
       S=src/test/screenshots
       [ -d "$S" ] && runCmd "Removing $S" "rm -rf $S"
