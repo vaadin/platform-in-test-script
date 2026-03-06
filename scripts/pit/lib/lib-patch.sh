@@ -47,9 +47,9 @@ applyPatches() {
       [ -z "$OPENAI_TOKEN" ] && err "Set correctly the OPENAI_TOKEN env var" && return 1
       ;;
     vaadin-quarkus)
-      [ -n "$TEST" ] || log "Fixing quarkus dependencyManagement https://vaadin.com/docs/latest/flow/integrations/quarkus#quarkus.vaadin.knownissues"
-      ## TODO: should not be needed with latest LC
-      moveQuarkusBomToBottom
+      ## TODO: re-enable when https://github.com/vaadin/quarkus/issues/271 is fixed
+      ## See also: https://vaadin.com/docs/latest/flow/integrations/quarkus#quarkus.vaadin.knownissues
+      # moveQuarkusBomToBottom
       ;;
     testbench-demo)
       S=src/test/screenshots
