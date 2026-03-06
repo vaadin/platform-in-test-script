@@ -51,6 +51,14 @@ applyPatches() {
       ## See also: https://vaadin.com/docs/latest/flow/integrations/quarkus#quarkus.vaadin.knownissues
       # moveQuarkusBomToBottom
       ;;
+    addon-template)
+      ## TODO: remove when https://github.com/vaadin/flow/issues/23785 is fixed
+      ## flow-server 25.1+ no longer pulls servlet-api transitively; Jetty plugin provides it
+      ## at runtime but not at compile time, so test code that touches VaadinSession fails.
+      if [ "$type_" = next ]; then
+        addMavenDep pom.xml "jakarta.servlet" "jakarta.servlet-api" "provided"
+      fi
+      ;;
     flow-spring-examples)
       ## TODO: remove when https://github.com/vaadin/flow-spring-examples/issues/330 is fixed
       if [ "$type_" = next ]; then
