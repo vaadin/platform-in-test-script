@@ -22,6 +22,15 @@ applyPatches() {
   checkProjectHasProductionProfile
   upgradeExampleData
 
+  ## Workaround: Flow bug in BundleBuildUtils.copyPackageLockFromBundle() copies stale
+  ## pnpm-lock.yaml from old dev-bundle (only checks major version, not minor/patch).
+  ## pnpm 10 + CI=true defaults to --frozen-lockfile, detects overrides mismatch -> fail.
+  ## Unsetting CI for next phase prevents pnpm from using frozen-lockfile.
+  ## Neither ~/.npmrc nor npm_config_frozen_lockfile works because Flow invokes pnpm
+  ## via npx in an isolated context that doesn't respect external .npmrc settings.
+  ## TODO: remove when https://github.com/vaadin/flow/issues/23530 is fixed
+  [ "$type_" = next ] && [ "${CI:-}" = true ] && export CI=
+
   case $app_ in
     archetype-hotswap)
       ## need to happen in patch phase not in the run phase
