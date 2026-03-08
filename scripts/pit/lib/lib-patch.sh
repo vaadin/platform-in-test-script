@@ -63,6 +63,11 @@ applyPatches() {
       if [ "$type_" = next ]; then
         addMavenDep pom.xml "jakarta.servlet" "jakarta.servlet-api" "provided"
       fi
+      ## TODO: remove when https://github.com/vaadin/flow/issues/23530 is fixed
+      if [ "$type_" = next ] && [ "${CI:-}" = true ]; then
+        warn "Unsetting CI=true to workaround pnpm frozen-lockfile bug (flow#23530)"
+        export CI=
+      fi
       ;;
     flow-spring-examples)
       ## TODO: remove when https://github.com/vaadin/flow-spring-examples/issues/330 is fixed
