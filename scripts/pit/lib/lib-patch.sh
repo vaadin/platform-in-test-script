@@ -42,9 +42,10 @@ applyPatches() {
       SS=~/vaadin.spreadsheet.developer.license
       [ ! -f $SS ] && err "Install a Valid License $SS" && return 1
       ## TODO: remove when https://github.com/vaadin/flow/issues/23530 is fixed
-      if [ "$type_" = next ] && [ "${CI:-}" = true ]; then
-        warn "Unsetting CI=true to workaround pnpm frozen-lockfile bug (flow#23530)"
-        export CI=
+      ## pnpm uses ci-info which detects CI via GITHUB_ACTIONS, CI, BUILD_NUMBER, etc.
+      if [ "$type_" = next ]; then
+        warn "Unsetting CI env vars to workaround pnpm frozen-lockfile bug (flow#23530)"
+        unset CI GITHUB_ACTIONS CONTINUOUS_INTEGRATION BUILD_NUMBER RUN_ID
       fi
       ;;
     form-filler-demo)
@@ -64,9 +65,10 @@ applyPatches() {
         addMavenDep pom.xml "jakarta.servlet" "jakarta.servlet-api" "provided"
       fi
       ## TODO: remove when https://github.com/vaadin/flow/issues/23530 is fixed
-      if [ "$type_" = next ] && [ "${CI:-}" = true ]; then
-        warn "Unsetting CI=true to workaround pnpm frozen-lockfile bug (flow#23530)"
-        export CI=
+      ## pnpm uses ci-info which detects CI via GITHUB_ACTIONS, CI, BUILD_NUMBER, etc.
+      if [ "$type_" = next ]; then
+        warn "Unsetting CI env vars to workaround pnpm frozen-lockfile bug (flow#23530)"
+        unset CI GITHUB_ACTIONS CONTINUOUS_INTEGRATION BUILD_NUMBER RUN_ID
       fi
       ;;
     flow-spring-examples)
