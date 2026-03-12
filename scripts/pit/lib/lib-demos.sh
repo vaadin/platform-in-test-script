@@ -356,6 +356,7 @@ getTest() {
     bookstore-example) echo "bookstore.js";;
     form-filler-demo) echo "ai.js";;
     expo-flow) echo "expo-flow.js";;
+    vaadin-showcase) echo "vaadin-showcase.js";;
     *) echo "hello.js";;
   esac
 }
