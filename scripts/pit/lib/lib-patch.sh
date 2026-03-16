@@ -41,12 +41,6 @@ applyPatches() {
     mpr-demo)
       SS=~/vaadin.spreadsheet.developer.license
       [ ! -f $SS ] && err "Install a Valid License $SS" && return 1
-      ## TODO: remove when https://github.com/vaadin/flow/issues/23530 is fixed
-      ## pnpm uses ci-info which detects CI via GITHUB_ACTIONS, CI, BUILD_NUMBER, etc.
-      if [ "$type_" = next ]; then
-        warn "Unsetting CI env vars to workaround pnpm frozen-lockfile bug (flow#23530)"
-        unset CI GITHUB_ACTIONS CONTINUOUS_INTEGRATION BUILD_NUMBER RUN_ID
-      fi
       ;;
     form-filler-demo)
       [ -n "$TEST" ] && ([ -z "$OPENAI_TOKEN" ] && cmd "export OPENAI_TOKEN=your_AI_token") && return 0
@@ -63,12 +57,6 @@ applyPatches() {
       ## at runtime but not at compile time, so test code that touches VaadinSession fails.
       if [ "$type_" = next ]; then
         addMavenDep pom.xml "jakarta.servlet" "jakarta.servlet-api" "provided"
-      fi
-      ## TODO: remove when https://github.com/vaadin/flow/issues/23530 is fixed
-      ## pnpm uses ci-info which detects CI via GITHUB_ACTIONS, CI, BUILD_NUMBER, etc.
-      if [ "$type_" = next ]; then
-        warn "Unsetting CI env vars to workaround pnpm frozen-lockfile bug (flow#23530)"
-        unset CI GITHUB_ACTIONS CONTINUOUS_INTEGRATION BUILD_NUMBER RUN_ID
       fi
       ;;
     flow-spring-examples)
@@ -115,12 +103,6 @@ applyPatches() {
       perl -pi -e 's/gradle-[\d.]+(-\w+)?-bin\.zip/gradle-8.14.2-bin.zip/' gradle/wrapper/gradle-wrapper.properties
       ## failOnNoDiscoveredTests is Gradle 9 only, remove it for 8.x
       perl -pi -e 's/^\s*failOnNoDiscoveredTests\s*=.*$//' build.gradle
-      ;;
-    spreadsheet-demo)
-      ## TODO: remove when fixed https://github.com/vaadin/flow/issues/23530
-      if [ "$type_" = next ]; then
-        runCmd -f "Cleaning project after version bump" "$MVN -ntp -B clean vaadin:clean-frontend"
-      fi
       ;;
   esac
   case "$vers_" in
