@@ -70,6 +70,7 @@ walking-skeleton:v25.0-hybrid
 releases-graph
 expo-flow
 manolo/vaadin-showcase
+signals-cases
 "
 
 ## mpr-demo_jdk17 might be revived with _jdk21 at some point

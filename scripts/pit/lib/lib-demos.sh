@@ -357,6 +357,7 @@ getTest() {
     form-filler-demo) echo "ai.js";;
     expo-flow) echo "expo-flow.js";;
     vaadin-showcase) echo "vaadin-showcase.js";;
+    signals-cases) echo "signals-cases.js";;
     *) echo "hello.js";;
   esac
 }
