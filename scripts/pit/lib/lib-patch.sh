@@ -98,6 +98,13 @@ applyPatches() {
       ## Tailwind CSS plugin fails to resolve bare @import in META-INF/resources (vaadin/flow#23560)
       perl -pi -e 's|\@import "((?!\./)[^"]+\.css)"|\@import "./$1"|g' src/main/resources/META-INF/resources/styles.css
       ;;
+    signals-cases)
+      ## TODO: remove when https://github.com/vaadin/signals-cases/issues/169 is fixed
+      ## ErrorProne needs -XDaddTypeAnnotationsToSymbol on JDK<22
+      changeBlock '<plugin>\s*<groupId>am.ik.maven</groupId>' '</plugin>' remove pom.xml
+      ## unnamed variables (_) finalized in JDK 22 (JEP 456), replace for JDK 21 compat
+      find src -name "*.java" -exec perl -pi -e 's/\b_ ->/unused ->/g' {} +
+      ;;
     base-starter-gradle)
       ## gretty uses archivePath removed in Gradle 9, downgrade to 8.14.2 (vaadin/base-starter-gradle#311)
       perl -pi -e 's/gradle-[\d.]+(-\w+)?-bin\.zip/gradle-8.14.2-bin.zip/' gradle/wrapper/gradle-wrapper.properties
@@ -110,8 +117,8 @@ applyPatches() {
     23*|24*)
       setJavaVersion 17
       ;;
-    25.0.0*)
-      ## The minimum version of Java supported by vaadin is 17, hence we test for it
+    25.*)
+      ## The minimum version of Java supported by vaadin 25 is 21
       setJavaVersion 21
       ;;
   esac
