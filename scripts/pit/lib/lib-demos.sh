@@ -247,6 +247,7 @@ getInstallCmdPrd() {
     *-quarkus) echo "$MVN -ntp -B clean package -Pproduction $E $PNPM -Dquarkus.analytics.disabled=true";;
     mpr-demo|spreadsheet-demo) echo "$MVN -ntp -B clean";;
     start) echo "$MVN -ntp -B install -Dmaven.test.skip -Pci" ;;
+    skeleton-starter-flow-cdi) W=""; [ -n "$WILDFLY_HOME" ] && W="-Djboss-as.home=$WILDFLY_HOME"; echo "$H $E $W $PNPM";;
     form-filler-demo) echo "$H $E $PNPM -DOPENAI_TOKEN=$OPENAI_TOKEN";;
     testbench-demo) echo "$H $E $PNPM";;
     *) echo "$H $PNPM";;
