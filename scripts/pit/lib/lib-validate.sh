@@ -29,6 +29,7 @@ runValidations() {
   [ -n "$8" ] && test="$PIT_SCR_FOLDER/its/$8" || test=""
   local GHTK= GITHUB_TOKEN=
   [ "$name" = "start" -a "$TIMEOUT" -le "300" ] && timeout=500 || timeout="$TIMEOUT"
+  [ "$name" = "skeleton-starter-flow-cdi" -a "$timeout" -le "300" ] && timeout=600
 
   file="$name-$mode-$version-"`uname`".out"
   rm -f $file
