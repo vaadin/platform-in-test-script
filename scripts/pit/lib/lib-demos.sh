@@ -260,7 +260,7 @@ getRunCmdDev() {
     vaadin-flow-karaf-example) echo "$MVN -ntp -B -pl main-ui install -Prun $PNPM";;
     *-quarkus) echo "$MVN -ntp -B $PNPM -Dquarkus.analytics.disabled=true -Dquarkus.http.port=$2";;
     base-starter-flow-osgi) echo "java $_P -jar app/target/app.jar";;
-    skeleton-starter-flow-cdi) echo "$MVN -ntp -B wildfly:run $PNPM -Djboss.http.port=$2";;
+    skeleton-starter-flow-cdi) W=""; [ -n "$WILDFLY_HOME" ] && W="-Djboss-home=$WILDFLY_HOME"; echo "$MVN -ntp -B wildfly:run $W $PNPM -Djboss.http.port=$2";;
     base-starter-gradle) echo "$GRADLE -Djetty.http.port=$2 jettyStart";; # should be appRun but reads from stdin and fails
     *-gradle) echo "$GRADLE bootRun --args='--server.port=$2'";;
     mpr-demo|testbench-demo) echo "$MVN -ntp -B -Djetty.http.port=$2 jetty:run $PNPM";;
@@ -280,7 +280,7 @@ getRunCmdPrd() {
     *-gradle) echo "$GRADLE -Djetty.http.port=$2 jettyStartWar";;
     *hilla*|k8s-demo-app|skeleton-starter-flow-spring|bakery-app-starter-flow-spring|vaadin-form-example|flow-spring-examples|vaadin-oauth-example) echo "java $_P -jar target/*.jar";;
     base-starter-flow-quarkus) echo "java -Dquarkus.http.port=$2 -jar target/quarkus-app/quarkus-run.jar";;
-    skeleton-starter-flow-cdi) echo "$MVN -ntp -B wildfly:run -Pproduction $PNPM -Djboss.http.port=$2";;
+    skeleton-starter-flow-cdi) W=""; [ -n "$WILDFLY_HOME" ] && W="-Djboss-home=$WILDFLY_HOME"; echo "$MVN -ntp -B wildfly:run -Pproduction $W $PNPM -Djboss.http.port=$2";;
     mpr-demo|spreadsheet-demo|layout-examples|skeleton-starter-flow|business-app-starter-flow|bookstore-example|testbench-demo) echo "$MVN -ntp -Pproduction -B -Djetty.http.port=$2 jetty:run-war $PNPM";;
     *addon-template|addon-starter-flow) echo "$MVN -ntp -Pproduction -B -Djetty.http.port=$2 jetty:run";;
     multi-module-example) echo "java $_P -jar vaadin-app/target/*.jar";;
