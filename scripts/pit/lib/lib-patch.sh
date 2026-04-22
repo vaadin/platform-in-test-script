@@ -131,7 +131,7 @@ applyPatches() {
 checkProjectUsingOldVaadin() {
   [ "$1" != 'current' ] && return
   case $vers_ in
-    25.1.*|25.0.*|current) : ;;
+    25.2.*|25.1.*|25.0.*|current) : ;;
     *) reportError "Using old version $vers_" "Please upgrade $app_ to latest stable" ;;
   esac
 }
