@@ -104,7 +104,7 @@ _getCompProd() {
   case $1 in
     archetype-hotswap|archetype-jetty) echo "$MVN -ntp -B clean";;
     initializer-*-gradle*) echo "$GRADLE clean build -Dhilla.productionMode -Dvaadin.productionMode && rm -f ./build/libs/*-plain.jar";;
-    *) echo "$MVN -ntp -B -Pproduction -Dvaadin.productionMode clean package $PNPM";;
+    *) echo "$MVN -ntp -B -Pproduction clean package $PNPM";;
   esac
 }
 
