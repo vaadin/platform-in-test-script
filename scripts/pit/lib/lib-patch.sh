@@ -84,6 +84,14 @@ applyPatches() {
       if [ "$type_" = next ]; then
         (cd backend && addRepoToPom "https://maven.vaadin.com/vaadin-prereleases")
       fi
+      ## TODO: remove when repo upgrades to Spring Boot 4.0.4+
+      ## Spring Boot 4.0.0 brings Jackson 3.0.2 incompatible with Vaadin 25.1+ (needs 3.1+)
+      changeMavenBlock parent org.springframework.boot spring-boot-starter-parent 4.0.5
+      ;;
+    skeleton-starter-hilla-lit-gradle|skeleton-starter-hilla-react-gradle)
+      ## TODO: remove when repos upgrade to Spring Boot 4.0.4+
+      ## Spring Boot 4.0.0 brings Jackson 3.0.2 incompatible with Vaadin 25.1+ (needs 3.1+)
+      perl -pi -e "s/id 'org.springframework.boot' version '4\.0\.[0-3]'/id 'org.springframework.boot' version '4.0.5'/" build.gradle
       ;;
     initializer-vaadin-*-react)
       ## Vaadin 25 no longer includes Hilla by default, need to add it for React views
