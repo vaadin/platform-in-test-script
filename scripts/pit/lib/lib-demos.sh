@@ -276,9 +276,9 @@ getRunCmdDev() {
 getRunCmdPrd() {
   _P="-Dserver.port=$2"
   case $1 in
-    base-starter-gradle) echo "$GRADLE -Djetty.http.port=$2 jettyStartWar";; # should be appRunWar but reads from stdin and fails
+    base-starter-gradle) echo "$GRADLE -Pvaadin.productionMode -Djetty.http.port=$2 jettyStartWar";; # should be appRunWar but reads from stdin and fails
     *-spring-gradle|*hilla*gradle) echo "java $_P -jar ./build/libs/*-gradle.jar";;
-    *-gradle) echo "$GRADLE -Djetty.http.port=$2 jettyStartWar";;
+    *-gradle) echo "$GRADLE -Pvaadin.productionMode -Djetty.http.port=$2 jettyStartWar";;
     *hilla*|k8s-demo-app|skeleton-starter-flow-spring|bakery-app-starter-flow-spring|vaadin-form-example|flow-spring-examples|vaadin-oauth-example) echo "java $_P -jar target/*.jar";;
     base-starter-flow-quarkus) echo "java -Dquarkus.http.port=$2 -jar target/quarkus-app/quarkus-run.jar";;
     skeleton-starter-flow-cdi) W=""; [ -n "$WILDFLY_HOME" ] && W="-Djboss-as.home=$WILDFLY_HOME"; echo "$MVN -ntp -B wildfly:run -Pproduction $W $PNPM -Djboss.http.port=$2";;
