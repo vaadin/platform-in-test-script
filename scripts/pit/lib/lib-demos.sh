@@ -230,7 +230,7 @@ getInstallCmdDev() {
 }
 ## Get install command for prod-mode
 getInstallCmdPrd() {
-  H="$MVN -ntp -B clean install -Pproduction"
+  H="$MVN -ntp -B clean install -Pproduction -Dvaadin.productionMode"
   if find src/test -name "*IT.java" -o -name "*spec.ts" 2>/dev/null | grep -q .
   then
     H="$H -Pit -Dcom.vaadin.testbench.Parameters.testsInParallel=2"
