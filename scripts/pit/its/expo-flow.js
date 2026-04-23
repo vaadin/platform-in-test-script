@@ -9,7 +9,7 @@ const { dismissDevmode, setupCopilotConfig, args, createPage, closePage, takeScr
     const page = await createPage(arg.headless);
     await waitForServerReady(page, arg.url, arg);
 
-    dismissDevmode(page);
+    await dismissDevmode(page);
 
     await page.locator('html').first().innerHTML();
     await takeScreenshot(page, arg, __filename, 'page-loaded');

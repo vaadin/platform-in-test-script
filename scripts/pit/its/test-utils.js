@@ -228,12 +228,20 @@ async function waitForServerReady(page, url, arg, options = {}) {
 }
 
 async function dismissDevmode(page) {
+  // Try the older UI pattern first
   let dismiss = page.getByTestId('message').getByText('Dismiss');
-  if (!await dismiss.count()) {
-    dismiss = page.locator('copilot-notifications-container').getByLabel('Close')
-  }
   if (await dismiss.count()) {
-    dismiss.click()
+    await dismiss.click();
+    return true;
+  }
+  // Close all copilot notifications (version upgrade, devmode, etc.)
+  const closeButtons = page.locator('copilot-notifications-container').getByLabel('Close');
+  const count = await closeButtons.count();
+  if (count > 0) {
+    for (let i = count - 1; i >= 0; i--) {
+      await closeButtons.nth(i).click();
+      await page.waitForTimeout(300);
+    }
     return true;
   }
   return false;

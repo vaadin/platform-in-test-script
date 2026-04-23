@@ -9,7 +9,7 @@ const {log, dismissDevmode, args, createPage, closePage, takeScreenshot, waitFor
   await page.waitForSelector('#outlet > * > *:not(style):not(script)');
   await takeScreenshot(page, arg, __filename, 'view-loaded');
   if (arg.mode == 'dev') {
-    dismissDevmode(page);
+    await dismissDevmode(page);
     await takeScreenshot(page, arg, __filename, 'dismissed-dev');
   }
   const txt = await page.locator('#outlet').first().innerHTML();
