@@ -1,3 +1,5 @@
+test
+
 ```
 Use: ./scripts/pit/run.sh with the next options:
 
