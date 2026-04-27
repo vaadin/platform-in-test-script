@@ -101,6 +101,14 @@ applyPatches() {
         perl -pi -e "s|(implementation\s*['\"]com\.vaadin:vaadin-spring-boot-starter['\"])|\$1\n    implementation 'com.vaadin:hilla-spring-boot-starter'|" build.gradle
       fi
       ;;
+    npm-addon-template)
+      ## package.json has all Vaadin component versions hardcoded in overrides.
+      ## When bumping vaadin.version, the plugin updates dependencies but not overrides,
+      ## causing npm EOVERRIDE conflict. Removing it lets the plugin regenerate it.
+      if [ "$type_" = next ]; then
+        rm -f package.json
+      fi
+      ;;
     expo-flow)
       ## TODO: remove
       ## Tailwind CSS plugin fails to resolve bare @import in META-INF/resources (vaadin/flow#23560)
