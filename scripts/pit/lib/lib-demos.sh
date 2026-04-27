@@ -241,6 +241,8 @@ getInstallCmdPrd() {
   [ -z "$MAVEN_ARGS" ] &&  E="$E -Dmaven.test.redirectTestOutputToFile=true"
 
   case $1 in
+    base-starter-gradle)
+      echo "$GRADLE clean build -Pvaadin.productionMode && curl -sf -o build/libs/jetty-ee10-runner.jar https://repo1.maven.org/maven2/org/eclipse/jetty/ee10/jetty-ee10-runner/12.0.34/jetty-ee10-runner-12.0.34.jar";;
     *-gradle)
       expr "$_version" : '2\.' >/dev/null && H="-hilla.productionMode" || H="-Pvaadin.productionMode"
       echo "$GRADLE clean build $H $PNPM";;
@@ -276,7 +278,7 @@ getRunCmdDev() {
 getRunCmdPrd() {
   _P="-Dserver.port=$2"
   case $1 in
-    base-starter-gradle) echo "$GRADLE -Pvaadin.productionMode -Djetty.http.port=$2 jettyStartWar";; # should be appRunWar but reads from stdin and fails
+    base-starter-gradle) echo "java -jar build/libs/jetty-ee10-runner.jar --port $2 build/libs/base-starter-gradle.war";;
     *-spring-gradle|*hilla*gradle) echo "java $_P -jar ./build/libs/*-gradle.jar";;
     *-gradle) echo "$GRADLE -Pvaadin.productionMode -Djetty.http.port=$2 jettyStartWar";;
     *hilla*|k8s-demo-app|skeleton-starter-flow-spring|bakery-app-starter-flow-spring|vaadin-form-example|flow-spring-examples|vaadin-oauth-example) echo "java $_P -jar target/*.jar";;
@@ -318,6 +320,7 @@ getReadyMessagePrd() {
     base-starter-flow-quarkus) echo "Listening on: http://0.0.0.0:";;
     skeleton-starter-flow-cdi) echo "Registered web contex|Registered web context";;
     mpr-demo|spreadsheet-demo) echo "Started ServerConnector";;
+    base-starter-gradle) echo "Vaadin is running in production mode";;
     *-gradle) echo "Tomcat started|started and listening";;
     client-server-addon-template) echo 'Started ServerConnector|Started oejs.Server';;
     bakery*|hilla-*-tutorial|start) echo "Started .*Application|Started Server";;
