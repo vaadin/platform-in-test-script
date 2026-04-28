@@ -67,9 +67,15 @@ applyPatches() {
           '${1}\n            <version>2.21.0</version>${3}' pom.xml
       fi
       ;;
-    testbench-demo)
-      S=src/test/screenshots
-      [ -d "$S" ] && runCmd "Removing $S" "rm -rf $S"
+    testbench-demo|skeleton-starter-flow)
+      ## TODO: remove when vaadin/testbench#2219 is fixed
+      ## testbench-core-junit5 pulls junit-platform-engine:1.14.0 (JUnit 5)
+      ## which conflicts with JUnit 6.0.3 used by the rest of the project.
+      ## Force the correct version via dependencyManagement.
+      if [ "$type_" = next ]; then
+        perl -0777 -pi -e 's|(<dependencyManagement>\s*<dependencies>)|$1\n            <dependency><groupId>org.junit.platform</groupId><artifactId>junit-platform-engine</artifactId><version>6.0.3</version></dependency>|' pom.xml
+      fi
+      [ "$app_" = testbench-demo ] && S=src/test/screenshots && [ -d "$S" ] && runCmd "Removing $S" "rm -rf $S"
       ;;
     vaadin-showcase|spring-petclinic-vaadin-flow|walking-skeleton)
       ## Repos use Spring Boot < 4.0.4 which brings Jackson 3.0.x.
