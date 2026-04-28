@@ -71,6 +71,14 @@ applyPatches() {
       S=src/test/screenshots
       [ -d "$S" ] && runCmd "Removing $S" "rm -rf $S"
       ;;
+    vaadin-showcase|spring-petclinic-vaadin-flow|walking-skeleton)
+      ## Repos use Spring Boot < 4.0.4 which brings Jackson 3.0.x.
+      ## Vaadin 25.2+ needs Jackson 3.1+ (available since Boot 4.0.4).
+      ## Only needed for next since the repos work fine with their pinned Vaadin version.
+      if [ "$type_" = next ]; then
+        changeMavenBlock parent org.springframework.boot spring-boot-starter-parent 4.0.5
+      fi
+      ;;
     archetype-spring)
       ## archetype hardcodes vaadin-maven-plugin version instead of using ${vaadin.version}
       if [ "$type_" = next ]; then
