@@ -128,6 +128,21 @@ applyPatches() {
         rm -f package.json
       fi
       ;;
+    start)
+      ## TODO: remove when vaadin/start#3650 is fixed
+      ## Vaadin 25.2 regenerates tsconfig.json without allowImportingTsExtensions,
+      ## causing TS5097 errors in production Vite build.
+      if [ "$type_" = next ]; then
+        cat > fix-tsconfig.cjs << 'FIXEOF'
+const fs = require("fs");
+const t = fs.readFileSync("tsconfig.json", "utf8").replace(/\/\/[^\n]*/g, "");
+const j = JSON.parse(t);
+j.compilerOptions.allowImportingTsExtensions = true;
+fs.writeFileSync("tsconfig.json", JSON.stringify(j, null, 2));
+FIXEOF
+        perl -pi -e "s|run\('compile-ts'\);|run('compile-ts');\nexecSync('node fix-tsconfig.cjs');|" vite.config.ts
+      fi
+      ;;
     expo-flow)
       ## TODO: remove
       ## Tailwind CSS plugin fails to resolve bare @import in META-INF/resources (vaadin/flow#23560)
