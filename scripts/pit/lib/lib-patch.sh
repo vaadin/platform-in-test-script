@@ -69,11 +69,16 @@ applyPatches() {
       ;;
     testbench-demo|skeleton-starter-flow)
       ## TODO: remove when vaadin/testbench#2219 is fixed
-      ## testbench-core-junit5 pulls junit-platform-engine:1.14.0 (JUnit 5)
-      ## which conflicts with JUnit 6.0.3 used by the rest of the project.
-      ## Force the correct version via dependencyManagement.
+      ## Vaadin 25.2 uses JUnit 6.0.3 but testbench-core-junit5 and some starters
+      ## pin JUnit 5.x versions causing conflicts. Force JUnit 6 BOM, align
+      ## all junit-platform artifacts, and upgrade surefire (3.0.0-M7 brings
+      ## its own junit-platform-launcher 1.x that conflicts with JUnit 6).
       if [ "$type_" = next ]; then
-        perl -0777 -pi -e 's|(<dependencyManagement>\s*<dependencies>)|$1\n            <dependency><groupId>org.junit.platform</groupId><artifactId>junit-platform-engine</artifactId><version>6.0.3</version></dependency>|' pom.xml
+        changeMavenBlock dependency org.junit junit-bom 6.0.3
+        changeMavenBlock plugin org.apache.maven.plugins maven-surefire-plugin 3.5.4
+        ## Remove hardcoded JUnit versions so the junit-bom 6.0.3 governs all
+        perl -pi -e 's|<version>5\.14\.0</version>||g; s|<version>1\.14\.0</version>||g' pom.xml
+        perl -0777 -pi -e 's|(<dependencyManagement>\s*<dependencies>)|$1\n            <dependency><groupId>org.junit.platform</groupId><artifactId>junit-platform-engine</artifactId><version>6.0.3</version></dependency>\n            <dependency><groupId>org.junit.platform</groupId><artifactId>junit-platform-commons</artifactId><version>6.0.3</version></dependency>\n            <dependency><groupId>org.junit.platform</groupId><artifactId>junit-platform-launcher</artifactId><version>6.0.3</version></dependency>|' pom.xml
       fi
       [ "$app_" = testbench-demo ] && S=src/test/screenshots && [ -d "$S" ] && runCmd "Removing $S" "rm -rf $S"
       ;;
