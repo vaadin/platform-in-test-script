@@ -27,7 +27,10 @@ runValidations() {
   [ -n "$6" ] && cmd="$6" || cmd=""
   [ -n "$7" ] && check="$7" || check=""
   [ -n "$8" ] && test="$PIT_SCR_FOLDER/its/$8" || test=""
-  local GHTK= GITHUB_TOKEN=
+  # Prevent secrets from leaking in Maven/Vite error messages that dump ProcessBuilder.environment()
+  local GHTK= GITHUB_TOKEN= CC_KEY= CC_CERT=
+  [ "$name" != form-filler-demo ] && local OPENAI_TOKEN=
+  [ "$name" != ce-demo ] && local CE_LICENSE=
   [ "$name" = "start" -a "$TIMEOUT" -le "300" ] && timeout=500 || timeout="$TIMEOUT"
   [ "$name" = "skeleton-starter-flow-cdi" -a "$timeout" -le "300" ] && timeout=600
 
