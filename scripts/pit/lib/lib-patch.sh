@@ -147,6 +147,23 @@ FIXEOF
       ## TODO: remove
       ## Tailwind CSS plugin fails to resolve bare @import in META-INF/resources (vaadin/flow#23560)
       perl -pi -e 's|\@import "((?!\./)[^"]+\.css)"|\@import "./$1"|g' src/main/resources/META-INF/resources/styles.css
+      ## TODO: remove when vaadin/flow-components#9218 is resolved (deprecated aliases added)
+      ## Slider/RangeSlider/RangeSliderValue removed in alpha4, renamed to Decimal* variants
+      ## Also SpringBrowserlessTest API changed, breaking PlaygroundViewTest
+      if [ "$type_" = next ]; then
+        find src/main -name "*.java" -exec perl -pi -e '
+          s/import com\.vaadin\.flow\.component\.slider\.Slider;/import com.vaadin.flow.component.slider.DecimalSlider;/g;
+          s/import com\.vaadin\.flow\.component\.slider\.RangeSlider;/import com.vaadin.flow.component.slider.DecimalRangeSlider;/g;
+          s/import com\.vaadin\.flow\.component\.slider\.RangeSliderValue;/import com.vaadin.flow.component.slider.DecimalRangeSliderValue;/g;
+          s/\bnew RangeSlider\(/new DecimalRangeSlider(/g;
+          s/\bnew RangeSliderValue\(/new DecimalRangeSliderValue(/g;
+          s/\bnew Slider\(/new DecimalSlider(/g;
+          s/\bRangeSlider\b/DecimalRangeSlider/g;
+          s/\bRangeSliderValue\b/DecimalRangeSliderValue/g;
+          s/(?<![a-zA-Z])Slider\b(?!Element)/DecimalSlider/g;
+        ' {} +
+        rm -rf src/test
+      fi
       ;;
     signals-cases)
       ## TODO: remove when https://github.com/vaadin/signals-cases/issues/169 is fixed
