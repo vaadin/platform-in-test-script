@@ -90,6 +90,14 @@ applyPatches() {
         changeMavenBlock parent org.springframework.boot spring-boot-starter-parent 4.0.5
       fi
       ;;
+    skeleton-starter-flow-spring)
+      ## TODO: remove when vaadin/testbench#2221 is fixed (browserless artifacts added to BOM)
+      ## browserless-test-* not in vaadin-testbench-bom, Maven can't resolve versions.
+      ## SpringBrowserlessTest is in browserless-test-spring, not browserless-test-junit6.
+      if [ "$type_" = next ]; then
+        changeMavenBlock dependency com.vaadin browserless-test-junit6 1.1.0-alpha1 com.vaadin browserless-test-spring
+      fi
+      ;;
     archetype-spring)
       ## archetype hardcodes vaadin-maven-plugin version instead of using ${vaadin.version}
       if [ "$type_" = next ]; then
