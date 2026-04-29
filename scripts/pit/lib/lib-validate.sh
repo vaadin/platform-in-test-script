@@ -75,6 +75,10 @@ runValidations() {
   fi
 
   # 4
+  # Truncate the output file before starting the server to avoid matching
+  # stale messages from the install phase (e.g. WildFly's "Registered web context"
+  # from integration tests can trick waitUntilMessageInFile into proceeding too early)
+  [ -z "$TEST" ] && > "$file"
   runInBackgroundToFile "$cmd" "$file" "$VERBOSE"
 
   # 5
