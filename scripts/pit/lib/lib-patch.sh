@@ -149,6 +149,18 @@ j.compilerOptions.allowImportingTsExtensions = true;
 fs.writeFileSync("tsconfig.json", JSON.stringify(j, null, 2));
 FIXEOF
         perl -pi -e "s|run\('compile-ts'\);|run('compile-ts');\nexecSync('node fix-tsconfig.cjs');|" vite.config.ts
+        ## Patch transform-tsconfig.json BEFORE build starts (tsc reads it during compile-ts)
+        ## TS5011: rootDir not set, TS5107: moduleResolution deprecated, TS5101: baseUrl deprecated
+        if [ -f transform-tsconfig.json ]; then
+          node -e '
+const fs = require("fs");
+const t = fs.readFileSync("transform-tsconfig.json", "utf8").replace(/\/\/[^\n]*/g, "");
+const j = JSON.parse(t);
+j.compilerOptions.ignoreDeprecations = "6.0";
+j.compilerOptions.rootDir = "./src/main";
+fs.writeFileSync("transform-tsconfig.json", JSON.stringify(j, null, 2));
+'
+        fi
       fi
       ;;
     expo-flow)
