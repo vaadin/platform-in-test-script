@@ -224,6 +224,7 @@ getInstallCmdDev() {
   case $1 in
     *-gradle) echo "$GRADLE clean" ;;
     multi-module-example) echo "$MVN -ntp -B clean install -DskipTests $PNPM";;
+    signals-cases) echo "$MVN -ntp -B clean -pl signals $PNPM";;
     start) echo "rm -rf package-lock.json node_modules target frontend/generated; $MVN -ntp -B clean";;
     *) echo "$MVN -ntp -B clean $PNPM";;
   esac
@@ -250,6 +251,7 @@ getInstallCmdPrd() {
     mpr-demo|spreadsheet-demo) echo "$MVN -ntp -B clean";;
     start) echo "$MVN -ntp -B install -Dmaven.test.skip -Pci" ;;
     skeleton-starter-flow-cdi) W=""; [ -n "$WILDFLY_HOME" ] && W="-Djboss-as.home=$WILDFLY_HOME"; echo "$H $E $W $PNPM";;
+    signals-cases) echo "$H -pl signals $PNPM";;
     form-filler-demo) echo "$H $E $PNPM -DOPENAI_TOKEN=$OPENAI_TOKEN";;
     testbench-demo) echo "$H $E $PNPM";;
     *) echo "$H $PNPM";;
@@ -268,6 +270,7 @@ getRunCmdDev() {
     *-gradle) echo "$GRADLE bootRun --args='--server.port=$2'";;
     mpr-demo|testbench-demo) echo "$MVN -ntp -B -Djetty.http.port=$2 jetty:run $PNPM";;
     multi-module-example) echo "$MVN -ntp -B spring-boot:run -pl vaadin-app -Dspring-boot.run.arguments=--server.port=$2";;
+    signals-cases) echo "$MVN -ntp -B spring-boot:run -pl signals -Dspring-boot.run.arguments=--server.port=$2";;
     spring-petclinic-vaadin-flow|gs-crud-with-vaadin) echo "$MVN -ntp -B spring-boot:run -Dspring-boot.run.arguments=--server.port=$2";;
     form-filler-demo) echo "$MVN -ntp -B $PNPM -DOPENAI_TOKEN=$OPENAI_TOKEN $_P";;
     *) echo "$MVN -ntp -B $PNPM $_P";;
@@ -287,6 +290,7 @@ getRunCmdPrd() {
     mpr-demo|spreadsheet-demo|layout-examples|skeleton-starter-flow|business-app-starter-flow|bookstore-example|testbench-demo) echo "$MVN -ntp -Pproduction -B -Djetty.http.port=$2 jetty:run-war $PNPM";;
     *addon-template|addon-starter-flow) echo "$MVN -ntp -Pproduction -B -Djetty.http.port=$2 jetty:run";;
     multi-module-example) echo "java $_P -jar vaadin-app/target/*.jar";;
+    signals-cases) echo "java $_P -jar signals/target/*.jar";;
     ce-demo) echo "java -Dvaadin.ce.dataDir=. $_P -jar target/*.jar";;
     start)
       H=""

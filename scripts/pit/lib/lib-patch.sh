@@ -178,7 +178,7 @@ FIXEOF
       ## ErrorProne needs -XDaddTypeAnnotationsToSymbol on JDK<22
       changeBlock '<plugin>\s*<groupId>am.ik.maven</groupId>' '</plugin>' remove pom.xml
       ## unnamed variables (_) finalized in JDK 22 (JEP 456), replace for JDK 21 compat
-      find src -name "*.java" -exec perl -pi -e 's/\b_ ->/unused ->/g' {} +
+      find . -name "*.java" -exec perl -pi -e 's/\b_ ->/unused ->/g' {} +
       ;;
     base-starter-gradle)
       ## gretty uses archivePath removed in Gradle 9, downgrade to 8.14.2 (vaadin/base-starter-gradle#311)
