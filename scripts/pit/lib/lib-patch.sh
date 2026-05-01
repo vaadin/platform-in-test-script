@@ -161,6 +161,8 @@ j.compilerOptions.rootDir = "./src/main";
 fs.writeFileSync("transform-tsconfig.json", JSON.stringify(j, null, 2));
 '
         fi
+        ## TS2882: CSS side-effect imports need type declarations for Vite prod build
+        echo 'declare module "*.css" {}' > css-shim.d.ts
       fi
       ;;
     expo-flow)
