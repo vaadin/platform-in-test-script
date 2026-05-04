@@ -165,6 +165,9 @@ fs.writeFileSync("transform-tsconfig.json", JSON.stringify(j, null, 2));
         ## Must be inside src/main/frontend/ to be in tsconfig.json's include scope
         mkdir -p src/main/frontend
         echo 'declare module "*.css" {}' > src/main/frontend/css-shim.d.ts
+        ## lightningcss rejects invalid CSS selector: ::part() followed by attribute selector
+        ## vaadin-radio-group::part(label)[focused]... is not valid CSS
+        perl -pi -e 's/vaadin-radio-group::part\(label\)\[focused\]:not\(\[readonly\]\)::part\(label\)/vaadin-radio-group::part(label)/' src/main/frontend/themes/wizard/styles.css 2>/dev/null || true
       fi
       ;;
     expo-flow)
