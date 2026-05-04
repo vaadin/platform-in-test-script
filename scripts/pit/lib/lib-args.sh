@@ -63,6 +63,8 @@ processStarters() {
         local b=${i%%:*}
         local H=`printf "$PRESETS\n$DEMOS" | egrep "^$b$|/$b$|/$b[/:]|^$b[/:]" | head -1`
         [ -z "$H" ] && err "Unknown starter: $b" && exit 1
+        # Preserve :branch suffix from the original argument
+        case $i in *:*) H="$H:${i#*:}" ;; esac
         S="${S:+$S,}$H"
       }
     done
