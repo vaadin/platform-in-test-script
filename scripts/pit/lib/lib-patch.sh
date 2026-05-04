@@ -136,40 +136,8 @@ applyPatches() {
         rm -f package.json
       fi
       ;;
-    start)
-      ## TODO: remove when vaadin/start#3650 is fixed
-      ## Vaadin 25.2 regenerates tsconfig.json without allowImportingTsExtensions,
-      ## causing TS5097 errors in production Vite build.
-      if [ "$type_" = next ]; then
-        cat > fix-tsconfig.cjs << 'FIXEOF'
-const fs = require("fs");
-const t = fs.readFileSync("tsconfig.json", "utf8").replace(/\/\/[^\n]*/g, "");
-const j = JSON.parse(t);
-j.compilerOptions.allowImportingTsExtensions = true;
-fs.writeFileSync("tsconfig.json", JSON.stringify(j, null, 2));
-FIXEOF
-        perl -pi -e "s|run\('compile-ts'\);|run('compile-ts');\nexecSync('node fix-tsconfig.cjs');|" vite.config.ts
-        ## Patch transform-tsconfig.json BEFORE build starts (tsc reads it during compile-ts)
-        ## TS5011: rootDir not set, TS5107: moduleResolution deprecated, TS5101: baseUrl deprecated
-        if [ -f transform-tsconfig.json ]; then
-          node -e '
-const fs = require("fs");
-const t = fs.readFileSync("transform-tsconfig.json", "utf8").replace(/\/\/[^\n]*/g, "");
-const j = JSON.parse(t);
-j.compilerOptions.ignoreDeprecations = "6.0";
-j.compilerOptions.rootDir = "./src/main";
-fs.writeFileSync("transform-tsconfig.json", JSON.stringify(j, null, 2));
-'
-        fi
-        ## TS2882: CSS side-effect imports need type declarations for Vite prod build
-        ## Must be inside src/main/frontend/ to be in tsconfig.json's include scope
-        mkdir -p src/main/frontend
-        echo 'declare module "*.css" {}' > src/main/frontend/css-shim.d.ts
-        ## lightningcss rejects invalid CSS selector: ::part() followed by attribute selector
-        ## vaadin-radio-group::part(label)[focused]... is not valid CSS (in components-new/)
-        perl -pi -e 's/vaadin-radio-group::part\(label\)\[focused\]:not\(\[readonly\]\)::part\(label\)/vaadin-radio-group[focused]::part(label)/' src/main/frontend/themes/wizard/components-new/vaadin-radio-group.css
-      fi
-      ;;
+    # start) -- all patches removed, fixed upstream in vaadin/start#3652
+    #   ;;
     expo-flow)
       ## TODO: remove
       ## Tailwind CSS plugin fails to resolve bare @import in META-INF/resources (vaadin/flow#23560)
