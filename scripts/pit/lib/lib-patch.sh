@@ -162,7 +162,9 @@ fs.writeFileSync("transform-tsconfig.json", JSON.stringify(j, null, 2));
 '
         fi
         ## TS2882: CSS side-effect imports need type declarations for Vite prod build
-        echo 'declare module "*.css" {}' > css-shim.d.ts
+        ## Must be inside src/main/frontend/ to be in tsconfig.json's include scope
+        mkdir -p src/main/frontend
+        echo 'declare module "*.css" {}' > src/main/frontend/css-shim.d.ts
       fi
       ;;
     expo-flow)
