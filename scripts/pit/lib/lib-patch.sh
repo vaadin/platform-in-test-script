@@ -166,8 +166,8 @@ fs.writeFileSync("transform-tsconfig.json", JSON.stringify(j, null, 2));
         mkdir -p src/main/frontend
         echo 'declare module "*.css" {}' > src/main/frontend/css-shim.d.ts
         ## lightningcss rejects invalid CSS selector: ::part() followed by attribute selector
-        ## vaadin-radio-group::part(label)[focused]... is not valid CSS
-        perl -pi -e 's/vaadin-radio-group::part\(label\)\[focused\]:not\(\[readonly\]\)::part\(label\)/vaadin-radio-group::part(label)/' src/main/frontend/themes/wizard/styles.css 2>/dev/null || true
+        ## vaadin-radio-group::part(label)[focused]... is not valid CSS (in components-new/)
+        perl -pi -e 's/vaadin-radio-group::part\(label\)\[focused\]:not\(\[readonly\]\)::part\(label\)/vaadin-radio-group[focused]::part(label)/' src/main/frontend/themes/wizard/components-new/vaadin-radio-group.css
       fi
       ;;
     expo-flow)
