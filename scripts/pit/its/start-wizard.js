@@ -1,4 +1,4 @@
-const { args, createPage, closePage, takeScreenshot, dismissDevmode } = require('./test-utils');
+const { args, createPage, closePage, takeScreenshot } = require('./test-utils');
 
 (async () => {
   const arg = args();
@@ -20,40 +20,18 @@ const { args, createPage, closePage, takeScreenshot, dismissDevmode } = require(
     // Navigate directly to the playground (the landing page no longer has a "Start Playing" button)
     await page.goto(`http://${arg.host}:${arg.port}/app/p?preset=default`);
     await page.waitForTimeout(2000);
-    // Close the dev-mode notification toast (if any).
-    await dismissDevmode(page);
-    // Workaround for vaadin/copilot#150: Vaadin Copilot in 25.2.0-alpha8+ keeps
-    // <copilot-main> attached with popover="manual", which puts it in the browser
-    // top-layer and intercepts pointer events on overlapping buttons (e.g. Download
-    // Project / Download in the toolbar). The popover can re-open after subsequent
-    // interactions. Install a MutationObserver that strips the popover attribute
-    // synchronously the moment Copilot re-adds it, plus pointer-events:none on the
-    // element itself as a belt-and-braces guard.
+    // Close the dev-mode notification, whose container sits in the top-right
+    // (rect x:1359 y:8 w:323 h:95) inside <copilot-main>'s shadow root and
+    // overlaps the wizard's Download Project button (vaadin/copilot#150).
+    // page.locator() does not pierce the shadow boundary here, so dispatch the
+    // click via JS directly on the Close button inside the shadow root.
     await page.evaluate(() => {
-      const neutralizeCopilot = (cm) => {
-        if (!cm) return;
-        if (cm.hasAttribute('popover')) cm.removeAttribute('popover');
-        cm.style.pointerEvents = 'none';
-      };
-      const sweep = () => document.querySelectorAll('copilot-main').forEach(neutralizeCopilot);
-      sweep();
-      const observer = new MutationObserver((records) => {
-        for (const r of records) {
-          if (r.type === 'attributes' && r.target.tagName === 'COPILOT-MAIN') {
-            neutralizeCopilot(r.target);
-          } else if (r.type === 'childList') {
-            r.addedNodes.forEach((n) => {
-              if (n.nodeType === 1 && n.tagName === 'COPILOT-MAIN') neutralizeCopilot(n);
-            });
-          }
-        }
-      });
-      observer.observe(document.documentElement, {
-        attributes: true, attributeFilter: ['popover'], subtree: true, childList: true,
-      });
-      // Belt and braces: also sweep periodically in case the observer misses an event.
-      setInterval(sweep, 100);
+      const cm = document.querySelector('copilot-main');
+      const closeBtn = cm?.shadowRoot?.querySelector('copilot-notifications-container [aria-label="Close"]');
+      closeBtn?.click();
     });
+    // Give the close animation a moment to remove the notification from the DOM.
+    await page.waitForTimeout(500);
     await takeScreenshot(page, arg, __filename, 'project-started');
 
     // Add all possible views
@@ -113,16 +91,9 @@ const { args, createPage, closePage, takeScreenshot, dismissDevmode } = require(
     const fname = `my-app-${arg.mode}.zip`
     if (arg.mode == 'dev' && process.env.RUNNER_OS != 'Windows') {
       log(`Downloading project\n`);
-      // Strip any Copilot popover root right before clicking, then click with force
-      // so Playwright does not re-check the intercept (vaadin/copilot#150).
-      const stripCopilot = () => page.evaluate(() => {
-        document.querySelectorAll('copilot-main').forEach((el) => el.remove());
-      });
-      await stripCopilot();
-      await page.getByRole('button', { name: 'Download Project' }).click({ force: true });
+      await page.getByRole('button', { name: 'Download Project' }).click();
       const downloadPromise = page.waitForEvent('download');
-      await stripCopilot();
-      await page.getByRole('button', { name: 'Download', exact: true }).click({ force: true });
+      await page.getByRole('button', { name: 'Download', exact: true }).click();
       const download = await downloadPromise;
       await download.saveAs(fname);
       log(`Downloaded file ${fname}\n`);
