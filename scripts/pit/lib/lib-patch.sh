@@ -76,16 +76,6 @@ applyPatches() {
         perl -i -pe 's|setTimeout\(60000\)|setTimeout(120000)|g' "$_fvt"
       fi
       ;;
-    bookstore-example)
-      ## TODO: remove when bookstore-example rtl-demo branch is fixed
-      ## Locale.Builder.setVariant() validates BCP 47 (no non-ASCII chars), but the rtl-demo
-      ## passes Persian word "فارسی" as variant for use as a button label. Replace with
-      ## Locale.of() which does not validate. Only the rtl-demo branch has this pattern.
-      _ls=src/main/java/org/vaadin/example/bookstore/ui/login/LoginScreen.java
-      if [ -f "$_ls" ] && grep -q 'setVariant("فارسی")' "$_ls"; then
-        perl -i -pe 's|new Locale\.Builder\(\)\.setLanguage\("fa"\)\.setRegion\("IR"\)\.setVariant\("فارسی"\)\.build\(\)|Locale.of("fa", "IR", "فارسی")|g' "$_ls"
-      fi
-      ;;
     testbench-demo|skeleton-starter-flow)
       ## TODO: remove when vaadin/testbench#2219 is fixed
       ## Vaadin 25.2 uses JUnit 6.0.3 but testbench-core-junit5 and some starters
