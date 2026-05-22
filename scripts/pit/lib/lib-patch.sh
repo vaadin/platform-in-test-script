@@ -67,6 +67,15 @@ applyPatches() {
           '${1}\n            <version>2.21.0</version>${3}' pom.xml
       fi
       ;;
+    flow-hilla-hybrid-example)
+      ## TODO: remove when flow-hilla-hybrid-example FlowViewIT timeout flakiness is fixed
+      ## With testsInParallel=2 on CI, the 60s wait for <vaadin-vertical-layout> can be too tight.
+      ## Bump to 120s to absorb frontend compile/serve jitter.
+      _fvt=src/test/java/org/vaadin/example/FlowViewIT.java
+      if [ -f "$_fvt" ]; then
+        perl -i -pe 's|setTimeout\(60000\)|setTimeout(120000)|g' "$_fvt"
+      fi
+      ;;
     testbench-demo|skeleton-starter-flow)
       ## TODO: remove when vaadin/testbench#2219 is fixed
       ## Vaadin 25.2 uses JUnit 6.0.3 but testbench-core-junit5 and some starters
