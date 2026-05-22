@@ -224,7 +224,7 @@ getInstallCmdDev() {
   case $1 in
     *-gradle) echo "$GRADLE clean" ;;
     multi-module-example) echo "$MVN -ntp -B clean install -DskipTests $PNPM";;
-    signals-cases) echo "$MVN -ntp -B clean -pl signals $PNPM";;
+    signals-cases) echo "$MVN -ntp -B clean install -DskipTests -pl signals -am $PNPM";;
     start) echo "rm -rf package-lock.json node_modules target frontend/generated; $MVN -ntp -B clean";;
     *) echo "$MVN -ntp -B clean $PNPM";;
   esac
@@ -251,7 +251,7 @@ getInstallCmdPrd() {
     mpr-demo|spreadsheet-demo) echo "$MVN -ntp -B clean";;
     start) echo "$MVN -ntp -B install -Dmaven.test.skip -Pci" ;;
     skeleton-starter-flow-cdi) W=""; [ -n "$WILDFLY_HOME" ] && W="-Djboss-as.home=$WILDFLY_HOME"; echo "$H $E $W $PNPM";;
-    signals-cases) echo "$H -pl signals $PNPM";;
+    signals-cases) echo "$H -pl signals -am $PNPM";;
     form-filler-demo) echo "$H $E $PNPM -DOPENAI_TOKEN=$OPENAI_TOKEN";;
     testbench-demo) echo "$H $E $PNPM";;
     *) echo "$H $PNPM";;
