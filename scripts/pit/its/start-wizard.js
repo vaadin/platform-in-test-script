@@ -1,4 +1,4 @@
-const { args, createPage, closePage, takeScreenshot } = require('./test-utils');
+const { args, createPage, closePage, takeScreenshot, dismissDevmode } = require('./test-utils');
 
 (async () => {
   const arg = args();
@@ -20,6 +20,20 @@ const { args, createPage, closePage, takeScreenshot } = require('./test-utils');
     // Navigate directly to the playground (the landing page no longer has a "Start Playing" button)
     await page.goto(`http://${arg.host}:${arg.port}/app/p?preset=default`);
     await page.waitForTimeout(2000);
+    // Close the dev-mode notification toast (if any).
+    await dismissDevmode(page);
+    // Workaround: Vaadin Copilot in 25.2.0-alpha8+ keeps <copilot-main> attached with
+    // popover="manual", which puts it in the browser top-layer and intercepts pointer
+    // events on overlapping buttons (e.g. Download Project in the toolbar). Force-close
+    // the popover until the upstream Copilot stops emitting it on the root element.
+    await page.evaluate(() => {
+      const cm = document.querySelector('copilot-main');
+      if (cm && cm.matches && cm.matches(':popover-open')) {
+        try { cm.hidePopover(); } catch (e) { cm.removeAttribute('popover'); }
+      } else if (cm && cm.hasAttribute('popover')) {
+        cm.removeAttribute('popover');
+      }
+    });
     await takeScreenshot(page, arg, __filename, 'project-started');
 
     // Add all possible views
