@@ -113,9 +113,16 @@ const { args, createPage, closePage, takeScreenshot, dismissDevmode } = require(
     const fname = `my-app-${arg.mode}.zip`
     if (arg.mode == 'dev' && process.env.RUNNER_OS != 'Windows') {
       log(`Downloading project\n`);
-      await page.getByRole('button', { name: 'Download Project' }).click();
+      // Strip any Copilot popover root right before clicking, then click with force
+      // so Playwright does not re-check the intercept (vaadin/copilot#150).
+      const stripCopilot = () => page.evaluate(() => {
+        document.querySelectorAll('copilot-main').forEach((el) => el.remove());
+      });
+      await stripCopilot();
+      await page.getByRole('button', { name: 'Download Project' }).click({ force: true });
       const downloadPromise = page.waitForEvent('download');
-      await page.getByRole('button', { name: 'Download', exact: true }).click();
+      await stripCopilot();
+      await page.getByRole('button', { name: 'Download', exact: true }).click({ force: true });
       const download = await downloadPromise;
       await download.saveAs(fname);
       log(`Downloaded file ${fname}\n`);
