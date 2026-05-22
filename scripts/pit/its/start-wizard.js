@@ -22,17 +22,24 @@ const { args, createPage, closePage, takeScreenshot, dismissDevmode } = require(
     await page.waitForTimeout(2000);
     // Close the dev-mode notification toast (if any).
     await dismissDevmode(page);
-    // Workaround: Vaadin Copilot in 25.2.0-alpha8+ keeps <copilot-main> attached with
-    // popover="manual", which puts it in the browser top-layer and intercepts pointer
-    // events on overlapping buttons (e.g. Download Project in the toolbar). Force-close
-    // the popover until the upstream Copilot stops emitting it on the root element.
+    // Workaround for vaadin/copilot#150: Vaadin Copilot in 25.2.0-alpha8+ keeps
+    // <copilot-main> attached with popover="manual", which puts it in the browser
+    // top-layer and intercepts pointer events on overlapping buttons (e.g. Download
+    // Project / Download in the toolbar). The popover can re-open after subsequent
+    // interactions, so install a self-renewing watcher that closes it continuously
+    // until the upstream Copilot stops emitting it on the root element.
     await page.evaluate(() => {
-      const cm = document.querySelector('copilot-main');
-      if (cm && cm.matches && cm.matches(':popover-open')) {
-        try { cm.hidePopover(); } catch (e) { cm.removeAttribute('popover'); }
-      } else if (cm && cm.hasAttribute('popover')) {
-        cm.removeAttribute('popover');
-      }
+      const closeCopilotPopover = () => {
+        const cm = document.querySelector('copilot-main');
+        if (!cm) return;
+        if (cm.matches && cm.matches(':popover-open')) {
+          try { cm.hidePopover(); } catch (e) { cm.removeAttribute('popover'); }
+        } else if (cm.hasAttribute('popover')) {
+          cm.removeAttribute('popover');
+        }
+      };
+      closeCopilotPopover();
+      setInterval(closeCopilotPopover, 200);
     });
     await takeScreenshot(page, arg, __filename, 'project-started');
 
