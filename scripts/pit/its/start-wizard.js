@@ -26,20 +26,33 @@ const { args, createPage, closePage, takeScreenshot, dismissDevmode } = require(
     // <copilot-main> attached with popover="manual", which puts it in the browser
     // top-layer and intercepts pointer events on overlapping buttons (e.g. Download
     // Project / Download in the toolbar). The popover can re-open after subsequent
-    // interactions, so install a self-renewing watcher that closes it continuously
-    // until the upstream Copilot stops emitting it on the root element.
+    // interactions. Install a MutationObserver that strips the popover attribute
+    // synchronously the moment Copilot re-adds it, plus pointer-events:none on the
+    // element itself as a belt-and-braces guard.
     await page.evaluate(() => {
-      const closeCopilotPopover = () => {
-        const cm = document.querySelector('copilot-main');
+      const neutralizeCopilot = (cm) => {
         if (!cm) return;
-        if (cm.matches && cm.matches(':popover-open')) {
-          try { cm.hidePopover(); } catch (e) { cm.removeAttribute('popover'); }
-        } else if (cm.hasAttribute('popover')) {
-          cm.removeAttribute('popover');
-        }
+        if (cm.hasAttribute('popover')) cm.removeAttribute('popover');
+        cm.style.pointerEvents = 'none';
       };
-      closeCopilotPopover();
-      setInterval(closeCopilotPopover, 200);
+      const sweep = () => document.querySelectorAll('copilot-main').forEach(neutralizeCopilot);
+      sweep();
+      const observer = new MutationObserver((records) => {
+        for (const r of records) {
+          if (r.type === 'attributes' && r.target.tagName === 'COPILOT-MAIN') {
+            neutralizeCopilot(r.target);
+          } else if (r.type === 'childList') {
+            r.addedNodes.forEach((n) => {
+              if (n.nodeType === 1 && n.tagName === 'COPILOT-MAIN') neutralizeCopilot(n);
+            });
+          }
+        }
+      });
+      observer.observe(document.documentElement, {
+        attributes: true, attributeFilter: ['popover'], subtree: true, childList: true,
+      });
+      // Belt and braces: also sweep periodically in case the observer misses an event.
+      setInterval(sweep, 100);
     });
     await takeScreenshot(page, arg, __filename, 'project-started');
 
