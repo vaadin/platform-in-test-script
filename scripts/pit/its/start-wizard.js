@@ -91,6 +91,15 @@ const { args, createPage, closePage, takeScreenshot } = require('./test-utils');
     const fname = `my-app-${arg.mode}.zip`
     if (arg.mode == 'dev' && process.env.RUNNER_OS != 'Windows') {
       log(`Downloading project\n`);
+      // Vite hot-reloads during view additions cause copilot to re-show the
+      // dev-mode notification, which overlaps the Download Project button.
+      // Dismiss it again here (same approach as the dismiss at startup above).
+      await page.evaluate(() => {
+        const cm = document.querySelector('copilot-main');
+        const closeBtn = cm?.shadowRoot?.querySelector('copilot-notifications-container [aria-label="Close"]');
+        closeBtn?.click();
+      });
+      await page.waitForTimeout(500);
       await page.getByRole('button', { name: 'Download Project' }).click();
       const downloadPromise = page.waitForEvent('download');
       await page.getByRole('button', { name: 'Download', exact: true }).click();
