@@ -182,6 +182,27 @@ applyPatches() {
       ## failOnNoDiscoveredTests is Gradle 9 only, remove it for 8.x
       perl -pi -e 's/^\s*failOnNoDiscoveredTests\s*=.*$//' build.gradle
       ;;
+    bakery-app-starter-flow-spring)
+      ## onFail lambda throws RuntimeException which vaadin-crud-flow no longer catches
+      ## internally in 25.2+, causing the request to escape through the full stack and
+      ## break subsequent navigation. The error notification is already shown by
+      ## CrudEntityPresenter.executeOperation(), so onFail should be a no-op.
+      ## https://github.com/vaadin/bakery-app-starter-flow-spring/issues/1500
+      if [ "$type_" = next ]; then
+        find src/main -name "AbstractBakeryCrudView.java" | xargs perl -0777 -pi -e \
+          's/(Consumer<E> onFail = entity -> \{)\s*throw new RuntimeException\("The operation could not be performed\."\);\s*(\})/$1\n        $2/g'
+      fi
+      ;;
+    bookstore-example)
+      ## MainLayoutElement.findMenuLinks() uses `this` (AppLayout ref) inside waitUntil.
+      ## With Spring Boot 4.x post-login redirect the AppLayout DOM is replaced, making
+      ## `this` stale. Fix: query from driver root instead of from the stale element.
+      ## https://github.com/vaadin/bookstore-example/issues/514
+      if [ "$type_" = next ]; then
+        find src/test -name "MainLayoutElement.java" | xargs perl -0777 -pi -e \
+          's/waitUntil\(driver ->"Inventory"\.equals\(findElements\(By\.className\("menu-link"\)\)\.get\(0\)\.getText\(\)\)\)/waitUntil(driver -> {\n            List<WebElement> links = driver.findElements(By.className("menu-link"));\n            return !links.isEmpty() \&\& "Inventory".equals(links.get(0).getText());\n        })/g'
+      fi
+      ;;
   esac
   case "$vers_" in
     ## The minimum version of Java supported by vaadin is 17, hence we test for it
