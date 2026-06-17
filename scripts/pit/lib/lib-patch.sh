@@ -191,6 +191,11 @@ applyPatches() {
       if [ "$type_" = next ]; then
         find src/main -name "AbstractBakeryCrudView.java" | xargs perl -0777 -pi -e \
           's/(Consumer<E> onFail = entity -> \{)\s*throw new RuntimeException\("The operation could not be performed\."\);\s*(\})/$1\n        $2/g'
+        ## UsersViewIT login times out on Windows because it runs concurrently with
+        ## DashboardViewIT, overloading the server. @Isolated prevents concurrent
+        ## execution with other test classes, giving UsersViewIT exclusive server access.
+        find src/test -name "UsersViewIT.java" | xargs perl -pi -e \
+          's/^public class UsersViewIT/\@org.junit.jupiter.api.parallel.Isolated\npublic class UsersViewIT/g'
       fi
       ;;
     bookstore-example)
