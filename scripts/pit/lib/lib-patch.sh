@@ -221,6 +221,16 @@ applyPatches() {
       ## Previously ignored with a warning, now breaks Lumo CSS loading. Remove the property
       ## so Vaadin loads Lumo modules automatically as intended.
       find . -name "theme.json" | xargs perl -0777 -pi -e 's/\s*"lumoImports"\s*:\s*\[[^\]]*\],?//g'
+      ## The generated vaadin.ts from older starters contains stale npm import paths.
+      ## In 25.2, web component packages restructured their exports, causing
+      ## "Class extends value undefined" errors in the browser. Regenerate the frontend
+      ## to pick up the correct import paths for 25.2.
+      for i in `getPomFiles`; do
+        P=
+        grep -q "vaadin-maven-plugin" "$i" && P=vaadin
+        grep -q "flow-maven-plugin" "$i" && P=flow
+        [ -z "$P" ] || runCmd -f "Cleaning frontend after version bump" "$MVN -ntp -B clean $P:clean-frontend -Pproduction -f $i"
+      done
       ;;
     25.*)
       ## The minimum version of Java supported by vaadin 25 is 21
