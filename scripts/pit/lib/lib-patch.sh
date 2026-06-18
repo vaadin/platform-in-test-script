@@ -214,6 +214,14 @@ applyPatches() {
     23*|24*)
       setJavaVersion 17
       ;;
+    25.2.*)
+      ## The minimum version of Java supported by vaadin 25 is 21
+      setJavaVersion 21
+      ## lumoImports in theme.json is no longer supported in 25.2.
+      ## Previously ignored with a warning, now breaks Lumo CSS loading. Remove the property
+      ## so Vaadin loads Lumo modules automatically as intended.
+      find . -name "theme.json" | xargs perl -0777 -pi -e 's/\s*"lumoImports"\s*:\s*\[[^\]]*\],?//g'
+      ;;
     25.*)
       ## The minimum version of Java supported by vaadin 25 is 21
       setJavaVersion 21
