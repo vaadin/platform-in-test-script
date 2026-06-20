@@ -10,6 +10,7 @@ isWindows() {
 
 ## Check if a set of commands passed as arguments are installed
 checkCommands() {
+  local command_name
   type command >/dev/null 2>&1 || exit 1
   for command_name in $*; do
     if ! command -v "$command_name" >/dev/null 2>&1; then
@@ -21,6 +22,7 @@ checkCommands() {
 
 ## Remove pro-key for testing core-only apps
 removeProKey() {
+  local _cmd
   if [ -f ~/.vaadin/proKey ]; then
     _cmd="mv ~/.vaadin/proKey ~/.vaadin/proKey-$$"
     runCmd "Removing proKey license" "mv ~/.vaadin/proKey ~/.vaadin/proKey-$$"
@@ -28,6 +30,7 @@ removeProKey() {
 }
 ## Restore pro-key removed in previous function
 restoreProKey() {
+  local H _cmd
   [ ! -f ~/.vaadin/proKey-$$ ] && return
   H=`cat ~/.vaadin/proKey 2>/dev/null`
   _cmd="mv ~/.vaadin/proKey-$$ ~/.vaadin/proKey"
@@ -37,6 +40,7 @@ restoreProKey() {
 
 ## get pids for process
 getPids() {
+  local H _P
   H=`grep -a "" /proc/*/cmdline 2>/dev/null | xargs -0 | grep -v grep | perl -pe 's|/proc/(.*?)/cmdline:|$1 |g'`
   if [ -n "$H" ]
   then
@@ -47,8 +51,9 @@ getPids() {
   [ -n "$_P" ] && echo "$_P" | tr "\n" " " && return 0 || return 1
 }
 
-## Kills a process with its children and wait until complete
+## Kills a process with its children and wait until complete
 doKill() {
+  local _procs
   while [ -n "$1" ]; do
     _procs=`type pgrep >/dev/null 2>&1 && pgrep -P $1`" $1"
     kill $_procs 2>/dev/null
@@ -91,6 +96,7 @@ printnl() {
 
 ## log with some nice color
 isnl() {
+  local _opt
   expr "$1" : "\-" > /dev/null && _opt=${1#-} && shift || _opt=""
   [ "$_opt" = n ] && echo "" >&2 || return 1
   true
@@ -115,6 +121,7 @@ warn() {
   printnl '> ' 0 33 "$*"
 }
 cmd() {
+  local cmd_
   isnl $1 && shift
   cmd_=`printf "$*" | tr -s " " | perl -pe 's|\n|\\\\\\\n|g'`
   printnl '  ' 1 34 " $cmd_"
@@ -127,6 +134,7 @@ dim() {
 ## $1: report header
 ## $*: body
 reportError() {
+  local __head H
   __head=$1; shift
   [ -z "$__head" -o -z "$*" ] && return
   warn "reporting error: $__head"
@@ -143,9 +151,10 @@ EOF
 }
 
 ## Reports a file content to the GHA step-summary section
-## $1: file
+## $1: file
 ## $2: report header
 reportOutErrors() {
+  local H
   [ -f "$1" ] || return
   H=`cat "$1" | egrep -v ' *at |org.atmosphere.cpr.AtmosphereFramework' | tail -300`
   reportError "$2" "$H"
@@ -161,6 +170,7 @@ ask() {
 
 ## Compute the absolute PATH of the executed script
 computeAbsolutePath() {
+  local __path
   __path=`dirname $0 | sed -e 's,^\./,,'`
   ## Check whether the PATH is absolute
   [ `expr "$__path" : '^/'` != 1 ] && __path="$PWD/$__path"
@@ -184,6 +194,7 @@ computeGradle() {
 
 ## Compute npm command used for installing playwright
 computeNpm() {
+  local _VNODE _NPMJS
   _VNODE=~/.vaadin/node
   _NPMJS=$_VNODE/lib/node_modules/npm/bin/npm-cli.js
   NPM="'"`which npm`"'"
@@ -197,6 +208,7 @@ computeNpm() {
 ## $2: message to show
 ## $*: command line order and arguments
 runCmd() {
+  local __ __set _opt _silent _force _cmd _pid _err
   __=$-
   set +x
   expr $__ : .*x >/dev/null && __set="set -x" || __set=true
@@ -243,6 +255,7 @@ runCmdQuiet() {
 ## $3 verbose mode (it means that the output is also printed in the console)
 ## $4 send only stdout to file (if not set, stdout and stderr are sent to the file)
 runToFile() {
+  local __cmd __file __verbose __stdout E err
   __cmd="$1"
   __file="$2"
   __verbose="$3"
@@ -272,6 +285,7 @@ runToFile() {
 ## $2 file to send the output
 ## $3 verbose mode (it means that the output is also printed in the console)
 runInBackgroundToFile() {
+  local __cmd __file __verbose E
   __cmd="$1"
   __file="$2"
   __verbose="$3"
@@ -293,6 +307,7 @@ runInBackgroundToFile() {
 
 ## check whether flow modified the tsconfig.json file
 tsConfigModified() {
+  local H
   grep -q "'tsconfig.json' has been updated" "$1" || return 1
   H=`git diff tsconfig.json 2>/dev/null`
   H="$H"`git diff types.d.ts 2>/dev/null`
@@ -306,6 +321,7 @@ tsConfigModified() {
 ## $3 timeout in seconds
 ## $4 command that is sending the output to the file, used for logging it in case of failure
 waitUntilMessageInFile() {
+  local __file __message __timeout __cmd __sleep __lasted __perl H
   __file="$1"
   __message="$2"
   __timeout="$3"
@@ -344,8 +360,9 @@ playBell() {
 }
 
 ## Alert user with a bell and wait until they push enter
-## only for interactive mode
+## only for interactive mode
 waitForUserWithBell() {
+  local __message
   __message=$1
   playBell &
   pid_bell=$!
@@ -357,6 +374,7 @@ waitForUserWithBell() {
 
 ## Inform the user that app is running in localhost, then wait until the user push enter
 waitForUserManualTesting() {
+  local __port
   __port="$1"
   log "App is running in http://localhost:$__port, open it in your browser"
   ask "When you finish, push ENTER  to continue"
@@ -364,6 +382,7 @@ waitForUserManualTesting() {
 
 ## Check the port is occupied
 checkPort() {
+  local pid_curl
   curl -s telnet://localhost:$1 >/dev/null 2>/dev/null &
   pid_curl=$!
   isWindows && sleep 4 || sleep 2
@@ -372,6 +391,7 @@ checkPort() {
 
 ## Wait until port is listening
 waitUntilPort() {
+  local __i
   log "Waiting for port $1 to be available"
   __i=1
   while true; do
@@ -390,6 +410,7 @@ waitUntilAppReady() {
 
 ## Check whether the port is already in use in this machine
 checkBusyPort() {
+  local __port __err
   __port="$1"
   log "Checking whether port $__port is busy"
   checkPort $__port
@@ -398,10 +419,11 @@ checkBusyPort() {
 }
 
 ## Check that a HTTP servlet request responds with 200
-## $1 url to check
+## $1 url to check
 ## $2 file to send the output
 ## $3 verbose mode (it means that the output is also printed in the console)
 checkHttpServlet() {
+  local __url __ofile __cfile
   __url="$1"
   __ofile="$2"
   __cfile="curl-"`uname`".out"
@@ -417,6 +439,7 @@ checkHttpServlet() {
 ## $1 url to check
 ## $2 file to send the output
 waitUntilFrontendCompiled() {
+  local __url __ofile __time H __err
   __url="$1"
   __ofile="$2"
   [ -n "$TEST" ] && return 0
@@ -448,6 +471,8 @@ waitUntilFrontendCompiled() {
 ## get a property value from pom.xml, normally used for version of some dependency
 ## $1: property name
 getMavenVersion() {
+  local __vfile H __prop
+  __prop=$1
   for __vfile in `find * -name pom.xml 2>/dev/null | egrep -v 'target/|bin/'`
   do
     H=`getCurrProperty $__prop $__vfile`
@@ -459,6 +484,7 @@ getMavenVersion() {
 ## $1: property name
 ## $2: new value
 setVersion() {
+  local __prop __nversion
   __prop=$1
   __nversion=$2
   [ "false" != "$3" ] && git checkout -q .
@@ -481,6 +507,7 @@ getGradleVersion() {
 ## $1: property name
 ## $2: new value
 setGradleVersion() {
+  local __gradleProperty __nversion H __current
   __gradleProperty=$1
   __nversion=$2
   [ "false" != "$3" ] && git checkout -q .
@@ -548,6 +575,7 @@ checkBundleNotCreated() {
 
 ## check that there are no spring or hilla dependencies in the project
 checkNoSpringDependencies() {
+  local T H
   T=`mvn -ntp -B dependency:tree`
   # https://github.com/vaadin/flow-components/issues/7213
   H=`echo "$T" | egrep -i "spring|hilla" | egrep -v "spring-data-commons|hilla-dev"`
@@ -559,6 +587,7 @@ checkNoSpringDependencies() {
 
 ## check that there are no warnings during vite compilation in the logs file
 checkViteCompilationWarnings() {
+  local H
   log "Checking Vite Compilation Warnings"
   H=`grep "DevServerOutputTracker   : Failed" "$1"`
   [ -n "$H" ] && reportOutErrors "$1" "Vite Compilation Warnings"
@@ -572,11 +601,12 @@ getVersionFromPlatform() {
       | egrep -v '^[1-4]' | tr -d "\n" |tr -d " "  | sed -e 's/^.*"'$2'":{"javaVersion"://'| cut -d '"' -f2
 }
 
-## Set version of a property with the value gotten from the versions.json
+## Set version of a property with the value gotten from the versions.json
 ## $1: version of the platform (used to compute the branch)
 ## $2: module name
 ## $3: property name to set with the version in the pom.xml
 setVersionFromPlatform() {
+  local __nversion VERS
   __nversion=$1
   [ $__nversion = current ] && return
   VERS=`getVersionFromPlatform $__nversion $2`
@@ -603,11 +633,12 @@ getPomFiles() {
 ## an utility method for changing blocks in maven, they need to have the structure
 ## <tag><groupId></groupId><artifactId></artifactId><version></version>(optional_line)</tag>
 ## we can change groupId, artifactId, version, and optional_line
-## $1: tag (dependency if empty)
-## $2: groupId
-## $3: artifactId
-## $4: version (keep the same if empty, delete if 'remove' value is provided, or do not modify if version tag is not present)
+## $1: tag (dependency if empty)
+## $2: groupId
+## $3: artifactId
+## $4: version (keep the same if empty, delete if 'remove' value is provided, or do not modify if version tag is not present)
 changeMavenBlock() {
+  local __tag __grp __id __nvers __grp2 __id2 __file __content __found __extra __diff __msg
   __tag=${1:-dependency}
   __grp=$2
   __id=$3
@@ -653,6 +684,7 @@ changeMavenBlock() {
 ## $1: property name
 ## $2: pom.xml file to read
 getCurrProperty() {
+  local H
   H=`grep "<$1>" $2 | perl -pe 's|\s*<'$1'>(.+?)</'$1'>\s*|$1|'`
   [ -n "$H" ] && echo "$H" && return 0
 }
@@ -663,6 +695,7 @@ getCurrProperty() {
 ## $3: new content of the block, you need to provide ${1} ${2} ${3} to use the left, old content and right groups
 ## $4: file
 changeBlock() {
+  local __left __right __val __bfile __diff __err
   __left="$1"; __right="${2:-$1}"; __val="$3"; __bfile="$4";
   cp $__bfile $$-1
   if [ "$__val" = remove ]; then
@@ -681,10 +714,11 @@ changeBlock() {
 }
 
 ## change a maven property in the pom.xml, faster than
-##  mvn -q versions:set-property -Dproperty=property -DnewVersion=value
+##  mvn -q versions:set-property -Dproperty=property -DnewVersion=value
 ## $1: property name
 ## $2: value (if value is 'remove' the property is removed)
 changeMavenProperty() {
+  local __prop __val __ret __propfile __cur
   __prop=$1; __val=$2; __ret=0;
   for __propfile in `getPomFiles`
   do
@@ -708,6 +742,7 @@ changeMavenProperty() {
 ## $1: property1 name
 ## $2: property2 name
 renameMavenProperty() {
+  local __prop1 __prop2 __ret __file __cur
   __prop1=$1; __prop2=$2; __ret=1;
   for __file in `getPomFiles`
   do
@@ -739,6 +774,7 @@ removeMavenProperty() {
 ## $2: property name
 ## $3: value
 setPropertyInFile() {
+  local __file __key __val __cur __diff
   __file=$1; __key=$2; __val=$3
   [ ! -f "$__file" ] && return 0
   cp $__file $$-1
@@ -787,8 +823,9 @@ isHeadless() {
   test "$HEADLESS" = true -o -z "$VERBOSE" -a "$HEADLESS" != false -o -n "$IP"
 }
 
-## print used versions of node, java and maven
+## print used versions of node, java and maven
 printVersions() {
+  local _vers
   computeNpm
   [ -n "$TEST" ] && return
   _vers=`MAVEN_OPTS="$MAVEN_OPTS" MAVEN_ARGS="$MAVEN_ARGS" $MVN -version | tr \\\\ / 2>/dev/null | egrep -i 'maven|java'`
@@ -808,6 +845,7 @@ Npm version: `eval $NPM --version`
 ## Add extr repo to the pom.xml
 ## $1: repo url
 addRepoToPom() {
+  local U R __cmd
   U="$1"
   grep -q "$U" pom.xml && return 0
   for R in repositor pluginRepositor; do
@@ -837,6 +875,7 @@ addMavenDep() {
 ## Add extr repo to gradle files
 ## $1: repo url
 addRepoToGradle() {
+  local U REPO_FORMAT BUILD_REPO_FORMAT H
   U="$1"
   # Check if URL contains http to determine the format
   if echo "$U" | grep -q "http"; then
@@ -871,6 +910,7 @@ addSpringReleaseRepo() {
 
 ## enables snapshots for the pre-releases repositories in pom.xml
 enableSnapshots() {
+  local __file
   for __file in `getPomFiles`
   do
     changeBlock '<snapshots>\s+<enabled>' '</enabled>\s+</snapshots>' '${1}true${3}'  $__file
@@ -880,14 +920,16 @@ enableSnapshots() {
 ## Downloads a file from the internet
 ## $1: the URL
 download() {
+  local __S __O
   [ -z "$VERBOSE" ] && __S="-s"
   [ -n "$2" -a "$2" != '-' ] && __O="-o $2"
   runCmd -f "Downloading $1" "curl $__S -L $__O $1"
 }
 
 ## Installs jet brains java runtime, used for testing the hotswap agent
-## It updates JAVA_HOME and PATH variables, and sets the HOT one with the parameters to enable it.
+## It updates JAVA_HOME and PATH variables, and sets the HOT one with the parameters to enable it.
 installJBRRuntime() {
+  local __hvers __jvers __vers __hsau __jurl H
   # https://github.com/HotswapProjects/HotswapAgent/releases/
   __hvers="2.0.1"
   # https://github.com/JetBrains/JetBrainsRuntime/releases
@@ -921,6 +963,7 @@ installJBRRuntime() {
 ## Installs a certain version of OPENJDK
 # $1: version (eg: 17, 21, 23)
 installJDKRuntime() {
+  local __version base_url os_suffix __ext __nversion __vpath tar_file tmp_dir __jurl
   __version=$1
   base_url="https://download.oracle.com/java"
   isLinux && os_suffix="linux-x64" && __ext="tar.gz"
@@ -945,6 +988,7 @@ installJDKRuntime() {
 }
 
 setJavaPath() {
+  local H
   H=`find "$1" -name Home -type d`
   [ -z "$H" ] && H="$1"
   [ -z "$TEST" ] && log "Setting JAVA_HOME=$H PATH=$H/bin:\$PATH"
@@ -969,6 +1013,7 @@ unsetJavaPath() {
 ## enables autoreload for preparing jet brains java runtime
 ## it modifies jetty in pom.xml and configures the hotswap-agent.properties
 enableJBRAutoreload() {
+  local _p
   _p=src/main/resources/hotswap-agent.properties
   mkdir -p `dirname $_p` && echo "autoHotswap=true" > "$_p"
   [ -z "$TEST" ] && warn "Disabled Jetty autoreload"
@@ -978,6 +1023,7 @@ enableJBRAutoreload() {
 ## displays secs in mins:secs
 ## $1: seconds
 secsToString() {
+  local __mins __secs
   __mins=`expr $1 / 60`
   __secs=`expr $1 % 60`
   printf "%.2d':%.2d\"" $__mins $__secs
@@ -986,6 +1032,7 @@ secsToString() {
 ## computes elapsed time
 ## $1: the starttime in `date +%s`, otherwise the time since the script was run
 computeTime() {
+  local __start __end
   __start=${1:-$START}
   __end=`date +%s`
   secsToString `expr $__end - $__start`
@@ -994,6 +1041,7 @@ computeTime() {
 ## prints elapsed time
 ## $1: the starttime in `date +%s`, otherwise the time since the script was run
 printTime() {
+  local H
   H=`computeTime $1`
   echo ""
   log "Elapsed Time: $H\""
@@ -1001,6 +1049,7 @@ printTime() {
 
 ## update Gradle to the version provided in $1
 upgradeGradle() {
+  local V
   [ -z "$1" ] && return
   V=`$GRADLE --version | grep '^Gradle' | awk '{print $2}'`
   expr "$V" : "$1" >/dev/null && return
@@ -1009,6 +1058,7 @@ upgradeGradle() {
 
 ## list all demos that are available in the vaadin website (examples and starters)
 getReposFromWebsite() {
+  local _demos _starters
   _demos=`curl -s https://vaadin.com/examples-and-demos  | grep div | grep github.com/vaadin | perl -pe 's|(^.*)/github.com/vaadin/([\w\-]+).*|$2|g' | sort -u`
   _starters=`curl -s https://vaadin.com/hello-world-starters  | grep div | grep github.com/vaadin | perl -pe 's|(^.*)/github.com/vaadin/([\w\-]+).*|$2|g' | sort -u`
   printf "$_demos\n$_starters" | sort -u
@@ -1023,6 +1073,7 @@ cleanM2() {
 
 ## compute the latest version of hilla depending on the platform or hilla version provided in $1
 getLatestHillaVersion() {
+  local G
   case "$1" in
     24.[45].*|*-SNAPSHOT) echo "$1" && return ;;
     2.*)    echo "$1" && return ;;
@@ -1054,6 +1105,7 @@ computeProp() {
 }
 
 computeJavaMajor() {
+  local JavaMajor
   JavaMajor=`java -version 2>&1 | sed -n 's/.*version "\([0-9]*\).*/\1/p'`
   [ -z "$JavaMajor" ] && err "Could not determine Java version minor" && return 1
   echo $JavaMajor
@@ -1086,6 +1138,7 @@ getMvnDependencyVersion() {
 # $3 version
 # $4 extra arguments to pass to mvn
 setMvnDependencyVersion() {
+  local _newVers _curVers
   # expr "$3" : ".*SNAPSHOT" >/dev/null && _newVers=$3 || _newVers=$3
   _newVers=$3
   _curVers=`getMvnDependencyVersion "$1" "$2" "$4"` || return 1
@@ -1099,6 +1152,7 @@ setMvnDependencyVersion() {
 }
 
 validateToken() {
+  local H
   [ -z "$GHTK" ] && return 1
   H=`curl -s -H "Authorization: Bearer $GHTK" https://api.github.com/user | jq '.login'`
   [ -z "$H" -o "$H" = null ] && err "Invalid GHTK, $H" && return 1
@@ -1111,8 +1165,9 @@ validateToken() {
 ## change java version in pom files
 ## $1 new version
 setJavaVersion() {
+  local i v
   for i in `getPomFiles`; do
-    local v=`grep '</java.version>' pom.xml  | sed -e 's|[^0-9]||g'`
+    v=`grep '</java.version>' pom.xml  | sed -e 's|[^0-9]||g'`
     [ -z "$v" -o "$v" = "$1" ] && return
     cmd "perl -pi -e 's|<java.version>\d+</java.version>|<java.version>'$1'</java.version>|' $i"
     perl -pi -e 's|<java.version>\d+</java.version>|<java.version>'$1'</java.version>|' $i

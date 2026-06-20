@@ -20,6 +20,7 @@ initGit() {
 ## Generate an app from start.vaadin.com with the given preset, and unzip it in the current folder
 ## multiple presets can be used by joining them with the `_` character
 downloadStarter() {
+  local _preset _presets _dir _p _url _zip _silent _name
   _preset=$1
   _presets=""
   _dir="$2"
@@ -39,6 +40,7 @@ downloadStarter() {
 ## Generates a starter by using archetype, or hilla/cli
 ## TODO: add support for vaadi cli
 generateStarter() {
+  local _name cmd
   _name=$1
   case $_name in
     *spring)        cmd="$MVN -ntp -q -B archetype:generate -DarchetypeGroupId=com.vaadin -DarchetypeArtifactId=vaadin-archetype-spring-application -DarchetypeVersion=LATEST -DgroupId=com.vaadin.starter -DartifactId=$_name" ;;
@@ -57,6 +59,7 @@ generateStarter() {
 ## Gemerate a starter using spring initializer website
 ## TODO: Check versions
 downloadInitializer() {
+  local _name _java _boot _group _type _deps _url
   _name=$1
   _java=`computeJavaMajor`
   _boot=4.0.5
@@ -111,6 +114,7 @@ _getCompProd() {
 ## Get the command to run the project in dev mode
 ## $1: starter name, $2: port
 _getRunDev() {
+  local _P
   _P="-Dserver.port=$2"
   case $1 in
     vaadin-quarkus) echo "$MVN -ntp -B -Dquarkus.enforceBuildGoal=false -Dquarkus.http.port=$2 quarkus:dev";;
@@ -123,6 +127,7 @@ _getRunDev() {
 ## Get the command to run the project in production mode
 ## $1: starter name, $2: port
 _getRunProd() {
+  local _P
   _P="-Dserver.port=$2"
   case $1 in
     archetype-hotswap|archetype-jetty) echo "$MVN -ntp -B -Pproduction -Dvaadin.productionMode -Djetty.http.port=$2 jetty:run-war";;
@@ -168,8 +173,10 @@ setStartVersion() {
 # 5. run validations for the new version in dev-mode
 # 6. run validations for the new version in prod-mode
 runStarter() {
-  local GHTK= GITHUB_TOKEN=
-  # 0
+  local GHTK GITHUB_TOKEN MVN _preset _tmp _port _versionProp _version _offline
+  local _test _folder _dir _msg _msgprod _prod _dev _compile _clean _current
+  GHTK= GITHUB_TOKEN=
+  # 0
   MVN=mvn
   _preset="$1"
   _tmp="$2"

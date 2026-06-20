@@ -19,6 +19,8 @@
 # 13. check that the app is not using a default ID for statistics
 # 14. remove .out file if the process was successful
 runValidations() {
+  local mode version name port compile cmd check test timeout file treefile H _err test_result
+  local GHTK GITHUB_TOKEN CC_KEY CC_CERT OPENAI_TOKEN CE_LICENSE
   [ -n "$1" ] && mode="$1" || mode=""
   [ -n "$2" ] && version="$2" || version=""
   [ -n "$3" ] && name="$3" || name=""
@@ -28,9 +30,9 @@ runValidations() {
   [ -n "$7" ] && check="$7" || check=""
   [ -n "$8" ] && test="$PIT_SCR_FOLDER/its/$8" || test=""
   # Prevent secrets from leaking in Maven/Vite error messages that dump ProcessBuilder.environment()
-  local GHTK= GITHUB_TOKEN= CC_KEY= CC_CERT=
-  [ "$name" != form-filler-demo ] && local OPENAI_TOKEN=
-  [ "$name" != ce-demo ] && local CE_LICENSE=
+  GHTK= GITHUB_TOKEN= CC_KEY= CC_CERT=
+  [ "$name" != form-filler-demo ] && OPENAI_TOKEN=
+  [ "$name" != ce-demo ] && CE_LICENSE=
   [ "$name" = "start" -a "$TIMEOUT" -le "300" ] && timeout=500 || timeout="$TIMEOUT"
   [ "$name" = "skeleton-starter-flow-cdi" -a "$timeout" -le "300" ] && timeout=600
 
@@ -62,14 +64,14 @@ runValidations() {
       checkNoSpringDependencies "$name" || return 1 ;;
   esac
 
-  # 1
+  # 1
   [ -n "$TEST" ] || checkBusyPort "$port" || return 1
   # 2
   [ -n "$TEST" ] || disableLaunchBrowser
   [ -z "$TEST" ] && [ -n "$PNPM" ] && enablePnpm
   [ -z "$TEST" ] && [ -n "$VITE" ] && enableVite
 
-  # 3
+  # 3
   runToFile "$compile" "$file" "$VERBOSE"
   if [ "$?" != 0 ]; then
     H=`grep FAILURE grep FAILURE target/*-reports/*txt 2>/dev/null`
