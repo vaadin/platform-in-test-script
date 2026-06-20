@@ -165,16 +165,17 @@ compareVersions() {
 ## we add GITHUB_TOKEN or GHTK environment variable to the URL
 ## $1: the name of the demo in the form of `repo[:branch][/folder]`
 checkoutDemo() {
-  local _demo=`getGitDemo $1`
-  local _branch=`getGitBranch $1`
-  local _folder=`getGitFolder $1`
-  local _workdir="$_demo$_folder"
-  local _repo=`getGitRepo $1`
-  local _base="https://github.com/"
+  local _demo _branch _folder _workdir _repo _base _gitUrl _quiet
+  _demo=`getGitDemo $1`
+  _branch=`getGitBranch $1`
+  _folder=`getGitFolder $1`
+  _workdir="$_demo$_folder"
+  _repo=`getGitRepo $1`
+  _base="https://github.com/"
   grep -q '^github' ~/.ssh/known_hosts 2>/dev/null && _base="git@github.com:"
 
   validateToken $_repo && _base=`echo "$_base" | sed -e 's|\(https://\)|\\1'$GHTK'@|'`
-  local _gitUrl="${_base}${_repo}.git"
+  _gitUrl="${_base}${_repo}.git"
   [ -z "$VERBOSE" -o -n "$TEST" ] && _quiet="-q"
   if [ -z "$OFFLINE" -o ! -d "$_workdir" ]
   then
@@ -191,6 +192,7 @@ checkoutDemo() {
 }
 ## returns the github repo URL of a demo
 getGitRepo() {
+  local _repo
   _repo=`echo $1 | cut -d : -f1`
   case $_repo in
     */*) echo $_repo | cut -d / -f1,2 ;;
@@ -205,6 +207,7 @@ getGitBranch() {
 }
 ## returns the folder with the demo in the repo
 getGitFolder() {
+  local _repo
   _repo=`echo $1 | cut -d : -f1`
   case $_repo in
     */*/*) echo "/"`echo $_repo | cut -d / -f3` ;;
@@ -212,6 +215,7 @@ getGitFolder() {
 }
 ## returns the name for the demo
 getGitDemo() {
+  local _repo
   _repo=`echo $1 | cut -d : -f1`
   case $_repo in
     */*) echo $_repo | cut -d / -f2 ;;
@@ -231,6 +235,7 @@ getInstallCmdDev() {
 }
 ## Get install command for prod-mode
 getInstallCmdPrd() {
+  local H E W
   H="$MVN -ntp -B clean install -Pproduction"
   if find src/test -name "*IT.java" -o -name "*spec.ts" 2>/dev/null | grep -q .
   then
@@ -260,6 +265,7 @@ getInstallCmdPrd() {
 ## Get command for running the project dev-mode after install was run
 ## $1: demo name, $2: port
 getRunCmdDev() {
+  local _P W
   _P="-Dserver.port=$2"
   case $1 in
     vaadin-flow-karaf-example) echo "$MVN -ntp -B -pl main-ui install -Prun $PNPM";;
@@ -279,6 +285,7 @@ getRunCmdDev() {
 ## Get command for running the project prod-mode after install was run
 ## $1: demo name, $2: port
 getRunCmdPrd() {
+  local _P W H i
   _P="-Dserver.port=$2"
   case $1 in
     base-starter-gradle) echo "java -jar build/libs/jetty-ee10-runner.jar --port $2 build/libs/base-starter-gradle.war";;
