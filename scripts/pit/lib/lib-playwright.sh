@@ -1,6 +1,8 @@
 ## LIBRARY for installing and running playwright tests
 
-## Check whether playwright is installed in node_modules folder of the test node-script
+## Check whether Playwright is installed in node_modules folder of the test script
+## $1: path to test file (e.g., scripts/pit/its/click-hotswap.js)
+## Returns: 0 if installed, 1 otherwise
 isInstalledPlaywright() {
   local dir
   dir=`dirname "$1"`
@@ -8,7 +10,9 @@ isInstalledPlaywright() {
     echo -e "const { chromium } = require('@playwright/test');\n" | "$NODE" - 2>/dev/null)
 }
 
-## Install playwright in the folder of the test node-script
+## Install Playwright in the folder of the test script
+## $1: path to test file
+## Returns: 0 on success, 1 on failure
 installPlaywright() {
   local pfile dir
   pfile="playwright-"`uname`".out"
@@ -18,19 +22,24 @@ installPlaywright() {
   isLinux && (cd "$dir" && runToFile "'${NODE}' ./node_modules/.bin/playwright install-deps chromium" "$pfile" "$VERBOSE") || true
 }
 
-## Check if playwright is installed, otherwise install it
+## Check if Playwright is installed, install it if not
+## If UPDATE env var is set, force reinstall
+## $1: path to test file
+## Returns: 0 on success, 1 on failure
 checkPlaywrightInstallation() {
   [ -z "$UPDATE" ] || installPlaywright "$1" || return 1
   isInstalledPlaywright "$1" && return 0
   installPlaywright "$1"
 }
 
-## Run playwright tests
-# $1 test file to run
-# $2 output file of the running server-side running in background to save
-# $3 mode (dev, prod)
-# $4 name of the app being tested
-# $5 platform version in test
+## Run Playwright tests for a specific app/demo
+## $1: test file path to run (e.g., scripts/pit/its/click-hotswap.js)
+## $2: server log file to append results and check for errors
+## $3: mode ('dev' or 'prod')
+## $4: name of the app being tested
+## $5: platform version being tested
+## $*: additional arguments to pass to the test (e.g., --port=8080)
+## Returns: test exit code (0 on success)
 runPlaywrightTests() {
   local test_file base_name ofile mode name version pfile args err H
   test_file="$1"

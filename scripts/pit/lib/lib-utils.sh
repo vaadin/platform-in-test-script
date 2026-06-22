@@ -1,14 +1,18 @@
+## Check if the current OS is Linux
 isLinux() {
   test `uname` = Linux
 }
+## Check if the current OS is macOS
 isMac() {
   test `uname` = Darwin
 }
+## Check if the current OS is Windows (or not Linux/macOS)
 isWindows() {
   ! isLinux && ! isMac
 }
 
 ## Check if a set of commands passed as arguments are installed
+## $*: command names to check
 checkCommands() {
   local command_name
   type command >/dev/null 2>&1 || exit 1
@@ -38,7 +42,8 @@ restoreProKey() {
   [ -z "$TEST" -a -n "$H" ] && reportError "A proKey was generated while running validation" "$H" && return 1
 }
 
-## get pids for process
+## Get PIDs for processes matching a pattern
+## $1: pattern to match against process command line
 getPids() {
   local H P
   H=`grep -a "" /proc/*/cmdline 2>/dev/null | xargs -0 | grep -v grep | perl -pe 's|/proc/(.*?)/cmdline:|$1 |g'`
@@ -52,6 +57,7 @@ getPids() {
 }
 
 ## Kills a process with its children and wait until complete
+## $*: process IDs to kill
 doKill() {
   local procs
   while [ -n "$1" ]; do
@@ -72,6 +78,8 @@ cleanAll() {
   unsetJavaPath
 }
 
+## Register a command to be executed on script exit
+## $1: command to execute on exit
 onExit() {
   [ -n "$exitCmds" ] && exitCmds="$exitCmds;$1" || exitCmds="$1"
 }
@@ -85,47 +93,69 @@ doExit() {
   exit
 }
 
-## print wrapper for coloring outputs
+## Print wrapper for coloring outputs
+## $1: prefix string
+## $2: text attribute (0=normal, 1=bold, 2=dim)
+## $3: color code (31=red, 32=green, 33=yellow, 34=blue, 36=cyan)
+## $4: message to print
 print() {
   printf "\033[0m$1\033[$2;$3m$4\033[0m" >&2
 }
 
+## Print with newline
+## $1: prefix string
+## $2: text attribute
+## $3: color code
+## $4: message to print
 printnl() {
   print "$1" "$2" "$3" "$4\n"
 }
 
-## log with some nice color
+## Check if first argument is -n flag (newline option)
+## $1: optional -n flag
 isnl() {
   local opt
   expr "$1" : "\-" > /dev/null && opt=${1#-} && shift || opt=""
   [ "$opt" = n ] && echo "" >&2 || return 1
   true
 }
+## Log a message with timestamp (green color)
+## $*: message to log
 log() {
   isnl $1 && shift
   [ -n "$TEST" ] && cmd "## $*" && return 0
   print '> ' 0 32 "$*"
   printnl '' 2 36 " - "`computeTime`""
 }
+## Log a bold message with timestamp (bold green color)
+## $*: message to log
 bold() {
   isnl $1 && shift
   [ -n "$TEST" ] && cmd "## $*" && return 0
   print '> ' 1 32 "$*"
   printnl '' 2 36 " - "`computeTime`""
 }
+## Print an error message (red color)
+## $*: error message
 err() {
   printnl '> ' 0 31 "$*"
 }
+## Print a warning message (yellow color)
+## $*: warning message
 warn() {
   isnl $1 && shift
   printnl '> ' 0 33 "$*"
 }
+## Print a command (blue color)
+## $*: command to display
 cmd() {
   local cmd_str
   isnl $1 && shift
   cmd_str=`printf "$*" | tr -s " " | perl -pe 's|\n|\\\\\\\n|g'`
   printnl '  ' 1 34 " $cmd_str"
 }
+## Print a dimmed message (cyan color)
+## $*: message to print
 dim() {
   printnl '' 0 36 "$*"
 }
@@ -160,7 +190,8 @@ reportOutErrors() {
   reportError "$2" "$H"
 }
 
-## ask user a question, response is stored in key variable
+## Ask user a question, response is stored in key variable
+## $1: question to ask the user
 ask() {
   # flush stdin
   while read -t1 ignore; do :; done
@@ -204,7 +235,7 @@ computeNpm() {
 }
 
 ## Run a command, and shows a message explaining it
-## $1: it's optional and it could be -q (quiet sending output to dev/null) -f (force execution even when $TEST is set)
+## $1: optional flags: -q (quiet, send output to dev/null) -f (force execution even when $TEST is set)
 ## $2: message to show
 ## $*: command line order and arguments
 runCmd() {
@@ -244,16 +275,17 @@ runCmd() {
   return $err
 }
 
-##
+## Run a command quietly (alias for runCmd -qf)
+## $*: command to run
 runCmdQuiet() {
   :
 }
 
 ## Run a command and outputs its stdout/stderr to a file
-## $1 command to run
-## $2 file to send the output
-## $3 verbose mode (it means that the output is also printed in the console)
-## $4 send only stdout to file (if not set, stdout and stderr are sent to the file)
+## $1: command to run
+## $2: file to send the output
+## $3: verbose mode (if set, output is also printed to console)
+## $4: send only stdout to file (if set, only stdout is redirected, stderr goes to console)
 runToFile() {
   local cmd file verbose stdout E err
   cmd="$1"
@@ -281,9 +313,9 @@ runToFile() {
 }
 
 ## Run a process silently in background sending its output to a file
-## $1 command to run
-## $2 file to send the output
-## $3 verbose mode (it means that the output is also printed in the console)
+## $1: command to run
+## $2: file to send the output
+## $3: verbose mode (if set, output is also tailed to console)
 runInBackgroundToFile() {
   local cmd file verbose E
   cmd="$1"
@@ -305,7 +337,8 @@ runInBackgroundToFile() {
   kill -0 $pid_run 2>/dev/null || return 1
 }
 
-## check whether flow modified the tsconfig.json file
+## Check whether flow modified the tsconfig.json file
+## $1: log file to check and append results to
 tsConfigModified() {
   local H
   grep -q "'tsconfig.json' has been updated" "$1" || return 1
@@ -316,10 +349,10 @@ tsConfigModified() {
 }
 
 ## Wait until the specified message appears in the log file
-## $1 file continously check for the presence of a message
-## $2 message to wait for (it could be a regular expression, valid for egrep)
-## $3 timeout in seconds
-## $4 command that is sending the output to the file, used for logging it in case of failure
+## $1: file to continuously check for the presence of a message
+## $2: message to wait for (can be a regular expression valid for egrep)
+## $3: timeout in seconds
+## $4: command that is sending output to the file (used for logging in case of failure)
 waitUntilMessageInFile() {
   local file message timeout cmd sleep lasted perl H
   file="$1"
@@ -351,7 +384,7 @@ waitUntilMessageInFile() {
 }
 
 ## Infinite loop playing a bell in console
-## Used in interactive moded for alerting the user that last command has finished
+## Used in interactive mode for alerting the user that last command has finished
 playBell() {
   while true
   do
@@ -360,7 +393,7 @@ playBell() {
 }
 
 ## Alert user with a bell and wait until they push enter
-## only for interactive mode
+## $1: optional message to display to the user
 waitForUserWithBell() {
   local message
   message=$1
@@ -372,7 +405,8 @@ waitForUserWithBell() {
   unset pid_bell
 }
 
-## Inform the user that app is running in localhost, then wait until the user push enter
+## Inform the user that app is running in localhost, then wait until the user pushes enter
+## $1: port number where the app is running
 waitForUserManualTesting() {
   local port
   port="$1"
@@ -380,7 +414,8 @@ waitForUserManualTesting() {
   ask "When you finish, push ENTER  to continue"
 }
 
-## Check the port is occupied
+## Check if a port is occupied
+## $1: port number to check
 checkPort() {
   local pid_curl
   curl -s telnet://localhost:$1 >/dev/null 2>/dev/null &
@@ -389,7 +424,10 @@ checkPort() {
   kill $pid_curl >/dev/null 2>/dev/null || return 1
 }
 
-## Wait until port is listening
+## Wait until a port is listening
+## $1: port number to wait for
+## $2: timeout in seconds
+## $3: log file to append results to
 waitUntilPort() {
   local i
   log "Waiting for port $1 to be available"
@@ -401,14 +439,19 @@ waitUntilPort() {
   done
 }
 
-## App context in Karaf takes a while after the server is listening
+## Wait until the app context is ready (Karaf apps need extra time)
+## $1: app name
+## $2: port number
+## $3: timeout in seconds
+## $4: log file
 waitUntilAppReady() {
   [ -n "$TEST" ] && return
   waitUntilPort $2 $3 $4 || return 1
   [ "$1" = vaadin-flow-karaf-example ] && warn "sleeping 30 secs for the context" && sleep 10 || true
 }
 
-## Check whether the port is already in use in this machine
+## Check whether a port is already in use on this machine
+## $1: port number to check
 checkBusyPort() {
   local port err
   port="$1"
@@ -418,10 +461,9 @@ checkBusyPort() {
   [ $err = 0 ] && err "Port ${port} is occupied" && return 1 || return 0
 }
 
-## Check that a HTTP servlet request responds with 200
-## $1 url to check
-## $2 file to send the output
-## $3 verbose mode (it means that the output is also printed in the console)
+## Check that an HTTP servlet request responds with 200
+## $1: url to check
+## $2: log file from server output (used for error reporting)
 checkHttpServlet() {
   local url ofile cfile
   url="$1"
@@ -434,10 +476,10 @@ checkHttpServlet() {
   [ $? != 0 ] && reportOutErrors "$ofile" "Server Logs" && return 1 || return 0
 }
 
-## Hits an HTTP server until vaadin finishes to compile the frontend in dev-mode
-## This is the equivalent to open browser and wait for the spinner to disappear when frontend is compiling
-## $1 url to check
-## $2 file to send the output
+## Hits an HTTP server until Vaadin finishes compiling the frontend in dev-mode
+## This is equivalent to opening a browser and waiting for the spinner to disappear when frontend is compiling
+## $1: url to check
+## $2: log file to send output and check for errors
 waitUntilFrontendCompiled() {
   local url ofile time H err
   url="$1"
@@ -468,7 +510,7 @@ waitUntilFrontendCompiled() {
   done
 }
 
-## get a property value from pom.xml, normally used for version of some dependency
+## Get a property value from pom.xml, normally used for version of some dependency
 ## $1: property name
 getMavenVersion() {
   local vfile H prop
@@ -480,9 +522,10 @@ getMavenVersion() {
   done
 }
 
-## Set the value of a property in the pom file, returning error if unchanged
+## Set the value of a property in pom.xml, returning error if unchanged
 ## $1: property name
-## $2: new value
+## $2: new value (or 'current' to get current version without changing)
+## $3: optional, if 'false' skip git checkout
 setVersion() {
   local prop nversion
   prop=$1
@@ -503,9 +546,10 @@ getGradleVersion() {
   fi
 }
 
-## Set the value of a property in the gradle.properties file, returning error if unchanged
+## Set the value of a property in gradle.properties or build.gradle, returning error if unchanged
 ## $1: property name
-## $2: new value
+## $2: new value (or 'current' to get current version without changing)
+## $3: optional, if 'false' skip git checkout
 setGradleVersion() {
   local gradleProperty nversion H current
   gradleProperty=$1
@@ -560,7 +604,8 @@ setVersionInGradle() {
   fi
 }
 
-## checks whether an express dev-bundle has been created for the project
+## Check whether an express dev-bundle has been created for the project
+## $1: log file to check
 checkBundleNotCreated() {
   log "Checking Express Bundle"
   if grep -q "A development mode bundle build is not needed" "$1" ; then
@@ -573,7 +618,8 @@ checkBundleNotCreated() {
   fi
 }
 
-## check that there are no spring or hilla dependencies in the project
+## Check that there are no Spring or Hilla dependencies in the project
+## These dependencies should not be present in certain pure Flow projects
 checkNoSpringDependencies() {
   local T H
   T=`mvn -ntp -B dependency:tree`
@@ -585,7 +631,8 @@ checkNoSpringDependencies() {
   log "No Spring/Hilla dependencies found"
 }
 
-## check that there are no warnings during vite compilation in the logs file
+## Check that there are no warnings during Vite compilation in the log file
+## $1: log file to check
 checkViteCompilationWarnings() {
   local H
   log "Checking Vite Compilation Warnings"
@@ -594,8 +641,8 @@ checkViteCompilationWarnings() {
 }
 
 ## Get a specific version from the platform versions.json
-## $1 : platform branch
-## $2 : module name
+## $1: platform branch (e.g., '24.5', 'main')
+## $2: module name (e.g., 'flow', 'vaadin-core')
 getVersionFromPlatform() {
   curl -s "https://raw.githubusercontent.com/vaadin/platform/$1/versions.json" 2>/dev/null \
       | egrep -v '^[1-4]' | tr -d "\n" |tr -d " "  | sed -e 's/^.*"'$2'":{"javaVersion"://'| cut -d '"' -f2
@@ -626,17 +673,21 @@ setMprVersion() {
   setVersionFromPlatform $1 mpr-v8 mpr.version
 }
 
+## Find all pom.xml files in the project excluding target and bin directories
 getPomFiles() {
   find * -name pom.xml 2>/dev/null | egrep -v 'target/|bin/'
 }
 
-## an utility method for changing blocks in maven, they need to have the structure
-## <tag><groupId></groupId><artifactId></artifactId><version></version>(optional_line)</tag>
-## we can change groupId, artifactId, version, and optional_line
-## $1: tag (dependency if empty)
+## Utility method for changing Maven dependency/plugin blocks in pom.xml
+## Blocks must have the structure: <tag><groupId></groupId><artifactId></artifactId><version></version>(optional_line)</tag>
+## We can change groupId, artifactId, version, and optional_line
+## $1: tag name (defaults to 'dependency' if empty)
 ## $2: groupId
 ## $3: artifactId
-## $4: version (keep the same if empty, delete if 'remove' value is provided, or do not modify if version tag is not present)
+## $4: version (keep same if empty, delete if 'remove', or don't modify if version tag not present)
+## $5: optional new groupId (defaults to $2)
+## $6: optional new artifactId (defaults to $3)
+## $7: optional extra content
 changeMavenBlock() {
   local tag grp id nvers grp2 id2 file content found extra diff msg
   tag=${1:-dependency}
