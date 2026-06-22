@@ -1,19 +1,21 @@
-## LIBRARY for installing and running playwright tests
+## LIBRARY for installing and running playwright tests
 
 ## Check whether playwright is installed in node_modules folder of the test node-script
 isInstalledPlaywright() {
-  _dir=`dirname "$1"`
-  (cd "$_dir" && \
+  local dir
+  dir=`dirname "$1"`
+  (cd "$dir" && \
     echo -e "const { chromium } = require('@playwright/test');\n" | "$NODE" - 2>/dev/null)
 }
 
 ## Install playwright in the folder of the test node-script
 installPlaywright() {
-  _pfile="playwright-"`uname`".out"
-  _dir=`dirname "$1"`
-  (cd "$_dir" && runToFile "$NPM install --no-audit @playwright/test" "$_pfile" "$VERBOSE") || return 1
-  (cd "$_dir" && runToFile "npx playwright install chromium" "$_pfile" "$VERBOSE") || return 1
-  isLinux && (cd "$_dir" && runToFile "'${NODE}' ./node_modules/.bin/playwright install-deps chromium" "$_pfile" "$VERBOSE") || true
+  local pfile dir
+  pfile="playwright-"`uname`".out"
+  dir=`dirname "$1"`
+  (cd "$dir" && runToFile "$NPM install --no-audit @playwright/test" "$pfile" "$VERBOSE") || return 1
+  (cd "$dir" && runToFile "npx playwright install chromium" "$pfile" "$VERBOSE") || return 1
+  isLinux && (cd "$dir" && runToFile "'${NODE}' ./node_modules/.bin/playwright install-deps chromium" "$pfile" "$VERBOSE") || true
 }
 
 ## Check if playwright is installed, otherwise install it
@@ -30,33 +32,34 @@ checkPlaywrightInstallation() {
 # $4 name of the app being tested
 # $5 platform version in test
 runPlaywrightTests() {
-  local _test_file="$1"
-  local _base_name=`basename "$1"`
-  local _ofile="$2"
-  local _mode="$3"
-  local _name="$4"
-  local _version="$5"
+  local test_file base_name ofile mode name version pfile args err H
+  test_file="$1"
+  base_name=`basename "$1"`
+  ofile="$2"
+  mode="$3"
+  name="$4"
+  version="$5"
   shift 5
 
-  local _pfile="playwright-$_version-$_mode-"`uname`".out"
-  [ -f "$_test_file" ] && checkPlaywrightInstallation "$_test_file" || return 0
+  pfile="playwright-$version-$mode-"`uname`".out"
+  [ -f "$test_file" ] && checkPlaywrightInstallation "$test_file" || return 0
 
-  _args="$* --name=$_name --version=$_version --mode=$_mode"
-  [ -n "$SCREENSHOTS" ] && _args="$_args --screenshots"
+  args="$* --name=$name --version=$version --mode=$mode"
+  [ -n "$SCREENSHOTS" ] && args="$args --screenshots"
 
-  isHeadless && _args="$_args --headless"
-  log "Running visual test: $_base_name"
-  PATH=$PATH START=$START runToFile "'$NODE' '$_test_file' $_args" "$_pfile" "$VERBOSE" true
+  isHeadless && args="$args --headless"
+  log "Running visual test: $base_name"
+  PATH=$PATH START=$START runToFile "'$NODE' '$test_file' $args" "$pfile" "$VERBOSE" true
   err=$?
   [ -n "$TEST" ] && return 0
-  H=`grep ' > CONSOLE:' "$_pfile" | perl -pe 's/(> CONSOLE: Received xhr.*?feat":).*/$1 .../g'`
+  H=`grep ' > CONSOLE:' "$pfile" | perl -pe 's/(> CONSOLE: Received xhr.*?feat":).*/$1 .../g'`
   H=`echo "$H" | egrep -v 'Atmosphere|Vaadin push loaded|Websocket successfully opened|Websocket closed|404.*favicon.ico'`
-  [ -n "$H" ] && [ "$_mode" = "prod" ] && reportError "Console Warnings in $_mode mode $5" "$H" && echo "$H"
-  H=`egrep ' > (JSERROR|PAGEERROR):' "$_pfile"`
-  [ -n "$H" ] && reportError "Console Errors in $_msg" "$H" && echo "$H" && return 1
-  H=`tail -15 $_pfile`
-  [ $err != 0 ] && reportOutErrors "$_ofile" "Error ($err) running Visual-Test ("`basename $_pfile`")" || echo ">>>> PiT: playwright '$_test_file' done" >> $__file
-  [ $err = 0 ] && rm -f "$_pfile"
+  [ -n "$H" ] && [ "$mode" = "prod" ] && reportError "Console Warnings in $mode mode $5" "$H" && echo "$H"
+  H=`egrep ' > (JSERROR|PAGEERROR):' "$pfile"`
+  [ -n "$H" ] && reportError "Console Errors in $msg" "$H" && echo "$H" && return 1
+  H=`tail -15 $pfile`
+  [ $err != 0 ] && reportOutErrors "$ofile" "Error ($err) running Visual-Test ("`basename $pfile`")" || echo ">>>> PiT: playwright '$test_file' done" >> "$ofile"
+  [ $err = 0 ] && rm -f "$pfile"
   return $err
 }
 
