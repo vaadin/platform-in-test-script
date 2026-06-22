@@ -47,12 +47,12 @@ applyPatches() {
       [ -z "$OPENAI_TOKEN" ] && err "Set correctly the OPENAI_TOKEN env var" && return 1
       ;;
     vaadin-quarkus)
-      ## TODO: re-enable when https://github.com/vaadin/quarkus/issues/271 is fixed
-      ## See also: https://vaadin.com/docs/latest/flow/integrations/quarkus#quarkus.vaadin.knownissues
+      ## NOTE: Quarkus BOM ordering is a documented limitation (vaadin/quarkus#271)
+      ## When Vaadin BOM is placed before Quarkus BOM, Jackson 3.x conflicts with Vert.x
+      ## See: https://vaadin.com/docs/latest/flow/integrations/quarkus#known-issues
       # moveQuarkusBomToBottom
       ;;
     addon-template)
-      ## TODO: remove when https://github.com/vaadin/flow/issues/23785 is fixed
       ## flow-server 25.1+ no longer pulls servlet-api transitively; Jetty plugin provides it
       ## at runtime but not at compile time, so test code that touches VaadinSession fails.
       if [ "$type_" = next ]; then
@@ -77,18 +77,6 @@ applyPatches() {
       fi
       ;;
     testbench-demo|skeleton-starter-flow)
-      ## TODO: remove when vaadin/testbench#2219 is fixed
-      ## Vaadin 25.2 uses JUnit 6.0.3 but testbench-core-junit5 and some starters
-      ## pin JUnit 5.x versions causing conflicts. Force JUnit 6 BOM, align
-      ## all junit-platform artifacts, and upgrade surefire (3.0.0-M7 brings
-      ## its own junit-platform-launcher 1.x that conflicts with JUnit 6).
-      if [ "$type_" = next ]; then
-        changeMavenBlock dependency org.junit junit-bom 6.0.3
-        changeMavenBlock plugin org.apache.maven.plugins maven-surefire-plugin 3.5.4
-        ## Remove hardcoded JUnit versions so the junit-bom 6.0.3 governs all
-        perl -pi -e 's|<version>5\.14\.0</version>||g; s|<version>1\.14\.0</version>||g' pom.xml
-        perl -0777 -pi -e 's|(<dependencyManagement>\s*<dependencies>)|$1\n            <dependency><groupId>org.junit.platform</groupId><artifactId>junit-platform-engine</artifactId><version>6.0.3</version></dependency>\n            <dependency><groupId>org.junit.platform</groupId><artifactId>junit-platform-commons</artifactId><version>6.0.3</version></dependency>\n            <dependency><groupId>org.junit.platform</groupId><artifactId>junit-platform-launcher</artifactId><version>6.0.3</version></dependency>|' pom.xml
-      fi
       [ "$app_" = testbench-demo ] && S=src/test/screenshots && [ -d "$S" ] && runCmd "Removing $S" "rm -rf $S"
       ;;
     vaadin-showcase|spring-petclinic-vaadin-flow|walking-skeleton)
@@ -97,14 +85,6 @@ applyPatches() {
       ## Only needed for next since the repos work fine with their pinned Vaadin version.
       if [ "$type_" = next ]; then
         changeMavenBlock parent org.springframework.boot spring-boot-starter-parent 4.0.5
-      fi
-      ;;
-    skeleton-starter-flow-spring)
-      ## TODO: remove when vaadin/testbench#2221 is fixed (browserless artifacts added to BOM)
-      ## browserless-test-* not in vaadin-testbench-bom, Maven can't resolve versions.
-      ## SpringBrowserlessTest is in browserless-test-spring, not browserless-test-junit6.
-      if [ "$type_" = next ]; then
-        changeMavenBlock dependency com.vaadin browserless-test-junit6 1.1.0-alpha1 com.vaadin browserless-test-spring
       fi
       ;;
     archetype-spring)
@@ -170,7 +150,6 @@ applyPatches() {
       fi
       ;;
     signals-cases)
-      ## TODO: remove when https://github.com/vaadin/signals-cases/issues/169 is fixed
       ## ErrorProne needs -XDaddTypeAnnotationsToSymbol on JDK<22
       changeBlock '<plugin>\s*<groupId>am.ik.maven</groupId>' '</plugin>' remove pom.xml
       ## unnamed variables (_) finalized in JDK 22 (JEP 456), replace for JDK 21 compat
