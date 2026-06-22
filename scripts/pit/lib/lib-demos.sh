@@ -162,8 +162,10 @@ compareVersions() {
 }
 
 ## Checkout a branch of a vaadin repository in github
-## we add GITHUB_TOKEN or GHTK environment variable to the URL
-## $1: the name of the demo in the form of `repo[:branch][/folder]`
+## Clone or update a demo repository from GitHub
+## Adds GITHUB_TOKEN or GHTK environment variable to the URL for authentication
+## $1: demo name in the format 'repo[:branch][/folder]'
+##     e.g., 'skeleton-starter-flow', 'expo-flow:v25', 'platform/some/folder'
 checkoutDemo() {
   local demo branch folder workdir repo base gitUrl quiet
   demo=`getGitDemo $1`
@@ -190,7 +192,9 @@ checkoutDemo() {
   fi
   [ -z "$branch" ] || runCmd -f "Selecting branch: $branch" "git checkout $quiet $branch"
 }
-## returns the github repo URL of a demo
+## Extract the GitHub repository path from demo name
+## $1: demo name (e.g., 'skeleton-starter-flow' or 'vaadin/expo-flow')
+## Returns: full repo path (e.g., 'vaadin/skeleton-starter-flow' or 'vaadin/expo-flow')
 getGitRepo() {
   local repo
   repo=`echo $1 | cut -d : -f1`
@@ -199,13 +203,17 @@ getGitRepo() {
     *) echo "vaadin/"`echo $repo` ;;
   esac
 }
-## returns the current branch of a demo
+## Extract the branch name from demo name if specified
+## $1: demo name (e.g., 'skeleton-starter-flow:v25')
+## Returns: branch name (e.g., 'v25') or empty if not specified
 getGitBranch() {
   case $1 in
     *:*) echo echo $1 | cut -d ":" -f2 ;;
   esac
 }
-## returns the folder with the demo in the repo
+## Extract the folder path from demo name if specified
+## $1: demo name (e.g., 'vaadin/platform/demos/demo-flow')
+## Returns: folder path (e.g., '/demos/demo-flow') or empty if not specified
 getGitFolder() {
   local repo
   repo=`echo $1 | cut -d : -f1`
@@ -213,7 +221,9 @@ getGitFolder() {
     */*/*) echo "/"`echo $repo | cut -d / -f3` ;;
   esac
 }
-## returns the name for the demo
+## Extract the demo name (repository name) from full path
+## $1: demo name (e.g., 'vaadin/skeleton-starter-flow' or 'skeleton-starter-flow')
+## Returns: just the demo name (e.g., 'skeleton-starter-flow')
 getGitDemo() {
   local repo
   repo=`echo $1 | cut -d : -f1`
@@ -223,7 +233,9 @@ getGitDemo() {
   esac
 }
 
-## Get install command for dev-mode
+## Get install command for development mode
+## $1: demo name
+## Returns: Maven or Gradle clean command with appropriate options
 getInstallCmdDev() {
   case $1 in
     *-gradle) echo "$GRADLE clean" ;;
@@ -233,7 +245,9 @@ getInstallCmdDev() {
     *) echo "$MVN -ntp -B clean $PNPM";;
   esac
 }
-## Get install command for prod-mode
+## Get install command for production mode
+## $1: demo name
+## Returns: Maven or Gradle production build command with tests/options
 getInstallCmdPrd() {
   local H E W
   H="$MVN -ntp -B clean install -Pproduction"
@@ -262,8 +276,10 @@ getInstallCmdPrd() {
     *) echo "$H $PNPM";;
   esac
 }
-## Get command for running the project dev-mode after install was run
-## $1: demo name, $2: port
+## Get command for running the project in development mode after install
+## $1: demo name
+## $2: port number
+## Returns: Maven, Gradle, or direct Java run command
 getRunCmdDev() {
   local _P W
   _P="-Dserver.port=$2"
@@ -282,8 +298,10 @@ getRunCmdDev() {
     *) echo "$MVN -ntp -B $PNPM $_P";;
   esac
 }
-## Get command for running the project prod-mode after install was run
-## $1: demo name, $2: port
+## Get command for running the project in production mode after install
+## $1: demo name
+## $2: port number
+## Returns: Java JAR execution command with appropriate server options
 getRunCmdPrd() {
   local _P W H i
   _P="-Dserver.port=$2"
@@ -309,7 +327,9 @@ getRunCmdPrd() {
     *) echo "java $_P -jar target/*.jar" ;;
   esac
 }
-## Get ready message when running the project in dev-mode
+## Get ready message pattern to wait for when running in development mode
+## $1: demo name
+## Returns: regex pattern to match in server logs (e.g., 'Started.*Application|Vaadin is running')
 getReadyMessageDev() {
   case $1 in
     base-starter-flow-osgi) echo "HTTP:";;
@@ -324,7 +344,9 @@ getReadyMessageDev() {
     *) echo "Frontend compiled successfully|Started .*Application|Started Server|Started oejs.Server";;
   esac
 }
-## Get ready message when running the project in prod-mode
+## Get ready message pattern to wait for when running in production mode
+## $1: demo name
+## Returns: regex pattern to match in server logs (e.g., 'Started.*Application|Started ServerConnector')
 getReadyMessagePrd() {
   case $1 in
     skeleton-starter-flow-spring|k8s-demo-app) echo "Vaadin is running in production mode";;
@@ -338,7 +360,10 @@ getReadyMessagePrd() {
     *) getReadyMessageDev $1;;
   esac
 }
-## Check whether a demo can be run in prod-mode
+## Check whether a demo can be run in production mode
+## Some demos only work in dev mode (e.g., MPR demos)
+## $1: demo name
+## Returns: 0 if production is supported, 1 otherwise
 hasProduction() {
   [ -n "$NOPROD" ] && return 1
   case $1 in
@@ -346,6 +371,10 @@ hasProduction() {
     *) return 0;
   esac
 }
+## Check whether a demo can be run in development mode
+## Most demos support dev mode
+## $1: demo name
+## Returns: 0 if dev mode is supported, 1 otherwise
 hasDev() {
   test -z "$NODEV"
 }

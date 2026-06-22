@@ -5,8 +5,8 @@
 
 . `dirname $0`/lib/lib-validate.sh
 
-## Initialize a git repository in the current starter project if not already
-## It's useful in the case we want to manually check PiT patches applied
+## Initialize a git repository in the current starter project if not already initialized
+## Useful for manually checking PiT patches applied
 initGit() {
   [ -d ".git" ] && return
   git init -q
@@ -17,8 +17,10 @@ initGit() {
   git commit -q -m 'First commit' -a
 }
 
-## Generate an app from start.vaadin.com with the given preset, and unzip it in the current folder
-## multiple presets can be used by joining them with the `_` character
+## Download and unzip an app from start.vaadin.com with the given preset
+## Multiple presets can be combined by joining them with the '_' character
+## $1: preset name (or presets separated by '_')
+## $2: directory to extract into
 downloadStarter() {
   local preset presets dir p url zip silent name
   preset=$1
@@ -37,8 +39,9 @@ downloadStarter() {
   cmd "cd '$dir'" && cd "$dir" || return 1
 }
 
-## Generates a starter by using archetype, or hilla/cli
-## TODO: add support for vaadi cli
+## Generate a starter using Maven archetype or Hilla CLI
+## $1: starter name (e.g., 'archetype-spring', 'vaadin-quarkus', 'hilla-react-cli')
+## TODO: add support for Vaadin CLI
 generateStarter() {
   local name cmd
   name=$1
@@ -56,7 +59,10 @@ generateStarter() {
 }
 
 
-## Gemerate a starter using spring initializer website
+## Generate a starter using Spring Initializr website
+## $1: project name
+## $2: project type ('maven-project' or 'gradle-project')
+## $3: dependencies (comma-separated, e.g., 'vaadin,devtools')
 ## TODO: Check versions
 downloadInitializer() {
   local name java boot group type deps url
@@ -73,8 +79,10 @@ downloadInitializer() {
   initGit
 }
 
-## get the Playwright IDE test file used for each starter
-## thwey are located in the pit/its folder
+## Get the Playwright test file to use for a specific starter
+## Test files are located in the scripts/pit/its folder
+## $1: starter name
+## Returns: test filename or empty string if no test
 ## TODO: check those returning noop.js
 getStartTestFile() {
   case $1 in
@@ -95,6 +103,8 @@ getStartTestFile() {
 }
 
 ## Get the clean command for the given starter
+## $1: starter name
+## Returns: Maven or Gradle clean command
 _getClean() {
   case $1 in
     initializer-*-gradle*) echo "$GRADLE clean" ;;
@@ -103,6 +113,8 @@ _getClean() {
 }
 
 ## Get the command to compile the project in production mode
+## $1: starter name
+## Returns: Maven or Gradle production build command
 _getCompProd() {
   case $1 in
     archetype-hotswap|archetype-jetty) echo "$MVN -ntp -B clean";;
@@ -111,8 +123,10 @@ _getCompProd() {
   esac
 }
 
-## Get the command to run the project in dev mode
-## $1: starter name, $2: port
+## Get the command to run the project in development mode
+## $1: starter name
+## $2: port number
+## Returns: Maven or Gradle dev run command
 _getRunDev() {
   local _P
   _P="-Dserver.port=$2"
@@ -125,7 +139,9 @@ _getRunDev() {
 }
 
 ## Get the command to run the project in production mode
-## $1: starter name, $2: port
+## $1: starter name
+## $2: port number
+## Returns: Java command to run the built JAR
 _getRunProd() {
   local _P
   _P="-Dserver.port=$2"
@@ -137,8 +153,10 @@ _getRunProd() {
   esac
 }
 
-## Check whether the starter needs a pro license, if not, remove the pro key
-## so as we can check that there are no pro features in the starter
+## Check whether the starter requires a Vaadin Pro license
+## If not, the pro key will be removed to verify no pro features are used
+## $1: starter name
+## Returns: 0 if license needed, 1 if not
 _needsLicense() {
   case $1 in
     default*|archetype*) return 1;;
@@ -146,12 +164,16 @@ _needsLicense() {
   esac
 }
 
-## Check whether the run is a next prerelease (we have to increase the version with the --version provided)
+## Check whether this is a next pre-release run (version needs to be increased)
+## $1: starter name
+## Returns: 0 if next pre-release, 1 otherwise
 _isNext() {
   expr "$1" : .*partial-nextprerelease$ >/dev/null
 }
 
-## Set the version of the project to the given version
+## Set the version of the project (works for both Maven and Gradle projects)
+## $1: property name (e.g., 'vaadin.version', 'vaadinVersion')
+## $2: new version value (or 'current' to get current version)
 setStartVersion() {
     if [ -f "build.gradle" ]
     then
@@ -161,17 +183,22 @@ setStartVersion() {
     fi
 }
 
-## Run an App downloaded from start.vaadin.com by following the next steps
-# 0. compute properties and make preparations
-# 1. generate the project using archetypes or download from start.vaadin.com, initializer, etc
-#    if we are in offline mode we skip this step if the project already exists, and clean it instead
-#    it installs the JBR runtime if the project can be run with it
-#    it removes the pro key if the project does not need a pro license
-# 2. run validations in the current version to check that it's not broken
-# 3. run validations for the current version in prod-mode
-# 4. increase version to the version used for PiT (if version given)
-# 5. run validations for the new version in dev-mode
-# 6. run validations for the new version in prod-mode
+## Run a starter app downloaded from start.vaadin.com by following these steps:
+## 0. Compute properties and make preparations
+## 1. Generate project using archetypes or download from start.vaadin.com, Initializr, etc
+##    In offline mode, reuse existing project and clean it
+##    Install JBR runtime if project supports it
+##    Remove pro key if project doesn't need a pro license
+## 2. Run validations in current version to check it's not broken (dev mode)
+## 3. Run validations for current version in production mode
+## 4. Increase version to the one specified for PiT (if version given)
+## 5. Run validations for the new version in dev mode
+## 6. Run validations for the new version in production mode
+## $1: starter name/preset
+## $2: temporary directory path
+## $3: port number
+## $4: version to test
+## $5: offline mode flag
 runStarter() {
   local GHTK GITHUB_TOKEN MVN preset tmp port versionProp version offline
   local test folder dir msg msgprod prod dev compile clean current

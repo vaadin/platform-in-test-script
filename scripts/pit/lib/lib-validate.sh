@@ -1,23 +1,31 @@
 . `dirname $0`/lib/lib-utils.sh
 . `dirname $0`/lib/lib-playwright.sh
 
-## Run validations against one APP or DEMO by following next steps:
-# 0. set variables
-# 1. checks whether port is not busy
-# 2. optimize certain vaadin parameters for speeeding up frontend compilation
-# 3. run command for compilation
-# 4. run command for starting servlet container hosting the app and wait until ready
-# 5. check that server is up and running and port is listening
-# 6. ask user for manually testing the app in their browser (if interactive)
-# 7. if build is in prod mode, check for deprecated API usage and report it
-# 8. check that no dev-bundle was created in dev mode to be sure bundle comes from the platform
-# 9. if dev mode, wait until frontend is compiled
-#    and check that no exception that needs re-run is not thrown (this is deprecated aftter 24.4)
-# 10. check that the app is accessible via http and response is a valid servlet response
-# 11. run UI test with selenium IDE (if not skipped)
-# 12. kill remaining processes
-# 13. check that the app is not using a default ID for statistics
-# 14. remove .out file if the process was successful
+## Run validations against one APP or DEMO by following these steps:
+## 0. Set variables
+## 1. Check whether port is not busy
+## 2. Optimize certain Vaadin parameters for speeding up frontend compilation
+## 3. Run command for compilation
+## 4. Run command for starting servlet container hosting the app and wait until ready
+## 5. Check that server is up and running and port is listening
+## 6. Ask user for manually testing the app in their browser (if interactive)
+## 7. If build is in prod mode, check for deprecated API usage and report it
+## 8. Check that no dev-bundle was created in dev mode (ensures bundle comes from platform)
+## 9. If dev mode, wait until frontend is compiled and check for exceptions
+##    that need re-run (deprecated after 24.4)
+## 10. Check that the app is accessible via HTTP and response is valid
+## 11. Run UI test with Playwright (if not skipped)
+## 12. Kill remaining processes
+## 13. Check that the app is not using a default ID for statistics
+## 14. Remove .out files if the process was successful
+## $1: mode ('dev' or 'prod')
+## $2: version being tested
+## $3: app/demo name
+## $4: port number
+## $5: compile command (e.g., 'mvn clean' or 'gradle build')
+## $6: run command (e.g., 'mvn spring-boot:run' or 'java -jar target/*.jar')
+## $7: check message pattern to wait for in logs
+## $8: Playwright test file basename (in scripts/pit/its/)
 runValidations() {
   local mode version name port compile cmd check test timeout file treefile H err test_result
   local GHTK GITHUB_TOKEN CC_KEY CC_CERT OPENAI_TOKEN CE_LICENSE
