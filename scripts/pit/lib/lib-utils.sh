@@ -22,41 +22,41 @@ checkCommands() {
 
 ## Remove pro-key for testing core-only apps
 removeProKey() {
-  local _cmd
+  local cmd
   if [ -f ~/.vaadin/proKey ]; then
-    _cmd="mv ~/.vaadin/proKey ~/.vaadin/proKey-$$"
+    cmd="mv ~/.vaadin/proKey ~/.vaadin/proKey-$$"
     runCmd "Removing proKey license" "mv ~/.vaadin/proKey ~/.vaadin/proKey-$$"
   fi
 }
 ## Restore pro-key removed in previous function
 restoreProKey() {
-  local H _cmd
+  local H cmd
   [ ! -f ~/.vaadin/proKey-$$ ] && return
   H=`cat ~/.vaadin/proKey 2>/dev/null`
-  _cmd="mv ~/.vaadin/proKey-$$ ~/.vaadin/proKey"
+  cmd="mv ~/.vaadin/proKey-$$ ~/.vaadin/proKey"
   runCmd "Restoring proKey license" "mv ~/.vaadin/proKey-$$ ~/.vaadin/proKey"
   [ -z "$TEST" -a -n "$H" ] && reportError "A proKey was generated while running validation" "$H" && return 1
 }
 
 ## get pids for process
 getPids() {
-  local H _P
+  local H P
   H=`grep -a "" /proc/*/cmdline 2>/dev/null | xargs -0 | grep -v grep | perl -pe 's|/proc/(.*?)/cmdline:|$1 |g'`
   if [ -n "$H" ]
   then
-    _P=`echo "$H" | grep "$1" | awk '{print $1}'`
+    P=`echo "$H" | grep "$1" | awk '{print $1}'`
   else
-    _P=`ps -feaw | grep "$1" | grep -v grep | awk '{print $2}'`
+    P=`ps -feaw | grep "$1" | grep -v grep | awk '{print $2}'`
   fi
-  [ -n "$_P" ] && echo "$_P" | tr "\n" " " && return 0 || return 1
+  [ -n "$P" ] && echo "$P" | tr "\n" " " && return 0 || return 1
 }
 
 ## Kills a process with its children and wait until complete
 doKill() {
-  local _procs
+  local procs
   while [ -n "$1" ]; do
-    _procs=`type pgrep >/dev/null 2>&1 && pgrep -P $1`" $1"
-    kill $_procs 2>/dev/null
+    procs=`type pgrep >/dev/null 2>&1 && pgrep -P $1`" $1"
+    kill $procs 2>/dev/null
     shift
   done
 }
@@ -96,9 +96,9 @@ printnl() {
 
 ## log with some nice color
 isnl() {
-  local _opt
-  expr "$1" : "\-" > /dev/null && _opt=${1#-} && shift || _opt=""
-  [ "$_opt" = n ] && echo "" >&2 || return 1
+  local opt
+  expr "$1" : "\-" > /dev/null && opt=${1#-} && shift || opt=""
+  [ "$opt" = n ] && echo "" >&2 || return 1
   true
 }
 log() {
@@ -121,10 +121,10 @@ warn() {
   printnl '> ' 0 33 "$*"
 }
 cmd() {
-  local cmd_
+  local cmd_str
   isnl $1 && shift
-  cmd_=`printf "$*" | tr -s " " | perl -pe 's|\n|\\\\\\\n|g'`
-  printnl '  ' 1 34 " $cmd_"
+  cmd_str=`printf "$*" | tr -s " " | perl -pe 's|\n|\\\\\\\n|g'`
+  printnl '  ' 1 34 " $cmd_str"
 }
 dim() {
   printnl '' 0 36 "$*"
@@ -134,15 +134,15 @@ dim() {
 ## $1: report header
 ## $*: body
 reportError() {
-  local __head H
-  __head=$1; shift
-  [ -z "$__head" -o -z "$*" ] && return
-  warn "reporting error: $__head"
+  local head H
+  head=$1; shift
+  [ -z "$head" -o -z "$*" ] && return
+  warn "reporting error: $head"
   [ -z "$GITHUB_STEP_SUMMARY" ] && return
   H=`echo "$*" | awk '{print substr ($0, 0, 300)}' | tail -n 100000`
   cat << EOF >> "$GITHUB_STEP_SUMMARY"
 <details>
-<summary><h4>$__head</h4></summary>
+<summary><h4>$head</h4></summary>
 <pre>
 `echo "$H"`
 </pre>
@@ -170,11 +170,11 @@ ask() {
 
 ## Compute the absolute PATH of the executed script
 computeAbsolutePath() {
-  local __path
-  __path=`dirname $0 | sed -e 's,^\./,,'`
+  local path
+  path=`dirname $0 | sed -e 's,^\./,,'`
   ## Check whether the PATH is absolute
-  [ `expr "$__path" : '^/'` != 1 ] && __path="$PWD/$__path"
-  echo "$__path"
+  [ `expr "$path" : '^/'` != 1 ] && path="$PWD/$path"
+  echo "$path"
 }
 ## Compute the maven command to use for the project and stores in MVN env variable
 computeMvn() {
@@ -194,13 +194,13 @@ computeGradle() {
 
 ## Compute npm command used for installing playwright
 computeNpm() {
-  local _VNODE _NPMJS
-  _VNODE=~/.vaadin/node
-  _NPMJS=$_VNODE/lib/node_modules/npm/bin/npm-cli.js
+  local vnode npmjs
+  vnode=~/.vaadin/node
+  npmjs=$vnode/lib/node_modules/npm/bin/npm-cli.js
   NPM="'"`which npm`"'"
   NPX=`which npx`
   NODE=`which node`
-  [ -x "$_VNODE/bin/node" -a -f "$_NPMJS" ] && export PATH="$_VNODE/bin:$PATH" && NODE="$_VNODE/bin/node" && NPM="'$NODE' '$_NPMJS'"
+  [ -x "$vnode/bin/node" -a -f "$npmjs" ] && export PATH="$vnode/bin:$PATH" && NODE="$vnode/bin/node" && NPM="'$NODE' '$npmjs'"
 }
 
 ## Run a command, and shows a message explaining it
@@ -208,40 +208,40 @@ computeNpm() {
 ## $2: message to show
 ## $*: command line order and arguments
 runCmd() {
-  local __ __set _opt _silent _force _cmd _pid _err
-  __=$-
+  local saved_flags set_cmd opt silent force cmd pid err
+  saved_flags=$-
   set +x
-  expr $__ : .*x >/dev/null && __set="set -x" || __set=true
-  expr "$1" : "\-" > /dev/null && _opt=${1#-} && shift || _opt=""
-  expr "$_opt" : ".*q" >/dev/null && _silent=true || _silent=""
-  expr "$_opt" : ".*f" >/dev/null && _force=true || _force=""
-  [ -z "$1" ] && echo "bad arguments call: runCmd <true|false|-q> <message> command args" && eval "$__set" && return 1
+  expr $saved_flags : .*x >/dev/null && set_cmd="set -x" || set_cmd=true
+  expr "$1" : "\-" > /dev/null && opt=${1#-} && shift || opt=""
+  expr "$opt" : ".*q" >/dev/null && silent=true || silent=""
+  expr "$opt" : ".*f" >/dev/null && force=true || force=""
+  [ -z "$1" ] && echo "bad arguments call: runCmd <true|false|-q> <message> command args" && eval "$set_cmd" && return 1
   [ -z "$TEST" ] && log "$1" || cmd "## $1"
   shift
-  _cmd="${*}"
-  cmd "$_cmd"
-  [ -z "$_force" -a -n "$TEST" ] && eval "$__set" && return 0
-  if expr "$_cmd" : ".*&$" >/dev/null
+  cmd="${*}"
+  cmd "$cmd"
+  [ -z "$force" -a -n "$TEST" ] && eval "$set_cmd" && return 0
+  if expr "$cmd" : ".*&$" >/dev/null
   then
-    _cmd=`echo "$_cmd" | sed -e 's/&$//'`
-    eval "$_cmd" &
-    _pid=$!
-    _err=$?
+    cmd=`echo "$cmd" | sed -e 's/&$//'`
+    eval "$cmd" &
+    pid=$!
+    err=$?
     sleep 2
-    kill -0 $_pid 2>/dev/null || return 1
+    kill -0 $pid 2>/dev/null || return 1
   else
     if [ -n "$VERBOSE" ]; then
-      eval "$_cmd" | tee -a runCmd.out
-      _err=$?
+      eval "$cmd" | tee -a runCmd.out
+      err=$?
     else
-      eval "trap 'trap - INT; kill -INT '$$'' INT; $_cmd" > runCmd.out 2>&1
-      _err=$?
+      eval "trap 'trap - INT; kill -INT '$$'' INT; $cmd" > runCmd.out 2>&1
+      err=$?
     fi
-    [ $_err != 0 -a -z "$VERBOSE" -a -n "$_silent" ] && cat runCmd.out >&2
+    [ $err != 0 -a -z "$VERBOSE" -a -n "$silent" ] && cat runCmd.out >&2
     rm -f runCmd.out
   fi
-  eval "$__set"
-  return $_err
+  eval "$set_cmd"
+  return $err
 }
 
 ##
@@ -255,29 +255,29 @@ runCmdQuiet() {
 ## $3 verbose mode (it means that the output is also printed in the console)
 ## $4 send only stdout to file (if not set, stdout and stderr are sent to the file)
 runToFile() {
-  local __cmd __file __verbose __stdout E err
-  __cmd="$1"
-  __file="$2"
-  __verbose="$3"
-  __stdout="$4"
-  [ -z "$TEST" ] && log "Running and sending output to > $__file"
+  local cmd file verbose stdout E err
+  cmd="$1"
+  file="$2"
+  verbose="$3"
+  stdout="$4"
+  [ -z "$TEST" ] && log "Running and sending output to > $file"
   expr "$1" : ".*mvn " >/dev/null && E=" $MAVEN_ARGS" || E=""
-  cmd "$__cmd $E"
+  cmd "$cmd $E"
   [ -n "$TEST" ] && return
-  if [ -z "$__verbose" ]
+  if [ -z "$verbose" ]
   then
-    if [ -z "$__stdout" ]; then
-      eval "$__cmd" >> "$__file" 2>&1
+    if [ -z "$stdout" ]; then
+      eval "$cmd" >> "$file" 2>&1
       err=$?
     else
-      eval "$__cmd" >> "$__file"
+      eval "$cmd" >> "$file"
       err=$?
     fi
   else
-    eval "$__cmd" 2>&1 | tee -a "$__file"
+    eval "$cmd" 2>&1 | tee -a "$file"
     err=$?
   fi
-  [ $err != 0 ] && reportOutErrors "$__file" "Error ($err) running $__cmd" && return 1 || return 0
+  [ $err != 0 ] && reportOutErrors "$file" "Error ($err) running $cmd" && return 1 || return 0
 }
 
 ## Run a process silently in background sending its output to a file
@@ -285,21 +285,21 @@ runToFile() {
 ## $2 file to send the output
 ## $3 verbose mode (it means that the output is also printed in the console)
 runInBackgroundToFile() {
-  local __cmd __file __verbose E
-  __cmd="$1"
-  __file="$2"
-  __verbose="$3"
-  [ -z "$TEST" ] && log "Running in background and sending output to > $__file"
+  local cmd file verbose E
+  cmd="$1"
+  file="$2"
+  verbose="$3"
+  [ -z "$TEST" ] && log "Running in background and sending output to > $file"
   expr "$1" : ".*mvn " >/dev/null && E=" $MAVEN_ARGS" || E=""
-  cmd "$__cmd $E"
+  cmd "$cmd $E"
   [ -n "$TEST" ] && return
-  touch "$__file"
-  if [ -n "$__verbose" ]
+  touch "$file"
+  if [ -n "$verbose" ]
   then
-    tail -f "$__file" &
+    tail -f "$file" &
     pid_tail=$!
   fi
-  $__cmd >> "$__file" 2>&1 &
+  $cmd >> "$file" 2>&1 &
   pid_run=$!
   sleep 2
   kill -0 $pid_run 2>/dev/null || return 1
@@ -321,32 +321,32 @@ tsConfigModified() {
 ## $3 timeout in seconds
 ## $4 command that is sending the output to the file, used for logging it in case of failure
 waitUntilMessageInFile() {
-  local __file __message __timeout __cmd __sleep __lasted __perl H
-  __file="$1"
-  __message="$2"
-  __timeout="$3"
-  __cmd="$4"
-  __sleep=4
-  [ -n "$TEST" ] && cmd "## Wait for: '$__message'" || log "Waiting for server to start, timeout=$__timeout secs, message='$__message'"
+  local file message timeout cmd sleep lasted perl H
+  file="$1"
+  message="$2"
+  timeout="$3"
+  cmd="$4"
+  sleep=4
+  [ -n "$TEST" ] && cmd "## Wait for: '$message'" || log "Waiting for server to start, timeout=$timeout secs, message='$message'"
   [ -n "$TEST" ] && return 0
-  while [ $__timeout -gt 0 ]
+  while [ $timeout -gt 0 ]
   do
     kill -0 $pid_run 2>/dev/null
     if [ $? != 0 ]
     then
-      tsConfigModified "$__file" && return 2
-      reportOutErrors "$__file" "Error $__cmd failed to start" && return 1
+      tsConfigModified "$file" && return 2
+      reportOutErrors "$file" "Error $cmd failed to start" && return 1
     fi
-    __lasted=`expr $3 - $__timeout`
-    __perl="perl -pe 's~^.*($__message.*)~\$1~g'"
-    egrep -q "$__message" "$__file"  \
-      && H=`egrep "$__message" $__file | eval "$__perl" | head -1` \
-      && log "Found '$H' in $__file after $__lasted secs" \
-      && echo ">>>> PiT: Found '$H' after $__lasted secs" >> "$__file" \
-      && sleep $__sleep && return 0
-    sleep $__sleep && __timeout=`expr $__timeout - $__sleep`
+    lasted=`expr $3 - $timeout`
+    perl="perl -pe 's~^.*($message.*)~\$1~g'"
+    egrep -q "$message" "$file"  \
+      && H=`egrep "$message" $file | eval "$perl" | head -1` \
+      && log "Found '$H' in $file after $lasted secs" \
+      && echo ">>>> PiT: Found '$H' after $lasted secs" >> "$file" \
+      && sleep $sleep && return 0
+    sleep $sleep && timeout=`expr $timeout - $sleep`
   done
-  reportOutErrors "$__file"  "Timeout: could not find '$__message' in $__file after $3 secs"
+  reportOutErrors "$file"  "Timeout: could not find '$message' in $file after $3 secs"
   return 1
 }
 
@@ -362,11 +362,11 @@ playBell() {
 ## Alert user with a bell and wait until they push enter
 ## only for interactive mode
 waitForUserWithBell() {
-  local __message
-  __message=$1
+  local message
+  message=$1
   playBell &
   pid_bell=$!
-  [ -n "$__message" ] && log "$__message"
+  [ -n "$message" ] && log "$message"
   ask "Push ENTER to stop the bell and continue"
   doKill $pid_bell
   unset pid_bell
@@ -374,9 +374,9 @@ waitForUserWithBell() {
 
 ## Inform the user that app is running in localhost, then wait until the user push enter
 waitForUserManualTesting() {
-  local __port
-  __port="$1"
-  log "App is running in http://localhost:$__port, open it in your browser"
+  local port
+  port="$1"
+  log "App is running in http://localhost:$port, open it in your browser"
   ask "When you finish, push ENTER  to continue"
 }
 
@@ -391,13 +391,13 @@ checkPort() {
 
 ## Wait until port is listening
 waitUntilPort() {
-  local __i
+  local i
   log "Waiting for port $1 to be available"
-  __i=1
+  i=1
   while true; do
     checkPort $1 && echo ">>>> PiT: Checked that port $1 is listening" >> "$3" && return 0
-    __i=`expr $__i + 1`
-    [ $__i -gt $2 ] && err "Server not listening in port $1 after $2 secs" && return 1
+    i=`expr $i + 1`
+    [ $i -gt $2 ] && err "Server not listening in port $1 after $2 secs" && return 1
   done
 }
 
@@ -410,12 +410,12 @@ waitUntilAppReady() {
 
 ## Check whether the port is already in use in this machine
 checkBusyPort() {
-  local __port __err
-  __port="$1"
-  log "Checking whether port $__port is busy"
-  checkPort $__port
-  __err=$?
-  [ $__err = 0 ] && err "Port ${__port} is occupied" && return 1 || return 0
+  local port err
+  port="$1"
+  log "Checking whether port $port is busy"
+  checkPort $port
+  err=$?
+  [ $err = 0 ] && err "Port ${port} is occupied" && return 1 || return 0
 }
 
 ## Check that a HTTP servlet request responds with 200
@@ -423,15 +423,15 @@ checkBusyPort() {
 ## $2 file to send the output
 ## $3 verbose mode (it means that the output is also printed in the console)
 checkHttpServlet() {
-  local __url __ofile __cfile
-  __url="$1"
-  __ofile="$2"
-  __cfile="curl-"`uname`".out"
+  local url ofile cfile
+  url="$1"
+  ofile="$2"
+  cfile="curl-"`uname`".out"
   [ -n "$TEST" ] && return 0
-  rm -f $__cfile
-  log "Checking whether url $__url returns HTTP 200"
-  runToFile "curl -s --fail -I -L --insecure -H Accept:text/html $__url" "$__cfile" "$VERBOSE"
-  [ $? != 0 ] && reportOutErrors "$__ofile" "Server Logs" && return 1 || return 0
+  rm -f $cfile
+  log "Checking whether url $url returns HTTP 200"
+  runToFile "curl -s --fail -I -L --insecure -H Accept:text/html $url" "$cfile" "$VERBOSE"
+  [ $? != 0 ] && reportOutErrors "$ofile" "Server Logs" && return 1 || return 0
 }
 
 ## Hits an HTTP server until vaadin finishes to compile the frontend in dev-mode
@@ -439,30 +439,30 @@ checkHttpServlet() {
 ## $1 url to check
 ## $2 file to send the output
 waitUntilFrontendCompiled() {
-  local __url __ofile __time H __err
-  __url="$1"
-  __ofile="$2"
+  local url ofile time H err
+  url="$1"
+  ofile="$2"
   [ -n "$TEST" ] && return 0
-  log "Waiting for dev-mode to be ready at $__url"
-  __time=0
+  log "Waiting for dev-mode to be ready at $url"
+  time=0
   while true; do
-    H=`curl --retry 4 --retry-all-errors -f -s -v $__url -L -H Accept:text/html -o /dev/null 2>&1`
-    __err=$?
-    if [ $__err != 0 ]; then
-       if tsConfigModified $__ofile; then
-         echo ">>>> PiT: config file modified, retrying ...." >> "$__ofile" && reportOutErrors "$__ofile" "File tsconfig/types.d was modified and servlet threw an Exception" "$_diff"
+    H=`curl --retry 4 --retry-all-errors -f -s -v $url -L -H Accept:text/html -o /dev/null 2>&1`
+    err=$?
+    if [ $err != 0 ]; then
+       if tsConfigModified $ofile; then
+         echo ">>>> PiT: config file modified, retrying ...." >> "$ofile"
          return 2
        else
-         echo ">>>> PiT: Found Error when compiling frontend" >> "$__ofile" && reportOutErrors "$__ofile" "Error ($__err) checking dev-mode"
+         echo ">>>> PiT: Found Error when compiling frontend" >> "$ofile" && reportOutErrors "$ofile" "Error ($err) checking dev-mode"
          return 1
        fi
     fi
     if echo "$H" | grep -q "X-DevModePending"; then
       sleep 3
-      __time=`expr $__time + 3`
+      time=`expr $time + 3`
     else
-      echo ">>>> PiT: Checked that frontend is compiled and dev-mode is ready after $__time secs" >> "$__ofile"
-      log "Found a valid response after $__time secs"
+      echo ">>>> PiT: Checked that frontend is compiled and dev-mode is ready after $time secs" >> "$ofile"
+      log "Found a valid response after $time secs"
       return
     fi
   done
@@ -471,11 +471,11 @@ waitUntilFrontendCompiled() {
 ## get a property value from pom.xml, normally used for version of some dependency
 ## $1: property name
 getMavenVersion() {
-  local __vfile H __prop
-  __prop=$1
-  for __vfile in `find * -name pom.xml 2>/dev/null | egrep -v 'target/|bin/'`
+  local vfile H prop
+  prop=$1
+  for vfile in `find * -name pom.xml 2>/dev/null | egrep -v 'target/|bin/'`
   do
-    H=`getCurrProperty $__prop $__vfile`
+    H=`getCurrProperty $prop $vfile`
     [ -n "$H" ] && echo "$H" && return 0
   done
 }
@@ -484,13 +484,13 @@ getMavenVersion() {
 ## $1: property name
 ## $2: new value
 setVersion() {
-  local __prop __nversion
-  __prop=$1
-  __nversion=$2
+  local prop nversion
+  prop=$1
+  nversion=$2
   [ "false" != "$3" ] && git checkout -q .
 
-  [ "$__nversion" = current ] && getMavenVersion $__prop && return 1
-  changeMavenProperty $__prop $__nversion && echo $__nversion
+  [ "$nversion" = current ] && getMavenVersion $prop && return 1
+  changeMavenProperty $prop $nversion && echo $nversion
 }
 
 ## Get the value of a property in the gradle.properties or build.gradle file, normally the version of a dependency
@@ -507,18 +507,18 @@ getGradleVersion() {
 ## $1: property name
 ## $2: new value
 setGradleVersion() {
-  local __gradleProperty __nversion H __current
-  __gradleProperty=$1
-  __nversion=$2
+  local gradleProperty nversion H current
+  gradleProperty=$1
+  nversion=$2
   [ "false" != "$3" ] && git checkout -q .
-  H=`getGradleVersion "$__gradleProperty"`
-  [ "$__nversion" = current ] && echo "$H" && return 1
-  __current=$H
+  H=`getGradleVersion "$gradleProperty"`
+  [ "$nversion" = current ] && echo "$H" && return 1
+  current=$H
   if [ -f "gradle.properties" ]; then
-    setPropertyInFile gradle.properties $__gradleProperty $__nversion
+    setPropertyInFile gradle.properties $gradleProperty $nversion
   elif [ -f "build.gradle" ]; then
-    runCmd -f "Changing $__gradleProperty to $__nversion in build.gradle" "perl -pi -e 's/^(.*set.*$__gradleProperty.*?)(\\d[^\"]+)(.*)\$/\${1}${__nversion}\${3}/g' build.gradle"
-    runCmd -f "Changing vaadin plugin to $__nversion in build.gradle" "perl -pi -e \"s/(id +'com\\.vaadin' +version +')[\\d\\.]+(')/\\\${1}${__nversion}\\\${2}/\" build.gradle"
+    runCmd -f "Changing $gradleProperty to $nversion in build.gradle" "perl -pi -e 's/^(.*set.*$gradleProperty.*?)(\\d[^\"]+)(.*)\$/\${1}${nversion}\${3}/g' build.gradle"
+    runCmd -f "Changing vaadin plugin to $nversion in build.gradle" "perl -pi -e \"s/(id +'com\\.vaadin' +version +')[\\d\\.]+(')/\\\${1}${nversion}\\\${2}/\" build.gradle"
   fi
 }
 
@@ -606,10 +606,10 @@ getVersionFromPlatform() {
 ## $2: module name
 ## $3: property name to set with the version in the pom.xml
 setVersionFromPlatform() {
-  local __nversion VERS
-  __nversion=$1
-  [ $__nversion = current ] && return
-  VERS=`getVersionFromPlatform $__nversion $2`
+  local nversion VERS
+  nversion=$1
+  [ $nversion = current ] && return
+  VERS=`getVersionFromPlatform $nversion $2`
   [ -z "$VERS" ] && VERS=`getVersionFromPlatform master $2`
   setVersion $3 "$VERS" false
 }
@@ -638,41 +638,41 @@ getPomFiles() {
 ## $3: artifactId
 ## $4: version (keep the same if empty, delete if 'remove' value is provided, or do not modify if version tag is not present)
 changeMavenBlock() {
-  local __tag __grp __id __nvers __grp2 __id2 __file __content __found __extra __diff __msg
-  __tag=${1:-dependency}
-  __grp=$2
-  __id=$3
-  __nvers=${4:-\$\{8\}}
-  __grp2=${5:-$__grp}
-  __id2=${6:-$__id}
-  for __file in `getPomFiles`
+  local tag grp id nvers grp2 id2 file content found extra diff msg
+  tag=${1:-dependency}
+  grp=$2
+  id=$3
+  nvers=${4:-\$\{8\}}
+  grp2=${5:-$grp}
+  id2=${6:-$id}
+  for file in `getPomFiles`
   do
-    cp $__file $$-1
+    cp $file $$-1
     if [ "$4" = remove ]; then
-      _cmd="perl -0777 -pi -e 's|(\s+)(<$__tag>\s*<groupId>)($__grp)(</groupId>\s*<artifactId>)($__id)(</artifactId>)(\s*.*?)?(\s*</$__tag>)||msg' $__file"
-      perl -0777 -pi -e 's|(\s+)(<'$__tag'>\s*<groupId>)('$__grp')\s*(</groupId>\s*<artifactId>)('$__id')\s*(</artifactId>)(\s*.*?)?(\s*</'$__tag'>)||msg' $__file
+      _cmd="perl -0777 -pi -e 's|(\s+)(<$tag>\s*<groupId>)($grp)(</groupId>\s*<artifactId>)($id)(</artifactId>)(\s*.*?)?(\s*</$tag>)||msg' $file"
+      perl -0777 -pi -e 's|(\s+)(<'$tag'>\s*<groupId>)('$grp')\s*(</groupId>\s*<artifactId>)('$id')\s*(</artifactId>)(\s*.*?)?(\s*</'$tag'>)||msg' $file
     elif [ -n "$4" ]; then
-      __content=`cat $__file`
-      __found=`perl -0777 -pe 's|.*<'$__tag'>\s*<groupId>'$__grp'</groupId>\s*<artifactId>'$__id'</artifactId>\s*<version>([^<]+)</version>\s*.*?\s*</'$__tag'>.*|${1}|msg' $__file`
-      if [ "$__content" = "$__found" ]; then
-        __extra=${7:-\$\{8\}}
-        _cmd="perl -0777 -pi -e 's|(\s+)(<$__tag>\s*<groupId>)($__grp)(</groupId>\s*<artifactId>)($__id)(</artifactId>\s*)(\s*)(.*?)?(\s*</$__tag>)|\${1}\${2}'${__grp2}'\${4}'${__id2}'\${6}\${7}${__extra}\${9}|msg' $__file"
-        perl -0777 -pi -e 's|(\s+)(<'$__tag'>\s*<groupId>)('$__grp')(</groupId>\s*<artifactId>)('$__id')(</artifactId>\s*)(\s*)(.*?)?(\s*</'$__tag'>)|${1}${2}'${__grp2}'${4}'${__id2}'${6}${7}'${__extra}'${9}|msg' $__file
+      content=`cat $file`
+      found=`perl -0777 -pe 's|.*<'$tag'>\s*<groupId>'$grp'</groupId>\s*<artifactId>'$id'</artifactId>\s*<version>([^<]+)</version>\s*.*?\s*</'$tag'>.*|${1}|msg' $file`
+      if [ "$content" = "$found" ]; then
+        extra=${7:-\$\{8\}}
+        _cmd="perl -0777 -pi -e 's|(\s+)(<$tag>\s*<groupId>)($grp)(</groupId>\s*<artifactId>)($id)(</artifactId>\s*)(\s*)(.*?)?(\s*</$tag>)|\${1}\${2}'${grp2}'\${4}'${id2}'\${6}\${7}${extra}\${9}|msg' $file"
+        perl -0777 -pi -e 's|(\s+)(<'$tag'>\s*<groupId>)('$grp')(</groupId>\s*<artifactId>)('$id')(</artifactId>\s*)(\s*)(.*?)?(\s*</'$tag'>)|${1}${2}'${grp2}'${4}'${id2}'${6}${7}'${extra}'${9}|msg' $file
       else
-        __extra=${7:-\$\{11\}}
-        _cmd="perl -0777 -pi -e 's|(\s+)(<$__tag>\s*<groupId>)($__grp)(</groupId>\s*<artifactId>)($__id)(</artifactId>\s*)(?:(<version>)([^<]+)(</version>))?(\s*)(.*?)?(\s*</$__tag>)|\${1}\${2}'${__grp2}'\${4}'${__id2}'\${6}\${7}${__nvers}\${9}\${10}${__extra}\${12}|msg' $__file"
-        perl -0777 -pi -e 's|(\s+)(<'$__tag'>\s*<groupId>)('$__grp')(</groupId>\s*<artifactId>)('$__id')(</artifactId>\s*)(?:(<version>)([^<]+)(</version>))?(\s*)(.*?)?(\s*</'$__tag'>)|${1}${2}'${__grp2}'${4}'${__id2}'${6}${7}'${__nvers}'${9}${10}'${__extra}'${12}|msg' $__file
+        extra=${7:-\$\{11\}}
+        _cmd="perl -0777 -pi -e 's|(\s+)(<$tag>\s*<groupId>)($grp)(</groupId>\s*<artifactId>)($id)(</artifactId>\s*)(?:(<version>)([^<]+)(</version>))?(\s*)(.*?)?(\s*</$tag>)|\${1}\${2}'${grp2}'\${4}'${id2}'\${6}\${7}${nvers}\${9}\${10}${extra}\${12}|msg' $file"
+        perl -0777 -pi -e 's|(\s+)(<'$tag'>\s*<groupId>)('$grp')(</groupId>\s*<artifactId>)('$id')(</artifactId>\s*)(?:(<version>)([^<]+)(</version>))?(\s*)(.*?)?(\s*</'$tag'>)|${1}${2}'${grp2}'${4}'${id2}'${6}${7}'${nvers}'${9}${10}'${extra}'${12}|msg' $file
       fi
     else
-      _cmd="perl -0777 -pi -e 's|(\s+)(<$__tag>\s*<groupId>)($__grp)(</groupId>\s*<artifactId>)($__id)(</artifactId>\s*)(?:(<version>)([^<]+)(</version>))?(\s*)(.*?)?(\s*</$__tag>)|\${1}\${2}'${__grp2}'\${4}'${__id2}'\${6}\${7}${__nvers}\${9}\${10}'${__extra}'\${12}|msg' $__file"
-      perl -0777 -pi -e 's|(\s+)(<'$__tag'>\s*<groupId>)('$__grp')(</groupId>\s*<artifactId>)('$__id')(</artifactId>\s*)(?:(<version>)([^<]+)(</version>))?(\s*)(.*?)?(\s*</'$__tag'>)|${1}${2}'${__grp2}'${4}'${__id2}'${6}${7}'${__nvers}'${9}${10}'${__extra}'${12}|msg' $__file
+      _cmd="perl -0777 -pi -e 's|(\s+)(<$tag>\s*<groupId>)($grp)(</groupId>\s*<artifactId>)($id)(</artifactId>\s*)(?:(<version>)([^<]+)(</version>))?(\s*)(.*?)?(\s*</$tag>)|\${1}\${2}'${grp2}'\${4}'${id2}'\${6}\${7}${nvers}\${9}\${10}'${extra}'\${12}|msg' $file"
+      perl -0777 -pi -e 's|(\s+)(<'$tag'>\s*<groupId>)('$grp')(</groupId>\s*<artifactId>)('$id')(</artifactId>\s*)(?:(<version>)([^<]+)(</version>))?(\s*)(.*?)?(\s*</'$tag'>)|${1}${2}'${grp2}'${4}'${id2}'${6}${7}'${nvers}'${9}${10}'${extra}'${12}|msg' $file
     fi
-    cp $__file $$-2
-    __diff=`diff -w $$-1 $$-2`
-    if [ -n "$__diff" ]; then
-      [ "$4" = remove ] && __msg="Remove" || __msg="Change"
-      [ -z "$TEST" ] && warn "$__msg $__tag $__grp:$__id $__nvers"
-      [ -n "$TEST" ] && cmd "## $__msg Maven Block $__tag $__grp:$__id -> $__grp2:$__id2:$4 $9"
+    cp $file $$-2
+    diff=`diff -w $$-1 $$-2`
+    if [ -n "$diff" ]; then
+      [ "$4" = remove ] && msg="Remove" || msg="Change"
+      [ -z "$TEST" ] && warn "$msg $tag $grp:$id $nvers"
+      [ -n "$TEST" ] && cmd "## $msg Maven Block $tag $grp:$id -> $grp2:$id2:$4 $9"
       cmd "$_cmd"
     fi
     rm -f $$-1 $$-2
@@ -695,22 +695,22 @@ getCurrProperty() {
 ## $3: new content of the block, you need to provide ${1} ${2} ${3} to use the left, old content and right groups
 ## $4: file
 changeBlock() {
-  local __left __right __val __bfile __diff __err
-  __left="$1"; __right="${2:-$1}"; __val="$3"; __bfile="$4";
-  cp $__bfile $$-1
-  if [ "$__val" = remove ]; then
-    _cmd="perl -0777 -pi -e 's|($__left)(.*?)($__right)||gs' $__bfile"
-          perl -0777 -pi -e 's|('$__left')(.*?)('$__right')||gs' $__bfile
+  local left right val bfile diff err
+  left="$1"; right="${2:-$1}"; val="$3"; bfile="$4";
+  cp $bfile $$-1
+  if [ "$val" = remove ]; then
+    _cmd="perl -0777 -pi -e 's|($left)(.*?)($right)||gs' $bfile"
+          perl -0777 -pi -e 's|('$left')(.*?)('$right')||gs' $bfile
   else
-    _cmd="perl -0777 -pi -e 's|($__left)(.*?)($__right)|${__val}|gs' $__bfile"
-          perl -0777 -pi -e 's|('$__left')(.*?)('$__right')|'"${__val}"'|gs' $__bfile
+    _cmd="perl -0777 -pi -e 's|($left)(.*?)($right)|${val}|gs' $bfile"
+          perl -0777 -pi -e 's|('$left')(.*?)('$right')|'"${val}"'|gs' $bfile
   fi
-  __diff=`diff -w $$-1 $__bfile`
+  diff=`diff -w $$-1 $bfile`
   rm -f $$-1
-  [ -n "$__diff" ] && cmd "$_cmd" && __err=0 || __err=1
-  [ -z "$TEST" -a -n "$__diff" -a "$__val" =  remove ] && warn "Remove $__left in $__bfile"
-  [ -z "$TEST" -a -n "$__diff" -a "$__val" != remove ] && warn "Changed '($__left)($__right)' to '$__val' in $__bfile"
-  return $__err
+  [ -n "$diff" ] && cmd "$_cmd" && err=0 || err=1
+  [ -z "$TEST" -a -n "$diff" -a "$val" =  remove ] && warn "Remove $left in $bfile"
+  [ -z "$TEST" -a -n "$diff" -a "$val" != remove ] && warn "Changed '($left)($right)' to '$val' in $bfile"
+  return $err
 }
 
 ## change a maven property in the pom.xml, faster than
@@ -718,41 +718,41 @@ changeBlock() {
 ## $1: property name
 ## $2: value (if value is 'remove' the property is removed)
 changeMavenProperty() {
-  local __prop __val __ret __propfile __cur
-  __prop=$1; __val=$2; __ret=0;
-  for __propfile in `getPomFiles`
+  local prop val ret propfile cur
+  prop=$1; val=$2; ret=0;
+  for propfile in `getPomFiles`
   do
-    __cur=`getCurrProperty $__prop $__propfile`
-    if [ "$__val" != remove -a "$__val" != "$__cur" ]; then
-      runCmd -f "Changing Maven property $__prop from $__cur -> $__val in $__propfile" \
-        "perl -pi -e 's|(\s*<'$__prop'>)[^\s]+(</'$__prop'>)|\${1}${__val}\${2}|g' $__propfile"
-      __ret=$?
-    elif [ "$__val" = remove -a -n "$__cur" ]; then
-      runCmd -f "Removing Maven property $__prop from $__propfile" \
-        "perl -pi -e 's|(\s*<'$__prop'>)[^\s]+(</'$__prop'>)||g' $__propfile"
-      __ret=$?
+    cur=`getCurrProperty $prop $propfile`
+    if [ "$val" != remove -a "$val" != "$cur" ]; then
+      runCmd -f "Changing Maven property $prop from $cur -> $val in $propfile" \
+        "perl -pi -e 's|(\s*<'$prop'>)[^\s]+(</'$prop'>)|\${1}${val}\${2}|g' $propfile"
+      ret=$?
+    elif [ "$val" = remove -a -n "$cur" ]; then
+      runCmd -f "Removing Maven property $prop from $propfile" \
+        "perl -pi -e 's|(\s*<'$prop'>)[^\s]+(</'$prop'>)||g' $propfile"
+      ret=$?
     else
-      __ret=1
+      ret=1
     fi
   done
-  return $__ret
+  return $ret
 }
 
 ## rename a maven property in the pom.xml
 ## $1: property1 name
 ## $2: property2 name
 renameMavenProperty() {
-  local __prop1 __prop2 __ret __file __cur
-  __prop1=$1; __prop2=$2; __ret=1;
-  for __file in `getPomFiles`
+  local prop1 prop2 ret file cur
+  prop1=$1; prop2=$2; ret=1;
+  for file in `getPomFiles`
   do
-    __cur=`getCurrProperty $__prop1 $__file`
-    [ -z "$__cur" ] && continue
-    runCmd -f "Rename Maven property $__prop1 -> $__prop2" \
-      "perl -0777 -pi -e 's|(<$__prop1>[^\s]+)(/$__prop1>)|<$__prop2>$__cur</$__prop2>|g' $__file"
-    [ $? = 0 -a $__ret = 1 ] && __ret=0
+    cur=`getCurrProperty $prop1 $file`
+    [ -z "$cur" ] && continue
+    runCmd -f "Rename Maven property $prop1 -> $prop2" \
+      "perl -0777 -pi -e 's|(<$prop1>[^\s]+)(/$prop1>)|<$prop2>$cur</$prop2>|g' $file"
+    [ $? = 0 -a $ret = 1 ] && ret=0
   done
-  return $__ret
+  return $ret
 }
 
 ## removes a maven block from the pom.xml
@@ -774,45 +774,45 @@ removeMavenProperty() {
 ## $2: property name
 ## $3: value
 setPropertyInFile() {
-  local __file __key __val __cur __diff
-  __file=$1; __key=$2; __val=$3
-  [ ! -f "$__file" ] && return 0
-  cp $__file $$-1
-  __cur=`egrep ' *'$__key $__file | tr ':' '=' | cut -d "=" -f2-`
-  if [ "$__val" = remove ]; then
-    _cmd="perl -pi -e 's|\s*($__key)\s*([=:]).*||g' $__file"
-          perl -pi -e 's|\s*('$__key')\s*([=:]).*||g' $__file
-  elif [ -n "$__cur" ]; then
-    _cmd="perl -pi -e 's|\s*($__key)\s*([=:]).*|\${1}\${2}${__val}|g' $__file"
-          perl -pi -e 's|\s*('$__key')\s*([=:]).*|${1}${2}'"${__val}|g" $__file
+  local file key val cur diff
+  file=$1; key=$2; val=$3
+  [ ! -f "$file" ] && return 0
+  cp $file $$-1
+  cur=`egrep ' *'$key $file | tr ':' '=' | cut -d "=" -f2-`
+  if [ "$val" = remove ]; then
+    _cmd="perl -pi -e 's|\s*($key)\s*([=:]).*||g' $file"
+          perl -pi -e 's|\s*('$key')\s*([=:]).*||g' $file
+  elif [ -n "$cur" ]; then
+    _cmd="perl -pi -e 's|\s*($key)\s*([=:]).*|\${1}\${2}${val}|g' $file"
+          perl -pi -e 's|\s*('$key')\s*([=:]).*|${1}${2}'"${val}|g" $file
   else
-    _cmd="echo '$__key=$__val' >> $__file"
-          echo "$__key=$__val" >> "$__file"
+    _cmd="echo '$key=$val' >> $file"
+          echo "$key=$val" >> "$file"
   fi
-  __diff=`diff -w $$-1 $__file`
+  diff=`diff -w $$-1 $file`
   rm -f $$-1
-  [ -z "$TEST" -a -n "$__diff" -a "$__val" =  remove ] && warn "Remove $__key in $__file"
-  [ -z "$TEST" -a -n "$__diff" -a "$__val" != remove ] && warn "Change $__key from '$__cur' to '$__val' in $__file"
-  [ -n "$__diff" ] && cmd "$_cmd"
+  [ -z "$TEST" -a -n "$diff" -a "$val" =  remove ] && warn "Remove $key in $file"
+  [ -z "$TEST" -a -n "$diff" -a "$val" != remove ] && warn "Change $key from '$cur' to '$val' in $file"
+  [ -n "$diff" ] && cmd "$_cmd"
 }
 
 ## Do not open Browser after app is started
 disableLaunchBrowser() {
-  for __file in `find . -name application.properties`; do
-    setPropertyInFile $__file vaadin.launch-browser remove
+  for file in `find . -name application.properties`; do
+    setPropertyInFile $file vaadin.launch-browser remove
   done
 }
 
 ## pnpm is quite faster than npm
 enablePnpm() {
-  for __file in `find . -name application.properties`; do
-    setPropertyInFile $__file vaadin.pnpm.enable true
+  for file in `find . -name application.properties`; do
+    setPropertyInFile $file vaadin.pnpm.enable true
   done
 }
 
 ## vite is faster than webpack
 enableVite() {
-  for __file in `find . -name application.properties`; do
+  for file in `find . -name application.properties`; do
     setPropertyInFile com.vaadin.experimental.viteForFrontendBuild true
   done
 }
@@ -825,15 +825,15 @@ isHeadless() {
 
 ## print used versions of node, java and maven
 printVersions() {
-  local _vers
+  local vers
   computeNpm
   [ -n "$TEST" ] && return
-  _vers=`MAVEN_OPTS="$MAVEN_OPTS" MAVEN_ARGS="$MAVEN_ARGS" $MVN -version | tr \\\\ / 2>/dev/null | egrep -i 'maven|java'`
-  [ $? != 0 ] && err "Error $? when running $MVN, $_vers" && return 1
+  vers=`MAVEN_OPTS="$MAVEN_OPTS" MAVEN_ARGS="$MAVEN_ARGS" $MVN -version | tr \\\\ / 2>/dev/null | egrep -i 'maven|java'`
+  [ $? != 0 ] && err "Error $? when running $MVN, $vers" && return 1
   log "==== VERSIONS ====
 
 MAVEN_OPTS='$MAVEN_OPTS' MAVEN_ARGS='$MAVEN_ARGS' $MVN -version
-$_vers
+$vers
 NODE=$NODE
 Java version: `java -version 2>&1`
 Node version: `"$NODE" --version`
@@ -845,16 +845,16 @@ Npm version: `eval $NPM --version`
 ## Add extr repo to the pom.xml
 ## $1: repo url
 addRepoToPom() {
-  local U R __cmd
+  local U R cmd
   U="$1"
   grep -q "$U" pom.xml && return 0
   for R in repositor pluginRepositor; do
     if ! grep -q $R'ies>' pom.xml; then
-      __cmd="perl -pi -e 's|(\s*)(</project>)|\$1\$1<${R}ies><${R}y><id>v</id><url>${U}</url></${R}y></${R}ies>\n\$1\$2|' pom.xml"
+      cmd="perl -pi -e 's|(\s*)(</project>)|\$1\$1<${R}ies><${R}y><id>v</id><url>${U}</url></${R}y></${R}ies>\n\$1\$2|' pom.xml"
     else
-      __cmd="perl -pi -e 's|(\s*)(<${R}ies>)|\$1\$2\n\$1\$1<${R}y><id>v</id><url>${U}</url></${R}y>|' pom.xml"
+      cmd="perl -pi -e 's|(\s*)(<${R}ies>)|\$1\$2\n\$1\$1<${R}y><id>v</id><url>${U}</url></${R}y>|' pom.xml"
     fi
-    runCmd -f "Adding $U repository to pom.xml" "$__cmd"
+    runCmd -f "Adding $U repository to pom.xml" "$cmd"
   done
 }
 
@@ -910,42 +910,42 @@ addSpringReleaseRepo() {
 
 ## enables snapshots for the pre-releases repositories in pom.xml
 enableSnapshots() {
-  local __file
-  for __file in `getPomFiles`
+  local file
+  for file in `getPomFiles`
   do
-    changeBlock '<snapshots>\s+<enabled>' '</enabled>\s+</snapshots>' '${1}true${3}'  $__file
+    changeBlock '<snapshots>\s+<enabled>' '</enabled>\s+</snapshots>' '${1}true${3}'  $file
   done
 }
 
 ## Downloads a file from the internet
 ## $1: the URL
 download() {
-  local __S __O
-  [ -z "$VERBOSE" ] && __S="-s"
-  [ -n "$2" -a "$2" != '-' ] && __O="-o $2"
-  runCmd -f "Downloading $1" "curl $__S -L $__O $1"
+  local S O
+  [ -z "$VERBOSE" ] && S="-s"
+  [ -n "$2" -a "$2" != '-' ] && O="-o $2"
+  runCmd -f "Downloading $1" "curl $S -L $O $1"
 }
 
 ## Installs jet brains java runtime, used for testing the hotswap agent
 ## It updates JAVA_HOME and PATH variables, and sets the HOT one with the parameters to enable it.
 installJBRRuntime() {
-  local __hvers __jvers __vers __hsau __jurl H
+  local hvers jvers vers hsau jurl H
   # https://github.com/HotswapProjects/HotswapAgent/releases/
-  __hvers="2.0.1"
+  hvers="2.0.1"
   # https://github.com/JetBrains/JetBrainsRuntime/releases
-  __jvers="21.0.5"
-  __vers="b631.16"
+  jvers="21.0.5"
+  vers="b631.16"
 
-  __hsau="https://github.com/HotswapProjects/HotswapAgent/releases/download/RELEASE-${__hvers}/hotswap-agent-${__hvers}.jar"
-  __jurl="https://cache-redirector.jetbrains.com/intellij-jbr"
+  hsau="https://github.com/HotswapProjects/HotswapAgent/releases/download/RELEASE-${hvers}/hotswap-agent-${hvers}.jar"
+  jurl="https://cache-redirector.jetbrains.com/intellij-jbr"
 
   [ -z "$TEST" ] && warn "Installing JBR for hotswap testing"
 
-  isLinux   && __jurl="$__jurl/jbr-${__jvers}-linux-x64-${__vers}.tar.gz"
-  isMac     && __jurl="$__jurl/jbr-${__jvers}-osx-x64-${__vers}.tar.gz"
-  isWindows && __jurl="$__jurl/jbr-${__jvers}-windows-x64-${__vers}.tar.gz"
+  isLinux   && jurl="$jurl/jbr-${jvers}-linux-x64-${vers}.tar.gz"
+  isMac     && jurl="$jurl/jbr-${jvers}-osx-x64-${vers}.tar.gz"
+  isWindows && jurl="$jurl/jbr-${jvers}-windows-x64-${vers}.tar.gz"
   if [ ! -f /tmp/JBR.tgz ]; then
-    download "$__jurl" "/tmp/JBR.tgz" || return 1
+    download "$jurl" "/tmp/JBR.tgz" || return 1
   fi
   if [ ! -d /tmp/jbr ]; then
     mkdir -p /tmp/jbr
@@ -954,7 +954,7 @@ installJBRRuntime() {
   setJavaPath "/tmp/jbr" || return 1
   if [ ! -f $JAVA_HOME/lib/hotswap/hotswap-agent.jar ] ; then
     mkdir -p $JAVA_HOME/lib/hotswap
-    download "$__hsau" "$H/lib/hotswap/hotswap-agent.jar" || return 1
+    download "$hsau" "$H/lib/hotswap/hotswap-agent.jar" || return 1
     [ -z "$TEST" ] && log "Installed "`ls -1 $H/lib/hotswap/hotswap-agent.jar`
   fi
   export HOT="-Djetty.deployMode=FORK -Djetty.jvmArgs=-XX:HotswapAgent=fatjar"
@@ -963,26 +963,26 @@ installJBRRuntime() {
 ## Installs a certain version of OPENJDK
 # $1: version (eg: 17, 21, 23)
 installJDKRuntime() {
-  local __version base_url os_suffix __ext __nversion __vpath tar_file tmp_dir __jurl
-  __version=$1
+  local version base_url os_suffix ext nversion vpath tar_file tmp_dir jurl
+  version=$1
   base_url="https://download.oracle.com/java"
-  isLinux && os_suffix="linux-x64" && __ext="tar.gz"
-  isMac && os_suffix="macos-x64" && __ext="tar.gz"
-  isWindows && os_suffix="windows-x64" && __ext="zip"
-  [ -z "$__version" -o -z "$os_suffix" ] && return 1
-  __nversion="$__version"
-  __vpath="latest"
-  [ "$__version" = "18" ] && __nversion="18.0.1" && __vpath="archive"
-  [ "$__version" = "17" ] && __nversion="17.0.12" && __vpath="archive"
-  tar_file="jdk-${__nversion}_${os_suffix}_bin.${__ext}"
-  tmp_dir="/tmp/jdk-${__version}"
-  __jurl="${base_url}/${__version}/${__vpath}/${tar_file}"
+  isLinux && os_suffix="linux-x64" && ext="tar.gz"
+  isMac && os_suffix="macos-x64" && ext="tar.gz"
+  isWindows && os_suffix="windows-x64" && ext="zip"
+  [ -z "$version" -o -z "$os_suffix" ] && return 1
+  nversion="$version"
+  vpath="latest"
+  [ "$version" = "18" ] && nversion="18.0.1" && vpath="archive"
+  [ "$version" = "17" ] && nversion="17.0.12" && vpath="archive"
+  tar_file="jdk-${nversion}_${os_suffix}_bin.${ext}"
+  tmp_dir="/tmp/jdk-${version}"
+  jurl="${base_url}/${version}/${vpath}/${tar_file}"
   if [ ! -f "/tmp/$tar_file" ]; then
-    download "$__jurl" "/tmp/$tar_file" || return 1
+    download "$jurl" "/tmp/$tar_file" || return 1
   fi
   [ -d "$tmp_dir" ] && rm -rf "$tmp_dir"
   mkdir -p "$tmp_dir"
-  runCmd -f "Extracting JDK-$__version" "tar -xf "/tmp/$tar_file" -C "$tmp_dir" --strip-components 1" || return 1
+  runCmd -f "Extracting JDK-$version" "tar -xf "/tmp/$tar_file" -C "$tmp_dir" --strip-components 1" || return 1
 
   setJavaPath "$tmp_dir" || return 1
 }
@@ -1013,9 +1013,9 @@ unsetJavaPath() {
 ## enables autoreload for preparing jet brains java runtime
 ## it modifies jetty in pom.xml and configures the hotswap-agent.properties
 enableJBRAutoreload() {
-  local _p
-  _p=src/main/resources/hotswap-agent.properties
-  mkdir -p `dirname $_p` && echo "autoHotswap=true" > "$_p"
+  local p
+  p=src/main/resources/hotswap-agent.properties
+  mkdir -p `dirname $p` && echo "autoHotswap=true" > "$p"
   [ -z "$TEST" ] && warn "Disabled Jetty autoreload"
   changeMavenProperty scan -1
 }
@@ -1023,19 +1023,19 @@ enableJBRAutoreload() {
 ## displays secs in mins:secs
 ## $1: seconds
 secsToString() {
-  local __mins __secs
-  __mins=`expr $1 / 60`
-  __secs=`expr $1 % 60`
-  printf "%.2d':%.2d\"" $__mins $__secs
+  local mins secs
+  mins=`expr $1 / 60`
+  secs=`expr $1 % 60`
+  printf "%.2d':%.2d\"" $mins $secs
 }
 
 ## computes elapsed time
 ## $1: the starttime in `date +%s`, otherwise the time since the script was run
 computeTime() {
-  local __start __end
-  __start=${1:-$START}
-  __end=`date +%s`
-  secsToString `expr $__end - $__start`
+  local start end
+  start=${1:-$START}
+  end=`date +%s`
+  secsToString `expr $end - $start`
 }
 
 ## prints elapsed time
@@ -1058,10 +1058,10 @@ upgradeGradle() {
 
 ## list all demos that are available in the vaadin website (examples and starters)
 getReposFromWebsite() {
-  local _demos _starters
-  _demos=`curl -s https://vaadin.com/examples-and-demos  | grep div | grep github.com/vaadin | perl -pe 's|(^.*)/github.com/vaadin/([\w\-]+).*|$2|g' | sort -u`
-  _starters=`curl -s https://vaadin.com/hello-world-starters  | grep div | grep github.com/vaadin | perl -pe 's|(^.*)/github.com/vaadin/([\w\-]+).*|$2|g' | sort -u`
-  printf "$_demos\n$_starters" | sort -u
+  local demos starters
+  demos=`curl -s https://vaadin.com/examples-and-demos  | grep div | grep github.com/vaadin | perl -pe 's|(^.*)/github.com/vaadin/([\w\-]+).*|$2|g' | sort -u`
+  starters=`curl -s https://vaadin.com/hello-world-starters  | grep div | grep github.com/vaadin | perl -pe 's|(^.*)/github.com/vaadin/([\w\-]+).*|$2|g' | sort -u`
+  printf "$demos\n$starters" | sort -u
 }
 
 ## clean vaadin artifact from local maven repository with the version provided
@@ -1138,16 +1138,16 @@ getMvnDependencyVersion() {
 # $3 version
 # $4 extra arguments to pass to mvn
 setMvnDependencyVersion() {
-  local _newVers _curVers
-  # expr "$3" : ".*SNAPSHOT" >/dev/null && _newVers=$3 || _newVers=$3
-  _newVers=$3
-  _curVers=`getMvnDependencyVersion "$1" "$2" "$4"` || return 1
-  if [ "$_curVers" != "$_newVers" ]; then
-    changeBlock '<artifactId>'$2'</artifactId>' '\s+</dependency>' '${1}<version>'$_newVers'</version>${3}' pom.xml
-    _curVers=`getMvnDependencyVersion "$1" "$2" "$4"` || return 1
-    [ "$_curVers" != "$_newVers" ] && err "CC version mismatch $_curVers != $_newVers" && return 1
+  local newVers curVers
+  # expr "$3" : ".*SNAPSHOT" >/dev/null && newVers=$3 || newVers=$3
+  newVers=$3
+  curVers=`getMvnDependencyVersion "$1" "$2" "$4"` || return 1
+  if [ "$curVers" != "$newVers" ]; then
+    changeBlock '<artifactId>'$2'</artifactId>' '\s+</dependency>' '${1}<version>'$newVers'</version>${3}' pom.xml
+    curVers=`getMvnDependencyVersion "$1" "$2" "$4"` || return 1
+    [ "$curVers" != "$newVers" ] && err "CC version mismatch $curVers != $newVers" && return 1
   fi
-  log "App is using $1:$2:$_curVers"
+  log "App is using $1:$2:$curVers"
   return 0
 }
 

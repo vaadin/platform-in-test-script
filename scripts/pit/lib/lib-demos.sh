@@ -165,38 +165,38 @@ compareVersions() {
 ## we add GITHUB_TOKEN or GHTK environment variable to the URL
 ## $1: the name of the demo in the form of `repo[:branch][/folder]`
 checkoutDemo() {
-  local _demo _branch _folder _workdir _repo _base _gitUrl _quiet
-  _demo=`getGitDemo $1`
-  _branch=`getGitBranch $1`
-  _folder=`getGitFolder $1`
-  _workdir="$_demo$_folder"
-  _repo=`getGitRepo $1`
-  _base="https://github.com/"
-  grep -q '^github' ~/.ssh/known_hosts 2>/dev/null && _base="git@github.com:"
+  local demo branch folder workdir repo base gitUrl quiet
+  demo=`getGitDemo $1`
+  branch=`getGitBranch $1`
+  folder=`getGitFolder $1`
+  workdir="$demo$folder"
+  repo=`getGitRepo $1`
+  base="https://github.com/"
+  grep -q '^github' ~/.ssh/known_hosts 2>/dev/null && base="git@github.com:"
 
-  validateToken $_repo && _base=`echo "$_base" | sed -e 's|\(https://\)|\\1'$GHTK'@|'`
-  _gitUrl="${_base}${_repo}.git"
-  [ -z "$VERBOSE" -o -n "$TEST" ] && _quiet="-q"
-  if [ -z "$OFFLINE" -o ! -d "$_workdir" ]
+  validateToken $repo && base=`echo "$base" | sed -e 's|\(https://\)|\\1'$GHTK'@|'`
+  gitUrl="${base}${repo}.git"
+  [ -z "$VERBOSE" -o -n "$TEST" ] && quiet="-q"
+  if [ -z "$OFFLINE" -o ! -d "$workdir" ]
   then
-    [ ! -d "$_demo" ] || runCmd -qf "Removing preexisting folder $_demo" "rm -rf $_demo" || return 1
-    runCmd -f "Cloning repository $_repo" "git clone $_quiet $_gitUrl" || return 1
-    cmd "cd $_workdir"; cd "$_workdir" || return 1
+    [ ! -d "$demo" ] || runCmd -qf "Removing preexisting folder $demo" "rm -rf $demo" || return 1
+    runCmd -f "Cloning repository $repo" "git clone $quiet $gitUrl" || return 1
+    cmd "cd $workdir"; cd "$workdir" || return 1
     log "Default branch: $(git rev-parse --abbrev-ref HEAD)"
   else
-    cmd "cd $_workdir"; cd "$_workdir" || return 1
-    runCmd -f "Reseting local changes in $_repo" "git reset $_quiet --hard HEAD" || return 1
+    cmd "cd $workdir"; cd "$workdir" || return 1
+    runCmd -f "Reseting local changes in $repo" "git reset $quiet --hard HEAD" || return 1
     runCmd -f "Deleting preexisting .out files" "rm -rf *.out"
   fi
-  [ -z "$_branch" ] || runCmd -f "Selecting branch: $_branch" "git checkout $_quiet $_branch"
+  [ -z "$branch" ] || runCmd -f "Selecting branch: $branch" "git checkout $quiet $branch"
 }
 ## returns the github repo URL of a demo
 getGitRepo() {
-  local _repo
-  _repo=`echo $1 | cut -d : -f1`
-  case $_repo in
-    */*) echo $_repo | cut -d / -f1,2 ;;
-    *) echo "vaadin/"`echo $_repo` ;;
+  local repo
+  repo=`echo $1 | cut -d : -f1`
+  case $repo in
+    */*) echo $repo | cut -d / -f1,2 ;;
+    *) echo "vaadin/"`echo $repo` ;;
   esac
 }
 ## returns the current branch of a demo
@@ -207,19 +207,19 @@ getGitBranch() {
 }
 ## returns the folder with the demo in the repo
 getGitFolder() {
-  local _repo
-  _repo=`echo $1 | cut -d : -f1`
-  case $_repo in
-    */*/*) echo "/"`echo $_repo | cut -d / -f3` ;;
+  local repo
+  repo=`echo $1 | cut -d : -f1`
+  case $repo in
+    */*/*) echo "/"`echo $repo | cut -d / -f3` ;;
   esac
 }
 ## returns the name for the demo
 getGitDemo() {
-  local _repo
-  _repo=`echo $1 | cut -d : -f1`
-  case $_repo in
-    */*) echo $_repo | cut -d / -f2 ;;
-    *)   echo "$_repo" ;;
+  local repo
+  repo=`echo $1 | cut -d : -f1`
+  case $repo in
+    */*) echo $repo | cut -d / -f2 ;;
+    *)   echo "$repo" ;;
   esac
 }
 

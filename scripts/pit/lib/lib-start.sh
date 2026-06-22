@@ -20,38 +20,38 @@ initGit() {
 ## Generate an app from start.vaadin.com with the given preset, and unzip it in the current folder
 ## multiple presets can be used by joining them with the `_` character
 downloadStarter() {
-  local _preset _presets _dir _p _url _zip _silent _name
-  _preset=$1
-  _presets=""
-  _dir="$2"
-  for _p in `echo "$_preset" | tr "_" " "`
+  local preset presets dir p url zip silent name
+  preset=$1
+  presets=""
+  dir="$2"
+  for p in `echo "$preset" | tr "_" " "`
   do
-    _presets="$_presets&preset=$_p"
+    presets="$presets&preset=$p"
   done
-  _url="https://start.vaadin.com/dl?${_presets}&projectName=${_preset}"
-  _zip="$_preset.zip"
+  url="https://start.vaadin.com/dl?${presets}&projectName=${preset}"
+  zip="$preset.zip"
 
-  [ -z "$VERBOSE" ] && _silent="-s"
-  runCmd -f "Downloading $1" "curl $_silent -f '$_url' -o '$_zip'" || return 1
-  runCmd -f "Unzipping $_name" "unzip -q '$_zip'" && rm -f "$_zip" || return 1
-  cmd "cd '$_dir'" && cd "$_dir" || return 1
+  [ -z "$VERBOSE" ] && silent="-s"
+  runCmd -f "Downloading $1" "curl $silent -f '$url' -o '$zip'" || return 1
+  runCmd -f "Unzipping $name" "unzip -q '$zip'" && rm -f "$zip" || return 1
+  cmd "cd '$dir'" && cd "$dir" || return 1
 }
 
 ## Generates a starter by using archetype, or hilla/cli
 ## TODO: add support for vaadi cli
 generateStarter() {
-  local _name cmd
-  _name=$1
-  case $_name in
-    *spring)        cmd="$MVN -ntp -q -B archetype:generate -DarchetypeGroupId=com.vaadin -DarchetypeArtifactId=vaadin-archetype-spring-application -DarchetypeVersion=LATEST -DgroupId=com.vaadin.starter -DartifactId=$_name" ;;
-    archetype*)     cmd="$MVN -ntp -q -B archetype:generate -DarchetypeGroupId=com.vaadin -DarchetypeArtifactId=vaadin-archetype-application -DarchetypeVersion=LATEST -DgroupId=com.vaadin.starter -DartifactId=$_name" ;;
+  local name cmd
+  name=$1
+  case $name in
+    *spring)        cmd="$MVN -ntp -q -B archetype:generate -DarchetypeGroupId=com.vaadin -DarchetypeArtifactId=vaadin-archetype-spring-application -DarchetypeVersion=LATEST -DgroupId=com.vaadin.starter -DartifactId=$name" ;;
+    archetype*)     cmd="$MVN -ntp -q -B archetype:generate -DarchetypeGroupId=com.vaadin -DarchetypeArtifactId=vaadin-archetype-application -DarchetypeVersion=LATEST -DgroupId=com.vaadin.starter -DartifactId=$name" ;;
     ## workaround in current quarkus-maven-plugin 3.28.3 : -Dextensions=rest,vaadin
     ## https://github.com/quarkusio/quarkus/issues/50528
-    vaadin-quarkus) cmd="$MVN -ntp -q -B io.quarkus.platform:quarkus-maven-plugin:create -Dextensions=rest,vaadin -DwithCodestart -DprojectGroupId=com.vaadin.starter -DprojectArtifactId=$_name" ;;
-    hilla-*-cli)    cmd="npx -y @hilla/cli init --react $_name" ;;
+    vaadin-quarkus) cmd="$MVN -ntp -q -B io.quarkus.platform:quarkus-maven-plugin:create -Dextensions=rest,vaadin -DwithCodestart -DprojectGroupId=com.vaadin.starter -DprojectArtifactId=$name" ;;
+    hilla-*-cli)    cmd="npx -y @hilla/cli init --react $name" ;;
   esac
   runCmd -f "Generating $1" "$cmd" || return 1
-  cmd "cd '$_name'" && cd "$_name" || return 1
+  cmd "cd '$name'" && cd "$name" || return 1
   initGit
 }
 
@@ -59,17 +59,17 @@ generateStarter() {
 ## Gemerate a starter using spring initializer website
 ## TODO: Check versions
 downloadInitializer() {
-  local _name _java _boot _group _type _deps _url
-  _name=$1
-  _java=`computeJavaMajor`
-  _boot=4.0.5
-  _group=com.vaadin.initializer
-  _type=$2
-  _deps=$3
-  _url="https://start.spring.io/starter.zip?type=$_type&language=java&bootVersion=$_boot&baseDir=$_name&groupId=$_group&artifactId=$_name&name=$_name&description=$_name&packageName=$_group&packaging=jar&javaVersion=$_java&dependencies=$_deps"
-  runCmd -f "Downloading $_name" "curl -s '$_url' --output $_name.zip" || return 1
-  runCmd -f "Unzipping $_name" "unzip -q '$_name.zip'" && rm -f "$_name.zip" || return 1
-  cmd "cd '$_name'" && cd "$_name" || return 1
+  local name java boot group type deps url
+  name=$1
+  java=`computeJavaMajor`
+  boot=4.0.5
+  group=com.vaadin.initializer
+  type=$2
+  deps=$3
+  url="https://start.spring.io/starter.zip?type=$type&language=java&bootVersion=$boot&baseDir=$name&groupId=$group&artifactId=$name&name=$name&description=$name&packageName=$group&packaging=jar&javaVersion=$java&dependencies=$deps"
+  runCmd -f "Downloading $name" "curl -s '$url' --output $name.zip" || return 1
+  runCmd -f "Unzipping $name" "unzip -q '$name.zip'" && rm -f "$name.zip" || return 1
+  cmd "cd '$name'" && cd "$name" || return 1
   initGit
 }
 
@@ -173,79 +173,79 @@ setStartVersion() {
 # 5. run validations for the new version in dev-mode
 # 6. run validations for the new version in prod-mode
 runStarter() {
-  local GHTK GITHUB_TOKEN MVN _preset _tmp _port _versionProp _version _offline
-  local _test _folder _dir _msg _msgprod _prod _dev _compile _clean _current
+  local GHTK GITHUB_TOKEN MVN preset tmp port versionProp version offline
+  local test folder dir msg msgprod prod dev compile clean current
   GHTK= GITHUB_TOKEN=
   # 0
   MVN=mvn
-  _preset="$1"
-  _tmp="$2"
-  _port="$3"
-  _versionProp=`computeProp "$_preset"`
-  _version=`computeVersion "$_versionProp" "$4"`
-  _offline="$5"
+  preset="$1"
+  tmp="$2"
+  port="$3"
+  versionProp=`computeProp "$preset"`
+  version=`computeVersion "$versionProp" "$4"`
+  offline="$5"
 
-  _test=`getStartTestFile "$_preset"`
+  test=`getStartTestFile "$preset"`
 
-  cd "$_tmp"
-  _folder=`echo "$_preset" | tr "_" "-"`
-  _dir="$_tmp/$_folder"
+  cd "$tmp"
+  folder=`echo "$preset" | tr "_" "-"`
+  dir="$tmp/$folder"
 
   #  1
-  if [ -z "$_offline" -o ! -d "$_dir" ]
+  if [ -z "$offline" -o ! -d "$dir" ]
   then
-     if [ -d "$_dir" ]; then
-       runCmd -f "Cleaning project folder $_dir" "rm -rf '$_dir'" || return 1
+     if [ -d "$dir" ]; then
+       runCmd -f "Cleaning project folder $dir" "rm -rf '$dir'" || return 1
      fi
-    case "$_preset" in
-      archetype*|vaadin-quarkus|hilla-*-cli) generateStarter "$_preset" || return 1 ;;
-      initializer-*-maven*)  downloadInitializer "$_preset" maven-project vaadin,devtools || return 1 ;;
-      initializer-*-gradle*) downloadInitializer "$_preset" gradle-project vaadin,devtools || return 1 ;;
-      *) downloadStarter "$_preset" "$_folder" || return 1 ;;
+    case "$preset" in
+      archetype*|vaadin-quarkus|hilla-*-cli) generateStarter "$preset" || return 1 ;;
+      initializer-*-maven*)  downloadInitializer "$preset" maven-project vaadin,devtools || return 1 ;;
+      initializer-*-gradle*) downloadInitializer "$preset" gradle-project vaadin,devtools || return 1 ;;
+      *) downloadStarter "$preset" "$folder" || return 1 ;;
     esac
   else
-    cd "$_folder"
+    cd "$folder"
   fi
   computeMvn
   computeGradle
 
   printVersions || return 1
 
-  _msg="Started .*Application|Frontend compiled|Started ServerConnector|Started Vite|Listening on:|Vaadin is running"
-  _msgprod="Started .*Application|Started ServerConnector|Listening on:|Started oejs.Server"
-  _prod=`_getRunProd "$_preset" "$_port"`
-  _dev=`_getRunDev "$_preset" "$_port"`
-  _compile=`_getCompProd "$_preset"`
-  _clean=`_getClean "$_preset"`
+  msg="Started .*Application|Frontend compiled|Started ServerConnector|Started Vite|Listening on:|Vaadin is running"
+  msgprod="Started .*Application|Started ServerConnector|Listening on:|Started oejs.Server"
+  prod=`_getRunProd "$preset" "$port"`
+  dev=`_getRunDev "$preset" "$port"`
+  compile=`_getCompProd "$preset"`
+  clean=`_getClean "$preset"`
 
-  _needsLicense "$_preset" || removeProKey
+  _needsLicense "$preset" || removeProKey
 
-  if test -z "$NOCURRENT" && ! _isNext "$_preset"
+  if test -z "$NOCURRENT" && ! _isNext "$preset"
   then
-    _current=`setStartVersion "$_versionProp" current`
-    applyPatches $_preset current $_current dev || return 0
+    current=`setStartVersion "$versionProp" current`
+    applyPatches $preset current $current dev || return 0
     # 2
     if [ -z "$NODEV" ]; then
-      runValidations dev "$_current" "$_preset" "$_port" "$_clean" "$_dev $HOT" "$_msg" "$_test" || return 1
+      runValidations dev "$current" "$preset" "$port" "$clean" "$dev $HOT" "$msg" "$test" || return 1
     fi
     # 3
     if [ -z "$NOPROD" ]; then
-      runValidations prod "$_current" "$_preset" "$_port" "$_compile" "$_prod" "$_msgprod" "$_test" || return 1
+      runValidations prod "$current" "$preset" "$port" "$compile" "$prod" "$msgprod" "$test" || return 1
     fi
   fi
 
   # 4
-  if _isNext "$_preset" || setStartVersion "$_versionProp" "$_version" >/dev/null
+  if _isNext "$preset" || setStartVersion "$versionProp" "$version" >/dev/null
   then
     [ -d ~/.vaadin/node ] && cmd "rm -rf ~/.vaadin/node" && rm -rf ~/.vaadin/node
-    applyPatches "$_preset" next "$_version" prod || return 0
+    applyPatches "$preset" next "$version" prod || return 0
     # 5
     if [ -z "$NODEV" ]; then
-      runValidations dev "$_version" "$_preset" "$_port" "$_clean" "$_dev $HOT" "$_msg" "$_test" || return 1
+      runValidations dev "$version" "$preset" "$port" "$clean" "$dev $HOT" "$msg" "$test" || return 1
     fi
     # 6
     if [ -z "$NOPROD" ]; then
-      runValidations prod "$_version" "$_preset" "$_port" "$_compile" "$_prod" "$_msgprod" "$_test" || return 1
+      runValidations prod "$version" "$preset" "$port" "$compile" "$prod" "$msgprod" "$test" || return 1
     fi
   fi
 }

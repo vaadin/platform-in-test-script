@@ -19,7 +19,7 @@
 # 13. check that the app is not using a default ID for statistics
 # 14. remove .out file if the process was successful
 runValidations() {
-  local mode version name port compile cmd check test timeout file treefile H _err test_result
+  local mode version name port compile cmd check test timeout file treefile H err test_result
   local GHTK GITHUB_TOKEN CC_KEY CC_CERT OPENAI_TOKEN CE_LICENSE
   [ -n "$1" ] && mode="$1" || mode=""
   [ -n "$2" ] && version="$2" || version=""
@@ -102,8 +102,8 @@ runValidations() {
   # 9
   if [ "$mode" = dev ]; then
     waitUntilFrontendCompiled "http://localhost:$port/" "$file"
-    _err=$?
-    if [ "$_err" = 2 ]; then
+    err=$?
+    if [ "$err" = 2 ]; then
       warn "File tsconfig/types.d was modified and server threw an exception !! retrying ..."
       killAll
       mv "$file" "$file.tsconfig"
@@ -111,7 +111,7 @@ runValidations() {
       waitUntilMessageInFile "$file" "$check" "$timeout" "$cmd" || return 1
       waitUntilAppReady "$name" "$port" 60 "$file" || return 1
       waitUntilFrontendCompiled "http://localhost:$port/" "$file" || return 1
-    elif [ "$_err" != 0 ]; then
+    elif [ "$err" != 0 ]; then
       return 1
     fi
   fi
