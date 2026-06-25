@@ -849,6 +849,7 @@ setPropertyInFile() {
 
 ## Do not open Browser after app is started
 disableLaunchBrowser() {
+  local file
   for file in `find . -name application.properties`; do
     setPropertyInFile $file vaadin.launch-browser remove
   done
@@ -856,6 +857,7 @@ disableLaunchBrowser() {
 
 ## pnpm is quite faster than npm
 enablePnpm() {
+  local file
   for file in `find . -name application.properties`; do
     setPropertyInFile $file vaadin.pnpm.enable true
   done
@@ -863,8 +865,9 @@ enablePnpm() {
 
 ## vite is faster than webpack
 enableVite() {
+  local file
   for file in `find . -name application.properties`; do
-    setPropertyInFile com.vaadin.experimental.viteForFrontendBuild true
+    setPropertyInFile $file com.vaadin.experimental.viteForFrontendBuild true
   done
 }
 
