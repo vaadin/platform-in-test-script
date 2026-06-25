@@ -22,7 +22,9 @@ const { log, args, createPage, closePage, takeScreenshot, waitForServerReady, di
     await page.waitForLoadState();
     await page.getByLabel('Your name').fill('Test User');
     await page.getByRole('button', { name: 'Say hello' }).click();
-    await page.locator('text=Hello Test User').waitFor({ state: 'visible' });
+    // The greeting renders twice: a reactive Signal-bound <span> and a Notification
+    // toast. Target the toast specifically to avoid a strict-mode multi-match.
+    await page.getByRole('alert').filter({ hasText: 'Hello Test User' }).first().waitFor({ state: 'visible' });
     await takeScreenshot(page, arg, __filename, 'hello-world');
 
     // --- Dashboard ---
@@ -161,9 +163,15 @@ const { log, args, createPage, closePage, takeScreenshot, waitForServerReady, di
     await page.getByRole('textbox', { name: 'Name' }).fill('John Doe');
     await page.getByRole('textbox', { name: 'Email address' }).fill('john@example.com');
     await page.getByRole('textbox', { name: 'Phone number' }).fill('+1234567890');
+    // Commit the last field (fill() alone fires no change/blur). The Wizard gates the
+    // Next link on the step-1 validity signal, which only flips true once the binder
+    // revalidates the committed phone value.
+    await page.getByRole('textbox', { name: 'Phone number' }).blur();
     await takeScreenshot(page, arg, __filename, 'wizard-step1');
     // Navigate to step 2
-    await page.getByRole('link', { name: 'Next' }).click();
+    const wizardNext = page.getByRole('link', { name: 'Next' });
+    await wizardNext.waitFor({ state: 'visible' });
+    await wizardNext.click();
     await page.waitForLoadState();
     await page.waitForTimeout(1000);
     await takeScreenshot(page, arg, __filename, 'wizard-step2');
