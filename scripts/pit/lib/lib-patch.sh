@@ -5,6 +5,9 @@
 ##   Patches for special versions are maintained in separated files like lib-patch-v24.sh, lib-patch-v24.4.sh
 ##   These especial patches are loaded and applied in this script
 
+## Version-specific patch libraries (dispatched from applyPatches by version)
+. `dirname $0`/lib/lib-patch-v25.3.sh
+
 ## Run after updating Vaadin/Hilla versions in order to patch sources
 # $1 application/starter name
 # $2 type (current | next)
@@ -164,11 +167,6 @@ applyPatches() {
       if [ "$type_" = next ]; then
         find src/main -name "AbstractBakeryCrudView.java" | xargs perl -0777 -pi -e \
           's/(Consumer<E> onFail = entity -> \{)\s*throw new RuntimeException\("The operation could not be performed\."\);\s*(\})/$1\n        $2/g'
-        ## UsersViewIT login times out on Windows because it runs concurrently with
-        ## DashboardViewIT, overloading the server. @Isolated prevents concurrent
-        ## execution with other test classes, giving UsersViewIT exclusive server access.
-        find src/test -name "UsersViewIT.java" | xargs perl -pi -e \
-          's/^public class UsersViewIT/\@org.junit.jupiter.api.parallel.Isolated\npublic class UsersViewIT/g'
       fi
       ;;
     bookstore-example)
@@ -209,6 +207,11 @@ applyPatches() {
       ## The minimum version of Java supported by vaadin 25 is 21
       setJavaVersion 21
       ;;
+  esac
+
+  ## Apply version-series specific patches (see lib-patch-v25.3.sh)
+  case "$vers_" in
+    25.3.*) applyv253patches "$app_" "$type_" "$vers_" ;;
   esac
 
   # always successful
