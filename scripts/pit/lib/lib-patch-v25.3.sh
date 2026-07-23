@@ -17,6 +17,14 @@ applyv253patches() {
       ## Align it with the property so the version bump takes effect. See vaadin/quarkus#316.
       perl -0777 -pi -e 's|(<artifactId>vaadin-quarkus-extension</artifactId>\s*<version>)[^<]+(</version>)|${1}\${vaadin.version}${2}|s' pom.xml
       ;;
+    hilla-crm-tutorial)
+      ## @vaadin/react-components 25.3 added a SelectItem *component* (a value), so the
+      ## former SelectItem *type* is now exported as SelectItemData. Using SelectItem in a
+      ## type position (e.g. useState<SelectItem[]>) fails to compile with TS2749.
+      ## Rename to SelectItemData per the migration docs (vaadin/docs#5831).
+      find src/main/frontend \( -name "*.tsx" -o -name "*.ts" \) \
+        -exec perl -pi -e 's/\bSelectItem\b/SelectItemData/g' {} +
+      ;;
   esac
   return 0
 }
