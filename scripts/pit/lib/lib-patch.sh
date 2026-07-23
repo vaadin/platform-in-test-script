@@ -56,7 +56,7 @@ applyPatches() {
       ## flow-server 25.1+ no longer pulls servlet-api transitively; Jetty plugin provides it
       ## at runtime but not at compile time, so test code that touches VaadinSession fails.
       if [ "$type_" = next ]; then
-        addMavenDep pom.xml "jakarta.servlet" "jakarta.servlet-api" "provided"
+        addMavenDep pom.xml "jakarta.servlet" "jakarta.servlet-api" "provided" '\<version\>6.1.0\</version\>'
       fi
       ;;
     flow-spring-examples)
