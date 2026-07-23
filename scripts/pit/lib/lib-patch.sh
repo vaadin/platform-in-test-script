@@ -155,12 +155,6 @@ applyPatches() {
       ## unnamed variables (_) finalized in JDK 22 (JEP 456), replace for JDK 21 compat
       find . -name "*.java" -exec perl -pi -e 's/\b_ ->/unused ->/g' {} +
       ;;
-    base-starter-gradle)
-      ## gretty uses archivePath removed in Gradle 9, downgrade to 8.14.2 (vaadin/base-starter-gradle#311)
-      perl -pi -e 's/gradle-[\d.]+(-\w+)?-bin\.zip/gradle-8.14.2-bin.zip/' gradle/wrapper/gradle-wrapper.properties
-      ## failOnNoDiscoveredTests is Gradle 9 only, remove it for 8.x
-      perl -pi -e 's/^\s*failOnNoDiscoveredTests\s*=.*$//' build.gradle
-      ;;
     bakery-app-starter-flow-spring)
       ## onFail lambda throws RuntimeException which vaadin-crud-flow no longer catches
       ## internally in 25.2+, causing the request to escape through the full stack and
