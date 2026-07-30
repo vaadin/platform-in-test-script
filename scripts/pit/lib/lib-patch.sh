@@ -152,7 +152,7 @@ applyPatches() {
         rm -rf src/test
       fi
       ;;
-    signals-cases)
+    use-cases)
       ## ErrorProne needs -XDaddTypeAnnotationsToSymbol on JDK<22
       changeBlock '<plugin>\s*<groupId>am.ik.maven</groupId>' '</plugin>' remove pom.xml
       ## unnamed variables (_) finalized in JDK 22 (JEP 456), replace for JDK 21 compat
