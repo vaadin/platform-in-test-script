@@ -421,6 +421,39 @@ setDemoVersion() {
         return 1
        fi
        ;;
+    signals-cases)
+       ## The repo imports flow-bom and flow-components-bom *before* vaadin-bom, so those
+       ## BOMs, not vaadin.version, decide the flow/flow-components versions. Bumping only
+       ## vaadin.version leaves Flow on the old line (e.g. flow-server 25.2-SNAPSHOT with
+       ## vaadin 25.3.x), which breaks compilation. The three properties must move together.
+       ## Reading the current version needs care too: the observability module pins its own
+       ## newer versions and sorts before the root pom in getPomFiles, so the baseline has
+       ## to be read from the root pom.xml.
+       if [ "$2" = current ]; then
+         git checkout -q .
+         getCurrProperty vaadin.version pom.xml
+         return 1
+       fi
+       ## flow is not released in lockstep with the platform (platform 25.3.0-alpha7 ships
+       ## flow 25.3.0-alpha6, platform 25.2.4 ships flow 25.2.5), so flow.version has to be
+       ## resolved from the platform's versions.json. flow-components is '{{version}}' there,
+       ## i.e. always the platform version, so vaadin.version can be reused for it.
+       ## SNAPSHOT lines have no versions.json to read, but flow publishes the same
+       ## coordinate (25.3-SNAPSHOT), so the platform version is used as is.
+       if setVersion vaadin.version "$2"; then
+         case "$2" in
+           *SNAPSHOT) __flow="$2";;
+           *) __flow=`getVersionFromPlatform "$2" flow`
+              [ -z "$__flow" ] && warn "Cannot resolve flow version for $2 from versions.json, using $2" && __flow="$2"
+              ;;
+         esac
+         setVersion flow.version "$__flow" false
+         setVersion flow-components.version "$2" false
+         return 0
+       else
+         return 1
+       fi
+       ;;
     *)
       __prop=`computeProp $1`
       __vers=`computeVersion "$__prop" $2`
