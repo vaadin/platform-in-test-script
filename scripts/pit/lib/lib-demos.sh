@@ -412,11 +412,10 @@ getTest() {
 setDemoVersion() {
   [ -z "$2" ] && return 1
   case "$1" in
-    base-starter-flow-quarkus|mpr-demo|signals-cases)
+    base-starter-flow-quarkus|mpr-demo)
        if setVersion vaadin.version "$2"; then
         setFlowVersion "$2"
         [ "$1" = mpr-demo ] && setMprVersion "$2"
-        [ "$1" = signals-cases ] && setFlowComponentsVersion "$2"
         return 0
        else
         return 1

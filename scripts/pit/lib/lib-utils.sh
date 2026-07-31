@@ -673,15 +673,6 @@ setMprVersion() {
   setVersionFromPlatform $1 mpr-v8 mpr.version
 }
 
-## Set flow-components.version to the platform version being tested.
-## flow-components tracks the platform version (its javaVersion is the template
-## {{version}} in versions.json), so it equals the platform version directly.
-## $1: version of the platform
-setFlowComponentsVersion() {
-  [ "$1" = current ] && return
-  setVersion flow-components.version "$1" false
-}
-
 ## Find all pom.xml files in the project excluding target and bin directories
 getPomFiles() {
   find * -name pom.xml 2>/dev/null | egrep -v 'target/|bin/'
