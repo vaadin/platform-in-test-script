@@ -1,5 +1,5 @@
 name: Run PiT
-run-name: PiT ${{ inputs.version }} ${{ inputs.vendor }} ${{inputs.skipcurrent}} ${{inputs.starters}} ${{github.event_path}} ${{ github.event.head_commit.message }}
+run-name: PiT ${{ inputs.version }} ${{inputs.skipcurrent}} ${{inputs.starters}} ${{github.event_path}} ${{ github.event.head_commit.message }}
 on:
   workflow_dispatch:
    inputs:
@@ -10,10 +10,6 @@ on:
       starters:
         description: 'Starters to run, separated by comma'
         required: true
-        type: string
-      vendor:
-        description: 'Kubernetes vendor to use with CC'
-        required: false
         type: string
       skipcurrent:
         description: 'Skip running tests in current version'
@@ -32,16 +28,10 @@ on:
         default: false
   push:
 env:
-  CC_KEY: ${{secrets.CC_KEY}}
-  CC_CERT: ${{secrets.CC_CERT}}
   GITHUB_TOKEN: ${{secrets.GHTK}}
 jobs:
   run:
     runs-on: ubuntu-latest
-    services:
-      docker:
-        image: docker:dind
-        options: --privileged --shm-size=2g
     steps:
       - uses: actions/checkout@v4
       - uses: dev-hanz-ops/install-gh-cli-action@v0.2.1
@@ -55,20 +45,16 @@ jobs:
       - uses: stCarolas/setup-maven@v5
         with:
           maven-version: '3.9.0'
-      - uses: azure/setup-helm@v3.5
-        with:
-          version: 3.17.3
       - if: ${{env.ACT}}
         name: Run install dependencies (only in ACT)
         run: |
-          for i in PATH CC_KEY CC_CERT GITHUB_TOKEN
+          for i in PATH GITHUB_TOKEN
           do
              V="${!i}"
              [ -n "$V" ] && echo "export $i='"$V"'" >> vars.sh
           done
           sudo apt-get update -qq
           sudo apt-get install -qq -y vim iputils-ping curl >/dev/null
-          sudo chmod u+s /usr/bin/docker
         shell: bash
       - name: Run Install licenses
         run: |
@@ -82,9 +68,14 @@ jobs:
           [ true = "${{inputs.skipcurrent}}" ] && A="$A --skip-current"
           [ true = "${{inputs.skipdev}}" ] && A="$A --skip-dev"
           [ true = "${{inputs.debug}}" ] && A="$A --debug"
-          [ -n "${{inputs.version}}" ] && A="$A --version=${{inputs.version}}" || A="$A --version=24.9-SNAPSHOT"
-          [ -n "${{inputs.starters}}" ] && A="$A --starters=${{inputs.starters}}" || A="$A --starters=control-center"
-          [ -n "${{inputs.vendor}}" ] && A="$A --vendor=${{inputs.vendor}}"
+          if [ -n "${{inputs.version}}" ]; then
+            A="$A --version=${{inputs.version}}"
+          else
+            SNAP=`curl -s "https://maven.vaadin.com/vaadin-prereleases/com/vaadin/vaadin-bom/maven-metadata.xml" | grep -oE '[0-9]+\.[0-9]+-SNAPSHOT' | sort -uV | tail -1`
+            [ -z "$SNAP" ] && echo "Could not compute latest SNAPSHOT version" && exit 1
+            A="$A --version=$SNAP"
+          fi
+          [ -n "${{inputs.starters}}" ] && A="$A --starters=${{inputs.starters}}" || A="$A --starters=skeleton-starter-flow"
           echo "PIT_ARGS=$A" >> $GITHUB_ENV
           K=`echo "$A" | perl -pe 's/[^\d\w]/-/g' | tr -s '-'`
           echo "CACHE_KEY=$K" >> $GITHUB_ENV
@@ -98,16 +89,6 @@ jobs:
           restore-keys: |
             pit-${{env.CACHE_KEY}}
             pit-
-      - if: ${{!inputs.vendor || inputs.vendor == 'kind'}}
-        uses: helm/kind-action@v1
-        with:
-          cluster_name: pit
-      - if: ${{inputs.vendor == 'do'}}
-        uses: azure/setup-kubectl@v4
-      - if: ${{inputs.vendor == 'do'}}
-        uses: digitalocean/action-doctl@v2
-        with:
-          token: ${{ secrets.DOTK }}
       - name: Run PiT
         run: |
           echo ./scripts/pit/run.sh ${{env.PIT_ARGS}}
@@ -134,6 +115,3 @@ jobs:
           gh actions-cache list
           gh actions-cache delete "pit-${{env.CACHE_KEY}}" --confirm || true
         shell: bash
-
-
-
