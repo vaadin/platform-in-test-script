@@ -87,7 +87,19 @@ applyPatches() {
       ## Vaadin 25.2+ needs Jackson 3.1+ (available since Boot 4.0.4).
       ## Only needed for next since the repos work fine with their pinned Vaadin version.
       if [ "$type_" = next ]; then
-        changeMavenBlock parent org.springframework.boot spring-boot-starter-parent 4.0.5
+        ## Only raise the version, never downgrade a repo that already moved past 4.0.4.
+        _boot_=`perl -0777 -ne 'print $1 if m|<parent>.*?<artifactId>spring-boot-starter-parent</artifactId>\s*<version>([^<]+)</version>|s' pom.xml`
+        if [ -n "$_boot_" ] && [ "$_boot_" != 4.0.4 ] \
+           && [ "`printf '%s\n' 4.0.4 "$_boot_" | sort -V | head -1`" = "$_boot_" ]; then
+          changeMavenBlock parent org.springframework.boot spring-boot-starter-parent 4.0.5
+        fi
+      fi
+      ## AI components were split into free (core) and pro (extensions) modules,
+      ## so the old aggregate artifact is no longer managed by flow-components-bom.
+      ## https://github.com/vaadin/flow-components/pull/9887
+      if [ "$app_" = vaadin-showcase -a "$type_" = next ]; then
+        runCmd -f "Splitting vaadin-ai-components-flow into core and extensions" \
+          "perl -0777 -pi -e 's|<artifactId>vaadin-ai-components-flow</artifactId>|<artifactId>vaadin-ai-core-flow</artifactId>\n        </dependency>\n        <dependency>\n            <groupId>com.vaadin</groupId>\n            <artifactId>vaadin-ai-extensions-flow</artifactId>|' pom.xml"
       fi
       ;;
     archetype-spring)
