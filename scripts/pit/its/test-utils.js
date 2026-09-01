@@ -194,8 +194,12 @@ async function waitForServerReady(page, url, arg, options = {}) {
   } = options;
   log(`Opening ${url}\n`);
   for (let attempt = 0; attempt < maxRetries; attempt++) {
-    await page.goto('about:blank');
     try {
+      // Inside the try: right after a hot reload the page can already be
+      // navigating, and then this goto throws "Navigation to about:blank is
+      // interrupted by another navigation", which used to abort the test
+      // instead of counting as one more attempt.
+      await page.goto('about:blank');
       const response = await page.goto(url, {timeout: 5000});
       // Check if the response status is not 503
       if (response && response.status() < 400) {
