@@ -222,8 +222,9 @@ applyPatches() {
   esac
 
   ## Apply version-series specific patches (see lib-patch-v25.3.sh)
+  ## Match branch snapshots too: those are 25.3-SNAPSHOT, with no dot after the minor.
   case "$vers_" in
-    25.3.*) applyv253patches "$app_" "$type_" "$vers_" ;;
+    25.3.*|25.3-*) applyv253patches "$app_" "$type_" "$vers_" ;;
   esac
 
   # always successful
