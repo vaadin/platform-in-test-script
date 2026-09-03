@@ -283,8 +283,16 @@ async function compileAndReload(page, url, options = {}) {
 
   if (name && /jetty/.test(name)) {
     log('Reloading Page for Jetty');
-    await page.reload();
-    await page.waitForLoadState();
+    if (url) {
+      // Jetty can still be restarting when the fixed sleep above ends. A plain
+      // reload then lands on a 404 and the test looks for content the server
+      // cannot answer yet. Reload through waitForServerReady, which retries
+      // until it gets a valid response.
+      await waitForServerReady(page, url, options.arg || {}, { maxRetries: 30, retryInterval: 2000 });
+    } else {
+      await page.reload();
+      await page.waitForLoadState();
+    }
   } else if (url) {
     log('Reloading page');
     await page.reload();
