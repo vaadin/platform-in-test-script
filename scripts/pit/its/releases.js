@@ -22,11 +22,25 @@ const {log, args, createPage, closePage, takeScreenshot, waitForServerReady, dis
     await takeScreenshot(page, arg, __filename, 'releases-view');
     await expect(page.getByText('Releases per version').first()).toBeVisible();
 
-    const [major, minor] = arg.version.split('.');
+    // Strip the qualifier before splitting: a branch snapshot like
+    // "25.3-SNAPSHOT" has no patch segment, so minor would come out as
+    // "3-SNAPSHOT" and the label would never match.
+    const [major, minor] = arg.version.replace(/-.*$/, '').split('.');
     const labelRegex = new RegExp(`${major}\\.${minor}, `);
     await page.getByLabel(labelRegex).click();
 
     await takeScreenshot(page, arg, __filename, 'version-label-clicked');
+
+    // The graph is built from the platform releases published on GitHub, so a
+    // branch snapshot is never one of its points and has no release notes.
+    // The series assertions above already cover the view for those.
+    if (/SNAPSHOT/.test(arg.version)) {
+        log(`Skipping the per version assertions, ${arg.version} is not a published release`);
+        log(JSON.stringify(arg));
+        await closePage(page, arg);
+        return;
+    }
+
     let selector = `path.highcharts-point[aria-label*="${arg.version},"]`
     await expect(page.getByLabel('Interactive chart').locator(selector)).toBeVisible();
     await takeScreenshot(page, arg, __filename, 'chart-loaded');
