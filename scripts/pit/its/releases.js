@@ -6,7 +6,11 @@ const {log, args, createPage, closePage, takeScreenshot, waitForServerReady, dis
 
     const page = await createPage(arg.headless, arg.ignoreHTTPSErrors);
 
-    await waitForServerReady(page, arg.url, arg);
+    // Wait until the app has actually rendered, not just until the server
+    // answers. In dev mode the first response can arrive while the frontend is
+    // still being built, and the assertions below then run against a blank page.
+    await waitForServerReady(page, arg.url, arg,
+        {selector: '#outlet > * > *:not(style):not(script)'});
 
     await page.locator('html').first().innerHTML();
     await takeScreenshot(page, arg, __filename, 'page-loaded');
