@@ -24,15 +24,61 @@ EOF
 
 V=vaadin
 
+## repositories in the list may carry their own owner (owner/name), otherwise they belong to $V
+fullName() {
+  case "$1" in
+    */*) echo "$1";;
+    *) echo "$V/$1";;
+  esac
+}
+
+## verify that the tools, the network and the credentials are usable before doing anything
+checkConnection() {
+  for c in gh jq curl git
+  do
+    command -v $c >/dev/null 2>&1 || { echo "ERROR: '$c' is not installed or not in the PATH" >&2; exit 1; }
+  done
+
+  O=`gh api user --jq .login 2>&1`
+  if [ $? != 0 ]; then
+    if echo "$O" | egrep -qi 'connect|network|timeout|dial|no such host|resolve|EOF'; then
+      echo "ERROR: cannot reach github.com, check your internet connection or https://githubstatus.com" >&2
+    elif echo "$O" | egrep -qi '401|Bad credentials|expired|revoked|authentication'; then
+      echo "ERROR: github credentials are not valid, run 'gh auth login' or export a valid GITHUB_TOKEN" >&2
+    else
+      echo "ERROR: cannot query the github API" >&2
+    fi
+    echo "$O" >&2
+    exit 1
+  fi
+  U="$O"
+
+  S=`gh api -i user 2>/dev/null | egrep -i '^X-OAuth-Scopes:' | cut -d: -f2- | tr -d ' \r'`
+  case ",$S," in
+    *,repo,*) ;;
+    *) echo "WARN: the token used has no 'repo' scope [$S], listing may work but merging will fail" >&2;;
+  esac
+
+  if [ -n "$GITHUB_TOKEN" ]; then
+    C=`curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $GITHUB_TOKEN" https://api.github.com/user`
+    [ "$C" = "200" ] || { echo "ERROR: GITHUB_TOKEN is set but rejected by the API (http $C), unset it or export a valid one" >&2; exit 1; }
+  else
+    echo "WARN: GITHUB_TOKEN is not set, --start queries the commits API anonymously and may be rate limited" >&2
+  fi
+
+  echo "> connected to github.com as $U"
+}
+
 checkout() {
+    R=`fullName $1`
+    D=`basename $1`
     mkdir -p tmp
     cd tmp || exit 1
-    [ -d "$1" ] && rm -rf $1
-    gh auth status
+    [ -d "$D" ] && rm -rf $D
     gh config set git_protocol https
-    gh repo clone $V/$1
-    # git clone git@github.com:$V/$1.git || exit 1
-    cd $1 || exit 1
+    gh repo clone $R || exit 1
+    # git clone git@github.com:$R.git || exit 1
+    cd $D || exit 1
     [ -z "$2" ] || git checkout $2 || exit 1
 }
 
@@ -43,6 +89,12 @@ getHash() {
     | grep "chore: Update Vaadin $3" | tail -1
 }
 
+## the check runs once, recursive calls inherit the result through the environment
+if [ -n "$1" -a "$1" != "--help" -a -z "$PR_MERGE_CHECKED" ]; then
+  checkConnection || exit 1
+  export PR_MERGE_CHECKED=1
+fi
+
 arg=`echo "$1" | cut -d= -f2`
 while [ -n "$1" ]; do
     case $1 in
@@ -50,20 +102,23 @@ while [ -n "$1" ]; do
         usage && exit;;
       --list*)
         [ -z "$arg" ] && usage && exit 1
-        # echo "# >> $V/$arg"
-        H=`gh pr list --repo $V/$arg --json baseRefName,title,number,author,createdAt | jq -r '.[] | "\(.number)ç\(.baseRefName)ç\(.title)ç\(.author.login)ç\(.createdAt)"' | tr " " "_" | perl -p -e 's/T\d+:.*//g'`
+        R=`fullName $arg`
+        # echo "# >> $R"
+        J=`gh pr list --repo $R --json baseRefName,title,number,author,createdAt` || { echo "ERROR: cannot list the PRs of $R" >&2; exit 1; }
+        H=`echo "$J" | jq -r '.[] | "\(.number)ç\(.baseRefName)ç\(.title)ç\(.author.login)ç\(.createdAt)"' | tr " " "_" | perl -p -e 's/T\d+:.*//g'`
         if [ -n "$2" ]; then
           [ "$2" = "update" ] && G="Update" || G="$2"
           H=`echo "$H" | grep "$G"`
         fi
         for i in $H
         do
+          [ -n "$PR_MERGE_FOUND" ] && echo 1 >> "$PR_MERGE_FOUND"
           N=`echo "$i" | cut -d "ç" -f1`
           B=`echo "$i" | cut -d "ç" -f2`
           D=`echo "$i" | cut -d "ç" -f3`
           L=`echo "$i" | cut -d "ç" -f4`
           T=`echo "$i" | cut -d "ç" -f5`
-          echo "  # > https://github.com/$V/$arg/pull/$N - ($B) $D - [$L $T]" | tr "ç" "\t"
+          echo "  # > https://github.com/$R/pull/$N - ($B) $D - [$L $T]" | tr "ç" "\t"
           if [ "$3" = "merge" ]; then
             $0 --merge=$arg $N
           elif [ "$3" = "close" ]; then
@@ -74,16 +129,20 @@ while [ -n "$1" ]; do
         done
         ;;
       --all)
+        PR_MERGE_FOUND=`mktemp -t pr-merge`
+        export PR_MERGE_FOUND
         for i in $REPOS
         do
           $0 --list=$i $2 $3
         done
+        [ -s "$PR_MERGE_FOUND" ] || echo "> no PRs found matching '${2:-*}' in `echo "$REPOS" | wc -l | tr -d ' '` repositories"
+        rm -f "$PR_MERGE_FOUND"
         ;;
       --merge*)
         N="$2"
         [ -z "$N" ] && echo usage && exit 1
         shift
-        echo "https://github.com/$V/$arg/pull/$N"
+        echo "https://github.com/`fullName $arg`/pull/$N"
 
         checkout $arg
 
@@ -95,7 +154,7 @@ while [ -n "$1" ]; do
         N="$2"
         [ -z "$N" ] && echo usage && exit 1
         shift
-        echo "https://github.com/$V/$arg/pull/$N"
+        echo "https://github.com/`fullName $arg`/pull/$N"
         checkout $arg
 
         gh pr checkout $N || exit 1
