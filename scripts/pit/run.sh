@@ -39,6 +39,13 @@ run() {
   return $_err
 }
 
+## register a starter as failed when the java runtime it needs cannot be installed
+runtimeError() {
+  failed="$failed $1"
+  err "==== Error installing the java runtime needed by '$1' ===="
+  unsetJavaPath
+}
+
 ## compute what starters to run based on the command line arguments
 computeStarters() {
   ## Exclude starters beginning with the negated chart \!
@@ -91,9 +98,9 @@ main() {
   for i in $presets; do
     log -n "================= $HEAD for '$i' =================="
     if expr "$i" : '.*-hotswap' >/dev/null; then
-      installJBRRuntime || continue
+      installJBRRuntime || { runtimeError "$i"; continue; }
     elif [ -n "$JDK" ]; then
-      installJDKRuntime "$JDK" || continue
+      installJDKRuntime "$JDK" || { runtimeError "$i"; continue; }
     fi
     run runStarter "$i" "$tmp"
   done
@@ -114,9 +121,9 @@ main() {
     elif expr "$i" : '.*_jdk' >/dev/null; then
       _jdk=`echo "$i" | sed -e 's|.*_jdk||'`
       i=`echo "$i" | sed -e 's|_jdk.*||'`
-      installJDKRuntime "$_jdk" || continue
+      installJDKRuntime "$_jdk" || { runtimeError "$i"; continue; }
     elif [ -n "$JDK" ]; then
-      installJDKRuntime "$JDK" || continue
+      installJDKRuntime "$JDK" || { runtimeError "$i"; continue; }
     fi
     ## Exit soon if the port is busy
     [ -n "$TEST" ] || checkBusyPort "$PORT" || exit 1
