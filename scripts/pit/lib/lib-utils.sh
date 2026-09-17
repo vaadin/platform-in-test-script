@@ -983,7 +983,7 @@ download() {
 ## Installs jet brains java runtime, used for testing the hotswap agent
 ## It updates JAVA_HOME and PATH variables, and sets the HOT one with the parameters to enable it.
 installJBRRuntime() {
-  local hvers jvers vers hsau jurl H
+  local hvers jvers vers hsau jurl
   # https://github.com/HotswapProjects/HotswapAgent/releases/
   hvers="2.0.1"
   # https://github.com/JetBrains/JetBrainsRuntime/releases
@@ -1008,8 +1008,8 @@ installJBRRuntime() {
   setJavaPath "/tmp/jbr" || return 1
   if [ ! -f $JAVA_HOME/lib/hotswap/hotswap-agent.jar ] ; then
     mkdir -p $JAVA_HOME/lib/hotswap
-    download "$hsau" "$H/lib/hotswap/hotswap-agent.jar" || return 1
-    [ -z "$TEST" ] && log "Installed "`ls -1 $H/lib/hotswap/hotswap-agent.jar`
+    download "$hsau" "$JAVA_HOME/lib/hotswap/hotswap-agent.jar" || return 1
+    [ -z "$TEST" ] && log "Installed "`ls -1 $JAVA_HOME/lib/hotswap/hotswap-agent.jar`
   fi
   export HOT="-Djetty.deployMode=FORK -Djetty.jvmArgs=-XX:HotswapAgent=fatjar"
 }
