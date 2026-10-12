@@ -68,7 +68,7 @@ downloadInitializer() {
   local name java boot group type deps url
   name=$1
   java=`computeJavaMajor`
-  boot=4.0.5
+  boot=4.1.1
   group=com.vaadin.initializer
   type=$2
   deps=$3
