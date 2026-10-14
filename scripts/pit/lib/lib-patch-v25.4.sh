@@ -7,23 +7,13 @@
 ## $2 type (current | next)
 ## $3 version (e.g. 25.4.0-alpha3)
 applyv254patches() {
-  local app_=$1 type_=$2 vers_=$3 F
+  local app_=$1 type_=$2 vers_=$3
   case $app_ in
-    ai-integrations-demo)
-      ## Flow 25.4 reports data provider queries on the service event bus
-      ## (vaadin/flow#25262), so a grid counting its rows calls
-      ## VaadinService.getEventBus(). The demo's TestUi mocks VaadinService with
-      ## Mockito, whose getEventBus() returns null, and 7 tests in ClaimsViewTest
-      ## fail with a NullPointerException in DataFetchObserver. Stub the event bus
-      ## as a real service has one. Skipped once the demo stubs it itself.
-      ## Not needed once Flow checks for a missing event bus: vaadin/flow#26417
-      F=src/test/java/com/vaadin/demo/nordicsupply/ui/TestUi.java
-      if [ -f "$F" ] && ! grep -q 'getEventBus' "$F"; then
-        warn "Stubbing VaadinService.getEventBus() in $F"
-        perl -pi -e 's|^(import com\.vaadin\.flow\.server\.VaadinService;)(\r?\n)|$1$2import com.vaadin.flow.server.VaadinServiceEventBus;$2|' "$F"
-        perl -pi -e 's|^(\s*)(when\(service\.getContext\(\)\)\.thenReturn\(context\);)(\r?\n)|$1$2$3$1when(service.getEventBus()).thenReturn(new VaadinServiceEventBus(service));$3|' "$F"
-      fi
-      ;;
+    ## ai-integrations-demo) (Not needed since vaadin/ai-integrations-demo#39)
+      ## The demo's TestUi mocked VaadinService without stubbing getEventBus(),
+      ## which Flow 25.4 calls when it reports data provider queries (vaadin/flow#25963).
+      ## The demo now stubs it itself.
+      ##;;
   esac
   return 0
 }
