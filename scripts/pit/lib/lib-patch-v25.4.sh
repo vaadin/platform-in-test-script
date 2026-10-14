@@ -16,6 +16,7 @@ applyv254patches() {
       ## Mockito, whose getEventBus() returns null, and 7 tests in ClaimsViewTest
       ## fail with a NullPointerException in DataFetchObserver. Stub the event bus
       ## as a real service has one. Skipped once the demo stubs it itself.
+      ## Not needed once Flow checks for a missing event bus: vaadin/flow#26417
       F=src/test/java/com/vaadin/demo/nordicsupply/ui/TestUi.java
       if [ -f "$F" ] && ! grep -q 'getEventBus' "$F"; then
         warn "Stubbing VaadinService.getEventBus() in $F"
