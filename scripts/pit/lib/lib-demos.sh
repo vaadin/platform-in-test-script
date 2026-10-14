@@ -293,7 +293,7 @@ getRunCmdDev() {
     mpr-demo|testbench-demo) echo "$MVN -ntp -B -Djetty.http.port=$2 jetty:run $PNPM";;
     multi-module-example) echo "$MVN -ntp -B spring-boot:run -pl vaadin-app -Dspring-boot.run.arguments=--server.port=$2";;
     use-cases) echo "$MVN -ntp -B spring-boot:run -pl signals -Dspring-boot.run.arguments=--server.port=$2";;
-    spring-petclinic-vaadin-flow|gs-crud-with-vaadin) echo "$MVN -ntp -B spring-boot:run -Dspring-boot.run.arguments=--server.port=$2";;
+    spring-petclinic-vaadin-flow|gs-crud-with-vaadin|ai-integrations-demo) echo "$MVN -ntp -B spring-boot:run -Dspring-boot.run.arguments=--server.port=$2";;
     form-filler-demo) echo "$MVN -ntp -B $PNPM -DOPENAI_TOKEN=$OPENAI_TOKEN $_P";;
     *) echo "$MVN -ntp -B $PNPM $_P";;
   esac
@@ -402,6 +402,7 @@ getTest() {
     expo-flow) echo "expo-flow.js";;
     vaadin-showcase) echo "vaadin-showcase.js";;
     use-cases) echo "use-cases.js";;
+    ai-integrations-demo) echo "ai-integrations-demo.js";;
     *) echo "hello.js";;
   esac
 }
