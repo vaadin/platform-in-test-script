@@ -7,6 +7,7 @@
 
 ## Version-specific patch libraries (dispatched from applyPatches by version)
 . `dirname $0`/lib/lib-patch-v25.3.sh
+. `dirname $0`/lib/lib-patch-v25.4.sh
 
 ## Run after updating Vaadin/Hilla versions in order to patch sources
 # $1 application/starter name
@@ -221,10 +222,11 @@ applyPatches() {
       ;;
   esac
 
-  ## Apply version-series specific patches (see lib-patch-v25.3.sh)
+  ## Apply version-series specific patches (see lib-patch-v25.3.sh, lib-patch-v25.4.sh)
   ## Match branch snapshots too: those are 25.3-SNAPSHOT, with no dot after the minor.
   case "$vers_" in
     25.3.*|25.3-*) applyv253patches "$app_" "$type_" "$vers_" ;;
+    25.4.*|25.4-*) applyv254patches "$app_" "$type_" "$vers_" ;;
   esac
 
   # always successful
