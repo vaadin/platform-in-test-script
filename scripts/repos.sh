@@ -71,6 +71,7 @@ releases-graph
 expo-flow
 manolo/vaadin-showcase
 use-cases
+ai-integrations-demo
 "
 
 ## mpr-demo_jdk17 might be revived with _jdk21 at some point
