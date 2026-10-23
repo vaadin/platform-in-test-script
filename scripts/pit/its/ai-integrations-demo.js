@@ -55,7 +55,7 @@ const { log, args, createPage, closePage, takeScreenshot, waitForServerReady, di
     // --- Dashboard: asking needs a live model, so only check the default widgets render ---
     log('Testing Dashboard');
     await openView('Dashboard');
-    await expect(page.getByRole('button', { name: 'Save Dashboard' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeVisible();
     await expect(page.locator('vaadin-dashboard')).toBeVisible();
     await expect(page.locator('vaadin-dashboard vaadin-grid').first()).toBeVisible();
     await takeScreenshot(page, arg, __filename, 'dashboard');
