@@ -58,7 +58,7 @@ const { log, args, createPage, closePage, takeScreenshot, waitForServerReady, di
     await takeScreenshot(page, arg, __filename, 'page-reloaded');
     await page.waitForURL(`${arg.url}personas/new`);
 
-    await page.getByRole('button', { name: 'No' }).locator('div').click();
+    await page.getByRole('button', { name: 'No', exact: true }).locator('div').click();
     await takeScreenshot(page, arg, __filename, 'no-clicked');
     const name = await page.locator('.detail').getByLabel('First Name').inputValue();
     if (name != 'FOOBAR') throw new Error();
