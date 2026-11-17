@@ -274,30 +274,24 @@ async function compileProject() {
 }
 
 async function compileAndReload(page, url, options = {}) {
-  const { name, waitTime = 10000 } = options;
+  const { waitTime = 10000 } = options;
 
   log('Re-compiling project');
   await compileProject();
   log(`Sleeping ${waitTime / 1000}secs`);
   await page.waitForTimeout(waitTime);
 
-  if (name && /jetty/.test(name)) {
-    log('Reloading Page for Jetty');
-    if (url) {
-      // Jetty can still be restarting when the fixed sleep above ends. A plain
-      // reload then lands on a 404 and the test looks for content the server
-      // cannot answer yet. Reload through waitForServerReady, which retries
-      // until it gets a valid response.
-      await waitForServerReady(page, url, options.arg || {}, { maxRetries: 30, retryInterval: 2000 });
-    } else {
-      await page.reload();
-      await page.waitForLoadState();
-    }
-  } else if (url) {
+  if (url) {
+    // The server can still be restarting when the fixed sleep above ends:
+    // Jetty redeploys, or Spring DevTools restarts and Vaadin first downloads
+    // a supported Node.js (e.g. 25.3 on a Node 26 runner). A plain reload then
+    // fails with a 404 or ERR_CONNECTION_REFUSED. Reload through
+    // waitForServerReady, which retries until it gets a valid response.
     log('Reloading page');
+    await waitForServerReady(page, url, options.arg || {}, { maxRetries: 30, retryInterval: 2000 });
+  } else {
     await page.reload();
-    await page.waitForURL(url);
-    log('Page reloaded');
+    await page.waitForLoadState();
   }
 }
 
