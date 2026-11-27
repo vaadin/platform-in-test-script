@@ -15,6 +15,10 @@ applyv254patches() {
 
   ## Vaadin 25.4 moves to Spring Boot 4.2, projects still on 4.0/4.1 need to be bumped
   updateSpringBootV254
+  ## AI integrations classes were renamed in 25.4 (AI/LLM -> Ai/Llm, DatabaseProvider -> QueryExecutor)
+  renameAiIntegrationsClassesV254
+  ## browserless-test renamed ExecutedJavaScript.getAll() to getExecutions()
+  renameExecutedJavaScriptGetAllV254
 
   case $app_ in
     ## ai-integrations-demo) (Not needed since vaadin/ai-integrations-demo#39)
@@ -23,6 +27,47 @@ applyv254patches() {
       ## The demo now stubs it itself.
       ##;;
   esac
+  return 0
+}
+
+## Rename the AI integrations types to their 25.4 names in projects that use them
+## (e.g. ai-integrations-demo, expo-flow, manolo/vaadin-showcase)
+##   - AI/LLM in type names became Ai/Llm, e.g. AIOrchestrator -> AiOrchestrator,
+##     LLMProvider -> LlmProvider, SpringAILLMProvider -> SpringAiLlmProvider
+##     (vaadin/flow-components#10832, CP #10834)
+##   - DatabaseProvider -> QueryExecutor, DatabaseProviderAITools -> QueryExecutorAiTools
+##     (vaadin/flow-components#10837, CP #10840)
+## Not covered: removed API, such as setMaxCallsPerTool() or ToolCallLimitExceededException (#10839)
+renameAiIntegrationsClassesV254() {
+  local _files _f
+  _files=`grep -rlE 'com\.vaadin\.flow\.component\.ai\.' . --include='*.java' --include='*.kt' 2>/dev/null | grep -v '/target/\|/node_modules/'`
+  [ -z "$_files" ] && return 0
+  for _f in $_files; do
+    [ -z "$TEST" ] && warn "renaming AI integrations classes for 25.4 in $_f" || cmd "## renaming AI integrations classes for 25.4 in $_f"
+    perl -pi -e '
+      s/\bDatabaseProviderAITools\b/QueryExecutorAiTools/g;
+      s/\bDatabaseProviderAiTools\b/QueryExecutorAiTools/g;
+      s/\bDatabaseProvider\b/QueryExecutor/g;
+      s/\bLangChain4JLLMProvider\b/LangChain4jLlmProvider/g;
+      s/\bSpringAILLMProvider\b/SpringAiLlmProvider/g;
+      s/\bLLM(Provider|ProviderHelpers|Request)\b/Llm$1/g;
+      s/\bAI(Attachment|Controller|DataRow|FileReceiver|Input|Message|MessageList|Orchestrator|TurnEvents|ExtensionsLicense|ComponentsFeatureFlagProvider|ComponentsExperimentalFeatureException)\b/Ai$1/g;
+      s/\b(Chart|Form|Grid)AI(Controller|Tools)\b/$1Ai$2/g;
+    ' "$_f"
+  done
+  return 0
+}
+
+## Rename ExecutedJavaScript.getAll(...) to getExecutions(...) (vaadin/browserless-test#393)
+## Only files that use ExecutedJavaScript are touched, e.g. use-cases signals MainLayoutTest
+renameExecutedJavaScriptGetAllV254() {
+  local _files _f
+  _files=`grep -rl 'ExecutedJavaScript' . --include='*.java' --include='*.kt' 2>/dev/null | grep -v '/target/\|/node_modules/'`
+  [ -z "$_files" ] && return 0
+  for _f in $_files; do
+    [ -z "$TEST" ] && warn "renaming ExecutedJavaScript.getAll() to getExecutions() in $_f" || cmd "## renaming ExecutedJavaScript.getAll() to getExecutions() in $_f"
+    perl -pi -e 's/\.getAll\(/.getExecutions(/g' "$_f"
+  done
   return 0
 }
 
